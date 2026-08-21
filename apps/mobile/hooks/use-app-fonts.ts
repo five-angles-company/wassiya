@@ -10,7 +10,7 @@ import { useFonts } from "expo-font"
 
 // Every weight is registered as its own family: React Native's `fontWeight`
 // does NOT select a bold file, so the theme's `--font-*` tokens name these
-// exact strings (see apps/mobile/src/global.css). Loading a weight here and
+// exact strings (see apps/mobile/global.css). Loading a weight here and
 // forgetting its token — or vice versa — silently falls back to the system
 // face, so the two lists must stay in step.
 const FONTS = {

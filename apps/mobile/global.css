@@ -1,13 +1,14 @@
 @import 'tailwindcss';
 @import 'uniwind';
 
-/* Tailwind auto-detects sources from THIS file's directory, i.e. `src/` only —
-   so the expo-router tree in `app/` and the shared component package are both
-   invisible to the scanner unless named here. Without the `../app` line, a
-   class used only in a route file is silently purged and the style just never
-   applies. Paths are relative to this file (apps/mobile/src/global.css). */
-@source '../app';
-@source '../../../packages/ui-native/src';
+/* Tailwind auto-detects sources from THIS file's directory — now the app root,
+   so `app/`, `components/` and `hooks/` all fall under the default scan. `app/`
+   is still named explicitly because the failure mode is silent: a class used
+   only in a route file gets purged and the style simply never applies. The
+   shared component package lives outside this app and is found ONLY because it
+   is named here. Paths are relative to this file (apps/mobile/global.css). */
+@source './app';
+@source '../../packages/ui-native/src';
 
 /* ---------------------------------------------------------------------------
    Theme-INVARIANT tokens (fonts, radii, spacing, shadows).

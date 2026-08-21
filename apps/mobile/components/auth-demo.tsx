@@ -4,7 +4,7 @@ import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/re
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { SignInCard } from "@/src/components/sign-in-card"
+import { SignInCard } from "@/components/sign-in-card"
 
 export function AuthDemo() {
   return (

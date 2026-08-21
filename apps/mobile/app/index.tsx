@@ -4,8 +4,8 @@ import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { isRTL } from "@workspace/ui-native/lib/rtl"
 
-import { AuthDemo } from "@/src/components/auth-demo"
-import { DEFAULT_LOCALE } from "@/src/lib/direction"
+import { AuthDemo } from "@/components/auth-demo"
+import { DEFAULT_LOCALE } from "@/lib/direction"
 
 export default function Index() {
   const today = new Date()

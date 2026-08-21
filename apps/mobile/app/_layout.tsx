@@ -1,4 +1,4 @@
-import "../src/global.css"
+import "../global.css"
 
 import { ClerkProvider, useAuth } from "@clerk/expo"
 import { tokenCache } from "@clerk/expo/token-cache"
@@ -9,8 +9,8 @@ import * as SplashScreen from "expo-splash-screen"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { PortalHost } from "@rn-primitives/portal"
 
-import { useAppFonts } from "@/src/hooks/use-app-fonts"
-import { initLayoutDirection } from "@/src/lib/direction"
+import { useAppFonts } from "@/hooks/use-app-fonts"
+import { initLayoutDirection } from "@/lib/direction"
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
 
