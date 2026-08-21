@@ -8,8 +8,21 @@
  * @module
  */
 
-import type * as auth from "../auth.js";
+import type * as assets from "../assets.js";
+import type * as audit from "../audit.js";
+import type * as checkin from "../checkin.js";
+import type * as claims from "../claims.js";
+import type * as crons from "../crons.js";
+import type * as guardians from "../guardians.js";
+import type * as heirs from "../heirs.js";
 import type * as http from "../http.js";
+import type * as identity from "../identity.js";
+import type * as keyring from "../keyring.js";
+import type * as model_access from "../model/access.js";
+import type * as model_claimFlow from "../model/claimFlow.js";
+import type * as notifications from "../notifications.js";
+import type * as release from "../release.js";
+import type * as routing from "../routing.js";
 import type * as users from "../users.js";
 
 import type {
@@ -19,8 +32,21 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  auth: typeof auth;
+  assets: typeof assets;
+  audit: typeof audit;
+  checkin: typeof checkin;
+  claims: typeof claims;
+  crons: typeof crons;
+  guardians: typeof guardians;
+  heirs: typeof heirs;
   http: typeof http;
+  identity: typeof identity;
+  keyring: typeof keyring;
+  "model/access": typeof model_access;
+  "model/claimFlow": typeof model_claimFlow;
+  notifications: typeof notifications;
+  release: typeof release;
+  routing: typeof routing;
   users: typeof users;
 }>;
 

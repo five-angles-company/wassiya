@@ -102,3 +102,26 @@ it serves — is in `packages/ui-native/README.md`.
 - Convex backend work: use the installed `convex` / `convex-setup-auth` skills + `packages/backend/convex/_generated/ai/guidelines.md`.
 - Auth wiring, adding an app, Expo specifics, Astro specifics: see `.claude/skills/` (`auth-wiring`, `add-app`, `mobile-expo`, `astro-landing`).
 <!-- END:template-guide -->
+
+<!-- BEGIN:wassiya-product -->
+# Wassiya product rules (durable)
+
+Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi-first; country is a parameter, never a branch.
+
+## Security model — 2-of-3 (LOCKED, no session may drift from this)
+- MK = 256-bit random master key, generated on the owner's device, never leaves it unencrypted. The server stores only ciphertext.
+- Daily unlock: each enrolled device stores MK wrapped by a hardware-backed key gated by biometrics (client-side; not in this backend).
+- Recovery (no enrolled device): MK also wrapped by K_rec = S_paper XOR S_guardian. S_paper lives only on the printed sheet (grouped Base32 + checksum). S_guardian is sealed to the guardian's X25519 public key; the server stores only the sealed ciphertext.
+- Per-asset: random DEK (XChaCha20-Poly1305) wrapped by MK; content + thumbnails encrypted client-side before upload.
+- Heir release: heirs NEVER receive MK. On every routing change the owner's device rebuilds per-heir bundles: Enc(K_h, routed DEKs + message keys), K_h = S_server_h XOR S_guardian_h. S_server_h is withheld until a claim reaches "released" (identity-verified heir + certificate name match + guardian confirmation + veto window elapsed).
+- Rotation: new paper or guardian ⇒ regenerate the affected shares and re-wrap; old material becomes worthless.
+- Rule for all code: no plaintext key material in Convex functions, logs, or errors. OTP/Clerk auth proves identity only — it never touches keys.
+
+## Product rules
+- Routing, not shares: assets go to recipients whole; no inheritance-share math anywhere (الأنصبة يحدّدها القانون، لا التطبيق).
+- Heirs are silent (learn nothing until release) or notified (invited, see no content). Heir preview = exactly what that heir would receive.
+- Dead man's switch: cadence + grace + escalation (day 0/7/14/30) + veto window; owner veto locks the claimant out 90 days. Life check-in confirmation is ALWAYS biometric-gated and exists in exactly one place (the check-in prompt) — no alternate confirm affordance may ever be added (rows, notifications, widgets report and navigate only), or an unlocked phone in the wrong hands could suppress delivery forever.
+- Subscription lapse: vault stays readable and heir delivery keeps working; only adding assets is blocked.
+- Audit log is append-only. No update or delete path may exist.
+- Identity verification (Didit) is mandatory and blocking for owners at onboarding, and for heirs at claim time; the death certificate name must match the owner's verified legal name.
+<!-- END:wassiya-product -->

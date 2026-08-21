@@ -1,0 +1,13 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    // Consumed as source by Metro (Expo), Next.js/Turbopack and Vitest — all of
+    // which resolve like bundlers. Match that so the `./*` subpath exports and
+    // the extensionless relative imports below resolve identically everywhere.
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vitest/globals"]
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}
