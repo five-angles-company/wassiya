@@ -42,6 +42,19 @@ warning, a type error, or a build failure — the style just never applies.
    is silently purged. `global.css` therefore lists `@source '../app'` as well as
    `@source '../../../packages/ui-native/src'`.
 
+`scripts/check-classes.mjs` catches both. Run it after any styling change:
+
+```bash
+cd apps/mobile
+npx expo export -p android --no-bytecode --no-minify --output-dir /tmp/wassiya-export
+node ../../packages/ui-native/scripts/check-classes.mjs /tmp/wassiya-export
+```
+
+It diffs the classes written in source against the bundle's compiled utility
+table, reporting **purged** classes (absent) and **inert** ones (present but
+resolving to `colorMix("unset", …)`). Exit 0 on a clean tree; the seven inert
+`/alpha` classes in verbatim upstream files are baselined in the script.
+
 ## Consuming it
 
 ```ts

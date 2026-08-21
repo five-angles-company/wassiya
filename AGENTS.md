@@ -62,6 +62,42 @@ Clerk Core 3 removed and renamed a lot; training-data patterns are usually wrong
 ## Ports & callbacks (procedure, not fixed values)
 Each app's dev port is set in its own `package.json` (`next dev --port …`) or `astro.config.mjs` (`server.port`) — those scripts are the source of truth. Nothing in this repo registers callback URLs any more: Clerk owns allowed origins and redirect URLs in its dashboard, and the mobile deep link derives from `scheme` in `apps/mobile/app.json`. Enabling an auth strategy (a social provider, email codes) is also a dashboard action — code written for a disabled strategy fails at runtime, not at build time.
 
+## Design source (mobile) — it is NOT in this repo
+
+The Wassiya visual design lives in a **Claude Design** project, read through the
+`DesignSync` MCP tool (`list_files` / `get_file`). Nothing in the tree mirrors
+it, so a styling question that the tokens and `packages/ui-native/README.md`
+cannot answer has to go back to the board.
+
+- **Project id:** `b8016fce-5298-4262-bf2b-80f1501c73df`
+- **URL form:** `https://claude.ai/design/p/<project-id>?file=Wassiya+Onboarding.dc.html` (spaces as `+`)
+
+| Board file | Contents |
+| --- | --- |
+| `Wassiya Onboarding.dc.html` | The mobile app — its own header says "54 screens, sections 1–10" |
+| `Wassiya Heir Claim (web).dc.html` | The heir claim funnel (web), incl. the 7.4 veto-period timeline |
+| `_ds/organic-…/styles.css` + `readme.md` | The "Organic" design system — the token authority |
+
+**Where the design file and a written brief disagree, the design file wins.**
+
+⚠️ **`get_file` hard-caps at 256 KiB** and sets `truncated: true`. The
+onboarding board is roughly 500–550 KiB, so a read stops mid-section-5 and
+returns exactly 262,144 bytes. **Sections ٦–١٠ have never been read** — the
+board is complete, the read is not, and there are no per-section files. Getting
+them requires splitting the board in Claude Design into sub-256 KiB files.
+
+Known section map, from forward references inside sections 1–5: ٦ Protection
+(6.1 Centre, 6.2 guardian, 6.4 check-in) · ٧ claim/escalation (7.4 waiting,
+7.5 death claim) · ٨ security · ٩ Settings (9.2 auto-lock, 9.3 audit log,
+9.4 subscription/storage, 9.5 legal) · ١٠ shared patterns.
+
+Two board quirks to ignore: the tokens still declare **Caprasimo** as the
+heading font (no Arabic glyphs — the heading face is Cairo 800/900), and the
+`.dc.html` boards render section 1–5 only through the MCP.
+
+Implementation state — every primitive, its props, states, and the board screen
+it serves — is in `packages/ui-native/README.md`.
+
 ## Deeper procedures → skills
 - Convex backend work: use the installed `convex` / `convex-setup-auth` skills + `packages/backend/convex/_generated/ai/guidelines.md`.
 - Auth wiring, adding an app, Expo specifics, Astro specifics: see `.claude/skills/` (`auth-wiring`, `add-app`, `mobile-expo`, `astro-landing`).
