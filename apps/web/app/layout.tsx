@@ -1,4 +1,5 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google"
+import { Geist_Mono, Inter } from "next/font/google"
+import { ClerkProvider } from "@clerk/nextjs"
 
 import "@workspace/ui/globals.css"
 import { ConvexClientProvider } from "@/components/convex-client-provider"
@@ -24,9 +25,13 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
     >
       <body>
-        <ThemeProvider>
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </ThemeProvider>
+        {/* ClerkProvider must wrap ConvexClientProvider — Convex reads Clerk's
+            context to get its access token. */}
+        <ClerkProvider>
+          <ThemeProvider>
+            <ConvexClientProvider>{children}</ConvexClientProvider>
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   )

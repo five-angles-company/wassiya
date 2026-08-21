@@ -18,9 +18,9 @@
     }
   },
   "dependencies": {
-    "@convex-dev/workos-authkit": "^0.2.6",
-    "@workos-inc/node": "^9.3.1",
-    "convex": "^1.39.1"
+    "@clerk/backend": "^3.16.10",
+    "convex": "^1.39.1",
+    "svix": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",

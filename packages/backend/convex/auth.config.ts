@@ -1,21 +1,18 @@
-// Runs on the Convex deployment. Reads WORKOS_CLIENT_ID from the *deployment*
-// environment (set by the managed AuthKit flow), NOT from any .env.local.
-const clientId = process.env.WORKOS_CLIENT_ID
+import type { AuthConfig } from "convex/server"
 
+// Runs on the Convex deployment. `CLERK_FRONTEND_API_URL` lives in the
+// *deployment* environment (`npx convex env set …`), NOT in any .env.local —
+// copy it from https://dashboard.clerk.com/apps/setup/convex after activating
+// the Convex integration there.
+//
+// `applicationID: "convex"` is checked against the JWT `aud` claim. Clerk's
+// Convex integration pre-maps that audience, so no custom JWT template is
+// needed. Re-run `convex dev` after editing this file.
 export default {
   providers: [
     {
-      type: "customJwt",
-      issuer: "https://api.workos.com/",
-      algorithm: "RS256",
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
-      applicationID: clientId,
-    },
-    {
-      type: "customJwt",
-      issuer: `https://api.workos.com/user_management/${clientId}`,
-      algorithm: "RS256",
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
+      domain: process.env.CLERK_FRONTEND_API_URL!,
+      applicationID: "convex",
     },
   ],
-}
+} satisfies AuthConfig

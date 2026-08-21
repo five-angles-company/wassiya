@@ -34,7 +34,7 @@ description: >-
 - **CSS-comment trap:** a CSS comment that contains a `**/` glob (e.g. describing `apps/**/*`) closes the comment early (`*/`), corrupting the next rule. Keep globs out of comments.
 
 ## Dynamic data (when needed)
-- The landing has no React provider and no WorkOS auth. For a form/dynamic call, use an Astro **server endpoint** with `ConvexHttpClient` from `convex/browser` for a one-shot mutation/query — not `ConvexReactClient`/`ConvexProviderWithAuth`.
+- The landing has no React provider and no Clerk auth. For a form/dynamic call, use an Astro **server endpoint** with `ConvexHttpClient` from `convex/browser` for a one-shot mutation/query — not `ConvexReactClient`/`ConvexProviderWithClerk`.
 
 ## Gotchas
 - Importing the full `@workspace/ui/globals.css` pulls in extra theme vars/animations — fine (Tailwind tree-shakes unused utilities).

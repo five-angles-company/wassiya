@@ -5,11 +5,11 @@
 #
 #   docker build -f apps/web/Dockerfile \
 #     --build-arg NEXT_PUBLIC_CONVEX_URL=https://<prod>.convex.cloud \
-#     --build-arg NEXT_PUBLIC_WORKOS_REDIRECT_URI=https://<domain>/callback \
+#     --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_... \
 #     -t web .
 #
 # NEXT_PUBLIC_* are inlined into the client bundle at build time → build args.
-# Runtime secrets (WORKOS_CLIENT_ID / WORKOS_API_KEY / WORKOS_COOKIE_PASSWORD)
+# Runtime secrets (CLERK_SECRET_KEY)
 # are passed at `docker run` time, NOT baked into the image.
 
 # --- base: pnpm + turbo on Node 20 -----------------------------------------
@@ -34,9 +34,9 @@ RUN pnpm install --frozen-lockfile
 # Full pruned source.
 COPY --from=pruner /app/out/full/ .
 ARG NEXT_PUBLIC_CONVEX_URL
-ARG NEXT_PUBLIC_WORKOS_REDIRECT_URI
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CONVEX_URL=${NEXT_PUBLIC_CONVEX_URL}
-ENV NEXT_PUBLIC_WORKOS_REDIRECT_URI=${NEXT_PUBLIC_WORKOS_REDIRECT_URI}
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN turbo build --filter=web
 

@@ -1,25 +1,29 @@
 # convex-starter
 
-A Turborepo + pnpm template for bootstrapping apps on **Convex** with **WorkOS AuthKit** auth, across **web (Next.js)** and **mobile (Expo)**.
+A Turborepo + pnpm template for bootstrapping apps on **Convex** with **Clerk** auth, across **web (Next.js)** and **mobile (Expo)**.
 
 ```
 apps/
-  web/            Next.js 16 app (Convex + WorkOS AuthKit)
-  mobile/         Expo (React Native) app (Convex + WorkOS AuthKit, PKCE)
+  web/            Next.js 16 app (Convex + Clerk)
+  admin/          Next.js 16 app, near-mirror of web
+  landing/        Astro marketing site (static)
+  mobile/         Expo (React Native) app (Convex + Clerk)
 packages/
   backend/        Convex deployment: schema, functions, auth config (@workspace/backend)
   ui/             Shared shadcn/ui components (@workspace/ui)
+  ui-native/      Shared React Native Reusables components (@workspace/ui-native)
   eslint-config/  Shared ESLint config
   typescript-config/ Shared tsconfig presets
 ```
 
-Both apps talk to the **same** Convex deployment and the **same** WorkOS environment. The backend's `convex/auth.config.ts` validates WorkOS JWTs, so any client (web or native) authenticates against it unchanged.
+Every app talks to the **same** Convex deployment and the **same** Clerk instance. The backend's `convex/auth.config.ts` validates Clerk JWTs, so any client (web or native) authenticates against it unchanged.
 
 ## Prerequisites
 
 - Node 20+, `pnpm` 10+
 - A Convex account (`npx convex dev` will prompt login)
-- For the **native app's auth**: a **development build** — Expo Go will NOT work (custom OAuth scheme + a WebCrypto polyfill need native code). On Windows use Android (`expo run:android`); iOS needs macOS.
+- A Clerk account — [sign up](https://dashboard.clerk.com/sign-up), then [create an application](https://dashboard.clerk.com/apps/new)
+- For the **native app**: a **development build** — Expo Go will NOT work (the app uses native modules and the `@clerk/expo` config plugin). On Windows use Android (`expo run:android`); iOS needs macOS.
 
 ## Bootstrapping a new app from this template
 
@@ -28,55 +32,67 @@ Both apps talk to the **same** Convex deployment and the **same** WorkOS environ
 pnpm install
 ```
 
-### 2. Provision Convex + WorkOS (managed AuthKit)
+### 2. Provision Convex
 ```bash
 pnpm --filter @workspace/backend dev      # = npx convex dev
 ```
-First run is interactive: it logs you into Convex, **provisions a managed WorkOS team**, sets `WORKOS_CLIENT_ID` / `WORKOS_API_KEY` on the deployment, and writes `packages/backend/.env.local`. Leave it running (it also serves the backend).
+First run is interactive: it logs you into Convex, creates the deployment, and writes `packages/backend/.env.local`. Leave it running (it also serves the backend). The first push fails until step 3 sets `CLERK_FRONTEND_API_URL` — that is expected.
 
-### 3. Wire the WorkOS webhook (user sync)
-`convex/http.ts` registers the AuthKit component's webhook, which reads `WORKOS_WEBHOOK_SECRET` — the **first push fails without it**. In the WorkOS dashboard add a webhook to `https://<your-deployment>.convex.site/workos/webhook` (events `user.created|updated|deleted`), then:
+### 3. Activate the Clerk ⇄ Convex integration
+Open [dashboard.clerk.com/apps/setup/convex](https://dashboard.clerk.com/apps/setup/convex) and click **Activate Convex integration**. It reveals your **Frontend API URL**; no custom JWT template is needed (Clerk pre-maps the `aud: "convex"` claim that Convex requires). Put it on the **deployment**, not in a `.env.local`:
 ```bash
-cd packages/backend && npx convex env set WORKOS_WEBHOOK_SECRET <secret>
+cd packages/backend && npx convex env set CLERK_FRONTEND_API_URL https://<your-instance>.clerk.accounts.dev
 ```
-Re-run `convex dev`. (To unblock the push before wiring the real webhook, set any placeholder value.)
+Re-run `convex dev` so it picks up `auth.config.ts`.
 
-### 4. Web app env
+### 4. Wire the Clerk webhook (user sync)
+`convex/http.ts` serves the webhook that keeps the `users` table in sync. In the Clerk dashboard add an endpoint pointing at `https://<your-deployment>.convex.site/clerk-users-webhook`, subscribed to `user.created`, `user.updated`, `user.deleted`. Then:
+```bash
+cd packages/backend && npx convex env set CLERK_WEBHOOK_SIGNING_SECRET whsec_...
+```
+Without it the handler rejects every delivery, and `currentUser` reports `synced: false`.
+
+### 5. Web + admin env
 ```bash
 cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
 ```
-Fill it: `NEXT_PUBLIC_CONVEX_URL` (the deployment URL), mirror `WORKOS_CLIENT_ID` + `WORKOS_API_KEY` from `packages/backend/.env.local`, and generate `WORKOS_COOKIE_PASSWORD` with `openssl rand -base64 24`.
+Fill `NEXT_PUBLIC_CONVEX_URL` (the deployment URL from `packages/backend/.env.local`), plus the publishable and secret keys from [the Clerk API keys page](https://dashboard.clerk.com/last-active?path=api-keys).
 
-### 5. Native app env + dev build
+### 6. Native app env + dev build
 ```bash
-cp apps/mobile/.env.example apps/mobile/.env.local   # fill EXPO_PUBLIC_CONVEX_URL + EXPO_PUBLIC_WORKOS_CLIENT_ID
+cp apps/mobile/.env.example apps/mobile/.env.local   # EXPO_PUBLIC_CONVEX_URL + EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
 ```
-Register the mobile redirect URI: it's already in `packages/backend/convex.json` (`convexstarter://callback`) — re-run `convex dev` once so WorkOS picks it up. Then build a dev client:
+Two Clerk dashboard prerequisites — both fail at **runtime**, not build time:
+- **Email code**: under **User & authentication → Email, phone, username**, enable the email verification code as a sign-in strategy and make sure **password is not a required sign-up field**. The screen is email-code-only, so a required password leaves sign-up stuck at `missing_requirements` (the app surfaces which fields are missing rather than hanging).
+- **Google**: enable it under **User & authentication → Social connections**, or the **Continue with Google** button errors.
+
+Then build a dev client:
 ```bash
 cd apps/mobile
 npx expo prebuild --clean
 npx expo run:android          # or run:ios on macOS
 ```
 
-### 6. Run everything
+### 7. Run everything
 ```bash
-pnpm dev                      # turbo: web + convex dev (+ native if started)
+pnpm dev                      # turbo: web + admin + convex dev (+ native if started)
 ```
 
 ## ⚠️ The env-var trap: three separate stores
 
 `convex/auth.config.ts` runs on the **Convex deployment**, whose env is a *separate store* from any `.env.local`. A var in the wrong place fails **silently** (`getUserIdentity()` returns `null` while the client looks signed in). Map:
 
-| Var | Convex deployment | apps/web/.env.local | apps/mobile/.env.local |
+| Var | Convex deployment | apps/{web,admin}/.env.local | apps/mobile/.env.local |
 | --- | :---: | :---: | :---: |
-| `WORKOS_CLIENT_ID` | ✅ (auth.config) | ✅ | ✅ (`EXPO_PUBLIC_`) |
-| `WORKOS_API_KEY` | — | ✅ | ❌ never (PKCE is secret-less) |
-| `WORKOS_COOKIE_PASSWORD` | — | ✅ | — |
-| `WORKOS_WEBHOOK_SECRET` | ✅ | — | — |
-| `*_CONVEX_URL` | — | ✅ | ✅ (`EXPO_PUBLIC_`) |
-| `*_WORKOS_REDIRECT_URI` | — | ✅ `…:3001/callback` | ✅ `convexstarter://callback` |
+| `CLERK_FRONTEND_API_URL` | ✅ (auth.config) | — | — |
+| `CLERK_WEBHOOK_SIGNING_SECRET` | ✅ (http.ts) | — | — |
+| `*_CLERK_PUBLISHABLE_KEY` | — | ✅ (`NEXT_PUBLIC_`) | ✅ (`EXPO_PUBLIC_`) |
+| `CLERK_SECRET_KEY` | — | ✅ | ❌ never (public bundle) |
+| `*_CONVEX_URL` | — | ✅ (`NEXT_PUBLIC_`) | ✅ (`EXPO_PUBLIC_`) |
+| `NEXT_PUBLIC_CLERK_SIGN_{IN,UP}_URL` | — | ✅ `/sign-in`, `/sign-up` | — |
 
-`convex.json` `localEnvVars` only writes to `packages/backend/.env.local` — mirror the needed values into each app's `.env.local` yourself. Verify deployment vars with `npx convex env list`.
+`convex dev` only writes `packages/backend/.env.local` — mirror the needed values into each app's `.env.local` yourself. Verify deployment vars with `npx convex env list`.
 
 ## Adding shadcn/ui components
 
@@ -87,6 +103,8 @@ Components land in `packages/ui/src/components` and import as `@workspace/ui/com
 
 ## Auth model notes
 
-- Web uses `@workos-inc/authkit-nextjs` (hosted session + `ConvexProviderWithAuth`).
-- Native uses the WorkOS PKCE flow (`@workos-inc/node`, no client secret in the bundle), tokens in `expo-secure-store`, refreshed by the `fetchAccessToken` bridge in `apps/mobile/src/context/auth-context.tsx`.
-- Users sync into Convex via the `@convex-dev/workos-authkit` component (webhook). Read the current user in functions with `ctx.auth.getUserIdentity()` or `authKit.getAuthUser(ctx)`.
+- Web and admin use `@clerk/nextjs`: `<ClerkProvider>` wraps `<ConvexProviderWithClerk>` (that order — Convex reads Clerk's context), with `<SignIn />` / `<SignUp />` mounted at optional catch-all routes.
+- `proxy.ts` (Next.js 16 renamed `middleware.ts`) runs `clerkMiddleware()`, which attaches auth but gates nothing. Clerk deprecated matcher-based gating: protect **resources** instead — `await auth()` in the page/route that reads the data, and `ctx.auth.getUserIdentity()` in the Convex function.
+- Native uses `@clerk/expo` with `tokenCache` (sessions persist in the device keychain via `expo-secure-store`). Sign-in is a combined email-code flow plus browser SSO (`useSSO`); Clerk owns token refresh, so there is no `fetchAccessToken` bridge to maintain.
+- Clerk's default session token carries no email or name. Users sync into Convex through the webhook in `convex/http.ts`; read the caller with the helpers in `convex/users.ts` (`getCurrentUser` / `getCurrentUserOrThrow`), never by accepting a user id as an argument.
+- In the UI, gate on **Convex's** auth state (`<Authenticated>` / `<Unauthenticated>` / `useConvexAuth()`), not Clerk's — that is the state that decides whether a query succeeds.

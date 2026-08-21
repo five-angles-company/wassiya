@@ -4,8 +4,8 @@ description: >-
   Scaffold a new app in this Turborepo + pnpm monorepo (a Next.js app like
   web/admin, an Astro site, or an Expo app). Use when the user says "add an
   app", "new admin/marketing/dashboard app", or wants another deployable under
-  apps/. Covers naming, port allocation, env files, transpilePackages, WorkOS
-  callback registration, and turbo wiring.
+  apps/. Covers naming, port allocation, env files, transpilePackages, Clerk
+  env wiring, and turbo wiring.
 ---
 
 # Add an app to the monorepo
@@ -31,8 +31,8 @@ Fastest reliable path: **mirror an existing app of the same type**, then change 
    - Next.js: `"dev": "next dev --port <port>"`, `"start": "next start --port <port>"`.
    - Astro: `server: { port: <port> }` in `astro.config.mjs`.
    - Expo: no fixed web port; it runs on a device/emulator.
-4. **Env files.** Edit the copied `.env.example` for the new app; create `.env.local` (gitignored) with real values. For a new redirect URI, set `…/callback` for the new port/scheme.
-5. **If the app uses auth**, follow the `auth-wiring` skill: register `http://localhost:<port>/callback` (or the mobile scheme) in `packages/backend/convex.json` (`redirectUris` + `corsOrigins`) and **re-run `convex dev`**.
+4. **Env files.** Edit the copied `.env.example` for the new app; create `.env.local` (gitignored) with real values.
+5. **If the app uses auth**, follow the `auth-wiring` skill: copy the Clerk keys into the new app's `.env.local`. Nothing in this repo registers callback URLs — Clerk owns allowed origins in its dashboard, and a dev instance already accepts localhost.
 6. **Next.js only:** confirm `transpilePackages` in `next.config.ts` lists the shared packages it imports (`@workspace/ui`, `@workspace/backend`).
 7. **New build output dir?** Add it to `turbo.json` `build.outputs` (e.g. Astro → `dist/**`; Next `.next/**` is already there).
 8. `pnpm install`, then `pnpm --filter <new> typecheck`.
@@ -40,7 +40,7 @@ Fastest reliable path: **mirror an existing app of the same type**, then change 
 ## Gotchas
 - Copying with `cp -r` drags in `node_modules` (broken pnpm symlinks) and `.env.local` — use the `git ls-files` loop instead.
 - Cross-package relative paths (tsconfig `paths`, `components.json` css path) work unchanged **only** because apps sit at the same depth (`apps/*`).
-- `.env.local` is gitignored, so it isn't copied — recreate it (and the mirror's secrets, e.g. a fresh `WORKOS_COOKIE_PASSWORD`).
+- `.env.local` is gitignored, so it isn't copied — recreate it (including `CLERK_SECRET_KEY` for a Next.js app).
 - On Windows, a running `turbo dev`/Metro can lock files during copy/rename — stop it first.
 
 ## Verify
