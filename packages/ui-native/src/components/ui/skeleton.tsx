@@ -29,7 +29,10 @@ function Skeleton({
   return (
     <Animated.View
       style={style}
-      className={cn('bg-secondary dark:bg-muted rounded-md', className)}
+      // Brand change from upstream (`bg-secondary`): in this palette
+      // `secondary` is olive, which means "verified/done" — a loading
+      // placeholder must not read as a confirmed state. Sand is the inert tone.
+      className={cn('bg-sand-300 rounded-md', className)}
       {...props}
     />
   );

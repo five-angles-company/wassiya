@@ -8,10 +8,14 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "prebuild": "expo prebuild",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
   },
   "dependencies": {
     "@clerk/expo": "^4.5.2",
+    "@expo-google-fonts/cairo": "^0.4.2",
+    "@expo-google-fonts/figtree": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-sans-arabic": "^0.4.2",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@rn-primitives/portal": "^1.4.0",
     "@workspace/backend": "workspace:*",
@@ -21,9 +25,12 @@
     "expo-auth-session": "~56.0.13",
     "expo-constants": "~56.0.16",
     "expo-crypto": "~56.0.4",
+    "expo-font": "~56.0.7",
     "expo-linking": "~56.0.13",
+    "expo-localization": "~56.0.6",
     "expo-router": "~56.2.8",
     "expo-secure-store": "~56.0.4",
+    "expo-splash-screen": "~56.0.14",
     "expo-status-bar": "~56.0.4",
     "expo-web-browser": "~56.0.5",
     "lucide-react-native": "^0.577.0",
@@ -33,13 +40,17 @@
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
+    "react-native-svg": "15.15.4",
     "react-native-worklets": "0.8.3",
     "uniwind": "^1.7.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",
+    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9",
+    "globals": "^16",
     "tailwindcss": "^4",
     "typescript": "~5.9.2"
   }

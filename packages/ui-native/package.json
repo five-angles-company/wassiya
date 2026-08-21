@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@rn-primitives/alert-dialog": "^1.4.0",
     "@rn-primitives/avatar": "^1.4.0",
     "@rn-primitives/checkbox": "^1.4.0",
     "@rn-primitives/dialog": "^1.4.0",
@@ -16,10 +17,14 @@
     "@rn-primitives/label": "^1.4.0",
     "@rn-primitives/popover": "^1.4.0",
     "@rn-primitives/portal": "^1.4.0",
+    "@rn-primitives/progress": "^1.4.0",
+    "@rn-primitives/radio-group": "^1.4.0",
     "@rn-primitives/select": "^1.4.0",
     "@rn-primitives/separator": "^1.4.0",
     "@rn-primitives/slot": "^1.4.0",
     "@rn-primitives/switch": "^1.4.0",
+    "@rn-primitives/tabs": "^1.4.0",
+    "@rn-primitives/toggle": "^1.4.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react-native": "^0.577.0",

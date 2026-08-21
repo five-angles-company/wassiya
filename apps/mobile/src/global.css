@@ -1,66 +1,277 @@
 @import 'tailwindcss';
 @import 'uniwind';
 
-/* Scan the shared component package so classes used only there aren't purged.
-   Path is relative to this file (apps/mobile/src/global.css). */
+/* Tailwind auto-detects sources from THIS file's directory, i.e. `src/` only —
+   so the expo-router tree in `app/` and the shared component package are both
+   invisible to the scanner unless named here. Without the `../app` line, a
+   class used only in a route file is silently purged and the style just never
+   applies. Paths are relative to this file (apps/mobile/src/global.css). */
+@source '../app';
 @source '../../../packages/ui-native/src';
 
-/* shadcn "neutral" tokens, expressed as Uniwind theme variables. Components use
-   them as utilities (bg-background, text-foreground, border-border, ...). */
+/* ---------------------------------------------------------------------------
+   Theme-INVARIANT tokens (fonts, radii, spacing, shadows).
+   These must live in a literal `@theme` block, NOT inside `@variant` — Uniwind
+   only scans `@variant` blocks for per-theme variables and requires the light
+   and dark key sets to match exactly.
+   --------------------------------------------------------------------------- */
+@theme {
+  /* -- Type ---------------------------------------------------------------
+     React Native registers every weight as a SEPARATE font family; `font-bold`
+     does NOT pick a bold file. Each utility below therefore names an exact
+     family registered by expo-font in app/_layout.tsx. */
+
+  /* Cairo — the heading voice, in Arabic and English alike. */
+  --font-heading: Cairo_700Bold;
+  --font-heading-bold: Cairo_700Bold;
+  --font-heading-extrabold: Cairo_800ExtraBold;
+  --font-heading-black: Cairo_900Black;
+
+  /* IBM Plex Sans Arabic — body text and UI copy (the default face). */
+  --font-sans: IBMPlexSansArabic_400Regular;
+  --font-body: IBMPlexSansArabic_400Regular;
+  --font-body-medium: IBMPlexSansArabic_500Medium;
+  --font-body-semibold: IBMPlexSansArabic_600SemiBold;
+  --font-body-bold: IBMPlexSansArabic_700Bold;
+
+  /* Figtree — Latin-only fallback, for kickers and spec-sheet chrome. */
+  --font-latin: Figtree_400Regular;
+  --font-latin-medium: Figtree_500Medium;
+  --font-latin-semibold: Figtree_600SemiBold;
+
+  /* Monospace, for recovery codes / IBANs / OTP receipts. React Native has no
+     font-stack resolution, so the per-OS family is picked at the call site via
+     `monoFont` from @workspace/ui-native/lib/fonts. */
+  --font-mono-ios: Menlo;
+  --font-mono-android: monospace;
+
+  /* -- Type scale ---------------------------------------------------------
+     Named for the ROLE each size plays on the design board, not for a t-shirt
+     size, because the board's grammar is role-based: "26 tab-root title, 19
+     sub-page title, 13.5/700 section label, 14/700 notice title, 14.5/600 row
+     title, 11.5 meta, 12.5 inline action". Tailwind's own text-xs..text-4xl
+     steps are left untouched so upstream `ui/` components keep working. */
+  --text-display: 40px;
+  --text-display--line-height: 1.15;
+  /* The full-screen ask — 6.4 "هل أنت بخير؟". Bigger than a page title
+     because the screen has one question on it and nothing else. */
+  --text-prompt: 31px;
+  --text-prompt--line-height: 1.25;
+  --text-screen: 26px;
+  --text-screen--line-height: 1.2;
+  --text-h1: 24px;
+  --text-h1--line-height: 1.25;
+  --text-dialog: 20px;
+  --text-dialog--line-height: 1.25;
+  --text-page: 19px;
+  --text-page--line-height: 1.25;
+  --text-title: 17px;
+  --text-title--line-height: 1.2;
+  --text-body: 15px;
+  --text-body--line-height: 1.55;
+  --text-row: 14.5px;
+  --text-row--line-height: 1.35;
+  --text-notice: 14px;
+  --text-notice--line-height: 1.5;
+  --text-section: 13.5px;
+  --text-section--line-height: 1.3;
+  --text-meta: 12.5px;
+  --text-meta--line-height: 1.5;
+  --text-action: 12.5px;
+  --text-action--line-height: 1.3;
+  --text-metasm: 11.5px;
+  --text-metasm--line-height: 1.45;
+  --text-kicker: 10px;
+  --text-kicker--line-height: 1.4;
+
+  /* Kicker tracking. Letter-spacing is a Latin-only device — it breaks Arabic
+     letter joining — so components apply it behind a locale check. */
+  --tracking-kicker: 0.1em;
+
+  /* -- Radii --------------------------------------------------------------
+     Role-based scale straight off the design board's screen grammar:
+     "24 list row, 26 section card, 28 summary, 34 sheet" (+20 for boxed
+     fields). The generic xs..4xl steps are retuned to the same soft geometry
+     so upstream `ui/` components inherit the warmth without being edited. */
+  --radius-box: 20px;
+  --radius-row: 24px;
+  --radius-card: 26px;
+  --radius-summary: 28px;
+  --radius-sheet: 34px;
+  --radius-field: 16px;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 26px;
+  --radius-3xl: 28px;
+  --radius-4xl: 34px;
+
+  /* -- Spacing ------------------------------------------------------------
+     "20px gutters, 16px under every header row, 9px between list rows." */
+  --spacing-gutter: 20px;
+  --spacing-header: 16px;
+  --spacing-row: 9px;
+
+  /* -- Elevation ----------------------------------------------------------
+     Ink-tinted, tuned to the warm ground (sand-900 rather than pure black). */
+  --shadow-sm: 0 1px 2px rgba(46, 43, 37, 0.14);
+  --shadow-md: 0 3px 10px rgba(46, 43, 37, 0.16);
+  --shadow-lg: 0 12px 32px rgba(46, 43, 37, 0.22);
+}
+
+/* ---------------------------------------------------------------------------
+   Theme-VARIANT tokens (colors). Every key must appear in BOTH blocks with the
+   same name or Metro fails with "Theme <x> is missing variable <y>".
+   --------------------------------------------------------------------------- */
 @layer theme {
   :root {
     @variant light {
-      --color-background: hsl(0 0% 100%);
-      --color-foreground: hsl(0 0% 3.9%);
-      --color-card: hsl(0 0% 100%);
-      --color-card-foreground: hsl(0 0% 3.9%);
-      --color-popover: hsl(0 0% 100%);
-      --color-popover-foreground: hsl(0 0% 3.9%);
-      --color-primary: hsl(0 0% 9%);
-      --color-primary-foreground: hsl(0 0% 98%);
-      --color-secondary: hsl(0 0% 96.1%);
-      --color-secondary-foreground: hsl(0 0% 9%);
-      --color-muted: hsl(0 0% 96.1%);
-      --color-muted-foreground: hsl(0 0% 45.1%);
-      --color-accent: hsl(0 0% 96.1%);
-      --color-accent-foreground: hsl(0 0% 9%);
-      --color-destructive: hsl(0 84.2% 60.2%);
-      --color-destructive-foreground: hsl(0 0% 98%);
-      --color-border: hsl(0 0% 89.8%);
-      --color-input: hsl(0 0% 89.8%);
-      --color-ring: hsl(0 0% 3.9%);
-      --color-chart-1: hsl(12 76% 61%);
-      --color-chart-2: hsl(173 58% 39%);
-      --color-chart-3: hsl(197 37% 24%);
-      --color-chart-4: hsl(43 74% 66%);
-      --color-chart-5: hsl(27 87% 67%);
+      /* Paper ground and ink. */
+      --color-background: hsl(37.2 59.2% 90.4%); /* #f5ead8 */
+      --color-foreground: hsl(20 4.9% 12%); /* #201e1d */
+      --color-card: hsl(37.9 48.7% 84.7%); /* #ebddc5 */
+      --color-card-foreground: hsl(20 4.9% 12%);
+      --color-popover: hsl(37.9 48.7% 84.7%);
+      --color-popover-foreground: hsl(20 4.9% 12%);
+
+      /* Terracotta = action / identity. */
+      --color-primary: hsl(23.8 55.3% 50%); /* #c67139 */
+      --color-primary-foreground: hsl(21 100% 96.1%); /* #fff2eb */
+
+      /* Olive = protection / confirmation. */
+      --color-secondary: hsl(81.8 19% 45.5%); /* #7a8a5e */
+      --color-secondary-foreground: hsl(84 71.4% 93.1%); /* #f0fae1 */
+
+      --color-muted: hsl(37.9 35.8% 89.6%); /* #eee7db */
+      --color-muted-foreground: hsl(37.5 10.2% 46.3%); /* #82796a */
+
+      /* shadcn "accent" keeps its role (subtle hover / tinted fill), tinted
+         terracotta-200 on terracotta-700. */
+      --color-accent: hsl(21.7 100% 90.8%); /* #ffe1d0 */
+      --color-accent-foreground: hsl(24.7 68.7% 32.5%); /* #8c491a */
+
+      /* No alarm red anywhere in this product — danger stays in-family. */
+      --color-destructive: hsl(24.7 68.7% 32.5%); /* #8c491a */
+      --color-destructive-foreground: hsl(21 100% 96.1%); /* #fff2eb */
+
+      --color-border: hsl(20 4.9% 12% / 0.16);
+      --color-input: hsl(20 4.9% 12% / 0.16);
+      --color-ring: hsl(23.8 55.3% 50%);
+
+      /* Terracotta ramp — action, attention, "needs you". */
+      --color-terracotta-100: hsl(21 100% 96.1%); /* #fff2eb */
+      --color-terracotta-200: hsl(21.7 100% 90.8%); /* #ffe1d0 */
+      --color-terracotta-300: hsl(22 100% 82.4%); /* #ffc6a5 */
+      --color-terracotta-400: hsl(22.9 88.5% 69.2%); /* #f6a06b */
+      --color-terracotta-500: hsl(23.2 63.4% 56.1%); /* #d67f48 */
+      --color-terracotta-600: hsl(23.9 59.6% 43.7%); /* #b2622d */
+      --color-terracotta-700: hsl(24.7 68.7% 32.5%); /* #8c491a */
+      --color-terracotta-800: hsl(24.1 69.5% 23.1%); /* #643312 */
+      --color-terracotta-900: hsl(23.8 60% 15.7%); /* #402310 */
+      /* Divider drawn ON a terracotta-tinted card (the 9.4 plan card). It has
+         to be a declared alpha colour: an /alpha modifier on a theme colour
+         compiles to colorMix("unset", …) in this stack and renders nothing. */
+      --color-terracotta-divider: hsl(23.8 60% 15.7% / 0.18);
+
+      /* Olive ramp — verified, safe, done. */
+      --color-olive-100: hsl(84 71.4% 93.1%); /* #f0fae1 */
+      --color-olive-200: hsl(82.9 50% 86.7%); /* #e1eecc */
+      --color-olive-300: hsl(82 36.3% 77.8%); /* #ccdbb2 */
+      --color-olive-400: hsl(82.7 26% 66.1%); /* #aebf92 */
+      --color-olive-500: hsl(82.7 19.1% 53.9%); /* #8fa073 */
+      --color-olive-600: hsl(81.4 19.4% 42.4%); /* #728157 */
+      --color-olive-700: hsl(81.7 22.2% 31.8%); /* #56633f */
+      --color-olive-800: hsl(81.4 24.6% 22.4%); /* #3d472b */
+      --color-olive-900: hsl(82.1 26% 14.3%); /* #272e1b */
+
+      /* Sand ramp — pending, inert, paper. */
+      --color-sand-100: hsl(35 50% 95.3%); /* #f9f4ed */
+      --color-sand-200: hsl(37.9 35.8% 89.6%); /* #eee7db */
+      --color-sand-300: hsl(37.5 25.5% 81.6%); /* #dcd3c4 */
+      --color-sand-400: hsl(37.8 17.6% 70%); /* #c0b6a5 */
+      --color-sand-500: hsl(37.8 12.6% 57.8%); /* #a19786 */
+      --color-sand-600: hsl(37.5 10.2% 46.3%); /* #82796a */
+      --color-sand-700: hsl(36 11.1% 35.3%); /* #645c50 */
+      --color-sand-800: hsl(40 11.8% 24.9%); /* #474238 */
+      --color-sand-900: hsl(40 10.8% 16.3%); /* #2e2b25 */
+
+      --color-chart-1: hsl(23.8 55.3% 50%);
+      --color-chart-2: hsl(81.8 19% 45.5%);
+      --color-chart-3: hsl(37.8 17.6% 70%);
+      --color-chart-4: hsl(22.9 88.5% 69.2%);
+      --color-chart-5: hsl(82.7 26% 66.1%);
     }
 
+    /* TODO dark pass — mirrors the light values verbatim for now. A dark theme
+       here is a design exercise (the ramps swap roles: light steps become text
+       on dark fills), not a mechanical inversion, so nothing is invented.
+       Keys MUST stay identical to the light block. */
     @variant dark {
-      --color-background: hsl(0 0% 3.9%);
-      --color-foreground: hsl(0 0% 98%);
-      --color-card: hsl(0 0% 3.9%);
-      --color-card-foreground: hsl(0 0% 98%);
-      --color-popover: hsl(0 0% 3.9%);
-      --color-popover-foreground: hsl(0 0% 98%);
-      --color-primary: hsl(0 0% 98%);
-      --color-primary-foreground: hsl(0 0% 9%);
-      --color-secondary: hsl(0 0% 14.9%);
-      --color-secondary-foreground: hsl(0 0% 98%);
-      --color-muted: hsl(0 0% 14.9%);
-      --color-muted-foreground: hsl(0 0% 63.9%);
-      --color-accent: hsl(0 0% 14.9%);
-      --color-accent-foreground: hsl(0 0% 98%);
-      --color-destructive: hsl(0 62.8% 30.6%);
-      --color-destructive-foreground: hsl(0 0% 98%);
-      --color-border: hsl(0 0% 14.9%);
-      --color-input: hsl(0 0% 14.9%);
-      --color-ring: hsl(0 0% 83.1%);
-      --color-chart-1: hsl(220 70% 50%);
-      --color-chart-2: hsl(160 60% 45%);
-      --color-chart-3: hsl(30 80% 55%);
-      --color-chart-4: hsl(280 65% 60%);
-      --color-chart-5: hsl(340 75% 55%);
+      --color-background: hsl(37.2 59.2% 90.4%);
+      --color-foreground: hsl(20 4.9% 12%);
+      --color-card: hsl(37.9 48.7% 84.7%);
+      --color-card-foreground: hsl(20 4.9% 12%);
+      --color-popover: hsl(37.9 48.7% 84.7%);
+      --color-popover-foreground: hsl(20 4.9% 12%);
+
+      --color-primary: hsl(23.8 55.3% 50%);
+      --color-primary-foreground: hsl(21 100% 96.1%);
+
+      --color-secondary: hsl(81.8 19% 45.5%);
+      --color-secondary-foreground: hsl(84 71.4% 93.1%);
+
+      --color-muted: hsl(37.9 35.8% 89.6%);
+      --color-muted-foreground: hsl(37.5 10.2% 46.3%);
+
+      --color-accent: hsl(21.7 100% 90.8%);
+      --color-accent-foreground: hsl(24.7 68.7% 32.5%);
+
+      --color-destructive: hsl(24.7 68.7% 32.5%);
+      --color-destructive-foreground: hsl(21 100% 96.1%);
+
+      --color-border: hsl(20 4.9% 12% / 0.16);
+      --color-input: hsl(20 4.9% 12% / 0.16);
+      --color-ring: hsl(23.8 55.3% 50%);
+
+      --color-terracotta-100: hsl(21 100% 96.1%);
+      --color-terracotta-200: hsl(21.7 100% 90.8%);
+      --color-terracotta-300: hsl(22 100% 82.4%);
+      --color-terracotta-400: hsl(22.9 88.5% 69.2%);
+      --color-terracotta-500: hsl(23.2 63.4% 56.1%);
+      --color-terracotta-600: hsl(23.9 59.6% 43.7%);
+      --color-terracotta-700: hsl(24.7 68.7% 32.5%);
+      --color-terracotta-800: hsl(24.1 69.5% 23.1%);
+      --color-terracotta-900: hsl(23.8 60% 15.7%);
+      --color-terracotta-divider: hsl(23.8 60% 15.7% / 0.18);
+
+      --color-olive-100: hsl(84 71.4% 93.1%);
+      --color-olive-200: hsl(82.9 50% 86.7%);
+      --color-olive-300: hsl(82 36.3% 77.8%);
+      --color-olive-400: hsl(82.7 26% 66.1%);
+      --color-olive-500: hsl(82.7 19.1% 53.9%);
+      --color-olive-600: hsl(81.4 19.4% 42.4%);
+      --color-olive-700: hsl(81.7 22.2% 31.8%);
+      --color-olive-800: hsl(81.4 24.6% 22.4%);
+      --color-olive-900: hsl(82.1 26% 14.3%);
+
+      --color-sand-100: hsl(35 50% 95.3%);
+      --color-sand-200: hsl(37.9 35.8% 89.6%);
+      --color-sand-300: hsl(37.5 25.5% 81.6%);
+      --color-sand-400: hsl(37.8 17.6% 70%);
+      --color-sand-500: hsl(37.8 12.6% 57.8%);
+      --color-sand-600: hsl(37.5 10.2% 46.3%);
+      --color-sand-700: hsl(36 11.1% 35.3%);
+      --color-sand-800: hsl(40 11.8% 24.9%);
+      --color-sand-900: hsl(40 10.8% 16.3%);
+
+      --color-chart-1: hsl(23.8 55.3% 50%);
+      --color-chart-2: hsl(81.8 19% 45.5%);
+      --color-chart-3: hsl(37.8 17.6% 70%);
+      --color-chart-4: hsl(22.9 88.5% 69.2%);
+      --color-chart-5: hsl(82.7 26% 66.1%);
     }
   }
 }
