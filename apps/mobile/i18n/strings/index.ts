@@ -30,6 +30,14 @@ import {
 import { COMMON, TABS } from "@/i18n/strings/common"
 import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
 import {
+  AUDIT,
+  AUTO_LOCK,
+  DEVICES,
+  LEGAL,
+  PLAN,
+  SETTINGS,
+} from "@/i18n/strings/settings"
+import {
   HEIRS,
   HEIR_NEW,
   HEIR_PREVIEW,
@@ -48,6 +56,12 @@ export const SCREEN_STRINGS = {
   tabs: TABS,
 
   home: HOME,
+  settings: SETTINGS,
+  "settings/lock": AUTO_LOCK,
+  "settings/audit": AUDIT,
+  "settings/plan": PLAN,
+  "settings/devices": DEVICES,
+  "settings/legal": LEGAL,
   lock: LOCK,
   notifications: NOTIFICATIONS,
 

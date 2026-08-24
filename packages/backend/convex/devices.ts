@@ -100,3 +100,42 @@ async function byInstallId(
     )
     .unique()
 }
+
+/**
+ * Revoke a device.
+ *
+ * The schema's own note explains what this does and does not do: *"The enclave
+ * wrap of MK never leaves the device, so there is no ciphertext column here —
+ * revoking a row is a UX and audit act, and the device's local copy of MK is
+ * what its own OS keystore controls."*
+ *
+ * That is worth restating on the screen rather than hiding, because the
+ * intuition is wrong in a dangerous direction: revoking here does **not** reach
+ * into a lost phone and erase its key. What it does is remove the device from
+ * the owner's own inventory and leave an audit line, so a device the owner does
+ * not recognise stops being quietly listed as theirs. A phone genuinely out of
+ * the owner's hands is answered by rotating the recovery sheet and the
+ * guardian's share, which is what invalidates the material it holds.
+ *
+ * Kept revocable rather than deletable so the audit trail keeps its subject.
+ */
+export const revoke = mutation({
+  args: { deviceId: v.id("devices") },
+  handler: async (ctx, { deviceId }) => {
+    const user = await requireUser(ctx)
+    const device = await ctx.db.get("devices", deviceId)
+    if (device === null || device.userId !== user._id) {
+      throw new Error("Not found")
+    }
+    if (device.revoked) return null
+
+    await ctx.db.patch("devices", deviceId, { revoked: true })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "device.revoked",
+      deviceId,
+      meta: { name: device.name, platform: device.platform },
+    })
+    return null
+  },
+})

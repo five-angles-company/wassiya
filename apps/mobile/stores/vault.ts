@@ -32,6 +32,10 @@
 import { create } from "zustand"
 
 import { readMk, VaultKeyLostError } from "@/lib/secure-vault"
+import {
+  DEFAULT_AUTO_LOCK_MINUTES,
+  usePreferences,
+} from "@/stores/preferences"
 
 /**
  * How long an unlocked vault survives before it closes itself.
@@ -43,12 +47,25 @@ import { readMk, VaultKeyLostError } from "@/lib/secure-vault"
  * because the alternative is a store that claims to track idleness, stamps its
  * timestamp exactly once, and locks a reader out mid-scroll anyway.
  *
- * Section ٩.٢ ("القفل التلقائي") owns both the value and the policy, and has
- * never been read off the board — the 256 KiB `get_file` cap stops before it.
- * Five minutes is the placeholder, named here so that session retunes it in one
- * place instead of hunting for a literal.
+ * Section ٩.٢ ("القفل التلقائي") owns the value and now sets it: the window is
+ * read from `usePreferences` at check time, and this constant is only the
+ * default until that store rehydrates. The *policy* — a cap rather than an
+ * idle timer — is still unchanged, and still owned by a board that has never
+ * been readable past section ٥.
  */
-export const AUTO_LOCK_MS = 5 * 60 * 1000
+export const AUTO_LOCK_MS = DEFAULT_AUTO_LOCK_MINUTES * 60 * 1000
+
+/**
+ * The configured window, or the default until preferences rehydrate.
+ *
+ * Read at check time rather than captured, so changing it in ٩.٢ takes effect
+ * on the next tick instead of on the next app launch. Read from
+ * `getState()` rather than a hook because `isExpired` is called from an
+ * interval, not from a render.
+ */
+function autoLockMs(): number {
+  return usePreferences.getState().autoLockMinutes * 60 * 1000
+}
 
 export type VaultStatus =
   /** No key in memory. The normal resting state. */
@@ -142,6 +159,6 @@ export const useVault = create<VaultState>()((set, get) => ({
   isExpired: (now) => {
     const { status, unlockedAt } = get()
     if (status !== "unlocked" || unlockedAt === null) return false
-    return now - unlockedAt >= AUTO_LOCK_MS
+    return now - unlockedAt >= autoLockMs()
   },
 }))

@@ -1,7 +1,5 @@
-import { TabPlaceholder } from "@/screens/tabs/placeholder"
-import { useStrings } from "@/i18n/use-strings"
+import { SettingsScreen } from "@/screens/settings"
 
 export default function Route() {
-  const { t } = useStrings("tabs")
-  return <TabPlaceholder title={t.settings} />
+  return <SettingsScreen />
 }
