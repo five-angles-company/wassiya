@@ -13,6 +13,7 @@ import type * as audit from "../audit.js";
 import type * as checkin from "../checkin.js";
 import type * as claims from "../claims.js";
 import type * as crons from "../crons.js";
+import type * as devices from "../devices.js";
 import type * as guardians from "../guardians.js";
 import type * as heirs from "../heirs.js";
 import type * as http from "../http.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   checkin: typeof checkin;
   claims: typeof claims;
   crons: typeof crons;
+  devices: typeof devices;
   guardians: typeof guardians;
   heirs: typeof heirs;
   http: typeof http;

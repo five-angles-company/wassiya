@@ -23,8 +23,12 @@
     "node": ">=20"
   },
   "pnpm": {
+    "//": "React Native singletons. packages/ui-native declares these as peerDependencies \"*\" and is consumed as SOURCE, so pnpm's auto-install-peers gives it its own copy at the newest published version — Metro then bundles two Reanimateds and two gesture-handlers, which breaks module init for the whole app. Pinning here guarantees exactly one copy. Keep in step with apps/mobile.",
     "overrides": {
-      "react-native-worklets": "0.8.3"
+      "react-native-worklets": "0.8.3",
+      "react-native-reanimated": "4.3.1",
+      "react-native-gesture-handler": "2.31.2",
+      "react-native-screens": "4.26.2"
     }
   }
 }
