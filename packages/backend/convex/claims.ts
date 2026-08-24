@@ -476,3 +476,82 @@ export const publicStatus = query({
     }
   },
 })
+
+/**
+ * Upload target for a death certificate.
+ *
+ * Separate from `assets.generateUploadUrl` on purpose, even though the two are
+ * one line apart in behaviour. A certificate is **third-party personal data**
+ * about someone who cannot consent — the board is explicit that it must be
+ * restricted to the review queue and deleted on a schedule if the claim fails —
+ * so it must not be indistinguishable from an owner's own vault upload in the
+ * code, the audit log, or a future retention sweep.
+ *
+ * Unlike everything else the vault stores, this blob is **not** encrypted by
+ * the client: a human reviewer has to read it, and the claimant has no key to
+ * encrypt it with that a reviewer could also open. That makes it the one piece
+ * of plaintext personal data this deployment holds, and the reason the
+ * retention rule exists.
+ */
+export const generateCertificateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    // Authenticated: an anonymous upload URL would be an open file drop.
+    await getCurrentUserOrThrow(ctx)
+    return await ctx.storage.generateUploadUrl()
+  },
+})
+
+/**
+ * Attach the death certificate to a claim already filed.
+ *
+ * ٧.٢ files the claim and ٧.٣ uploads the certificate, which are separate
+ * screens minutes apart — so the certificate cannot be an argument to `submit`
+ * in the web funnel, even though `submit` accepts one for callers that have it
+ * up front.
+ *
+ * Narrow on purpose, in the same way `keyring.attachGuardian` is: re-calling
+ * `submit` to carry the certificate would need the caller to resend the
+ * subject's email and their own details, and getting any of them wrong would
+ * silently file nothing — `submit` answers `{ received: true }` either way,
+ * because it must not be an enumeration oracle. A mutation that takes only a
+ * claim id and a file cannot fail that way.
+ *
+ * Only the claimant who filed it, and only while it is still open: a released
+ * or vetoed claim's certificate is evidence of what was decided, and must not
+ * be swapped afterwards.
+ */
+export const attachCertificate = mutation({
+  args: {
+    claimId: v.id("claims"),
+    certificateStorageId: v.id("_storage"),
+    certificateName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const claimant = await getCurrentUserOrThrow(ctx)
+    const claim = await ctx.db.get("claims", args.claimId)
+    if (claim === null || claim.claimantUserId !== claimant._id) {
+      throw new Error("Not found")
+    }
+    if (claim.status !== "submitted") {
+      throw new Error("This claim is no longer accepting documents")
+    }
+    if (args.certificateName.trim().length === 0) {
+      throw new Error("The name on the certificate is required")
+    }
+
+    await ctx.db.patch("claims", args.claimId, {
+      certificateStorageId: args.certificateStorageId,
+      certificateName: args.certificateName.trim(),
+    })
+    await writeAudit(ctx, {
+      userId: claim.subjectUserId,
+      event: "claim.certificate_attached",
+      // The name is deliberately not logged: it is third-party personal data
+      // about the deceased, and the audit line only needs to record that a
+      // document arrived.
+      meta: { claimId: args.claimId, claimantUserId: claimant._id },
+    })
+    return null
+  },
+})

@@ -308,6 +308,9 @@ importers:
       '@workspace/backend':
         specifier: workspace:*
         version: link:../../packages/backend
+      '@workspace/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui

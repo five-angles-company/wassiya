@@ -7,6 +7,7 @@ import type { Id } from "@workspace/backend/dataModel"
 import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimTimeline } from "@/components/claim/claim-timeline"
 import { CLAIM, CLAIM_STATUS } from "@/lib/claim-copy"
+import { shortRef } from "@/lib/claim-ref"
 import { fmtArabicDate, fmtArabicNumber } from "@/lib/format-ar"
 
 /**
@@ -194,21 +195,6 @@ function ClaimRef({ id, submittedAt }: { id: string; submittedAt: number }) {
       </p>
     </div>
   )
-}
-
-/**
- * A human-quotable reference. The board shows "C-4482", which is short enough
- * to read down a phone to support; a raw Convex id is 32 characters and would
- * be transcribed wrong every time.
- *
- * Derived from the id rather than stored, so it needs no column and cannot
- * drift from it. It is **not** a secret and not a lookup key — the full id in
- * the URL remains the capability.
- */
-function shortRef(id: string): string {
-  let hash = 0
-  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 10_000
-  return `C-${String(hash).padStart(4, "0")}`
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

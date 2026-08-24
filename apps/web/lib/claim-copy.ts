@@ -100,3 +100,132 @@ export const CLAIM_STATUS = {
     "قد يكون الرابط قديماً أو غير مكتمل. افتح الرابط الذي أرسلناه إلى بريدك، أو ابدأ بلاغاً جديداً.",
   startOver: "ابدأ بلاغاً جديداً",
 } as const
+
+/** ٧.٢ — step 1: who are you, and whose vault is this. */
+export const CLAIM_IDENTITY = {
+  metaTitle: "التحقق من هويتك · وصيّة",
+  step: "الخطوة ١ من ٣",
+  heading: "من أنت؟",
+  // The board's own line. It does the work of not making a grieving relative
+  // feel accused at the first gate.
+  intro:
+    "نتحقق من هويتك أولاً — لا لأننا نشكّ فيك، بل لأن أحداً غيرك قد ينتحل صفتك.",
+
+  signInTitle: "سجّل الدخول أولاً",
+  signInBody:
+    "نحتاج حساباً لنربط الطلب بك، ولنمنع تقديم طلبات متكررة باسمك. مجاناً، ودقيقة واحدة.",
+  signIn: "تسجيل الدخول",
+
+  subjectLabel: "بريد صاحب الحساب المتوفى",
+  subjectHint: "البريد الذي كان يستخدمه في وصيّة",
+  nameLabel: "اسمك الكامل كما في هويتك",
+  contactLabel: "رقم جوالك",
+  contactHint: "سنستخدمه للتواصل بشأن الطلب",
+  fileClaim: "تسجيل البلاغ",
+  filing: "جارٍ التسجيل…",
+
+  checks: [
+    "صورة لهويتك أو جواز سفرك",
+    "صورة حيّة لوجهك",
+    "رمز يُرسل إلى الرقم الذي سجّله لك المتوفى",
+  ],
+  startVerify: "ابدأ التحقق",
+  starting: "جارٍ الفتح…",
+  popupNote: "يفتح مزوّد التحقق في نافذة آمنة",
+  popupBlocked:
+    "منع المتصفح فتح النافذة. اسمح بالنوافذ المنبثقة لهذا الموقع، أو افتح الرابط في تبويب جديد.",
+  openInTab: "افتح في تبويب جديد",
+
+  whyNumberTitle: "لماذا رقم محدّد؟",
+  whyNumberBody:
+    "الرمز يُرسل إلى الرقم الذي سجّله المتوفى لك — لا إلى رقم تكتبه أنت. هذا ما يجعل انتحال صفتك صعباً.",
+
+  handoffTitle: "أكمل من هاتفك",
+  handoffBody: "افتح هذا الرابط على هاتفك لتصوير هويتك بكاميرا الهاتف.",
+  copyLink: "انسخ الرابط",
+  copied: "نُسخ",
+
+  privacyNote:
+    "تُحفظ صورك مشفّرة وتُستخدم للتحقق فقط، ولا تُشارك مع الورثة الآخرين.",
+
+  verified: "تم التحقق من هويتك",
+  continue: "متابعة إلى شهادة الوفاة",
+  failed: "تعذّر بدء التحقق. حاول مرة أخرى.",
+  filed: "سجّلنا بلاغك",
+} as const
+
+/** ٧.٣ — step 2: the death certificate. */
+export const CLAIM_CERTIFICATE = {
+  metaTitle: "شهادة الوفاة · وصيّة",
+  step: "الخطوة ٢ من ٣",
+  heading: "شهادة الوفاة",
+  intro:
+    "ارفع الشهادة الرسمية. نطابق الاسم مع الهوية التي وثّقها صاحب الحساب عند التسجيل.",
+
+  dropHere: "اسحب الملف هنا",
+  dropHint: "PDF أو صورة · حتى ٢٠ م.ب",
+  pickFile: "اختر ملفاً",
+  uploaded: "رُفع",
+  replace: "غيّر الملف",
+  tooLarge: "الملف أكبر من ٢٠ م.ب. اختر ملفاً أصغر.",
+  wrongType: "نقبل PDF أو صورة فقط.",
+  uploading: "جارٍ الرفع…",
+
+  nameLabel: "اسم المتوفى كما في الشهادة",
+  nameHint: "انسخه حرفياً من الشهادة، حتى لو اختلف عن نطقه المعتاد",
+  dateLabel: "تاريخ الوفاة",
+  placeLabel: "المكان",
+  refLabel: "رقم الشهادة (اختياري)",
+
+  submit: "إرسال للمراجعة",
+  submitting: "جارٍ الإرسال…",
+  submitNote: "يمكنك إغلاق الصفحة بعدها — سنرسل لك رابط المتابعة.",
+  failed: "تعذّر الإرسال. لم يُحفظ شيء — حاول مرة أخرى.",
+
+  // Transliteration varies far more often than anyone forges a certificate, so
+  // a mismatch is a review queue, never a rejection.
+  matchNote:
+    "إن اختلف رسم الاسم عن المسجّل لدينا، يذهب الطلب إلى مراجعة بشرية — لا يُرفض.",
+} as const
+
+/** ٧.٦ — the heir's box, after release. */
+export const HEIR_BOX = {
+  metaTitle: "صندوق الوارث · وصيّة",
+  boxOf: "صندوقك · {name}",
+  releasedAt: "أُفرج {date}",
+  heading: "ما تركه لك {owner}",
+  // The ceiling, stated before anything is shown.
+  scope:
+    "هذه نسختك وحدك — لا ترى ما خُصّص لغيرك، ولا يرى غيرك ما خُصّص لك.",
+
+  // The key ceremony. The board draws the opened box; the security model
+  // requires this step to reach it.
+  lockedTitle: "أدخل نصيب الوصي",
+  lockedBody:
+    "نحتفظ بنصف مفتاح صندوقك فقط. النصف الآخر لدى الوصي — اطلبه منه وأدخله هنا. لا نستطيع فتح الصندوق بدونه، ولا نحتفظ بنسخة منه.",
+  shareLabel: "نصيب الوصي",
+  sharePlaceholder: "الصق النصيب الذي أعطاك إياه الوصي",
+  unlock: "افتح الصندوق",
+  unlocking: "جارٍ الفتح…",
+  badShare:
+    "لم ينجح هذا النصيب في فتح الصندوق. تأكد أنك نسخته كاملاً من الوصي.",
+
+  messageTitle: "رسالة لك وحدك",
+  assetsTitle: "أصول خُصّصت لك — {n}",
+  downloadAll: "تحميل كل شيء",
+  colAsset: "الأصل",
+  colType: "النوع",
+  colHandover: "الاستلام",
+  colState: "الحالة",
+  stateOpen: "مفتوح",
+  stateSteps: "يحتاج خطوات",
+  download: "تحميل",
+  howTo: "كيف أستردها؟",
+
+  farAid:
+    "تقسيم القيمة بينكم يتم وفق الفرائض وبإجراءات الإرث المعتادة — وصيّة سلّمتك الوصول فقط.",
+  expiry: "يبقى هذا الصندوق متاحاً ٩٠ يوماً، فحمّل ما يهمّك.",
+
+  notReleased: "لم يُفرج عن هذا الصندوق بعد.",
+  checkStatus: "تابع حالة الطلب",
+} as const
