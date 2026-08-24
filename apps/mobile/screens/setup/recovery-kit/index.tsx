@@ -1,0 +1,224 @@
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@workspace/backend/api"
+import { Text } from "@workspace/ui-native/components/ui/text"
+import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
+import * as Print from "expo-print"
+import { Redirect, router } from "expo-router"
+import {
+  usePreventScreenCapture,
+  useScreenshotListener,
+} from "expo-screen-capture"
+import * as Sharing from "expo-sharing"
+import { useCallback, useState } from "react"
+import { ActivityIndicator, ScrollView, View } from "react-native"
+
+import { SetupStepMeter } from "@/components/setup-step-meter"
+import { KitActions } from "@/screens/setup/recovery-kit/components/kit-actions"
+import { KitQr } from "@/screens/setup/recovery-kit/components/kit-qr"
+import { useRecoveryMaterial } from "@/screens/setup/recovery-kit/use-recovery-material"
+import { useStrings } from "@/i18n/use-strings"
+import { buildRecoverySheetHtml } from "@/lib/recovery-sheet-html"
+import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
+
+/**
+ * 2.4 — the printed recovery sheet.
+ *
+ * There is no confirmation screen after this one. A successful print or save
+ * intent **is** the milestone, recorded from the intent's result; if the user
+ * never completes one, Home re-prompts rather than the app trapping them here.
+ *
+ * Screen capture is blocked for the screen's lifetime, and the code never
+ * reaches the clipboard, a log or analytics. The shown-once promise is real:
+ * `S_paper` exists only in this render, and once the sheet is out it is gone
+ * for good — a later reprint issues a new version instead.
+ */
+export function RecoveryKitScreen() {
+  const { t, locale } = useStrings("setup/recovery-kit")
+  const { t: common } = useStrings("common")
+
+  usePreventScreenCapture()
+
+  const me = useQuery(api.users.me)
+  const keyring = useQuery(api.keyring.get)
+  const markPaperPrinted = useMutation(api.keyring.markPaperPrinted)
+
+  // A keyring row already existing means the previous sheet was abandoned
+  // unprinted, so this run reissues rather than issues. The loaded flag is
+  // passed separately because `undefined` (still loading) and `null` (no row)
+  // both read as "not a reissue" and only one of them is true.
+  const keyringLoaded = keyring !== undefined
+  const isReissue = keyring !== null && keyringLoaded
+  const { state, wipe } = useRecoveryMaterial(
+    keyringLoaded,
+    isReissue,
+    t.keyPrompt
+  )
+
+  const [qrDataUri, setQrDataUri] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+
+  useScreenshotListener(() => setNotice(t.screenshotBlocked))
+
+  const buildHtml = useCallback(async () => {
+    if (state.status !== "ready" || me === undefined || me === null) return null
+
+    // Refuse to print rather than print a blank identity line. This sheet is
+    // filed with a will for decades, and the email is how the heir-claim funnel
+    // finds the deceased — a document missing it looks complete and is not.
+    // (Both fields come from webhook-synced columns, so a null here means a
+    // sync has not landed, not that the user has no name or address.)
+    const ownerName = me.identityVerifiedName ?? me.name
+    if (ownerName === null || me.email === null) return null
+
+    return await buildRecoverySheetHtml({
+      codeGroups: state.material.groups,
+      qrDataUri,
+      // The verified name, not the typed one: this is the string a death
+      // certificate is matched against.
+      ownerName,
+      accountEmail: me.email,
+      issuedAt: new Date(),
+      paperVersion: state.material.paperVersion,
+      locale,
+      labels: {
+        documentTitle: t.documentTitle,
+        documentSubtitle: t.documentSubtitle,
+        codeLabel: t.codeLabel,
+        owner: t.owner,
+        account: t.account,
+        issued: t.issued,
+        version: t.version,
+        shownOnce: t.shownOnce,
+        handling: t.handling,
+        keepWithWill: t.keepWithWill,
+      },
+    })
+  }, [locale, me, qrDataUri, state, t])
+
+  /**
+   * Wipe, navigate, *then* record.
+   *
+   * The order is not stylistic. `markPaperPrinted` flips the evidence the
+   * setup gate reads, and the gate re-renders the moment the Convex query
+   * updates — which can land before a navigation issued after it. Awaiting the
+   * mutation first would therefore race the gate into bouncing this run
+   * straight to the tabs, skipping 2.6 entirely.
+   *
+   * A failed mutation is a designed degradation, not an error to surface: the
+   * sheet is out, and an unrecorded milestone simply means Home re-prompts.
+   */
+  async function complete() {
+    // Drop the code from memory before the next frame renders.
+    wipe()
+    router.replace("/setup/complete")
+    try {
+      await markPaperPrinted()
+    } catch {
+      // Home re-prompts from the unchanged `paperPrintedAt`.
+    }
+  }
+
+  async function run(action: "print" | "save" | "share") {
+    setBusy(true)
+    setNotice(null)
+    try {
+      const html = await buildHtml()
+      if (html === null) {
+        setNotice(t.failed)
+        return
+      }
+
+      if (action === "print") {
+        await Print.printAsync({ html })
+      } else {
+        const { uri } = await Print.printToFileAsync({ html })
+        if (action === "share" && (await Sharing.isAvailableAsync())) {
+          await Sharing.shareAsync(uri, {
+            mimeType: "application/pdf",
+            UTI: "com.adobe.pdf",
+          })
+        }
+      }
+      await complete()
+    } catch {
+      // A dismissed printer picker and a missing printer arrive the same way;
+      // the sheet is still on screen either way, so this is a notice, not a
+      // failure state.
+      setNotice(t.cancelled)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (state.status === "error") {
+    return <Redirect href={state.reason === "keyLost" ? "/recovery" : "/"} />
+  }
+
+  if (state.status !== "ready" || me === undefined) {
+    return (
+      <View className="flex-1 items-center justify-center gap-4 bg-background">
+        <ActivityIndicator />
+        <Text variant="meta" className="text-muted-foreground">
+          {t.preparing}
+        </Text>
+      </View>
+    )
+  }
+
+  return (
+    <ScrollView
+      className="flex-1 bg-background"
+      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
+    >
+      <SetupStepMeter
+        step={SETUP_STEP_INDEX.recoveryKit}
+        locale={locale}
+        separator={common.stepSeparator}
+        className="mb-header"
+      />
+
+      <Text variant="screenTitle" className="mb-2 text-[27px]">
+        {t.title}
+      </Text>
+      <Text className="text-notice mb-4.5 leading-[1.65] text-muted-foreground">
+        {t.body}
+      </Text>
+
+      <RecoveryCodeDisplay
+        groups={state.material.groups}
+        perLine={3}
+        ownerName={me?.identityVerifiedName ?? me?.name ?? ""}
+        issuedAt={new Date()}
+        handlingNote={t.handling}
+        locale={locale}
+        qrSlot={
+          <KitQr
+            value={state.material.qrPayload}
+            size={56}
+            onCaptured={setQrDataUri}
+          />
+        }
+      />
+
+      {notice !== null ? (
+        <AlertBanner className="mt-4" variant="notice" description={notice} />
+      ) : null}
+
+      <View className="grow" />
+
+      <View className="mt-5">
+        <KitActions
+          printLabel={t.print}
+          savePdfLabel={t.savePdf}
+          shareLabel={t.share}
+          disabled={busy}
+          onPrint={() => void run("print")}
+          onSavePdf={() => void run("save")}
+          onShare={() => void run("share")}
+        />
+      </View>
+    </ScrollView>
+  )
+}

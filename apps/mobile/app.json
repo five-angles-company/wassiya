@@ -7,28 +7,55 @@
     "scheme": "convexstarter",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fiveangles.convexstarter"
     },
     "android": {
-      "package": "com.fiveangles.convexstarter"
+      "package": "com.fiveangles.convexstarter",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#f5ead8"
+      }
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store",
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "تستخدم وصيّة Face ID لفتح مفتاح خزنتك المحفوظ على هذا الجهاز."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "تستخدم وصيّة Face ID لتأكيد هويتك قبل إنشاء مفتاح الخزنة أو استخدامه."
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser",
       "@clerk/expo",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/brand-mark.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#f5ead8"
+        }
+      ],
       [
         "expo-localization",
         {
           "supportsRTL": true,
           "forcesRTL": true
         }
-      ]
+      ],
+      "expo-sharing",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

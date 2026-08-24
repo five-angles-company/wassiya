@@ -48,6 +48,10 @@ export default defineSchema({
     identityDocType: v.optional(v.string()),
     identityVerifiedAt: v.optional(v.number()),
     diditSessionId: v.optional(v.string()),
+    // Failed Didit attempts. Incremented in `applyWebhookResult` on a
+    // rejection, not when a session opens — the flow caps *failures* at three,
+    // and a user who merely dismisses the hosted flow has not failed anything.
+    identityAttempts: v.optional(v.number()),
 
     // "admin" gates the claims-review functions used by apps/admin. Assigned
     // out of band (dashboard / CLI), never by anything a client can call.
@@ -74,11 +78,17 @@ export default defineSchema({
   // what its own OS keystore controls.
   devices: defineTable({
     userId: v.id("users"),
+    // Client-generated, written to the device keystore *before* the first
+    // `register` call, so a crash between the two cannot mint a duplicate row
+    // on retry. It identifies an install, not a person.
+    installId: v.string(),
     name: v.string(),
     platform: v.union(v.literal("ios"), v.literal("android"), v.literal("web")),
     lastUnlockAt: v.optional(v.number()),
     revoked: v.boolean(),
-  }).index("by_userId", ["userId"]),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_and_installId", ["userId", "installId"]),
 
   // One active row per user: the recovery leg of the 2-of-3. The server holds
   // the wrapper and the guardian's sealed half, and never the paper share.

@@ -23,6 +23,13 @@ import { getCurrentUser } from "./users"
 
 const DEFAULT_API_URL = "https://verification.didit.me/v2/session/"
 
+/**
+ * Rejections allowed before the app stops offering a retry and hands over to
+ * support. Counted server-side because a client-held counter resets on
+ * reinstall, which would make the cap decorative.
+ */
+export const MAX_IDENTITY_ATTEMPTS = 3
+
 export const identityStatusValidator = v.union(
   v.literal("unverified"),
   v.literal("pending"),
@@ -30,7 +37,12 @@ export const identityStatusValidator = v.union(
   v.literal("rejected")
 )
 
-/** What the app polls while the hosted flow is open in a browser. */
+/**
+ * What the app watches while the hosted flow is open in a browser.
+ *
+ * This is a Convex query, so a client subscribes to it and the Didit webhook's
+ * write pushes the new status out. Nothing needs to poll.
+ */
 export const status = query({
   args: {},
   handler: async (ctx) => {
@@ -44,6 +56,11 @@ export const status = query({
       docType: user.identityDocType ?? null,
       verifiedAt: user.identityVerifiedAt ?? null,
       hasOpenSession: user.diditSessionId !== undefined,
+      attempts: user.identityAttempts ?? 0,
+      attemptsRemaining: Math.max(
+        0,
+        MAX_IDENTITY_ATTEMPTS - (user.identityAttempts ?? 0)
+      ),
     }
   },
 })
@@ -140,6 +157,8 @@ export const applyWebhookResult = internalMutation({
     sessionId: v.string(),
     vendorData: v.optional(v.string()),
     status: identityStatusValidator,
+    /** True only for a real provider decline — see `isDeclined` in http.ts. */
+    declined: v.optional(v.boolean()),
     verifiedName: v.optional(v.string()),
     docType: v.optional(v.string()),
   },
@@ -150,16 +169,28 @@ export const applyWebhookResult = internalMutation({
       return null
     }
 
+    // Only a real decline burns an attempt. Counting sessions would spend one
+    // every time a user opened the hosted flow and backed out; counting every
+    // "rejected" would do the same, because an expired or abandoned session
+    // maps to that status too.
+    const attempts =
+      (user.identityAttempts ?? 0) + (args.declined === true ? 1 : 0)
+
     await ctx.db.patch("users", user._id, {
       identityStatus: args.status,
       identityVerifiedName: args.verifiedName,
       identityDocType: args.docType,
       identityVerifiedAt: args.status === "verified" ? Date.now() : undefined,
+      identityAttempts: attempts,
     })
     await writeAudit(ctx, {
       userId: user._id,
       event: "identity.webhook",
-      meta: { status: args.status, docType: args.docType ?? null },
+      meta: {
+        status: args.status,
+        docType: args.docType ?? null,
+        attempts,
+      },
     })
     return null
   },

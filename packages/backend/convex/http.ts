@@ -108,6 +108,9 @@ http.route({
       sessionId,
       vendorData: asString(body.vendor_data),
       status: mapDiditStatus(body.status),
+      // Distinct from "rejected": three provider outcomes collapse to that
+      // status, and only one of them is the user failing a check.
+      declined: isDeclined(body.status),
       verifiedName: verifiedNameOf(verification),
       docType: asString(verification.document_type),
     })
@@ -142,6 +145,17 @@ function idVerificationOf(
 
 // Didit's terminal statuses, narrowed to the four this app models. Anything
 // unrecognised is treated as still pending rather than as an approval.
+/**
+ * Whether the provider actually rejected the documents, as opposed to the
+ * session simply ending. `Expired` and `Abandoned` also map to "rejected"
+ * — they leave the user unverified — but neither is a failed attempt, and
+ * counting them would spend the retry budget on someone who merely closed the
+ * browser tab.
+ */
+function isDeclined(status: unknown): boolean {
+  return status === "Declined" || status === "declined"
+}
+
 function mapDiditStatus(
   status: unknown
 ): "unverified" | "pending" | "verified" | "rejected" {

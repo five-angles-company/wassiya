@@ -3,6 +3,7 @@ import { shouldFlipIcon } from '@workspace/ui-native/lib/rtl';
 import { cn } from '@workspace/ui-native/lib/utils';
 import type { LucideIcon, LucideProps } from 'lucide-react-native';
 import * as React from 'react';
+import { View } from 'react-native';
 import { withUniwind } from 'uniwind';
 
 type IconProps = LucideProps & {
@@ -19,6 +20,9 @@ type IconProps = LucideProps & {
    */
   flip?: boolean;
 } & React.RefAttributes<LucideIcon>;
+
+/** Hoisted so the wrapper is not handed a new object on every render. */
+const MIRROR = { transform: [{ scaleX: -1 }] } as const;
 
 function IconImpl({ as: IconComponent, ...props }: IconProps) {
   return <IconComponent {...props} />;
@@ -68,16 +72,26 @@ function Icon({
   ...props
 }: IconProps) {
   const textClass = React.useContext(TextClassContext);
-  const mirrored = flip && shouldFlipIcon();
-  return (
+  const icon = (
     <StyledIcon
       as={IconComponent}
       className={cn('text-foreground size-5', textClass, className)}
       strokeWidth={strokeWidth}
-      style={mirrored ? [{ transform: [{ scaleX: -1 }] }, style] : style}
+      style={style}
       {...props}
     />
   );
+
+  // The mirror goes on a WRAPPER, never on this icon's own `style`.
+  //
+  // `withUniwind` derives the `size` prop from the resolved className style
+  // (`styleProperty: 'width'`). This component used to hand down
+  // `[{ transform: [{ scaleX: -1 }] }, style]`, which replaced the style
+  // uniwind reads — leaving it no width, so the glyph rendered at no size.
+  // Silently: no error, no warning, just an empty circle where the back
+  // chevron should be. It made every `flip`ped icon in the app invisible.
+  if (!flip || !shouldFlipIcon()) return icon;
+  return <View style={MIRROR}>{icon}</View>;
 }
 
 export { Icon };
