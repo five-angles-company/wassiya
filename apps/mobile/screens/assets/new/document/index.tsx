@@ -78,14 +78,13 @@ export function NewDocumentScreen() {
 
   async function save() {
     if (file === null) return
-    const bytes = await readFileBytes(file.uri)
     const saved = await submit({
       type: "document",
       label: {
         title: title.trim(),
         subtitle: `${describeType(file.mimeType)} · ${formatSize(file.size, locale)}`,
       },
-      files: [{ bytes }],
+      files: [{ read: () => readFileBytes(file.uri), byteSize: file.size }],
       meta: {
         itemCount: 1,
         byteSize: file.size,

@@ -47,11 +47,19 @@ import type { AssetType } from "@/lib/asset-types"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 import { useVault } from "@/stores/vault"
 
-/** One payload to encrypt and store as its own blob. */
+/**
+ * One payload to encrypt and store as its own blob.
+ *
+ * `read` is a thunk, not bytes, and that is load-bearing for ٤.٦: an album of
+ * twenty full-resolution photos handed over as twenty `Uint8Array`s would have
+ * every one decoded and resident before the first upload starts, which is where
+ * a mid-range handset runs out of memory. Reading inside the loop keeps exactly
+ * one plaintext buffer alive at a time, and it stops a caller holding a
+ * reference to a buffer this function then zeroes.
+ */
 export type AssetPayload = {
-  /** Already-read plaintext bytes. Encrypted here, never written to disk raw. */
-  bytes: Uint8Array
-  /** Bytes on the wire, for the meta counters. Defaults to `bytes.length`. */
+  read: () => Promise<Uint8Array>
+  /** Bytes on the wire, for the meta counters. */
   byteSize?: number
 }
 
@@ -102,10 +110,12 @@ export function useCreateAsset(): (
 
         const storageIds: Id<"_storage">[] = []
         for (const [index, payload] of payloads.entries()) {
-          const ciphertext = encryptAsset(dek, payload.bytes)
-          // Wipe the plaintext as soon as it is encrypted. The caller's copy is
-          // the same buffer, so a wizard must not reuse it afterwards.
-          payload.bytes.fill(0)
+          const plaintext = await payload.read()
+          const ciphertext = encryptAsset(dek, plaintext)
+          // Wipe as soon as it is encrypted. Safe to do unconditionally now
+          // that the buffer was produced by `read` for this iteration alone and
+          // no caller holds it.
+          plaintext.fill(0)
           const url = await generateUploadUrl({})
           const storageId = await uploadCiphertext(ciphertext, url, (p) =>
             onProgress?.(index, p)

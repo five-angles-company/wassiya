@@ -12,7 +12,7 @@
  * `SECRET_INPUT_PROPS`, clipboard wiping via `useSecretPaste`. They are chips
  * on screen because a protection the user cannot see is one they cannot rely on.
  */
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { GuardedSecretField } from "@workspace/ui-native/components/wassiya/guarded-secret-field"
 import { fmtNum } from "@workspace/ui-native/lib/format"
@@ -44,7 +44,9 @@ export function NewCryptoScreen() {
   const [phrase, setPhrase] = useState("")
   const [notice, setNotice] = useState<string | null>(null)
 
-  const check = checkMnemonic(phrase)
+  // Memoised on the phrase: this runs a wordlist lookup per word and the
+  // screen re-renders on every character typed.
+  const check = useMemo(() => checkMnemonic(phrase), [phrase])
   const words = check.words
   const valid = check.status === "valid"
 

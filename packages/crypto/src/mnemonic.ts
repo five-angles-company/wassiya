@@ -23,6 +23,16 @@
 import { validateMnemonic } from '@scure/bip39'
 import { wordlist } from '@scure/bip39/wordlists/english.js'
 
+/**
+ * The wordlist as a Set, built once.
+ *
+ * `wordlist.includes` is a linear scan over 2048 strings, and `checkMnemonic`
+ * runs it per word on every keystroke — ~49k string comparisons per render for
+ * a 24-word phrase. That is latency on exactly the screen where a mistype is
+ * most expensive.
+ */
+const WORDS = new Set(wordlist)
+
 /** Word counts BIP-39 defines. 12 and 24 are what wallets actually emit. */
 export const MNEMONIC_LENGTHS = [12, 15, 18, 21, 24] as const
 
@@ -56,7 +66,7 @@ export function normalizeMnemonic(input: string): string[] {
 export function checkMnemonic(input: string): MnemonicCheck {
   const words = normalizeMnemonic(input)
 
-  const unknown = words.filter((word) => !wordlist.includes(word))
+  const unknown = words.filter((word) => !WORDS.has(word))
   if (unknown.length > 0) {
     // Reported before the length check: "12 words, three of them misspelled"
     // is a more useful thing to say than "wrong number of words".

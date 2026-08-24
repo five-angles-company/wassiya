@@ -168,8 +168,12 @@ export function AssetsScreen() {
         </Button>
       </View>
 
-      {/* Rendered as a sibling of the list, not inside the ScrollView: the
-          sheet is a native window and must not be laid out by a scroller. */}
+      {/* A sibling of the ScrollView rather than a child. Not a requirement —
+          TrueSheet's host view is `absoluteFill` with `zIndex: -9999`, so it
+          takes no layout space wherever it sits, and `SheetSelect` mounts one
+          inside a scroller on 4.4 without trouble. It is here because the sheet
+          belongs to the screen, not to the list, and a child of the content
+          container would be positioned against the scrolled content. */}
       <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
     </View>
   )

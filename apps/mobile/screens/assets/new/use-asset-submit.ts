@@ -63,7 +63,9 @@ export function useAssetSubmit(): AssetSubmit {
 
       try {
         const payloads: AssetPayload[] = [
-          ...(secret === undefined ? [] : [{ bytes: utf8ToBytes(secret) }]),
+          ...(secret === undefined
+            ? []
+            : [{ read: () => Promise.resolve(utf8ToBytes(secret)) }]),
           ...(files ?? []),
         ]
         await create({ type, label, payloads, meta, onProgress })

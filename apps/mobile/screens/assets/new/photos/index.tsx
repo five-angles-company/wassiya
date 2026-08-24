@@ -73,13 +73,13 @@ export function NewPhotosScreen() {
   async function save() {
     if (photos.length === 0) return
     setDone(0)
-    // Read sequentially rather than with Promise.all: twenty full-resolution
-    // photos resolved at once is twenty decoded buffers alive simultaneously,
-    // which is where a mid-range phone runs out of memory.
-    const files = []
-    for (const photo of photos) {
-      files.push({ bytes: await readFileBytes(photo.uri), byteSize: photo.size })
-    }
+    // Thunks, not bytes: the pipeline reads each photo immediately before it
+    // encrypts and uploads it, so one plaintext buffer is alive at a time
+    // rather than the whole album. See `AssetPayload`.
+    const files = photos.map((photo) => ({
+      read: () => readFileBytes(photo.uri),
+      byteSize: photo.size,
+    }))
 
     const saved = await submit({
       type: "photos",
