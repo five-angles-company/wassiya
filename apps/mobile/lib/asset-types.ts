@@ -19,7 +19,7 @@ import {
   AtSign,
   Bitcoin,
   FileText,
-  Image,
+  Image as ImageIcon,
   Landmark,
   StickyNote,
   type LucideIcon,
@@ -41,7 +41,7 @@ export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
   crypto: Bitcoin,
   bank: Landmark,
   document: FileText,
-  photos: Image,
+  photos: ImageIcon,
   digital: AtSign,
   note: StickyNote,
 }

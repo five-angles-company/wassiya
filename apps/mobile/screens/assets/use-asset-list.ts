@@ -63,7 +63,7 @@ export function useAssetList(
   undecryptableLabel: string
 ): AssetListResult {
   const assets = useQuery(api.assets.list, {})
-  // Subscribing to `mk` rather than calling `useMk()` is what makes this
+  // Subscribing to `mk` rather than reading it off `getState()` is what makes this
   // recompute on unlock: the getter would read the key without telling React
   // anything changed, and the list would stay locked until some other state
   // moved.

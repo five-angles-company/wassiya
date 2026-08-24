@@ -1,6 +1,10 @@
 /**
  * Drives the two events that close an unlocked vault: the app leaving the
- * foreground, and the idle window elapsing.
+ * foreground, and the session cap elapsing.
+ *
+ * The cap is measured from the unlock and nothing extends it — see
+ * `AUTO_LOCK_MS`, which explains why this is not the inactivity timer ٩.٢ will
+ * eventually want.
  *
  * Mounted **once**, from the tabs layout — the vault is only reachable from
  * there, and mounting it per screen would run one timer per mounted route.
@@ -21,11 +25,11 @@ import { AppState, type AppStateStatus } from "react-native"
 import { useVault } from "@/stores/vault"
 
 /**
- * How often the idle check runs. Coarse on purpose: a lock is allowed to be up
+ * How often the cap is checked. Coarse on purpose: a lock is allowed to be up
  * to this late, and a per-second timer would wake the JS thread 300 times to
  * answer "not yet" 299 of them.
  */
-const IDLE_POLL_MS = 15 * 1000
+const LOCK_POLL_MS = 15 * 1000
 
 export function useVaultAutoLock(): void {
   useEffect(() => {
@@ -40,7 +44,7 @@ export function useVaultAutoLock(): void {
     const timer = setInterval(() => {
       const vault = useVault.getState()
       if (vault.isExpired(Date.now())) vault.lock()
-    }, IDLE_POLL_MS)
+    }, LOCK_POLL_MS)
 
     return () => {
       subscription.remove()

@@ -15,8 +15,8 @@
  * - **MK is never persisted.** Not through `persist`, not to AsyncStorage, not
  *   to SecureStore — the keystore already holds the only at-rest copy, behind
  *   biometrics. This is process memory that dies with the app, and `lock()`
- *   zeroes the bytes before dropping them so a heap snapshot taken after a
- *   lock does not still contain the key.
+ *   zeroes the buffer after publishing the lock (see the ordering note there,
+ *   which is load-bearing).
  * - **`VaultKeyLostError` is a route, not an error to swallow.** Changing the
  *   device's enrolled biometrics invalidates MK permanently; the only honest
  *   destination is the recovery ceremony. `status: "lost"` says so, and
@@ -34,12 +34,19 @@ import { create } from "zustand"
 import { readMk, VaultKeyLostError } from "@/lib/secure-vault"
 
 /**
- * How long an unlocked vault survives without being used.
+ * How long an unlocked vault survives before it closes itself.
  *
- * Section ٩.٢ ("القفل التلقائي") owns this value and has never been read off
- * the board — the 256 KiB `get_file` cap stops before it. Five minutes is the
- * placeholder, named here so that session can retune it in one place instead of
- * hunting for a literal.
+ * **This is a session cap, not an inactivity timer.** It is measured from the
+ * unlock, and nothing extends it — a real "five minutes since the user last did
+ * something" needs a source of interaction events (a root-level responder, or a
+ * navigation subscription), and this app has neither yet. Saying so plainly
+ * because the alternative is a store that claims to track idleness, stamps its
+ * timestamp exactly once, and locks a reader out mid-scroll anyway.
+ *
+ * Section ٩.٢ ("القفل التلقائي") owns both the value and the policy, and has
+ * never been read off the board — the 256 KiB `get_file` cap stops before it.
+ * Five minutes is the placeholder, named here so that session retunes it in one
+ * place instead of hunting for a literal.
  */
 export const AUTO_LOCK_MS = 5 * 60 * 1000
 
@@ -54,19 +61,19 @@ export type VaultStatus =
 
 export type VaultState = {
   status: VaultStatus
-  /** Null unless `status === "unlocked"`. Never persisted, never sent. */
+  /**
+   * Null unless `status === "unlocked"`. Never persisted, never sent.
+   *
+   * Read it by subscribing (`useVault((s) => s.mk)`) rather than through a
+   * getter: a getter hands back the key without telling React anything moved,
+   * so a list that decrypted on unlock would never notice the lock.
+   */
   mk: Uint8Array | null
-  /** When the key was last handed out, for the idle timer. */
-  lastUsedAt: number | null
+  /** When the session opened. See {@link AUTO_LOCK_MS} — it is a cap, not idle. */
+  unlockedAt: number | null
   unlock: (authenticationPrompt: string) => Promise<void>
   lock: () => void
-  /**
-   * The session key, or null when locked. Reading it counts as using the
-   * vault and restarts the idle clock, so a user working through their assets
-   * is never locked out mid-task.
-   */
-  useMk: () => Uint8Array | null
-  /** True when the idle window has elapsed. The hook polls this. */
+  /** True when the session cap has elapsed. The auto-lock hook polls this. */
   isExpired: (now: number) => boolean
 }
 
@@ -80,7 +87,7 @@ let inFlight: Promise<void> | null = null
 export const useVault = create<VaultState>()((set, get) => ({
   status: "locked",
   mk: null,
-  lastUsedAt: null,
+  unlockedAt: null,
 
   unlock: async (authenticationPrompt) => {
     if (get().status === "unlocked") return
@@ -90,19 +97,19 @@ export const useVault = create<VaultState>()((set, get) => ({
       set({ status: "unlocking" })
       try {
         const mk = await readMk(authenticationPrompt)
-        set({ status: "unlocked", mk, lastUsedAt: Date.now() })
+        set({ status: "unlocked", mk, unlockedAt: Date.now() })
       } catch (error) {
         if (error instanceof VaultKeyLostError) {
           // Terminal for this device. Deliberately *not* rethrown: every
           // caller would have to re-derive the same "send them to recovery"
           // conclusion, and one that forgot would show a retry button for a
           // prompt that can never succeed again.
-          set({ status: "lost", mk: null, lastUsedAt: null })
+          set({ status: "lost", mk: null, unlockedAt: null })
           return
         }
         // A cancelled prompt lands here, which is not a failure — the user
         // declined, and the vault stays shut until they ask again.
-        set({ status: "locked", mk: null, lastUsedAt: null })
+        set({ status: "locked", mk: null, unlockedAt: null })
       } finally {
         inFlight = null
       }
@@ -113,28 +120,28 @@ export const useVault = create<VaultState>()((set, get) => ({
 
   lock: () => {
     const { mk, status } = get()
-    // Zero before dropping the reference. `fill` mutates the same buffer the
-    // keystore read produced, so nothing else can be holding a live view of it.
-    mk?.fill(0)
+    // Publish the lock BEFORE zeroing. `fill` mutates in place, and the assets
+    // list closes over this exact `Uint8Array` — zeroing first would leave a
+    // subscriber holding a present-but-all-zero key, and every row would
+    // decrypt to "تعذّر فك التشفير", which reads as a corrupted vault rather
+    // than a locked one. After `set`, no subscriber can reach it.
+    //
     // "lost" must survive a lock: the device still cannot produce a key, and
     // downgrading it to "locked" would offer a prompt that always fails.
     set({
       status: status === "lost" ? "lost" : "locked",
       mk: null,
-      lastUsedAt: null,
+      unlockedAt: null,
     })
-  },
-
-  useMk: () => {
-    const { mk } = get()
-    if (mk === null) return null
-    set({ lastUsedAt: Date.now() })
-    return mk
+    // Best-effort hygiene, not a guarantee: `readMk` decodes MK from a hex
+    // string, and JS strings are immutable, so a copy of the key survives in
+    // the string pool either way. This removes the binary one.
+    mk?.fill(0)
   },
 
   isExpired: (now) => {
-    const { status, lastUsedAt } = get()
-    if (status !== "unlocked" || lastUsedAt === null) return false
-    return now - lastUsedAt >= AUTO_LOCK_MS
+    const { status, unlockedAt } = get()
+    if (status !== "unlocked" || unlockedAt === null) return false
+    return now - unlockedAt >= AUTO_LOCK_MS
   },
 }))
