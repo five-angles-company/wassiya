@@ -202,3 +202,58 @@ export const CHECKIN = {
   },
   enable: { ar: "فعّل تأكيد الحياة", en: "Turn on life check-in" },
 } satisfies LabelSet<string>
+
+/**
+ * ٧.٥ — the owner's veto interrupt.
+ *
+ * The one screen of section ٧ that lives in the app rather than the web funnel,
+ * and the board says why: *"it must reach a person who is alive, on their own
+ * phone, with a biometric to cancel."* A veto is the assertion "I am not dead",
+ * and it has to be provable by presence, not by a tap on an unlocked handset
+ * someone else is holding.
+ */
+export const CLAIM_VETO = {
+  title: { ar: "طلب وراثة على حسابك", en: "An inheritance claim on your account" },
+  // Deliberately unalarming in tone and unambiguous in fact. Most claims are
+  // genuine; the ones that are not are the reason this screen exists.
+  intro: {
+    ar: "تقدّم {name} بطلب للوصول إلى ما تركته. إن كنت تقرأ هذا، فأنت حيّ — وبإمكانك إيقاف الطلب.",
+    en: "{name} has filed a claim to access what you left. If you're reading this, you're alive — and you can stop it.",
+  },
+  deadline: {
+    ar: "إن لم توقفه قبل {date}، سيُفرج عمّا خُصّص لهم.",
+    en: "If you don't stop it before {date}, what's routed to them will be released.",
+  },
+  daysLeft: { ar: "{n} يوماً متبقياً", en: "{n} days left" },
+
+  veto: { ar: "أوقف الطلب — أنا بخير", en: "Stop this claim — I'm well" },
+  vetoing: { ar: "جارٍ الإيقاف…", en: "Stopping…" },
+  vetoPrompt: {
+    ar: "أثبت هويتك لإيقاف الطلب",
+    en: "Confirm it's you to stop this claim",
+  },
+  vetoed: {
+    ar: "أُوقف الطلب. لن يُفرج عن شيء، ولن يستطيع مقدّم الطلب المحاولة مجدداً لمدة ٩٠ يوماً.",
+    en: "The claim is stopped. Nothing will be released, and the claimant cannot try again for 90 days.",
+  },
+  vetoFailed: {
+    ar: "تعذّر إيقاف الطلب. لم يتغيّر شيء — حاول مرة أخرى.",
+    en: "Could not stop the claim. Nothing changed — try again.",
+  },
+  biometricFailed: {
+    ar: "لم يتم التحقق. إيقاف الطلب يحتاج بصمتك — وهذا ما يمنع شخصاً آخر من إيقافه نيابةً عنك.",
+    en: "Not verified. Stopping a claim needs your biometrics — which is what stops someone else doing it for you.",
+  },
+  windowClosed: {
+    ar: "انتهت مدة الاعتراض على هذا الطلب.",
+    en: "The objection window for this claim has closed.",
+  },
+
+  // The other half of the honesty: doing nothing is also a decision.
+  ignoreTitle: { ar: "إن لم تفعل شيئاً", en: "If you do nothing" },
+  ignoreBody: {
+    ar: "سيمضي الطلب في مساره: تأكيد الوصي، ثم الإفراج عمّا خُصّص لمقدّم الطلب وحده.",
+    en: "The claim continues: your guardian confirms, then what's routed to that person alone is released.",
+  },
+  none: { ar: "لا توجد طلبات على حسابك.", en: "No claims against your account." },
+} satisfies LabelSet<string>

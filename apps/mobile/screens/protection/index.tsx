@@ -17,6 +17,7 @@
 import { useMemo } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
+import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { ProtectionScore } from "@workspace/ui-native/components/wassiya/protection-score"
@@ -36,6 +37,10 @@ export function ProtectionScreen() {
   const guardians = useQuery(api.guardians.list)
   const heirs = useQuery(api.heirs.list)
   const checkin = useQuery(api.checkin.get)
+  const claims = useQuery(api.claims.againstMe)
+  const { t: claimCopy } = useStrings("protection/claim")
+
+  const openClaim = claims?.find((claim) => claim.canVeto) ?? null
 
   const items = useMemo((): (ProtectionItem & { href?: Href })[] => {
     const guardianLive =
@@ -109,6 +114,26 @@ export function ProtectionScreen() {
           {earned === items.length ? t.scoreComplete : t.scoreIncomplete}
         </Text>
       </View>
+
+      {/* An open claim outranks everything, including the guardian warning:
+          it is time-boxed and someone else started the clock. ٧.٥ is the only
+          place it can be stopped. */}
+      {openClaim !== undefined && openClaim !== null ? (
+        <AlertBanner
+          className="mb-header"
+          variant="security"
+          title={claimCopy.title}
+          description={claimCopy.intro.replace("{name}", openClaim.claimantName)}
+          actions={
+            <Button
+              size="sm"
+              onPress={() => router.push("/protection/claim")}
+            >
+              <Text>{claimCopy.veto}</Text>
+            </Button>
+          }
+        />
+      ) : null}
 
       {/* Outranks the list: a printed sheet that cannot recover anything is
           worse than a missing one, because the owner believes they are safe. */}

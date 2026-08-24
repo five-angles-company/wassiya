@@ -36,6 +36,7 @@ import {
 } from "@/i18n/strings/will"
 import {
   CHECKIN,
+  CLAIM_VETO,
   GUARDIAN,
   GUARDIAN_ACCEPT,
   PROTECTION,
@@ -80,6 +81,7 @@ export const SCREEN_STRINGS = {
   "protection/guardian": GUARDIAN,
   "protection/guardian/accept": GUARDIAN_ACCEPT,
   "protection/checkin": CHECKIN,
+  "protection/claim": CLAIM_VETO,
 
   recovery: RECOVERY_STUB,
 } as const

@@ -428,3 +428,51 @@ async function notify(
 }
 
 export type Claim = Doc<"claims">
+
+/**
+ * ٧.٤ — the status page, read with no account.
+ *
+ * The board's requirement: *"Signed-URL access with the claim id, no account —
+ * but the URL alone reveals nothing beyond status."* The claim id is therefore
+ * a **capability**: holding it is what grants the read, exactly as holding the
+ * emailed link does. Convex ids are 32 random characters, so guessing one is
+ * not a practical attack; forwarding one to a relative is, and is intended —
+ * the board notes this page gets forwarded and re-opened for weeks.
+ *
+ * ## What this deliberately does NOT return
+ *
+ * Every field below is either the claimant's own submission or a date they were
+ * already told. Absent, on purpose:
+ *
+ *  - `claimantContact` and `claimantName` — an id-holder who is not the
+ *    claimant would otherwise learn who filed and how to reach them.
+ *  - `subjectUserId` and anything about the deceased's account, including
+ *    whether one exists. `claims.submit` is careful to answer uniformly so it
+ *    is not an oracle; this must not undo that.
+ *  - `certificateName`, `nameMatch`, `heirId` — review internals. A claimant
+ *    learning that name matching failed would learn how to make it pass.
+ *  - Anything at all about the vault's contents.
+ *
+ * What is left is a status, two dates and a reference, which is precisely the
+ * "radical transparency" the screen asks for and nothing more.
+ */
+export const publicStatus = query({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) return null
+    return {
+      id: claim._id,
+      status: claim.status,
+      submittedAt: claim._creationTime,
+      vetoDeadline: claim.vetoDeadline ?? null,
+      // Whether the identity check passed is the claimant's own result and the
+      // thing they are most likely to be waiting on.
+      identityVerified: claim.claimantIdentityStatus === "verified",
+      certificateReceived: claim.certificateStorageId !== undefined,
+      // `undefined`, not `null` — the column is `v.optional(v.number())`, and
+      // comparing it against null reports every claim as confirmed.
+      guardianConfirmed: claim.guardianConfirmedAt !== undefined,
+    }
+  },
+})
