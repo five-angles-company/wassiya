@@ -120,14 +120,18 @@ export const NEW_BANK = {
   },
 } satisfies LabelSet<string>
 
-/** ٤.٥ — scanner deferred; the file path is real. */
+/** ٤.٥ — scan or pick; both paths end in one encrypted PDF. */
 export const NEW_DOCUMENT = {
   title: { ar: "مستند", en: "Document" },
   fromFiles: { ar: "من الملفات", en: "From files" },
   scan: { ar: "صوّر المستند", en: "Scan the document" },
-  scanUnavailable: {
-    ar: "الماسح الضوئي داخل التطبيق يصل في مرحلة لاحقة — اختر ملفاً في هذه الأثناء",
-    en: "The in-app scanner arrives later — pick a file for now",
+  scanning: { ar: "جارٍ التصوير…", en: "Scanning…" },
+  // The scanner returns loose pages; the file it produces is one document, so
+  // it gets a name that says so rather than a camera-roll style timestamp.
+  scanNamePrefix: { ar: "مستند ممسوح", en: "Scanned document" },
+  scanFailed: {
+    ar: "تعذّر إنشاء المستند من الصور. حاول مرة أخرى أو اختر ملفاً.",
+    en: "Could not build the document from those pages. Try again, or pick a file.",
   },
   titleLabel: { ar: "العنوان", en: "Title" },
   titlePlaceholder: { ar: "صك ملكية — حطين", en: "Title deed — Hittin" },

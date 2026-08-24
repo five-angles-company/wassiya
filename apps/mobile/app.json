@@ -34,6 +34,12 @@
           "faceIDPermission": "تستخدم وصيّة Face ID لتأكيد هويتك قبل إنشاء مفتاح الخزنة أو استخدامه."
         }
       ],
+      [
+        "react-native-document-scanner-plugin",
+        {
+          "cameraPermission": "تستخدم وصيّة الكاميرا لتصوير مستنداتك وتشفيرها على جهازك."
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser",
       "@clerk/expo",

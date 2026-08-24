@@ -1,29 +1,38 @@
 /**
  * ٤.٥ — a document.
  *
- * The board wants an in-app ML Kit scanner with multi-page capture, edge
- * detection, and pages assembled into one PDF client-side. That needs a native
- * scanner module this app does not have, so **the "من الملفات" half is built
- * and the scanner is not** — the button says so rather than pretending.
+ * Both halves the board asks for: the in-app scanner (ML Kit on Android,
+ * VisionKit on iOS, via `react-native-document-scanner-plugin`) with multi-page
+ * capture and edge detection, and the file picker for something already saved.
  *
- * What is real here is the part that matters most: the file is read, encrypted
- * on this device under the asset's own DEK, and only ciphertext is uploaded.
- * Adding the scanner later changes where the bytes come from, not what happens
- * to them.
+ * Scanned pages are assembled into **one PDF on this device** — see
+ * `lib/scanned-pdf` — because a deed photographed in three parts is one
+ * document, and three loose images would leave an heir to work out the order.
+ * No OCR, and nothing fetched: the assembly happens in a local print WebView.
+ *
+ * The plaintext PDF that assembly produces is the one file on this screen that
+ * must not linger. It is deleted as soon as the encrypted copy exists, and on
+ * every path that abandons it — a new scan, a picked file replacing it, or
+ * leaving the screen.
  */
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import * as DocumentPicker from "expo-document-picker"
 import { router } from "expo-router"
+import DocumentScanner, {
+  ResponseType,
+  ScanDocumentResponseStatus,
+} from "react-native-document-scanner-plugin"
 import { FileText, ScanLine } from "lucide-react-native"
 import { View } from "react-native"
 
 import { Field } from "@/components/field"
 import { useStrings } from "@/i18n/use-strings"
-import { readFileBytes } from "@/lib/asset-upload"
+import { fileSize, readFileBytes } from "@/lib/asset-upload"
+import { buildScannedPdf, discardScan } from "@/lib/scanned-pdf"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
@@ -49,7 +58,70 @@ export function NewDocumentScreen() {
     size: number
     mimeType: string
   } | null>(null)
+  const [pageCount, setPageCount] = useState(0)
+  const [scanning, setScanning] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  /**
+   * The generated PDF's uri, when the current file came from the scanner.
+   * A ref rather than state so the unmount cleanup sees the latest value
+   * rather than the one captured when the effect was created.
+   */
+  const generated = useRef<string | null>(null)
+
+  /** Drop a previously generated PDF before it is replaced or abandoned. */
+  function clearGenerated() {
+    if (generated.current !== null) {
+      discardScan(generated.current)
+      generated.current = null
+    }
+  }
+
+  // Leaving mid-run must not leave a plaintext scan in the cache.
+  useEffect(() => () => clearGenerated(), [])
+
+  async function scan() {
+    setScanning(true)
+    setNotice(null)
+    try {
+      const result = await DocumentScanner.scanDocument({
+        responseType: ResponseType.ImageFilePath,
+        croppedImageQuality: 90,
+      })
+      if (
+        result.status === ScanDocumentResponseStatus.Cancel ||
+        !result.scannedImages?.length
+      ) {
+        return
+      }
+
+      const uri = await buildScannedPdf(result.scannedImages)
+      // Only after the new one exists — a failed assembly should leave the
+      // previous scan intact rather than dropping both.
+      clearGenerated()
+      generated.current = uri
+
+      const size = fileSize(uri)
+      if (size > MAX_BYTES) {
+        clearGenerated()
+        setNotice(
+          t.tooLarge.replace("{n}", fmtNum(MAX_BYTES / 1024 / 1024, locale))
+        )
+        return
+      }
+
+      setPageCount(result.scannedImages.length)
+      setFile({
+        uri,
+        name: `${t.scanNamePrefix}.pdf`,
+        size,
+        mimeType: "application/pdf",
+      })
+    } catch {
+      setNotice(t.scanFailed)
+    } finally {
+      setScanning(false)
+    }
+  }
 
   async function pick() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -66,6 +138,8 @@ export function NewDocumentScreen() {
       return
     }
     setNotice(null)
+    clearGenerated()
+    setPageCount(0)
     setFile({
       uri: asset.uri,
       name: asset.name,
@@ -91,7 +165,11 @@ export function NewDocumentScreen() {
         mimeType: file.mimeType,
       },
     })
-    if (saved) router.back()
+    if (saved) {
+      // The ciphertext is stored; the plaintext PDF has no further use.
+      clearGenerated()
+      router.back()
+    }
   }
 
   return (
@@ -108,16 +186,14 @@ export function NewDocumentScreen() {
             <Text>{file === null ? t.fromFiles : t.replaceFile}</Text>
           </Button>
 
-          {/* Present but disabled, with the reason on the button's own line.
-              Hiding it would leave the screen looking like it never intended
-              to scan; a dead enabled button would be worse than both. */}
-          <Button variant="outline" disabled onPress={() => undefined}>
+          <Button
+            variant="outline"
+            onPress={() => void scan()}
+            disabled={scanning}
+          >
             <Icon as={ScanLine} className="text-foreground size-4.5" />
-            <Text>{t.scan}</Text>
+            <Text>{scanning ? t.scanning : t.scan}</Text>
           </Button>
-          <Text variant="metaSm" className="text-muted-foreground text-center">
-            {t.scanUnavailable}
-          </Text>
         </View>
 
         {file !== null ? (
@@ -127,7 +203,11 @@ export function NewDocumentScreen() {
               <Text variant="rowTitle" numberOfLines={1}>
                 {file.name}
               </Text>
-              <Text variant="metaSm">{formatSize(file.size, locale)}</Text>
+              <Text variant="metaSm">
+                {pageCount > 0
+                  ? `${t.pages.replace("{n}", fmtNum(pageCount, locale))} · ${formatSize(file.size, locale)}`
+                  : formatSize(file.size, locale)}
+              </Text>
             </View>
           </View>
         ) : null}
