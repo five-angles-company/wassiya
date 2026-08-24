@@ -15,6 +15,13 @@
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 export const KYC = {
+  // Shown only to someone who already holds a guardianship — see the comment
+  // at its use site for why this link is the difference between a working
+  // recovery and a permanently locked vault.
+  guardianHere: {
+    ar: "أنت هنا كوصي على خزنة شخص آخر؟",
+    en: "Here as a guardian for someone else's vault?",
+  },
   title: { ar: "لنتحقق من هويتك", en: "Let's verify your identity" },
   body: {
     ar: "التحقق يربط الخزنة باسمك الرسمي. هذا ما يضمن أن ورثتك — ولا أحد سواهم — يستلمون إرثك.",

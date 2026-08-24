@@ -19,8 +19,26 @@
  * could use that the owner has already chosen to trust. Handing it to the
  * guardian and stepping back is the honest design — the same reason ٦.٢'s
  * invite token travels out of band.
+ *
+ * ## The copy button, and what it costs
+ *
+ * Copying puts the share somewhere `useSecureScreen` does not reach. On
+ * Android 13+ the clipboard is also *remembered* by the keyboard, and
+ * `expo-clipboard` exposes no way to mark a clip sensitive or to purge that
+ * history — so this is a real, unfixable-from-here leak, not a theoretical one.
+ *
+ * It stays anyway, and the reason is arithmetic: the share is 64 hex
+ * characters. A guardian reading those aloud down a phone line to a relative
+ * who has just lost their home will get them wrong, repeatedly, and the failure
+ * mode of a mistyped share is indistinguishable from a tampered one — the owner
+ * is told the halves didn't match and has no way to tell which. Forcing manual
+ * transcription would trade a bounded local leak for a recovery that regularly
+ * doesn't work.
+ *
+ * What we can do, we do: the clip is cleared when the share is dismissed and
+ * when the screen unmounts, which bounds the window to the ceremony itself.
  */
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
@@ -83,6 +101,14 @@ export function GuardianApproveScreen() {
     }
   }
 
+  // Bounds the clipboard window to this screen's life. Cannot reach Android's
+  // clipboard *history*; see the header.
+  useEffect(() => {
+    return () => {
+      if (copied) void Clipboard.setStringAsync("")
+    }
+  }, [copied])
+
   if (state.status === "open") {
     return (
       <ScrollView
@@ -125,7 +151,9 @@ export function GuardianApproveScreen() {
             variant="outline"
             onPress={() => {
               // Drop the plaintext from state on the way out rather than
-              // leaving it mounted behind a back gesture.
+              // leaving it mounted behind a back gesture, and take the clip
+              // with it.
+              if (copied) void Clipboard.setStringAsync("")
               setState({ status: "idle" })
               setCopied(false)
             }}

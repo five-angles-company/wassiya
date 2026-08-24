@@ -41,6 +41,7 @@ export function KycScreen() {
   // Normally already set from 1.3. Null only when the app died between the
   // OTP finalising and the first profile write.
   const [country, setCountry] = useState(me?.country ?? DEFAULT_COUNTRY)
+  const guardianships = useQuery(api.guardians.guardianFor)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -131,6 +132,33 @@ export function KycScreen() {
       <Button className="mt-5" disabled={busy} onPress={() => void start()}>
         <Text>{busy ? t.opening : t.cta}</Text>
       </Button>
+
+      {/*
+        The app's second persona, and the one place it can get stranded.
+
+        Identity verification is blocking **for owners** — AGENTS.md scopes it
+        that way deliberately. But someone who signed up only to hold half a key
+        for their father has no keyring and no verification, which is exactly
+        the evidence `setup-flow` reads as "unfinished owner onboarding", so the
+        splash lands them here. Without this link the guardian half of ٨.١ is
+        unreachable by the only people who ever need it, and the owner they are
+        supposed to rescue stays locked out.
+
+        It renders only for real guardians — `guardianFor` is server-derived
+        from accepted invitations, so this is not a bypass anyone can type their
+        way into. Accepting the invitation (٦.٢b) arrives by deep link and
+        never passes through this gate, which is why the gap only shows up
+        later, at the moment recovery is needed.
+      */}
+      {guardianships !== undefined && guardianships.length > 0 ? (
+        <Button
+          variant="ghost"
+          className="mt-2"
+          onPress={() => router.push("/recovery/approve")}
+        >
+          <Text>{t.guardianHere}</Text>
+        </Button>
+      ) : null}
     </ScrollView>
   )
 }
