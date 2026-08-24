@@ -33,7 +33,7 @@ export type AssetTypeSheetProps = {
  * means a second lookup table that can disagree with this one.
  */
 export function AssetTypeSheet({ ref, onSelect }: AssetTypeSheetProps) {
-  const { t } = useStrings("assets/new")
+  const { t } = useStrings("assets/new-sheet")
 
   return (
     <Sheet ref={ref} title={t.title} description={t.description}>

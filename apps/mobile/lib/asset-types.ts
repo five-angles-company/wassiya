@@ -68,3 +68,20 @@ export const ASSET_TYPE_TONE: Record<AssetType, Tone> = {
   bank: "sand",
   note: "sand",
 }
+
+/**
+ * Where each tile on ٤.٢ goes.
+ *
+ * `digital` maps to `/assets/new/account`, not `/assets/new/digital` — the
+ * board names that route after what the user is describing (an account), while
+ * the schema names the column after the kind of thing it is. Both stay as they
+ * are; this table is where the two vocabularies meet, so neither has to bend.
+ */
+export const ASSET_TYPE_ROUTE = {
+  crypto: "/assets/new/crypto",
+  bank: "/assets/new/bank",
+  document: "/assets/new/document",
+  photos: "/assets/new/photos",
+  digital: "/assets/new/account",
+  note: "/assets/new/note",
+} as const satisfies Record<AssetType, string>

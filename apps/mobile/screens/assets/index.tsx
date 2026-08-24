@@ -14,12 +14,13 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Plus } from "lucide-react-native"
-import { Alert, ScrollView, View } from "react-native"
+import { router } from "expo-router"
+import { ScrollView, View } from "react-native"
 
 import { useVaultGate } from "@/hooks/use-vault-gate"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPES, type AssetType } from "@/lib/asset-types"
+import { ASSET_TYPE_ROUTE, ASSET_TYPES, type AssetType } from "@/lib/asset-types"
 import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetList } from "@/screens/assets/components/asset-list"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
@@ -31,7 +32,6 @@ import { useAssetList } from "@/screens/assets/use-asset-list"
 
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
-  const { t: add } = useStrings("assets/new")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<AssetType | null>(null)
@@ -61,16 +61,14 @@ export function AssetsScreen() {
   const openAddSheet = () => void addSheet.current?.present()
 
   /**
-   * A tile's wizard (4.3–4.8) is not built. Dismiss first, then say which form
-   * is missing: an alert stacked over an open sheet is dismissible on iOS by
-   * tapping the sheet behind it, which leaves the alert's owner on screen and
-   * reads as a stuck dialog.
+   * Dismiss before navigating. A sheet left open while a route pushes underneath
+   * it stays on screen over the new page on iOS, and dismissing it then reveals
+   * the wizard with no transition — so the sheet closes first, and the push
+   * reads as one movement.
    */
-  const chooseType = async (_type: AssetType, label: string) => {
+  const chooseType = async (type: AssetType) => {
     await addSheet.current?.dismiss()
-    Alert.alert(add.soonTitle, add.soonBody.replace("{type}", label), [
-      { text: add.soonDismiss },
-    ])
+    router.push(ASSET_TYPE_ROUTE[type])
   }
 
   const clearFilters = () => {

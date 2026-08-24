@@ -70,3 +70,11 @@ export {
 } from "./asset"
 
 export { type AssetLabel, LABEL_AAD, openLabel, sealLabel } from "./label"
+
+export {
+  type MnemonicCheck,
+  MNEMONIC_LENGTHS,
+  canonicalMnemonic,
+  checkMnemonic,
+  normalizeMnemonic,
+} from "./mnemonic"

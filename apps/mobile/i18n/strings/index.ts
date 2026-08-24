@@ -18,6 +18,15 @@ import {
   SETUP_COMPLETE,
 } from "@/i18n/strings/setup"
 import { ADD_ASSET, ASSETS } from "@/i18n/strings/assets"
+import {
+  ASSET_NEW,
+  NEW_ACCOUNT,
+  NEW_BANK,
+  NEW_CRYPTO,
+  NEW_DOCUMENT,
+  NEW_NOTE,
+  NEW_PHOTOS,
+} from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
 
 export const SCREEN_STRINGS = {
@@ -40,7 +49,14 @@ export const SCREEN_STRINGS = {
   "setup/complete": SETUP_COMPLETE,
 
   assets: ASSETS,
-  "assets/new": ADD_ASSET,
+  "assets/new-sheet": ADD_ASSET,
+  "assets/new": ASSET_NEW,
+  "assets/new/crypto": NEW_CRYPTO,
+  "assets/new/bank": NEW_BANK,
+  "assets/new/document": NEW_DOCUMENT,
+  "assets/new/photos": NEW_PHOTOS,
+  "assets/new/account": NEW_ACCOUNT,
+  "assets/new/note": NEW_NOTE,
 
   recovery: RECOVERY_STUB,
 } as const

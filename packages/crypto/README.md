@@ -51,6 +51,14 @@ pnpm --filter @workspace/crypto test
    └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+## Not key material, but the same stakes
+
+`mnemonic.ts` validates a BIP-39 recovery phrase's checksum. It holds no key
+and derives nothing — it exists because ٤.٣ must refuse to store a phrase that
+cannot be right, and the person who would otherwise discover the mistake is an
+heir who cannot ask what it should have said. Same reason `apps/mobile/lib/iban.ts`
+validates mod-97 before saving a bank account.
+
 ## Which side runs what
 
 | Function                                                   | Owner's device  | Guardian's device |  Heir's client  | Convex backend |
