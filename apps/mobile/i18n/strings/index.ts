@@ -17,7 +17,7 @@ import {
   RECOVERY_STUB,
   SETUP_COMPLETE,
 } from "@/i18n/strings/setup"
-import { ADD_ASSET, ASSETS } from "@/i18n/strings/assets"
+import { ADD_ASSET, ASSETS, ASSET_DETAIL } from "@/i18n/strings/assets"
 import {
   ASSET_NEW,
   NEW_ACCOUNT,
@@ -50,6 +50,7 @@ export const SCREEN_STRINGS = {
 
   assets: ASSETS,
   "assets/new-sheet": ADD_ASSET,
+  "assets/detail": ASSET_DETAIL,
   "assets/new": ASSET_NEW,
   "assets/new/crypto": NEW_CRYPTO,
   "assets/new/bank": NEW_BANK,

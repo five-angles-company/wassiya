@@ -111,7 +111,7 @@ export function useCreateAsset(): (
         const storageIds: Id<"_storage">[] = []
         for (const [index, payload] of payloads.entries()) {
           const plaintext = await payload.read()
-          const ciphertext = encryptAsset(dek, plaintext)
+          const ciphertext = encryptAsset(plaintext, dek)
           // Wipe as soon as it is encrypted. Safe to do unconditionally now
           // that the buffer was produced by `read` for this iteration alone and
           // no caller holds it.

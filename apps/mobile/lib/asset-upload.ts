@@ -85,3 +85,27 @@ export async function readFileBytes(uri: string): Promise<Uint8Array> {
 export function fileSize(uri: string): number {
   return new File(uri).size ?? 0
 }
+
+/**
+ * Fetch one encrypted blob back and hand over its bytes.
+ *
+ * The mirror of {@link uploadCiphertext}, and it goes through a file for the
+ * same reason: React Native's `fetch` has no dependable typed-array response
+ * path, while expo-file-system streams the body straight to disk. Only
+ * ciphertext ever lands there — decryption happens in memory after this
+ * returns, and the staged file is deleted either way.
+ *
+ * `idempotent` because a retry after a failed decrypt would otherwise reject on
+ * the leftover file rather than re-downloading.
+ */
+export async function downloadCiphertext(url: string): Promise<Uint8Array> {
+  const staged = new File(Paths.cache, `wsy-download-${randomUUID()}.bin`)
+  try {
+    const downloaded = await File.downloadFileAsync(url, staged, {
+      idempotent: true,
+    })
+    return await downloaded.bytes()
+  } finally {
+    if (staged.exists) staged.delete()
+  }
+}

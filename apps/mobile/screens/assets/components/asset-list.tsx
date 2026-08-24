@@ -17,15 +17,15 @@ export type AssetListProps = {
   noResultsBody: string
   clearLabel: string
   onClear: () => void
+  onOpen: (id: AssetListRow["id"]) => void
 }
 
 /**
  * The rows themselves, plus the two states that replace them.
  *
- * Rows are deliberately **not pressable**: 4.9 (asset detail) is not built, and
- * `AssetRow` renders a plain `View` when it is given no `onPress`, so a tap
- * does nothing visible rather than looking like a button that fails. Handing it
- * a handler is the single change that turns the list live once 4.9 lands.
+ * Rows open ٤.٩. `AssetRow` renders a plain `View` when given no `onPress`,
+ * which is what it did while the detail screen did not exist — passing the
+ * handler is the whole difference.
  */
 export function AssetList({
   rows,
@@ -34,6 +34,7 @@ export function AssetList({
   noResultsBody,
   clearLabel,
   onClear,
+  onOpen,
 }: AssetListProps) {
   if (rows === undefined) return <AssetRowSkeleton count={4} />
 
@@ -71,6 +72,7 @@ export function AssetList({
           // prevent; a routed one recedes into olive.
           recipientStatus={row.routed ? "confirmed" : "action"}
           recipientLabel={recipientLabel(row.recipientCount)}
+          onPress={() => onOpen(row.id)}
         />
       ))}
     </View>

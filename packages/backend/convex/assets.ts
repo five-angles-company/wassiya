@@ -270,3 +270,70 @@ async function bumpStorageUsed(
     },
   })
 }
+
+/**
+ * Record that the owner revealed this asset's secret.
+ *
+ * 4.9 requires it: *"every reveal writes an audit entry (9.3) and the last one
+ * is stamped under the button"*. The point is not bookkeeping — it is that a
+ * vault whose secrets can be read without leaving a trace cannot tell its owner
+ * whether anyone else has read them. The stamp under the button is that trace
+ * made visible on the screen where it matters.
+ *
+ * `auditLog` deliberately has no client-callable write anywhere else; this is
+ * the one, and it is narrow on purpose — the caller chooses *which of their own
+ * assets*, and nothing else. The event name, the timestamp and the user are all
+ * decided here, so a client cannot forge a line or backdate one.
+ */
+export const recordReveal = mutation({
+  args: { assetId: v.id("assets") },
+  handler: async (ctx, { assetId }) => {
+    const user = await requireUser(ctx)
+    const asset = await ctx.db.get("assets", assetId)
+    if (asset === null || asset.userId !== user._id) {
+      throw new Error("Not found")
+    }
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: REVEAL_EVENT,
+      // Scalars only, and nothing describing what was revealed — the asset's
+      // name is ciphertext and must not be reconstructed from its own log.
+      meta: { assetId, type: asset.type },
+    })
+    return null
+  },
+})
+
+/**
+ * When this asset's secret was last revealed, or null if never.
+ *
+ * Scans the owner's log newest-first for the most recent matching entry.
+ * `auditLog` is indexed by user and time, not by asset, so this is a bounded
+ * reverse walk rather than a lookup: past {@link REVEAL_SCAN_LIMIT} entries it
+ * gives up and answers null.
+ *
+ * That bound is a deliberate trade. Indexing the log by asset would mean a
+ * second index on an append-only table that exists to be read in time order,
+ * and the honest failure — "we cannot see a reveal that old" — is far better
+ * than the alternative, which would be to keep a mutable `lastRevealedAt`
+ * column on `assets` that a future writer could quietly reset.
+ */
+const REVEAL_EVENT = "asset.revealed"
+const REVEAL_SCAN_LIMIT = 500
+
+export const lastRevealedAt = query({
+  args: { assetId: v.id("assets") },
+  handler: async (ctx, { assetId }) => {
+    const user = await requireUser(ctx)
+    const recent = await ctx.db
+      .query("auditLog")
+      .withIndex("by_userId_and_at", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .take(REVEAL_SCAN_LIMIT)
+
+    const hit = recent.find(
+      (row) => row.event === REVEAL_EVENT && row.meta.assetId === assetId
+    )
+    return hit?.at ?? null
+  },
+})

@@ -120,3 +120,69 @@ export const ADD_ASSET = {
   },
   soonDismiss: { ar: "حسناً", en: "Got it" },
 } satisfies LabelSet<string>
+
+/**
+ * ٤.٩ — the asset detail.
+ *
+ * Two-tier by design: the identity row decrypts when the screen opens, and the
+ * secret needs a fresh biometric that hides itself after ten seconds. The
+ * "آخر إظهار" stamp is the visible end of the audit trail every reveal writes.
+ */
+export const ASSET_DETAIL = {
+  secretLabel: { ar: "المحتوى المحمي", en: "Protected content" },
+  revealPrompt: { ar: "المس البصمة للإظهار", en: "Touch to reveal" },
+  // The OS sheet's own message — it says what is about to be shown.
+  biometricPrompt: {
+    ar: "أثبت هويتك لإظهار محتوى هذا الأصل",
+    en: "Confirm it's you to reveal this asset",
+  },
+  revealTerms: {
+    ar: "{n} ثوانٍ · محجوبة عن لقطات الشاشة",
+    en: "{n} seconds · hidden from screenshots",
+  },
+  lastRevealed: { ar: "آخر إظهار {date}", en: "Last revealed {date}" },
+  neverRevealed: { ar: "لم يُعرض بعد", en: "Never revealed" },
+  hide: { ar: "إخفاء", en: "Hide" },
+  revealing: { ar: "لحظة…", en: "One moment…" },
+  revealDenied: {
+    ar: "لم يتم التحقق. لم يُعرض شيء ولم يُفك تشفير شيء.",
+    en: "Not verified. Nothing was shown and nothing was decrypted.",
+  },
+  revealFailed: {
+    ar: "تعذّر فتح المحتوى. إن تكرّر ذلك فقد يكون الملف تالفاً.",
+    en: "Could not open the content. If this repeats, the file may be damaged.",
+  },
+
+  // File-backed types have no phrase to peek at; opening them needs a viewer
+  // that does not exist yet, so the row says what is stored rather than
+  // offering a button that cannot deliver.
+  filesLabel: { ar: "ملفات مشفّرة", en: "Encrypted files" },
+  filesCount: { ar: "{n} ملف · {size}", en: "{n} files · {size}" },
+  viewerSoon: {
+    ar: "عرض الملفات داخل التطبيق يصل في مرحلة لاحقة",
+    en: "In-app file viewing arrives in a later stage",
+  },
+
+  recipientsLabel: { ar: "من يستلمه؟", en: "Who receives it?" },
+  recipientsNone: { ar: "بلا مستلم", en: "No recipient" },
+  recipientsNoneBody: {
+    ar: "لن يصل هذا الأصل إلى أحد. تحديد المستلمين يصل مع شاشة الورثة.",
+    en: "This asset reaches nobody yet. Assigning recipients arrives with the heirs screen.",
+  },
+
+  deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
+  deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },
+  deleteBodyUnrouted: {
+    ar: "سيُحذف المحتوى المشفّر نهائياً. لا يمكن التراجع.",
+    en: "The encrypted content is destroyed permanently. This cannot be undone.",
+  },
+  // Names the people who lose access, per the board — the point of the confirm
+  // is that deletion is a decision about *recipients*, not about storage.
+  deleteBodyRouted: {
+    ar: "سيفقد {names} إمكانية الوصول إليه، ويُحذف المحتوى نهائياً. لا يمكن التراجع.",
+    en: "{names} will lose access and the content is destroyed permanently. This cannot be undone.",
+  },
+  deleteConfirm: { ar: "احذف", en: "Delete" },
+  deleteCancel: { ar: "إلغاء", en: "Cancel" },
+  deleteFailed: { ar: "تعذّر الحذف. لم يتغيّر شيء.", en: "Could not delete. Nothing changed." },
+} satisfies LabelSet<string>
