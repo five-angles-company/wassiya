@@ -36,6 +36,13 @@ export const ASSET_NEW = {
     ar: "خزنتك أُقفلت. افتحها وحاول مرة أخرى.",
     en: "Your vault locked. Unlock it and try again.",
   },
+  // The one gate a lapsed subscription closes. Worded to say what still works,
+  // because the rule is that a lapsed card never costs anyone their
+  // inheritance — only adding is paused.
+  quotaExceeded: {
+    ar: "إضافة الأصول متوقّفة حتى تجديد الاشتراك. خزنتك وكل ما فيها يبقى كما هو، وتسليم الورثة يعمل.",
+    en: "Adding assets is paused until your subscription renews. Your vault and everything in it is untouched, and heir delivery still works.",
+  },
 } satisfies LabelSet<string>
 
 /** ٤.٣ — the hard screen. */
@@ -78,9 +85,46 @@ export const NEW_CRYPTO = {
     en: "A BIP-39 phrase is 12, 15, 18, 21 or 24 words — you have {n}",
   },
   pasteEmpty: { ar: "الحافظة فارغة", en: "Nothing in the clipboard" },
-  scanUnavailable: {
-    ar: "مسح QR يصل مع الكاميرا في مرحلة لاحقة",
-    en: "QR scanning arrives with the camera in a later stage",
+
+  // QR — reading a phrase off a printed backup card.
+  scanTitle: { ar: "امسح رمز النسخ الاحتياطي", en: "Scan your backup code" },
+  scanBody: {
+    ar: "وجّه الكاميرا إلى رمز QR على بطاقة النسخ الاحتياطي. لا تُحفظ أي صورة.",
+    en: "Point the camera at the QR on your backup card. No image is saved.",
+  },
+  scanNotAPhrase: {
+    ar: "هذا الرمز لا يحتوي على عبارة BIP-39 صالحة.",
+    en: "That code does not contain a valid BIP-39 phrase.",
+  },
+  cameraNeeded: {
+    ar: "يحتاج المسح إذن الكاميرا. لا تُحفظ صور ولا يُرسل شيء.",
+    en: "Scanning needs camera access. No images are saved and nothing is sent.",
+  },
+  cameraAllow: { ar: "اسمح بالكاميرا", en: "Allow camera" },
+  cameraBlocked: {
+    ar: "إذن الكاميرا مرفوض. فعّله من إعدادات النظام، أو الصق العبارة بدلاً من ذلك.",
+    en: "Camera access is denied. Enable it in system settings, or paste the phrase instead.",
+  },
+
+  // ٤.٣'s exchange variant. A wallet held on an exchange has no seed phrase —
+  // the account *is* the custody — so the form asks for what an heir would
+  // actually need, and the BIP-39 gate does not apply.
+  exchangeName: { ar: "اسم المنصة", en: "Exchange" },
+  exchangeNamePlaceholder: { ar: "Binance", en: "Binance" },
+  exchangeAccount: { ar: "الحساب", en: "Account" },
+  exchangeAccountPlaceholder: { ar: "البريد أو رقم الحساب", en: "Email or account id" },
+  exchangePassword: { ar: "كلمة المرور", en: "Password" },
+  exchangeTwoFactor: {
+    ar: "التحقق بخطوتين (اختياري)",
+    en: "Two-factor (optional)",
+  },
+  exchangeTwoFactorPlaceholder: {
+    ar: "أين مفتاح 2FA، ورموز الاسترداد إن وُجدت",
+    en: "Where the 2FA key is, and any recovery codes",
+  },
+  exchangeNote: {
+    ar: "لا تملك المنصات عبارة سرّية — الحساب نفسه هو الحيازة، لذلك نحفظ ما يلزم لاستعادته.",
+    en: "An exchange has no recovery phrase — the account itself is the custody, so we keep what is needed to reclaim it.",
   },
 } satisfies LabelSet<string>
 
@@ -158,9 +202,10 @@ export const NEW_PHOTOS = {
   chooseMore: { ar: "أضف المزيد", en: "Add more" },
   selected: { ar: "{n} مختارة", en: "{n} selected" },
   encryptNote: {
-    ar: "تُشفّر الصور على جهازك قبل رفعها · {size}",
-    en: "Encrypted on your device before upload · {size}",
+    ar: "تُشفّر الصور والمصغّرات معاً على جهازك قبل رفعها · {size}",
+    en: "Photos and thumbnails are encrypted together on your device before upload · {size}",
   },
+  preparing: { ar: "جارٍ التحضير…", en: "Preparing…" },
   uploading: { ar: "جارٍ رفع {done} من {total}", en: "Uploading {done} of {total}" },
   none: { ar: "لم تختر صوراً بعد", en: "No photos chosen yet" },
 } satisfies LabelSet<string>
@@ -174,6 +219,13 @@ export const NEW_ACCOUNT = {
   usernamePlaceholder: { ar: "fatima@icloud.com", en: "fatima@icloud.com" },
   passwordLabel: { ar: "كلمة المرور", en: "Password" },
   recoveryLabel: { ar: "رموز الاسترداد (اختياري)", en: "Recovery codes (optional)" },
+  // Free text, not a code: where the second factor lives outlives any code it
+  // would generate, and an heir locked out by 2FA is locked out for good.
+  twoFactorLabel: { ar: "التحقق بخطوتين (اختياري)", en: "Two-factor (optional)" },
+  twoFactorPlaceholder: {
+    ar: "مثال: تطبيق Authy على الآيباد، ورموز الاحتياط في الخزنة",
+    en: "e.g. Authy on the iPad, backup codes in the safe",
+  },
   recoveryPlaceholder: {
     ar: "رمز في كل سطر",
     en: "One code per line",
@@ -224,4 +276,24 @@ export const NEW_NOTE = {
   },
   words: { ar: "{n} كلمة", en: "{n} words" },
   readOnRelease: { ar: "تُقرأ عند الإفراج", en: "Read at release" },
+
+  // Toolbar. Labels are for screen readers — the board shows glyphs only.
+  bold: { ar: "عريض", en: "Bold" },
+  italic: { ar: "مائل", en: "Italic" },
+  list: { ar: "قائمة", en: "List" },
+  wishBlock: { ar: "فقرة وصية", en: "Wish block" },
+  dictate: { ar: "إملاء", en: "Dictate" },
+  dictateStop: { ar: "أوقف الإملاء", en: "Stop dictation" },
+
+  // Autosave. "حُفظت" here means kept on this device, not stored in the vault —
+  // the wording has to hold that line or it promises encryption it has not done.
+  draftJustNow: { ar: "محفوظة على جهازك الآن", en: "Kept on your device just now" },
+  draftAgo: {
+    ar: "محفوظة على جهازك قبل {n} دقيقة",
+    en: "Kept on your device {n} min ago",
+  },
+  draftNote: {
+    ar: "المسودة على هذا الجهاز فقط، وتُشفَّر عند الحفظ في الخزنة.",
+    en: "The draft stays on this device, and is encrypted when you save it to your vault.",
+  },
 } satisfies LabelSet<string>

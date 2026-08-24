@@ -11,12 +11,21 @@
  * elsewhere: screenshots via `useSecureScreen`, keyboard learning via
  * `SECRET_INPUT_PROPS`, clipboard wiping via `useSecretPaste`. They are chips
  * on screen because a protection the user cannot see is one they cannot rely on.
+ *
+ * ## Two payloads, one screen
+ *
+ * Picking "منصة" switches the form. An exchange-held wallet has no seed phrase
+ * — the account is the custody — so the phrase field, the pills and the BIP-39
+ * gate all go away and credentials take their place. Without that branch the
+ * checksum would refuse to let an exchange user save anything at all, which is
+ * the failure the board's "exchange credentials variant" exists to prevent.
  */
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { GuardedSecretField } from "@workspace/ui-native/components/wassiya/guarded-secret-field"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { checkMnemonic } from "@workspace/crypto/mnemonic"
+import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { router } from "expo-router"
 import { View } from "react-native"
 
@@ -25,7 +34,9 @@ import { useSecretPaste } from "@/hooks/use-secret-paste"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { SECRET_INPUT_PROPS } from "@/lib/secret-input-props"
+import { ExchangeFields, type ExchangeCredentials } from "@/screens/assets/new/crypto/components/exchange-fields"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
+import { QrScanSheet } from "@/screens/assets/new/components/qr-scan-sheet"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
 
@@ -42,13 +53,36 @@ export function NewCryptoScreen() {
   const [network, setNetwork] = useState(NETWORKS[0]!)
   const [kind, setKind] = useState("hardware")
   const [phrase, setPhrase] = useState("")
+  const [exchange, setExchange] = useState<ExchangeCredentials>({
+    account: "",
+    password: "",
+    twoFactor: "",
+  })
   const [notice, setNotice] = useState<string | null>(null)
+  const qrSheet = useRef<TrueSheet>(null)
+
+  const isExchange = kind === "exchange"
 
   // Memoised on the phrase: this runs a wordlist lookup per word and the
   // screen re-renders on every character typed.
   const check = useMemo(() => checkMnemonic(phrase), [phrase])
   const words = check.words
   const valid = check.status === "valid"
+
+  /**
+   * A scanned QR is only accepted if it *is* a phrase. Backup cards hold all
+   * sorts of payloads, and silently pasting a non-phrase into the field would
+   * hand the checksum a string it can only reject with a confusing message.
+   */
+  async function onScanned(value: string) {
+    await qrSheet.current?.dismiss()
+    if (checkMnemonic(value).status !== "valid") {
+      setNotice(t.scanNotAPhrase)
+      return
+    }
+    setNotice(null)
+    setPhrase(value)
+  }
 
   async function onPaste() {
     const { text } = await paste()
@@ -61,20 +95,25 @@ export function NewCryptoScreen() {
   }
 
   async function save() {
-    // Belt and braces: the button is already disabled unless `valid`, but this
-    // is the one call site where an invalid phrase reaching storage is
-    // unrecoverable, so the guard is repeated where the write happens.
-    if (!valid) return
+    // Belt and braces: the button is already disabled unless the payload is
+    // complete, but this is the one call site where an invalid phrase reaching
+    // storage is unrecoverable, so the guard is repeated where the write happens.
+    if (!isExchange && !valid) return
+
     const saved = await submit({
       type: "crypto",
       label: {
         title: name.trim(),
-        subtitle: `${t.secretLabel} · ${network} · ${fmtNum(words.length, locale)} ${WORD_UNIT[locale]}`,
+        subtitle: isExchange
+          ? `${t.kindExchange} · ${network}`
+          : `${t.secretLabel} · ${network} · ${fmtNum(words.length, locale)} ${WORD_UNIT[locale]}`,
       },
-      // The canonical single-spaced phrase, not what was typed — the checksum
-      // was verified against exactly these words.
-      secret: words.join(" "),
-      meta: { itemCount: words.length },
+      secret: isExchange
+        ? JSON.stringify({ kind, network, ...exchange })
+        : // The canonical single-spaced phrase, not what was typed — the
+          // checksum was verified against exactly these words.
+          words.join(" "),
+      meta: isExchange ? {} : { itemCount: words.length },
     })
     if (saved) router.back()
   }
@@ -82,7 +121,12 @@ export function NewCryptoScreen() {
   return (
     <WizardFrame
       title={t.title}
-      canSubmit={name.trim().length > 0 && valid}
+      canSubmit={
+        name.trim().length > 0 &&
+        (isExchange
+          ? exchange.account.trim().length > 0 && exchange.password.length > 0
+          : valid)
+      }
       submitting={submitting}
       onSubmit={() => void save()}
     >
@@ -112,6 +156,14 @@ export function NewCryptoScreen() {
           onChange={setKind}
         />
 
+        {isExchange ? (
+          <ExchangeFields
+            value={exchange}
+            onChange={(patch) => setExchange((c) => ({ ...c, ...patch }))}
+            labels={t}
+          />
+        ) : (
+          <>
         <Field
           {...SECRET_INPUT_PROPS}
           label={t.secretLabel}
@@ -135,7 +187,7 @@ export function NewCryptoScreen() {
           locale={locale}
           revealSeconds={10}
           onPaste={() => void onPaste()}
-          onScanQr={() => setNotice(t.scanUnavailable)}
+          onScanQr={() => void qrSheet.current?.present()}
           safetyChips={[t.chipScreenshot, t.chipKeyboard, t.chipClipboard]}
           // The primitive owns the wording and takes only the verdict; our
           // copy is threaded through `labels` so the counted "١٢ كلمة صحيحة"
@@ -148,6 +200,8 @@ export function NewCryptoScreen() {
             checksumInvalid: t.checksumBad,
           }}
         />
+          </>
+        )}
 
         <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
           {chrome.encryptNote}
@@ -158,6 +212,12 @@ export function NewCryptoScreen() {
             {error}
           </Text>
         ) : null}
+
+        <QrScanSheet
+          ref={qrSheet}
+          labels={t}
+          onScanned={(value) => void onScanned(value)}
+        />
       </View>
     </WizardFrame>
   )

@@ -8,13 +8,21 @@
  * `PHPicker` on iOS, so that property holds on both.
  *
  * Each photo is encrypted separately under the asset's DEK and uploaded as its
- * own object, with per-file progress. Two things the board asks for are **not**
- * here: encrypted thumbnails (which need an image-resize step before the
- * encrypt) and a foreground service with resumable upload. Without the service,
- * a backgrounded upload can be killed mid-album — so the count is capped low
- * enough that the window is short, and the failure leaves orphaned ciphertext
- * rather than a broken asset (see `useCreateAsset` on why uploads precede the
- * row).
+ * own object, with per-file progress. **Thumbnails are encrypted too**, which
+ * is the board's actual requirement and the reason 4.9's grid will need
+ * decryption to draw: uploading plaintext thumbnails so our own grid rendered
+ * faster would hand the server a legible index of every photo the vault holds.
+ *
+ * Layout of `storageIds`: all originals, then all thumbnails, with
+ * `meta.itemCount` as the split. A reader takes `slice(itemCount)` for the
+ * grid and indexes originals directly.
+ *
+ * Still missing, and it needs native work rather than more JS: a foreground
+ * service with **resumable** upload. `expo-file-system`'s `UploadTask` has no
+ * pause/resume — only `DownloadTask` does — so a backgrounded album can be
+ * killed mid-upload. The count is capped low enough that the window is short,
+ * and the failure leaves orphaned ciphertext rather than a broken asset (see
+ * `useCreateAsset` on why uploads precede the row).
  */
 import { useState } from "react"
 import { Button } from "@workspace/ui-native/components/ui/button"
@@ -28,7 +36,8 @@ import { Image, View } from "react-native"
 
 import { Field } from "@/components/field"
 import { useStrings } from "@/i18n/use-strings"
-import { readFileBytes } from "@/lib/asset-upload"
+import { discardLocalFile, readFileBytes } from "@/lib/asset-upload"
+import { makeThumbnail } from "@/lib/thumbnail"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
 
@@ -45,6 +54,7 @@ export function NewPhotosScreen() {
   const [album, setAlbum] = useState("")
   const [photos, setPhotos] = useState<Picked[]>([])
   const [done, setDone] = useState(0)
+  const [preparing, setPreparing] = useState(false)
 
   const totalBytes = photos.reduce((sum, photo) => sum + photo.size, 0)
 
@@ -73,13 +83,35 @@ export function NewPhotosScreen() {
   async function save() {
     if (photos.length === 0) return
     setDone(0)
-    // Thunks, not bytes: the pipeline reads each photo immediately before it
+
+    // Thumbnails are generated up front rather than inside the upload loop:
+    // `expo-image-manipulator` writes each one to the cache, and those files
+    // have to be tracked so they can be deleted whatever happens next.
+    setPreparing(true)
+    const thumbUris: string[] = []
+    try {
+      for (const photo of photos) {
+        thumbUris.push((await makeThumbnail(photo.uri)).uri)
+      }
+    } catch {
+      // A thumbnail is a convenience; the album is not. Losing them costs a
+      // slower grid later, so the save proceeds without them rather than
+      // failing over a resize.
+      thumbUris.length = 0
+    } finally {
+      setPreparing(false)
+    }
+
+    // Thunks, not bytes: the pipeline reads each file immediately before it
     // encrypts and uploads it, so one plaintext buffer is alive at a time
     // rather than the whole album. See `AssetPayload`.
-    const files = photos.map((photo) => ({
-      read: () => readFileBytes(photo.uri),
-      byteSize: photo.size,
-    }))
+    const files = [
+      ...photos.map((photo) => ({
+        read: () => readFileBytes(photo.uri),
+        byteSize: photo.size,
+      })),
+      ...thumbUris.map((uri) => ({ read: () => readFileBytes(uri) })),
+    ]
 
     const saved = await submit({
       type: "photos",
@@ -95,6 +127,9 @@ export function NewPhotosScreen() {
       },
       onProgress: (index) => setDone(index + 1),
     })
+    // The plaintext thumbnails have done their job either way — encrypted
+    // copies are stored, or the save failed and they are stale.
+    for (const uri of thumbUris) discardLocalFile(uri)
     if (saved) router.back()
   }
 
@@ -102,7 +137,7 @@ export function NewPhotosScreen() {
     <WizardFrame
       title={t.title}
       canSubmit={album.trim().length > 0 && photos.length > 0}
-      submitting={submitting}
+      submitting={submitting || preparing}
       onSubmit={() => void save()}
     >
       <View className="gap-4">
@@ -144,7 +179,11 @@ export function NewPhotosScreen() {
             <Text variant="metaSm" className="text-muted-foreground">
               {`${t.selected.replace("{n}", fmtNum(photos.length, locale))} · ${t.encryptNote.replace("{size}", formatSize(totalBytes, locale))}`}
             </Text>
-            {submitting ? (
+            {preparing ? (
+              <Text variant="metaSm" className="text-muted-foreground">
+                {t.preparing}
+              </Text>
+            ) : submitting ? (
               <Text variant="metaSm" className="text-muted-foreground">
                 {t.uploading
                   .replace("{done}", fmtNum(done, locale))

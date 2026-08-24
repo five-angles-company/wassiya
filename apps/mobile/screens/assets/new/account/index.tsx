@@ -42,6 +42,7 @@ export function NewAccountScreen() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [recovery, setRecovery] = useState("")
+  const [twoFactor, setTwoFactor] = useState("")
   const [disposition, setDisposition] = useState<Disposition | null>(null)
 
   async function pasteInto(set: (value: string) => void) {
@@ -68,6 +69,7 @@ export function NewAccountScreen() {
           .split(/\s*\n\s*/)
           .map((line) => line.trim())
           .filter((line) => line.length > 0),
+        twoFactor: twoFactor.trim(),
         disposition,
       }),
       meta: {},
@@ -116,6 +118,20 @@ export function NewAccountScreen() {
           placeholder={t.recoveryPlaceholder}
           value={recovery}
           onChangeText={setRecovery}
+          multiline
+          className="h-auto min-h-20 py-3"
+        />
+
+        {/* Where the second factor lives, not a code. A rotating six digits is
+            worthless to an heir; "Authy on the iPad" is what gets them in —
+            and an account whose 2FA nobody can reach is lost as surely as one
+            whose password nobody has. */}
+        <Field
+          {...SECRET_INPUT_PROPS}
+          label={t.twoFactorLabel}
+          placeholder={t.twoFactorPlaceholder}
+          value={twoFactor}
+          onChangeText={setTwoFactor}
           multiline
           className="h-auto min-h-20 py-3"
         />

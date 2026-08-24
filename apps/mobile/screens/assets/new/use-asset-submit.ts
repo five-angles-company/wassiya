@@ -71,9 +71,22 @@ export function useAssetSubmit(): AssetSubmit {
         await create({ type, label, payloads, meta, onProgress })
         return true
       } catch (cause) {
-        // The vault auto-locking mid-wizard is a normal event with its own
-        // remedy, not a failure to report as "something went wrong".
-        setError(cause instanceof VaultLockedError ? t.vaultLocked : t.saveFailed)
+        // Three outcomes, three sentences. A lapsed subscription and an
+        // auto-locked vault are both normal events with their own remedies;
+        // collapsing them into "something went wrong" would send a user
+        // hunting for a fault that is not theirs.
+        //
+        // The lapse is matched on the message `assertCanAddAssets` throws,
+        // because Convex surfaces a server error as its text rather than a
+        // typed class. Brittle if that string is reworded — so the backend
+        // keeps it, and this comment is why.
+        setError(
+          cause instanceof VaultLockedError
+            ? t.vaultLocked
+            : isSubscriptionLapse(cause)
+              ? t.quotaExceeded
+              : t.saveFailed
+        )
         console.warn("[wassiya] asset create failed", cause)
         return false
       } finally {
@@ -81,8 +94,15 @@ export function useAssetSubmit(): AssetSubmit {
         setSubmitting(false)
       }
     },
-    [create, t.saveFailed, t.vaultLocked]
+    [create, t.quotaExceeded, t.saveFailed, t.vaultLocked]
   )
 
   return { submit, submitting, error }
+}
+
+/** Matches `assertCanAddAssets` in `convex/model/access.ts`. */
+function isSubscriptionLapse(cause: unknown): boolean {
+  return (
+    cause instanceof Error && cause.message.includes("Subscription lapsed")
+  )
 }

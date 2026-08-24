@@ -43,6 +43,12 @@ export type SheetProps = {
   scrollable?: boolean;
   children: React.ReactNode;
   /**
+   * Fired once the sheet is fully open — TrueSheet's `onDidPresent`. Content
+   * that owns a hardware resource (a camera preview) should start on this
+   * rather than on mount, so it is live only while the sheet is.
+   */
+  onPresent?: () => void;
+  /**
    * Fired once the sheet has finished animating away — TrueSheet's
    * `onDidDismiss`. The `onWillDismiss` half is deliberately not surfaced: a
    * caller that resets state on *will* runs it while the sheet is still
@@ -94,6 +100,7 @@ export function Sheet({
   maxContentHeight,
   scrollable = false,
   children,
+  onPresent,
   onDismiss,
   contentClassName,
 }: SheetProps) {
@@ -105,6 +112,7 @@ export function Sheet({
       scrollable={scrollable}
       backgroundColor={SHEET_BACKGROUND}
       cornerRadius={SHEET_CORNER_RADIUS}
+      onDidPresent={onPresent ? () => onPresent() : undefined}
       onDidDismiss={onDismiss ? () => onDismiss() : undefined}
       grabber
       dimmed>

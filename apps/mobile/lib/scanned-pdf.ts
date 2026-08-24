@@ -63,8 +63,10 @@ export async function buildScannedPdf(imageUris: string[]): Promise<string> {
   return uri
 }
 
-/** Delete a plaintext scan artefact. Safe to call on something already gone. */
-export function discardScan(uri: string): void {
-  const file = new File(uri)
-  if (file.exists) file.delete()
-}
+/**
+ * Delete the plaintext PDF once its encrypted copy exists.
+ *
+ * Aliases the generic helper rather than repeating it — the scan is one of two
+ * plaintext artefacts this app generates, and both are discarded the same way.
+ */
+export { discardLocalFile as discardScan } from "@/lib/asset-upload"

@@ -40,6 +40,13 @@
           "cameraPermission": "تستخدم وصيّة الكاميرا لتصوير مستنداتك وتشفيرها على جهازك."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "تستخدم وصيّة الكاميرا لتصوير مستنداتك ومسح رموز QR، ويُشفَّر كل ذلك على جهازك.",
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-status-bar",
       "expo-web-browser",
       "@clerk/expo",
@@ -61,7 +68,14 @@
         }
       ],
       "expo-sharing",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "تستخدم وصيّة الميكروفون لإملاء ملاحظاتك، ويجري التعرّف على الكلام على جهازك.",
+          "speechRecognitionPermission": "يجري التعرّف على الكلام على جهازك، ولا يُرسل صوتك إلى أي خادم."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

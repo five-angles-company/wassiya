@@ -76,6 +76,15 @@ export async function uploadCiphertext(
   }
 }
 
+/**
+ * Delete a local plaintext artefact once its encrypted copy exists — a scanned
+ * PDF, a generated thumbnail. Safe to call on something already gone.
+ */
+export function discardLocalFile(uri: string): void {
+  const file = new File(uri)
+  if (file.exists) file.delete()
+}
+
 /** Read a picked file's bytes so they can be encrypted before upload. */
 export async function readFileBytes(uri: string): Promise<Uint8Array> {
   return await new File(uri).bytes()
