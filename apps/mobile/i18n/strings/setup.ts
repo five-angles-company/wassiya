@@ -267,16 +267,3 @@ export const SETUP_COMPLETE = {
   addAsset: { ar: "أضف أول أصل", en: "Add my first asset" },
 } satisfies LabelSet<string>
 
-export const RECOVERY_STUB = {
-  title: { ar: "استرداد الخزنة", en: "Recover your vault" },
-  body: {
-    ar: "هذا الجهاز لا يحمل مفتاح خزنتك. لفتحها هنا تحتاج وثيقة الاسترداد المطبوعة وموافقة وصيّك — مفتاحان من الثلاثة.",
-    en: "This device does not hold your vault key. Opening it here needs your printed recovery sheet and your guardian's approval — two of the three keys.",
-  },
-  notReady: {
-    ar: "ما زلنا نبني هذه الخطوة. تواصل مع الدعم وسنكمل الاسترداد معك.",
-    en: "We are still building this step. Contact support and we will complete the recovery with you.",
-  },
-  contactSupport: { ar: "تواصل مع الدعم", en: "Contact support" },
-  signOut: { ar: "تسجيل الخروج", en: "Sign out" },
-} satisfies LabelSet<string>

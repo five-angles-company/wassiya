@@ -34,6 +34,11 @@ const SECURITY_EVENTS = new Set([
   "claim.submitted",
   "claim.blocked_by_lockout",
   "release.server_share_released",
+  // A spent sheet and a guardian approval are the fingerprints a recovery
+  // leaves. If the owner did not do this, these are the two rows that say so.
+  "keyring.paper_used",
+  "guardian.recovery_approved",
+  "claim.released",
 ])
 
 export function AuditScreen() {
@@ -105,6 +110,24 @@ function labelFor(event: string, t: Record<string, string>): string {
     "device.registered": t.deviceRegistered!,
     "device.revoked": t.deviceRevoked!,
     "profile.saved": t.profileSaved!,
+    "keyring.paper_printed": t.paperPrinted!,
+    "keyring.paper_used": t.paperUsed!,
+    "guardian.recovery_approved": t.recoveryApproved!,
+    "claim.heir_linked": t.claimHeirLinked!,
+    "claim.certificate_attached": t.claimCertificate!,
+    "claim.name_match_set": t.claimNameMatch!,
+    "claim.guardian_confirmed": t.claimGuardianConfirmed!,
+    "claim.released": t.claimReleased!,
+    "release.server_share_released": t.serverShareReleased!,
+    "release.guardian_share_handed_over": t.guardianHandedOver!,
+    "checkin.configured": t.checkinConfigured!,
+    "checkin.snoozed": t.checkinSnoozed!,
+    "checkin.escalated": t.checkinEscalated!,
+    "heir.updated": t.heirUpdated!,
+    "heir.removed": t.heirRemoved!,
+    "heir.message_set": t.heirMessageSet!,
+    "identity.session_started": t.identityStarted!,
+    "identity.webhook": t.identityResult!,
   }
   return map[event] ?? t.generic!
 }

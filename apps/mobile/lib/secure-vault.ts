@@ -279,3 +279,29 @@ export async function hasGuardianKey(): Promise<boolean> {
   const enrolment = await readEnrolment()
   return enrolment?.isGuardian === true
 }
+
+/**
+ * Seal a **recovered** MK into this device's keystore.
+ *
+ * Distinct from `generateAndStoreMk`, which mints a new key during setup. Here
+ * the key already exists — it was just rebuilt from the paper share and the
+ * guardian's — and generating a fresh one instead would orphan the entire
+ * vault it was meant to reopen. Two functions rather than one flag, because
+ * that is the sort of mistake a boolean invites.
+ *
+ * Idempotent by contract, not by hope: 8.1 only reaches here when
+ * `readEnrolment()` said this device has no key.
+ */
+export async function storeRecoveredMk(
+  mk: Uint8Array,
+  authenticationPrompt: string
+): Promise<void> {
+  if (mk.length !== 32) {
+    throw new Error("A recovered master key must be 32 bytes")
+  }
+  await SecureStore.setItemAsync(
+    MK_KEY,
+    bytesToHex(mk),
+    authenticated(authenticationPrompt)
+  )
+}

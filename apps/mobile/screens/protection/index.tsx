@@ -19,7 +19,9 @@ import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { ProtectionScore } from "@workspace/ui-native/components/wassiya/protection-score"
+import { ShieldCheck } from "lucide-react-native"
 import { ProtectionScoreList } from "@workspace/ui-native/components/wassiya/protection-score-list"
 import { router } from "expo-router"
 import { ScrollView, View } from "react-native"
@@ -41,6 +43,8 @@ export function ProtectionScreen() {
     checkin: t.itemCheckin,
   })
   const claims = useQuery(api.claims.againstMe)
+  const guardianships = useQuery(api.guardians.guardianFor)
+  const { t: approve } = useStrings("recovery/approve")
   const { t: claimCopy } = useStrings("protection/claim")
 
   const openClaim = claims?.find((claim) => claim.canVeto) ?? null
@@ -95,6 +99,19 @@ export function ProtectionScreen() {
       {/* The press handler lives on the item, not the list — a done row is
           not pressable, so "go fix this" and "this is finished" are different
           affordances rather than the same row behaving differently. */}
+      {/* The guardian role's own entry point. Someone can be an owner and
+          somebody else's guardian at once, and the second role has nowhere
+          else to live. */}
+      {guardianships !== undefined && guardianships.length > 0 ? (
+        <SettingsRow
+          className="rounded-card bg-card mb-header overflow-hidden"
+          icon={ShieldCheck}
+          label={approve.title}
+          chevron
+          onPress={() => router.push("/recovery/approve")}
+        />
+      ) : null}
+
       <ProtectionScoreList
         items={ranked.map(({ href, ...item }) => ({
           ...item,

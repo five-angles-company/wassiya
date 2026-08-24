@@ -1,5 +1,5 @@
-import { RecoveryStubScreen } from "@/screens/recovery-stub"
+import { RecoveryScreen } from "@/screens/recovery"
 
 export default function Route() {
-  return <RecoveryStubScreen />
+  return <RecoveryScreen />
 }

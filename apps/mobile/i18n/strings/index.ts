@@ -14,7 +14,6 @@ import {
   KYC_PENDING,
   KYC_VERIFIED,
   RECOVERY_KIT,
-  RECOVERY_STUB,
   SETUP_COMPLETE,
 } from "@/i18n/strings/setup"
 import { ADD_ASSET, ASSETS, ASSET_DETAIL } from "@/i18n/strings/assets"
@@ -29,6 +28,7 @@ import {
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
 import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
+import { GUARDIAN_APPROVE, RECOVERY } from "@/i18n/strings/recovery"
 import {
   AUDIT,
   AUTO_LOCK,
@@ -102,7 +102,8 @@ export const SCREEN_STRINGS = {
   "protection/checkin": CHECKIN,
   "protection/claim": CLAIM_VETO,
 
-  recovery: RECOVERY_STUB,
+  recovery: RECOVERY,
+  "recovery/approve": GUARDIAN_APPROVE,
 } as const
 
 export type ScreenName = keyof typeof SCREEN_STRINGS

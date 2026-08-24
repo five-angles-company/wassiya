@@ -103,6 +103,48 @@ export const AUDIT = {
   deviceRegistered: { ar: "سُجّل جهاز", en: "Device registered" },
   deviceRevoked: { ar: "أُلغي جهاز", en: "Device removed" },
   profileSaved: { ar: "حُدّث الملف الشخصي", en: "Profile updated" },
+  // ٨ — the recovery ceremony. These are the lines an owner scans for when
+  // they suspect someone else moved: a spent sheet and a guardian approval are
+  // the two halves of a recovery, and seeing them side by side is the whole
+  // point of keeping this log.
+  paperPrinted: { ar: "طُبعت وثيقة استرداد", en: "Recovery sheet printed" },
+  paperUsed: { ar: "استُخدمت وثيقة الاسترداد", en: "Recovery sheet used" },
+  recoveryApproved: {
+    ar: "وافق وصيّك على استعادة",
+    en: "Your guardian approved a recovery",
+  },
+
+  // The claim path. `released` is the most consequential row this log can ever
+  // carry, and it was rendering as "Vault activity".
+  claimHeirLinked: { ar: "رُبط طلب بوارث", en: "Claim linked to an heir" },
+  claimCertificate: { ar: "أُرفقت شهادة وفاة", en: "Death certificate attached" },
+  claimNameMatch: { ar: "طوبق الاسم القانوني", en: "Legal name checked" },
+  claimGuardianConfirmed: {
+    ar: "أكّد الوصي الوفاة",
+    en: "Guardian confirmed the death",
+  },
+  claimReleased: { ar: "سُلّمت الخزنة للورثة", en: "Vault released to heirs" },
+  serverShareReleased: {
+    ar: "أُفرج عن نصيب الخادم",
+    en: "Server share released",
+  },
+  guardianHandedOver: {
+    ar: "سلّم الوصي نصيبه للوارث",
+    en: "Guardian handed their share to the heir",
+  },
+
+  // Dead-man's-switch bookkeeping.
+  checkinConfigured: { ar: "ضُبط نبض الحياة", en: "Life check-in set up" },
+  checkinSnoozed: { ar: "أُجّل نبض الحياة", en: "Life check-in postponed" },
+  checkinEscalated: { ar: "تصاعد تنبيه الحياة", en: "Life check-in escalated" },
+
+  heirUpdated: { ar: "عُدّل وارث", en: "Heir updated" },
+  heirRemoved: { ar: "حُذف وارث", en: "Heir removed" },
+  heirMessageSet: { ar: "حُفظت رسالة لوارث", en: "Message for an heir saved" },
+
+  identityStarted: { ar: "بدأ التحقق من الهوية", en: "Identity check started" },
+  identityResult: { ar: "وصلت نتيجة التحقق", en: "Identity check result" },
+
   generic: { ar: "نشاط في الخزنة", en: "Vault activity" },
 } satisfies LabelSet<string>
 
