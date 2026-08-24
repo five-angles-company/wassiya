@@ -133,9 +133,21 @@ export default defineSchema({
       v.literal("digital"),
       v.literal("note")
     ),
-    title: v.string(),
+    // The asset's name and its at-a-glance subtitle, sealed under the asset's
+    // own DEK by `@workspace/crypto/label`. Opaque here, like every other
+    // `v.bytes()` column.
+    //
+    // Under the DEK rather than MK on purpose: heirs never receive MK, so a
+    // label wrapped by it would reach an heir as content they hold the key to
+    // and cannot name. This way the label travels with the asset.
+    //
+    // It is not a nicety. A plaintext `title` column would hold
+    // "مصرف الراجحي" and "iCloud · fatima@icloud.com", which is precisely what
+    // section ١ of the board promises the server cannot read.
+    labelSealed: v.bytes(),
     // Non-sensitive only: counts, sizes, mime, reminder dates. Never a secret,
-    // never a filename that gives away contents.
+    // never a filename that gives away contents. The descriptive half of a row
+    // lives in `labelSealed`; anything here is a number the server may know.
     meta: v.object({
       itemCount: v.optional(v.number()),
       byteSize: v.optional(v.number()),

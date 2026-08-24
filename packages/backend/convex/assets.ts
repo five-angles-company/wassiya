@@ -1,9 +1,14 @@
 // Assets.
 //
-// `dekWrappedByMk` and every blob behind `storageIds` are encrypted on the
-// owner's device before they get here. `meta` is the only readable part and is
-// typed to hold counts, sizes, mime types and a reminder date — nothing that
-// would tell this deployment what an asset actually contains.
+// `dekWrappedByMk`, `labelSealed`, and every blob behind `storageIds` are
+// encrypted on the owner's device before they get here. `meta` is the only
+// readable part and is typed to hold counts, sizes, mime types and a reminder
+// date — nothing that would tell this deployment what an asset actually
+// contains, or even what its owner calls it.
+//
+// `labelSealed` is sealed under the asset's DEK rather than MK, so it opens for
+// an heir holding a released bundle. Every function below passes it through
+// untouched; nothing here can name an asset, including the audit log.
 //
 // The subscription-lapse rule applies in exactly one place: `create`. Reads,
 // updates and the entire release path never consult the plan, because a lapsed
@@ -11,7 +16,12 @@
 import { v } from "convex/values"
 
 import type { Id } from "./_generated/dataModel"
-import { mutation, query, type MutationCtx } from "./_generated/server"
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server"
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
 
@@ -40,6 +50,19 @@ export const generateUploadUrl = mutation({
   },
 })
 
+/**
+ * The 4.1 list.
+ *
+ * Returns `dekWrappedByMk` alongside `labelSealed` because a row cannot render
+ * without it: the label is sealed under the asset's own DEK, and the DEK is
+ * wrapped under MK. Both are ciphertext this deployment cannot open, and `get`
+ * already hands the same wrapper to the same authenticated owner, so nothing
+ * new is exposed by having the list carry it.
+ *
+ * `recipientCount` drives the row's badge and 4.1's "unrouted first" sort. It
+ * is tallied from three indexed scans over the owner's routing rows rather than
+ * one `by_assetId` read per asset, which would be 500 queries for a full page.
+ */
 export const list = query({
   args: { type: v.optional(assetType) },
   handler: async (ctx, { type }) => {
@@ -56,17 +79,53 @@ export const list = query({
               q.eq("userId", user._id).eq("type", type)
             )
             .take(500)
+
+    const counts = await recipientCounts(ctx, user._id)
+
     return rows.map((row) => ({
       id: row._id,
       type: row.type,
-      title: row.title,
+      labelSealed: row.labelSealed,
+      dekWrappedByMk: row.dekWrappedByMk,
       meta: row.meta,
       recipientRule: row.recipientRule,
+      recipientCount: counts.get(row._id) ?? 0,
       fileCount: row.storageIds.length,
       createdAt: row._creationTime,
     }))
   },
 })
+
+/**
+ * How many recipients each of this owner's assets routes to.
+ *
+ * Convex indexes columns, not union branches, which is why `recipientKind`
+ * exists as a denormalised discriminant — sweeping the three kinds covers every
+ * routing row the owner has with three scans and no branch left unread.
+ *
+ * The 2000-row cap is per kind. An owner past it would see an undercounted
+ * badge on their least recently routed assets, never a wrong *state*: an asset
+ * with any routing at all still has `recipientRule: "explicit"`, which is what
+ * the "بلا مستلم" warning and the sort actually key on.
+ */
+async function recipientCounts(
+  ctx: QueryCtx,
+  userId: Id<"users">
+): Promise<Map<Id<"assets">, number>> {
+  const counts = new Map<Id<"assets">, number>()
+  for (const kind of ["heir", "executor", "allHeirs"] as const) {
+    const rows = await ctx.db
+      .query("assetRecipients")
+      .withIndex("by_userId_and_recipientKind", (q) =>
+        q.eq("userId", userId).eq("recipientKind", kind)
+      )
+      .take(2000)
+    for (const row of rows) {
+      counts.set(row.assetId, (counts.get(row.assetId) ?? 0) + 1)
+    }
+  }
+  return counts
+}
 
 /** The owner's device asks for this when it is about to decrypt an asset. */
 export const get = query({
@@ -83,7 +142,7 @@ export const get = query({
     return {
       id: asset._id,
       type: asset.type,
-      title: asset.title,
+      labelSealed: asset.labelSealed,
       meta: asset.meta,
       recipientRule: asset.recipientRule,
       dekWrappedByMk: asset.dekWrappedByMk,
@@ -96,7 +155,7 @@ export const get = query({
 export const create = mutation({
   args: {
     type: assetType,
-    title: v.string(),
+    labelSealed: v.bytes(),
     meta: assetMeta,
     dekWrappedByMk: v.bytes(),
     storageIds: v.array(v.id("_storage")),
@@ -110,7 +169,7 @@ export const create = mutation({
     const assetId = await ctx.db.insert("assets", {
       userId: user._id,
       type: args.type,
-      title: args.title,
+      labelSealed: args.labelSealed,
       meta: args.meta,
       dekWrappedByMk: args.dekWrappedByMk,
       storageIds: args.storageIds,
@@ -133,7 +192,7 @@ export const create = mutation({
 export const update = mutation({
   args: {
     assetId: v.id("assets"),
-    title: v.optional(v.string()),
+    labelSealed: v.optional(v.bytes()),
     meta: v.optional(assetMeta),
     dekWrappedByMk: v.optional(v.bytes()),
   },

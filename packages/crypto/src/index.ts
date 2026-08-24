@@ -68,3 +68,5 @@ export {
   encryptChunk,
   parseAssetHeader,
 } from "./asset"
+
+export { type AssetLabel, LABEL_AAD, openLabel, sealLabel } from "./label"

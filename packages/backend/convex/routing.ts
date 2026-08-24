@@ -154,7 +154,7 @@ export const previewForHeir = query({
       items.push({
         assetId: asset._id,
         type: asset.type,
-        title: asset.title,
+        labelSealed: asset.labelSealed,
         meta: asset.meta,
         via: row.recipient.kind,
         dekWrappedByMk: asset.dekWrappedByMk,
