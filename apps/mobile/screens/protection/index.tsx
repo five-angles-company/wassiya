@@ -14,91 +14,38 @@
  * device, so the recovery sheet the owner has already printed does not work.
  * Every other gap costs less than that one.
  */
-import { useMemo } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { ProtectionScore } from "@workspace/ui-native/components/wassiya/protection-score"
-import {
-  ProtectionScoreList,
-  type ProtectionItem,
-} from "@workspace/ui-native/components/wassiya/protection-score-list"
-import { router, type Href } from "expo-router"
+import { ProtectionScoreList } from "@workspace/ui-native/components/wassiya/protection-score-list"
+import { router } from "expo-router"
 import { ScrollView, View } from "react-native"
 
+import { useProtectionScore } from "@/hooks/use-protection-score"
 import { useStrings } from "@/i18n/use-strings"
 
 export function ProtectionScreen() {
   const { t } = useStrings("protection")
-  const me = useQuery(api.users.me)
-  const keyring = useQuery(api.keyring.get)
-  const guardians = useQuery(api.guardians.list)
-  const heirs = useQuery(api.heirs.list)
-  const checkin = useQuery(api.checkin.get)
+  // The same object Home renders as a ring. Computing it twice is how two
+  // screens end up disagreeing about how safe a vault is.
+  const { items, ranked, earned, total } = useProtectionScore({
+    identity: t.itemIdentity,
+    key: t.itemKey,
+    guardian: t.itemGuardian,
+    sheet: t.itemSheet,
+    heirs: t.itemHeirs,
+    routing: t.itemRouting,
+    checkin: t.itemCheckin,
+  })
   const claims = useQuery(api.claims.againstMe)
   const { t: claimCopy } = useStrings("protection/claim")
 
   const openClaim = claims?.find((claim) => claim.canVeto) ?? null
 
-  const items = useMemo((): (ProtectionItem & { href?: Href })[] => {
-    const guardianLive =
-      guardians?.some((g) => g.status === "accepted") === true &&
-      keyring?.hasGuardianShare === true
-    const routed = heirs?.some((h) => h.routedAssetCount > 0) === true
 
-    // Built in ranking order, then the first outstanding one is promoted to
-    // `needed` below — so the ranking lives in one place.
-    return [
-      {
-        id: "identity",
-        label: t.itemIdentity,
-        done: me?.identityStatus === "verified",
-        href: "/setup/kyc",
-      },
-      { id: "key", label: t.itemKey, done: keyring !== null },
-      {
-        id: "guardian",
-        label: t.itemGuardian,
-        done: guardianLive,
-        href: "/protection/guardian",
-      },
-      {
-        id: "sheet",
-        label: t.itemSheet,
-        done: keyring?.paperPrintedAt != null,
-        href: "/setup/recovery-kit",
-      },
-      {
-        id: "heirs",
-        label: t.itemHeirs,
-        done: (heirs?.length ?? 0) > 0,
-        href: "/heirs/new",
-      },
-      { id: "routing", label: t.itemRouting, done: routed, href: "/will/routing" },
-      {
-        id: "checkin",
-        label: t.itemCheckin,
-        done: checkin !== null,
-        href: "/protection/checkin",
-      },
-    ]
-  }, [me, keyring, guardians, heirs, checkin, t])
-
-  const ranked = useMemo(() => {
-    let promoted = false
-    return items.map((item) => {
-      if (item.done) return item
-      if (!promoted) {
-        promoted = true
-        return { ...item, priority: "needed" as const }
-      }
-      return { ...item, priority: "later" as const }
-    })
-  }, [items])
-
-  const earned = items.filter((item) => item.done).length
   const guardianMissing = items.find((i) => i.id === "guardian")?.done === false
 
   return (
@@ -109,9 +56,9 @@ export function ProtectionScreen() {
       <Text variant="screenTitle">{t.title}</Text>
 
       <View className="mb-header mt-4 items-center gap-3">
-        <ProtectionScore earned={earned} total={items.length} size="lg" />
+        <ProtectionScore earned={earned} total={total} size="lg" />
         <Text variant="meta" className="text-muted-foreground text-center">
-          {earned === items.length ? t.scoreComplete : t.scoreIncomplete}
+          {earned === total ? t.scoreComplete : t.scoreIncomplete}
         </Text>
       </View>
 

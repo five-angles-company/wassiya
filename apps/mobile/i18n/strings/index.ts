@@ -28,6 +28,7 @@ import {
   NEW_PHOTOS,
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
+import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
 import {
   HEIRS,
   HEIR_NEW,
@@ -45,6 +46,10 @@ import {
 export const SCREEN_STRINGS = {
   common: COMMON,
   tabs: TABS,
+
+  home: HOME,
+  lock: LOCK,
+  notifications: NOTIFICATIONS,
 
   splash: SPLASH,
   welcome: WELCOME,
