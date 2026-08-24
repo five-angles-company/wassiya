@@ -129,6 +129,17 @@ export const OTP = {
     ar: "هذا الحساب يحتاج خطوة إضافية لا تدعمها هذه الشاشة.",
     en: "This account needs another step that this screen does not handle.",
   },
+  resendFailed: {
+    ar: "تعذّر إرسال الرمز. حاول مرة أخرى.",
+    en: "We couldn't send the code. Try again.",
+  },
+  // Prefixes a raw Clerk code — a missing field, or a failure reason. Framed as
+  // a support detail rather than a user instruction, because none of what it
+  // names is actionable by the person holding the phone.
+  detailPrefix: {
+    ar: "تفاصيل للدعم:",
+    en: "Details for support:",
+  },
 } satisfies LabelSet<string>
 
 export const SIGN_IN = {

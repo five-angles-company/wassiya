@@ -20,6 +20,13 @@ const CODE_LENGTH = 6
 type Phase = "input" | "verifying" | "wrong" | "expired" | "lockedOut"
 
 /**
+ * A message, plus the machine-readable reason behind it where one exists.
+ * Carried as one value so the two can never drift apart across the four places
+ * the notice is set and cleared.
+ */
+type Notice = { text: string; detail?: string }
+
+/**
  * 1.4 — the one-time code.
  *
  * The screen's own copy is the point: this code proves who someone is and
@@ -45,8 +52,9 @@ export function OtpScreen() {
   const [phase, setPhase] = useState<Phase>("input")
   const [sends, setSends] = useState(1)
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const verifying = useRef(false)
+  const resending = useRef(false)
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -79,7 +87,24 @@ export function OtpScreen() {
 
       const status = isNewAccount ? signUp.status : signIn.status
       if (status !== "complete") {
-        setNotice(t.needsMoreSteps)
+        // A dead end for the user, so it has to name itself. Clerk parks the
+        // attempt here whenever the instance requires an attribute this screen
+        // never collects — a required password is the usual one, since the
+        // flow is email-code only by design. Without the outstanding field
+        // list this reads as a broken app rather than a dashboard setting.
+        const outstanding = isNewAccount
+          ? [...signUp.missingFields, ...signUp.unverifiedFields]
+          : []
+        // Sign-in has no field list; its status *is* the reason
+        // (`needs_second_factor`, `needs_new_password`).
+        const detail =
+          outstanding.length > 0 ? outstanding.join(" · ") : status
+        console.warn(
+          `[wassiya] Clerk sign-${isNewAccount ? "up" : "in"} stalled at ` +
+            `"${status}" — outstanding: ${detail}. Check the required ` +
+            "attributes on the instance in the Clerk dashboard."
+        )
+        setNotice({ text: t.needsMoreSteps, detail })
         setPhase("input")
         return
       }
@@ -115,22 +140,46 @@ export function OtpScreen() {
   }
 
   async function resend() {
-    if (sends >= MAX_SENDS) {
-      setPhase("lockedOut")
-      setNotice(t.resendLimit)
-      return
-    }
+    // Same guard as `verify`: a second tap while the first request is open
+    // spends one of the three sends for nothing.
+    if (resending.current) return
+    resending.current = true
     setNotice(null)
-    setCode("")
-    setPhase("input")
-    // Both resends take no arguments — the attempt already exists.
-    if (isNewAccount) {
-      await signUp.verifications.sendEmailCode()
-    } else {
-      await signIn.emailCode.sendCode()
+
+    try {
+      // Both take no arguments — the attempt already exists, and Clerk's own
+      // typings say to omit the address when it does.
+      const { error } = isNewAccount
+        ? await signUp.verifications.sendEmailCode()
+        : await signIn.emailCode.sendCode()
+
+      if (error) {
+        console.warn(
+          `[wassiya] Clerk resend failed: ${error.code} — ${error.message}`
+        )
+        setNotice({ text: t.resendFailed, detail: error.code })
+        return
+      }
+
+      // Only a send that actually left spends an attempt, restarts the clock
+      // and clears the field. Doing any of that before the await meant a
+      // rejected resend still cost the user a try, wiped what they had typed,
+      // and hid the link for another minute — with no email and no message,
+      // which is indistinguishable from a dead button.
+      setCode("")
+      setPhase("input")
+      setSends((n) => n + 1)
+      setCooldown(RESEND_COOLDOWN_SECONDS)
+    } catch (cause) {
+      // AGENTS.md records that Clerk resolves to `{ error }` rather than
+      // throwing, so reaching here means the transport failed underneath it —
+      // offline, DNS, a dead dev tunnel. Without this the rejection escapes
+      // `void resend()` and the tap is silent again, which is the whole bug.
+      console.warn("[wassiya] Clerk resend threw", cause)
+      setNotice({ text: t.resendFailed })
+    } finally {
+      resending.current = false
     }
-    setSends((n) => n + 1)
-    setCooldown(RESEND_COOLDOWN_SECONDS)
   }
 
   const canResend = cooldown === 0 && sends < MAX_SENDS && phase !== "verifying"
@@ -181,12 +230,31 @@ export function OtpScreen() {
             {t.resend}
           </Text>
         </Pressable>
+      ) : sends >= MAX_SENDS ? (
+        // Past the limit the link is gone for good, and the countdown that
+        // would otherwise explain its absence has already run out. Saying so
+        // in the space it used to occupy is the difference between a limit and
+        // a button that stopped working.
+        <Text variant="metaSm" className="text-muted-foreground py-1">
+          {t.resendLimit}
+        </Text>
       ) : null}
 
       {notice !== null ? (
-        <Text variant="meta" className="text-terracotta-800 mt-3">
-          {notice}
-        </Text>
+        <View className="mt-3 gap-1">
+          <Text variant="meta" className="text-terracotta-800">
+            {notice.text}
+          </Text>
+          {/* Raw Clerk field codes: a Latin run inside Arabic, isolated like
+              every other one in this app. Shown rather than dev-gated, because
+              this state cannot be recovered from in-app — the line a user can
+              quote to support is worth more than the polish it costs. */}
+          {notice.detail !== undefined ? (
+            <Text variant="metaSm" className="text-muted-foreground">
+              {`${t.detailPrefix} ${isolateLtr(notice.detail)}`}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
 
       <View className="bg-sand-200 rounded-row mt-5 px-3.75 py-3.25">
