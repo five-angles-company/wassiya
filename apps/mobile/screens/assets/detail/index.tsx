@@ -125,7 +125,7 @@ export function AssetDetailScreen() {
         <SecretBlock
           title={t.secretLabel}
           state={state}
-          wordCount={asset.meta.itemCount ?? 12}
+          wordCount={asset.meta.itemCount ?? 0}
           asWords={WORD_TYPES.includes(asset.type)}
           locale={locale}
           labels={{

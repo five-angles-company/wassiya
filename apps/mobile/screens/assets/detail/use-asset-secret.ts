@@ -14,10 +14,12 @@
  * 2. **It hides itself.** The countdown runs whether or not the user does
  *    anything — walking away is the case the timer exists for — and unmounting
  *    or backgrounding clears it too.
- * 3. **The reveal is recorded before it is shown.** `recordReveal` is awaited
- *    first: an audit line for a reveal that then failed is a false positive the
- *    owner can investigate, while a reveal that showed and was never logged is
- *    a hole in the one record that would tell them it happened.
+ * 3. **The reveal is recorded once it can succeed, and before it is shown.**
+ *    `recordReveal` is awaited after the payload decrypts and before it
+ *    reaches state. Logging earlier — at the biometric — would stamp "revealed"
+ *    on every failed download and every corrupt blob, and the stamp under the
+ *    button is the owner's evidence that something *was* read. Evidence that
+ *    fires on failures is worth less than none.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "convex/react"
@@ -87,14 +89,14 @@ export function useAssetSecret(
             return
           }
 
-          // Logged before shown — see the note above.
-          await recordReveal({ assetId })
-
           const dek = unwrap(new Uint8Array(dekWrapped), mk)
           try {
             const text = bytesToUtf8(
               decryptAsset(await downloadCiphertext(url), dek)
             )
+            // Decrypted and about to be shown — see the note above on why the
+            // write sits here rather than at the biometric.
+            await recordReveal({ assetId })
             setState({ status: "revealed", text, secondsLeft: REVEAL_SECONDS })
             stop()
             timer.current = setInterval(() => {

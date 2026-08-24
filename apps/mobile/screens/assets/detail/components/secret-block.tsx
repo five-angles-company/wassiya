@@ -12,7 +12,7 @@ import type { SecretState } from "@/screens/assets/detail/use-asset-secret"
 export type SecretBlockProps = {
   title: string
   state: SecretState
-  /** Word count from the plaintext when revealed, from `meta` when not. */
+  /** Words in the phrase, for the masked pills. Ignored unless `asWords`. */
   wordCount: number
   /** True for a mnemonic — pills; false for JSON-shaped payloads — text. */
   asWords: boolean
@@ -50,11 +50,17 @@ export function SecretBlock({
         <Text variant="rowTitle" className="text-terracotta-800">
           {title}
         </Text>
-        <Text variant="metaSm" className="text-terracotta-800">
-          {revealed
-            ? `${fmtNum(state.secondsLeft, locale)}`
-            : `${fmtNum(wordCount, locale)}`}
-        </Text>
+        {/* A count only where one means something. A word count on a bank
+            account describes nothing the reader can check. */}
+        {revealed ? (
+          <Text variant="metaSm" className="text-terracotta-800">
+            {fmtNum(state.secondsLeft, locale)}
+          </Text>
+        ) : asWords ? (
+          <Text variant="metaSm" className="text-terracotta-800">
+            {fmtNum(wordCount, locale)}
+          </Text>
+        ) : null}
       </View>
 
       {revealed ? (
@@ -69,8 +75,15 @@ export function SecretBlock({
             <Text className="text-[14px] leading-[1.8]">{state.text}</Text>
           </View>
         )
-      ) : (
+      ) : asWords ? (
         <SecretWordPills count={wordCount} revealed={false} />
+      ) : (
+        // Not a phrase, so not word pills. Twelve grey pills over a bank
+        // account's JSON would claim a shape the payload does not have — and
+        // read as a seed phrase to anyone glancing at the screen.
+        <View className="rounded-box bg-background h-14 justify-center px-3">
+          <Text className="text-muted-foreground tracking-[4px]">••••••••</Text>
+        </View>
       )}
 
       <Button

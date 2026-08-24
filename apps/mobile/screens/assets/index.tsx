@@ -154,7 +154,9 @@ export function AssetsScreen() {
             noResultsBody={t.noResultsBody}
             clearLabel={t.clearFilters}
             onClear={clearFilters}
-            onOpen={(id) => router.push(`/assets/${id}`)}
+            onOpen={(id) =>
+              router.push({ pathname: "/assets/[id]", params: { id } })
+            }
           />
         </View>
       </ScrollView>

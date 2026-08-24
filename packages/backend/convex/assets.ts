@@ -296,8 +296,11 @@ export const recordReveal = mutation({
     await writeAudit(ctx, {
       userId: user._id,
       event: REVEAL_EVENT,
-      // Scalars only, and nothing describing what was revealed — the asset's
-      // name is ciphertext and must not be reconstructed from its own log.
+      // `type` is already a plaintext column on the row and is already logged
+      // by `asset.created`, so recording it here tells the deployment nothing
+      // new and keeps ٩.٣ able to say *what kind* of thing was opened. What
+      // must never appear is the asset's **name**: that is `labelSealed`, and
+      // a log that reconstructed it would undo the reason it is sealed.
       meta: { assetId, type: asset.type },
     })
     return null
