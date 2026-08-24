@@ -6,7 +6,7 @@ import { ClerkProvider, useAuth } from "@clerk/expo"
 import { tokenCache } from "@clerk/expo/token-cache"
 import { ConvexReactClient } from "convex/react"
 import { ConvexProviderWithClerk } from "convex/react-clerk"
-import { Stack } from "expo-router"
+import { Stack, useSegments } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import * as SplashScreen from "expo-splash-screen"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -66,6 +66,17 @@ export default function RootLayout() {
   const fontsReady = useAppFonts()
   const ready = fontsReady || missingEnv.length > 0
 
+  // The tab bar reaches the bottom edge itself and paints its own background
+  // through the gesture-bar inset, so the shell must not also reserve that
+  // space — doing both leaves the shell's sand ground showing as a stripe
+  // beneath a white bar. Every other route still gets the inset from the shell.
+  // The group is always the first segment, and typed routes only admit it
+  // there — `.includes()` narrows its argument to `never` against the generated
+  // tuple union and will not compile. `useSegments` reads expo-router's global
+  // store through `useSyncExternalStore`, so it is valid here, above the
+  // `Stack`.
+  const inTabs = useSegments()[0] === "(tabs)"
+
   // Hiding the splash belongs in an effect, not in a child's `onLayout`.
   // While the tree below renders `null` no child exists to lay out, so an
   // onLayout-driven hide can never fire — and a held splash over an empty tree
@@ -88,7 +99,7 @@ export default function RootLayout() {
         <StatusBar style="dark" />
 
         {/* Insets once, at the root, rather than per screen. */}
-        <SafeAreaShell>
+        <SafeAreaShell insetBottom={!inTabs}>
           {/* `tokenCache` persists the session in the device keychain (via
               expo-secure-store), so it survives app restarts. Never
               AsyncStorage. ClerkProvider also calls

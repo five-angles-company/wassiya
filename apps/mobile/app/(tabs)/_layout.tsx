@@ -44,6 +44,20 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#c67139",
         tabBarInactiveTintColor: "#82796a",
+        // Declared, not inherited. The bar was white only because React
+        // Navigation's DefaultTheme is — a theme this app never opted into,
+        // which would change the bar's colour if it were ever swapped.
+        //
+        // The bar carries this white down through the gesture-bar inset on its
+        // own; `SafeAreaShell` deliberately stops reserving that space inside
+        // `(tabs)` so the sand ground cannot show beneath it.
+        tabBarStyle: {
+          backgroundColor: "#ffffff",
+          // The app's own `--color-border`, as a literal because this is a
+          // style object rather than a Uniwind class. White against the sand
+          // ground needs the seam; without it the bar floats.
+          borderTopColor: "rgba(32, 30, 29, 0.16)",
+        },
       }}
     >
       <Tabs.Screen
