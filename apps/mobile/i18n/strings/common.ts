@@ -18,12 +18,25 @@ export const COMMON = {
     ar: "حدث خطأ غير متوقع. حاول مرة أخرى.",
     en: "Something went wrong. Please try again.",
   },
+  // The OS biometric sheet's own message, so it says why the vault is asking
+  // rather than leaving the system default to. Distinct from `setup.prompt`,
+  // which is the one-time key *creation* prompt in section ٢.
+  unlockPrompt: {
+    ar: "افتح خزنتك لعرض أصولك",
+    en: "Unlock your vault to see your assets",
+  },
 } satisfies LabelSet<string>
 
+// Five tabs, in the board's own order — 4.1's screenshot shows the bar this
+// app shipped four of. `will` is the section ٥ tab: the board labels it
+// الوصيّة (the will) even though the list inside it is الورثة (the heirs), so
+// the route, the key and the label all say "will" and the screen inside keeps
+// its own name.
 export const TABS = {
   home: { ar: "الرئيسية", en: "Home" },
   assets: { ar: "الأصول", en: "Assets" },
-  heirs: { ar: "الورثة", en: "Heirs" },
+  will: { ar: "الوصيّة", en: "Will" },
+  protection: { ar: "الحماية", en: "Protection" },
   settings: { ar: "الإعدادات", en: "Settings" },
   placeholderTitle: { ar: "قريباً", en: "Coming next" },
   placeholderBody: {

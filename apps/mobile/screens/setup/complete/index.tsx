@@ -98,7 +98,7 @@ export function SetupCompleteScreen() {
       <View className="grow" />
 
       <View className="mt-5 gap-2.25">
-        <Button onPress={() => router.replace("/heirs")}>
+        <Button onPress={() => router.replace("/will")}>
           <Text>{t.addHeirs}</Text>
         </Button>
         <Button

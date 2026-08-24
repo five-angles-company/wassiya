@@ -1,7 +1,5 @@
-import { TabPlaceholder } from "@/screens/tabs/placeholder"
-import { useStrings } from "@/i18n/use-strings"
+import { AssetsScreen } from "@/screens/assets"
 
 export default function Route() {
-  const { t } = useStrings("tabs")
-  return <TabPlaceholder title={t.assets} />
+  return <AssetsScreen />
 }
