@@ -144,7 +144,6 @@ export function SignUpScreen() {
             value={country}
             onChange={setCountry}
             locale={locale}
-            closeLabel={common.cancel}
           />
         </View>
 

@@ -24,6 +24,7 @@ import {
   StickyNote,
   type LucideIcon,
 } from "lucide-react-native"
+import type { Tone } from "@workspace/ui-native/lib/tone"
 
 /** Mirrors the `assetType` union in `convex/assets.ts`, in board order. */
 export const ASSET_TYPES = [
@@ -44,4 +45,26 @@ export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
   photos: ImageIcon,
   digital: AtSign,
   note: StickyNote,
+}
+
+/**
+ * Icon tint on the 4.2 tiles, grouping the six types by **what they hold** —
+ * the board's own rule: "secrets (terracotta), files (sage), instructions
+ * (neutral)".
+ *
+ * It is a grouping, not a severity: `terracotta` here means "this one contains
+ * a secret", not "this one needs attention". That is the opposite of what the
+ * same colour means on a `StatusPill`, which is why the mapping is named and
+ * lives beside the type list instead of being written inline per tile.
+ */
+export const ASSET_TYPE_TONE: Record<AssetType, Tone> = {
+  // Seed phrases and passwords.
+  crypto: "terracotta",
+  digital: "terracotta",
+  // Encrypted blobs.
+  document: "olive",
+  photos: "olive",
+  // An IBAN and a wish are both directions to follow, not secrets to guard.
+  bank: "sand",
+  note: "sand",
 }

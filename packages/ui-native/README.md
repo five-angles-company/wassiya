@@ -16,6 +16,7 @@ configuration lives in each consuming app** (the Metro bundler runs there):
 | Concern | Location |
 | --- | --- |
 | Component `.tsx` source, `@rn-primitives/*`, `cva`, `lucide-react-native` | **this package** |
+| `@lodev09/react-native-true-sheet` (native module — see below) | **the app** (peer here) |
 | `uniwind/metro` plugin, `global.css`, theme tokens, `@source`, generated types, reanimated babel plugin | **the app** (see `apps/mobile`) |
 
 A new app that wants these components repeats only the app-side wiring (copy it
@@ -54,6 +55,22 @@ It diffs the classes written in source against the bundle's compiled utility
 table, reporting **purged** classes (absent) and **inert** ones (present but
 resolving to `colorMix("unset", …)`). Exit 0 on a clean tree; the seven inert
 `/alpha` classes in verbatim upstream files are baselined in the script.
+
+## The one native dependency
+
+`sheet` and `sheet-select` are built on
+[`@lodev09/react-native-true-sheet`](https://github.com/lodev09/react-native-true-sheet),
+which is a **native module**, not a JS one. Consequences:
+
+- It is a `peerDependency` here and a real dependency of the consuming app —
+  the same shape as `react-native-gesture-handler` and `reanimated`. Native
+  autolinking runs from the app, so declaring it only in this package would
+  bundle the JS and then fail at runtime with a missing native module.
+- **Adding it requires `expo prebuild` and a dev-client rebuild.** A JS-only
+  reload will not pick it up; the sheet throws instead, and the error reads like
+  a code bug rather than a stale binary.
+- v3 requires the New Architecture. v4 exists but its manifest pins
+  `expo-router >= 57`, so it belongs to the next SDK, not this one.
 
 ## Consuming it
 
@@ -148,6 +165,8 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `heart-badge` | `confirmed` | heart · check | inside `check-in-prompt` |
 | `storage-meter` | `quotaBytes`, `segments[{label,bytes,color?}]`, `formatSize`, `empty` | active · empty; segments are shares of the **quota** | **9.4** subscription |
 | `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · quiet · with accessory | all of section ٩ |
+| `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every sheet the board draws |
+| `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder` | selected · unselected | 1.3 / 2.1 country field; any single-choice field |
 | `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |
 
 ### Rules these components follow

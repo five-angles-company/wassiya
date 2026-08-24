@@ -17,7 +17,7 @@ import {
   RECOVERY_STUB,
   SETUP_COMPLETE,
 } from "@/i18n/strings/setup"
-import { ASSETS } from "@/i18n/strings/assets"
+import { ADD_ASSET, ASSETS } from "@/i18n/strings/assets"
 import { COMMON, TABS } from "@/i18n/strings/common"
 
 export const SCREEN_STRINGS = {
@@ -40,6 +40,7 @@ export const SCREEN_STRINGS = {
   "setup/complete": SETUP_COMPLETE,
 
   assets: ASSETS,
+  "assets/new": ADD_ASSET,
 
   recovery: RECOVERY_STUB,
 } as const

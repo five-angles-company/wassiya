@@ -101,7 +101,6 @@ export function KycScreen() {
           value={country}
           onChange={setCountry}
           locale={locale}
-          closeLabel={common.cancel}
         />
       ) : null}
 

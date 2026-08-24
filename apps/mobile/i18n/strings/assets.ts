@@ -78,12 +78,45 @@ export const ASSETS = {
   // the one broken row says so instead of the whole screen failing.
   undecryptable: { ar: "تعذّر فك التشفير", en: "Could not decrypt" },
 
-  // 4.2 is a bottom sheet and lands in the next stage; the button is real, so
-  // it has to say something true rather than do nothing.
-  addSoonTitle: { ar: "إضافة الأصول قريباً", en: "Adding assets is coming next" },
-  addSoonBody: {
-    ar: "نماذج الأنواع الستة تُبنى الآن. خزنتك جاهزة، ومفتاحك في مكانه.",
-    en: "The six type wizards are being built now. Your vault is ready and your key is in place.",
+} satisfies LabelSet<string>
+
+/**
+ * ٤.٢ — "ما الذي تريد حفظه؟", the type picker.
+ *
+ * A bottom sheet rather than a route, per the board: back dismisses it without
+ * losing the list's scroll position. Its own dictionary because it is its own
+ * screen in the board's numbering, even though it has no URL.
+ *
+ * Type names here are **singular** — you are about to create one thing. The
+ * filter chips in `ASSETS` name categories and stay plural. Same six types,
+ * deliberately different words.
+ */
+export const ADD_ASSET = {
+  title: { ar: "ما الذي تريد حفظه؟", en: "What do you want to keep safe?" },
+  description: {
+    ar: "كل نوع له نموذج مختلف — نطلب فقط ما يحتاجه الوارث فعلاً.",
+    en: "Each type has its own form — we only ask for what an heir will actually need.",
   },
-  addSoonDismiss: { ar: "حسناً", en: "Got it" },
+
+  crypto: { ar: "عملات رقمية", en: "Crypto" },
+  cryptoHint: { ar: "محافظ ومنصات", en: "Wallets and exchanges" },
+  bank: { ar: "حساب بنكي", en: "Bank account" },
+  bankHint: { ar: "آيبان وتعليمات", en: "IBAN and instructions" },
+  document: { ar: "مستند", en: "Document" },
+  documentHint: { ar: "عقود وشهادات", en: "Contracts and certificates" },
+  photos: { ar: "صور", en: "Photos" },
+  photosHint: { ar: "ألبومات مشفّرة", en: "Encrypted albums" },
+  digital: { ar: "حساب رقمي", en: "Digital account" },
+  digitalHint: { ar: "بريد، نطاقات، اشتراكات", en: "Email, domains, subscriptions" },
+  note: { ar: "ملاحظة", en: "Note" },
+  noteHint: { ar: "وصايا وأماكن أشياء", en: "Wishes and where things are" },
+
+  // 4.3–4.8 are the six wizards behind these tiles and are not built. Naming
+  // the chosen type is what keeps this from reading as a broken tile.
+  soonTitle: { ar: "هذا النموذج قيد الإنشاء", en: "This form is being built" },
+  soonBody: {
+    ar: "نموذج «{type}» يصل في المرحلة التالية. خزنتك جاهزة ومفتاحك في مكانه.",
+    en: "The “{type}” form arrives in the next stage. Your vault is ready and your key is in place.",
+  },
+  soonDismiss: { ar: "حسناً", en: "Got it" },
 } satisfies LabelSet<string>

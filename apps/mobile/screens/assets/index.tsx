@@ -7,10 +7,11 @@
  * opposite situations, and a single grey placeholder for both would tell a user
  * with forty assets that they have none.
  */
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Plus } from "lucide-react-native"
 import { Alert, ScrollView, View } from "react-native"
@@ -22,6 +23,7 @@ import { ASSET_TYPES, type AssetType } from "@/lib/asset-types"
 import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetList } from "@/screens/assets/components/asset-list"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
+import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
 import { ScreenFrame } from "@/screens/assets/components/screen-frame"
@@ -29,6 +31,7 @@ import { useAssetList } from "@/screens/assets/use-asset-list"
 
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
+  const { t: add } = useStrings("assets/new")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<AssetType | null>(null)
@@ -51,14 +54,24 @@ export function AssetsScreen() {
   const count = (n: number, forms: CountForms) =>
     fmtCount(n, fmtNum(n, locale), forms, locale)
 
+  // 4.2 lives here rather than in a route, so opening it cannot disturb this
+  // screen's scroll position — which is the board's stated reason for making
+  // it a sheet.
+  const addSheet = useRef<TrueSheet>(null)
+  const openAddSheet = () => void addSheet.current?.present()
+
   /**
-   * 4.2 is a bottom sheet rather than a route, and it is not built yet. A
-   * native alert is the stand-in: it takes no markup to remove, and it keeps
-   * the CTA from being the one thing this app has already been bitten by — a
-   * button that looks live and does nothing.
+   * A tile's wizard (4.3–4.8) is not built. Dismiss first, then say which form
+   * is missing: an alert stacked over an open sheet is dismissible on iOS by
+   * tapping the sheet behind it, which leaves the alert's owner on screen and
+   * reads as a stuck dialog.
    */
-  const openAddSheet = () =>
-    Alert.alert(t.addSoonTitle, t.addSoonBody, [{ text: t.addSoonDismiss }])
+  const chooseType = async (_type: AssetType, label: string) => {
+    await addSheet.current?.dismiss()
+    Alert.alert(add.soonTitle, add.soonBody.replace("{type}", label), [
+      { text: add.soonDismiss },
+    ])
+  }
 
   const clearFilters = () => {
     setSearch("")
@@ -93,6 +106,7 @@ export function AssetsScreen() {
           browseLabel={t.emptyBrowse}
           onAdd={openAddSheet}
         />
+        <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
       </ScreenFrame>
     )
   }
@@ -155,6 +169,10 @@ export function AssetsScreen() {
           <Text>{t.add}</Text>
         </Button>
       </View>
+
+      {/* Rendered as a sibling of the list, not inside the ScrollView: the
+          sheet is a native window and must not be laid out by a scroller. */}
+      <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
     </View>
   )
 }
