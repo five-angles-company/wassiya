@@ -163,3 +163,59 @@ async function requireKeyring(ctx: QueryCtx) {
   }
   return { row, userId: user._id }
 }
+
+/**
+ * Attach an accepted guardian and their sealed share, without touching
+ * anything else on the row.
+ *
+ * `save` above takes the whole keyring and `db.replace`s it, which is right for
+ * the ceremony that produces every field at once. It is the wrong shape for
+ * this: enrolling a guardian changes two columns, and a caller that forgot to
+ * pass `mkWrappedByRecovery` back would blank the wrapper — destroying the only
+ * ciphertext from which MK can be rebuilt, silently, on the screen whose entire
+ * purpose is to make recovery *possible*. A `patch` cannot express that
+ * mistake, so this exists rather than a comment asking callers to be careful.
+ *
+ * `paperVersion` is likewise untouched: the printed sheet is still valid, and
+ * bumping it would invalidate a page sitting in someone's safe.
+ */
+export const attachGuardian = mutation({
+  args: {
+    guardianId: v.id("guardians"),
+    guardianShareSealed: v.bytes(),
+  },
+  handler: async (ctx, { guardianId, guardianShareSealed }) => {
+    const user = await requireUser(ctx)
+
+    const guardian = await ctx.db.get("guardians", guardianId)
+    if (guardian === null || guardian.userId !== user._id) {
+      throw new Error("Not found")
+    }
+    if (guardian.status !== "accepted") {
+      throw new Error("Guardian has not accepted yet")
+    }
+    if (guardianShareSealed.byteLength === 0) {
+      throw new Error("Sealed share is empty")
+    }
+
+    const existing = await keyringFor(ctx, user._id)
+    if (existing === null) {
+      // No keyring means section ٢ never completed; attaching a guardian to a
+      // vault that has no recovery wrapper would describe a recovery path that
+      // does not exist.
+      throw new Error("No keyring to attach a guardian to")
+    }
+
+    await ctx.db.patch("keyring", existing._id, {
+      guardianId,
+      guardianShareSealed,
+      rotatedAt: Date.now(),
+    })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "keyring.guardian_attached",
+      meta: { guardianId },
+    })
+    return null
+  },
+})

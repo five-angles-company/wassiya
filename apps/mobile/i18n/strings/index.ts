@@ -34,6 +34,12 @@ import {
   HEIR_PREVIEW,
   ROUTING,
 } from "@/i18n/strings/will"
+import {
+  CHECKIN,
+  GUARDIAN,
+  GUARDIAN_ACCEPT,
+  PROTECTION,
+} from "@/i18n/strings/protection"
 
 export const SCREEN_STRINGS = {
   common: COMMON,
@@ -69,6 +75,11 @@ export const SCREEN_STRINGS = {
   "heirs/new": HEIR_NEW,
   "will/routing": ROUTING,
   "heirs/preview": HEIR_PREVIEW,
+
+  protection: PROTECTION,
+  "protection/guardian": GUARDIAN,
+  "protection/guardian/accept": GUARDIAN_ACCEPT,
+  "protection/checkin": CHECKIN,
 
   recovery: RECOVERY_STUB,
 } as const

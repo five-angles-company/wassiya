@@ -1,7 +1,5 @@
-import { TabPlaceholder } from "@/screens/tabs/placeholder"
-import { useStrings } from "@/i18n/use-strings"
+import { ProtectionScreen } from "@/screens/protection"
 
 export default function Route() {
-  const { t } = useStrings("tabs")
-  return <TabPlaceholder title={t.protection} />
+  return <ProtectionScreen />
 }

@@ -26,6 +26,7 @@
 import * as Crypto from "expo-crypto"
 import * as SecureStore from "expo-secure-store"
 import { bytesToHex, hexToBytes } from "@workspace/crypto/bytes"
+import { generateGuardianKeypair } from "@workspace/crypto/guardian"
 import { generateMk } from "@workspace/crypto/keys"
 
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
@@ -35,6 +36,23 @@ const MK_KEY = "wassiya.mk.v1"
 
 /** S_guardian: held here until a guardian accepts and it can be sealed to them. */
 const GUARDIAN_SHARE_KEY = "wassiya.sguardian.v1"
+
+/**
+ * The **guardian role's** X25519 secret key — a different thing entirely from
+ * `GUARDIAN_SHARE_KEY` above, despite the similar name.
+ *
+ * `wassiya.sguardian.v1` is a share of *this user's own* recovery key, held
+ * while they are an owner waiting for a guardian to accept.
+ * `wassiya.guardiankey.v1` is the private half of the keypair this user
+ * publishes when they act as **someone else's** guardian, and it is what opens
+ * every share sealed to them.
+ *
+ * One person can be both at once — an owner with a vault and a guardian for
+ * their sibling — so the two never share a slot. Losing this key means every
+ * share sealed to this guardian is unopenable, which is why it lives behind
+ * the same biometric gate as MK rather than in plain storage.
+ */
+const GUARDIAN_KEY = "wassiya.guardiankey.v1"
 
 /** The unauthenticated routing probe. Contains no secret. */
 const ENROLMENT_KEY = "wassiya.enrolment.v1"
@@ -83,6 +101,8 @@ export type VaultEnrolment = {
   deviceId: string | null
   /** True once S_guardian has been written to the keystore. */
   hasGuardianShare: boolean
+  /** True once this device holds a guardian keypair — see `GUARDIAN_KEY`. */
+  isGuardian?: boolean
   /** `keyring.paperVersion` at the last successful save, for diagnostics. */
   paperVersion: number | null
   enrolledAt: number
@@ -109,6 +129,7 @@ export async function patchEnrolment(
     deviceId: patch.deviceId ?? current?.deviceId ?? null,
     hasGuardianShare:
       patch.hasGuardianShare ?? current?.hasGuardianShare ?? false,
+    isGuardian: patch.isGuardian ?? current?.isGuardian ?? false,
     paperVersion: patch.paperVersion ?? current?.paperVersion ?? null,
     enrolledAt: current?.enrolledAt ?? Date.now(),
   }
@@ -207,4 +228,54 @@ export async function clearVault(): Promise<void> {
     keychainService: VAULT_SERVICE,
   })
   await SecureStore.deleteItemAsync(ENROLMENT_KEY)
+}
+
+/**
+ * Generate this device's guardian keypair and seal the secret half here.
+ *
+ * Called once, when the user accepts their first guardian invitation. The
+ * public half is what they publish to `guardians.accept`; the secret half never
+ * leaves this device, which is the entire reason a sealed share is safe for the
+ * server to hold.
+ *
+ * Returns the public key so the caller can publish it without a second
+ * biometric prompt.
+ */
+export async function generateAndStoreGuardianKey(
+  authenticationPrompt: string
+): Promise<Uint8Array> {
+  ensureWebCrypto()
+  const { secretKey, publicKey } = generateGuardianKeypair()
+  await SecureStore.setItemAsync(
+    GUARDIAN_KEY,
+    bytesToHex(secretKey),
+    authenticated(authenticationPrompt)
+  )
+  secretKey.fill(0)
+  return publicKey
+}
+
+/**
+ * This device's guardian secret key, behind the biometric prompt.
+ *
+ * Throws `VaultKeyLostError` when the keystore has invalidated it — for a
+ * guardian that is not merely inconvenient: every share sealed to them becomes
+ * unopenable, and the owners who chose them have to enrol a replacement. The
+ * caller must surface it rather than retrying.
+ */
+export async function readGuardianKey(
+  authenticationPrompt: string
+): Promise<Uint8Array> {
+  const hex = await SecureStore.getItemAsync(
+    GUARDIAN_KEY,
+    authenticated(authenticationPrompt)
+  )
+  if (hex === null) throw new VaultKeyLostError("The guardian key")
+  return hexToBytes(hex)
+}
+
+/** Whether this device has ever acted as a guardian. Unauthenticated probe. */
+export async function hasGuardianKey(): Promise<boolean> {
+  const enrolment = await readEnrolment()
+  return enrolment?.isGuardian === true
 }

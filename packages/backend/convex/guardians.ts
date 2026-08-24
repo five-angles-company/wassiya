@@ -32,6 +32,16 @@ export const list = query({
       relation: row.relation,
       status: row.status,
       hasPublicKey: row.x25519PublicKey !== undefined,
+      /**
+       * The guardian's published X25519 **public** key, which the owner's
+       * device needs in order to seal S_guardian to them.
+       *
+       * Safe to return: a public key is the half meant to be published, and
+       * this deployment already stores it in the clear. What it cannot do is
+       * open anything — the secret half never leaves the guardian's device, so
+       * a server holding this key still cannot reconstruct K_rec.
+       */
+      publicKey: row.x25519PublicKey ?? null,
       inviteExpiresAt: row.inviteExpiresAt,
     }))
   },
