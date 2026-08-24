@@ -242,3 +242,50 @@ async function markRoutingChanged(
     })
   }
 }
+
+/**
+ * Every asset with the recipients it routes to — the ٥.٣ overview.
+ *
+ * 5.3 groups by category for readability while *"the stored edge is per
+ * asset"*, so this returns the per-asset edges and leaves the grouping to the
+ * screen. No counts, no ratios: a list of recipients, because that is what the
+ * data model is. There are no percentages anywhere in this product.
+ *
+ * Built from two indexed scans plus one asset read pass, rather than a
+ * `by_assetId` query per asset, which would be one round trip per row of a
+ * 500-asset vault.
+ */
+export const overview = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx)
+
+    const assets = await ctx.db
+      .query("assets")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .take(500)
+
+    const byAsset = new Map<Id<"assets">, Recipient[]>()
+    for (const kind of ["heir", "executor", "allHeirs"] as const) {
+      const rows = await ctx.db
+        .query("assetRecipients")
+        .withIndex("by_userId_and_recipientKind", (q) =>
+          q.eq("userId", user._id).eq("recipientKind", kind)
+        )
+        .take(2000)
+      for (const row of rows) {
+        const current = byAsset.get(row.assetId)
+        if (current === undefined) byAsset.set(row.assetId, [row.recipient])
+        else current.push(row.recipient)
+      }
+    }
+
+    return assets.map((asset) => ({
+      id: asset._id,
+      type: asset.type,
+      labelSealed: asset.labelSealed,
+      dekWrappedByMk: asset.dekWrappedByMk,
+      recipients: byAsset.get(asset._id) ?? [],
+    }))
+  },
+})

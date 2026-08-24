@@ -9,7 +9,8 @@
 // both get the same sealed bundle, and mode only governs notifications.
 import { v } from "convex/values"
 
-import { mutation, query } from "./_generated/server"
+import type { Id } from "./_generated/dataModel"
+import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
 
@@ -23,6 +24,12 @@ export const list = query({
       .query("heirs")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .take(100)
+
+    // 5.1 puts "تستلم ٤ أصول" on every row, and an heir who receives nothing is
+    // that screen's amber case — the mirror of "بلا مستلم" in 4.1. Both need a
+    // count, so it is computed once here rather than per heir on the client.
+    const { direct, sharedCount } = await routedCounts(ctx, user._id)
+
     return rows.map((row) => ({
       id: row._id,
       name: row.name,
@@ -31,9 +38,51 @@ export const list = query({
       mode: row.mode,
       inviteStatus: row.inviteStatus,
       messageKind: row.messageMeta?.kind ?? null,
+      /**
+       * Assets routed to this heir: the ones naming them, plus every asset
+       * routed to "all heirs jointly", which they receive as well. An heir
+       * added after a shared route still receives it — that is the point of
+       * folding the bucket in here rather than expanding it at write time.
+       */
+      routedAssetCount: (direct.get(row._id) ?? 0) + sharedCount,
     }))
   },
 })
+
+/**
+ * How many assets each heir is named on, and how many go to all heirs jointly.
+ *
+ * Two indexed scans over the owner's routing rows rather than one read per
+ * heir. The 2000 cap is per scan; past it a count under-reports, which shows as
+ * a smaller number on a card — never as a wrong *state*, since "receives
+ * nothing" is decided by the total being zero and an under-count cannot
+ * manufacture a zero out of a non-empty set.
+ */
+async function routedCounts(
+  ctx: QueryCtx,
+  userId: Id<"users">
+): Promise<{ direct: Map<Id<"heirs">, number>; sharedCount: number }> {
+  const direct = new Map<Id<"heirs">, number>()
+  const named = await ctx.db
+    .query("assetRecipients")
+    .withIndex("by_userId_and_recipientKind", (q) =>
+      q.eq("userId", userId).eq("recipientKind", "heir")
+    )
+    .take(2000)
+  for (const row of named) {
+    if (row.recipientHeirId === undefined) continue
+    direct.set(row.recipientHeirId, (direct.get(row.recipientHeirId) ?? 0) + 1)
+  }
+
+  const shared = await ctx.db
+    .query("assetRecipients")
+    .withIndex("by_userId_and_recipientKind", (q) =>
+      q.eq("userId", userId).eq("recipientKind", "allHeirs")
+    )
+    .take(2000)
+
+  return { direct, sharedCount: shared.length }
+}
 
 export const add = mutation({
   args: {

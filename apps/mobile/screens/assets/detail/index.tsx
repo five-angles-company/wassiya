@@ -16,11 +16,12 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { openLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
+import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
-import { useLocalSearchParams } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { ScrollView, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
@@ -54,6 +55,12 @@ export function AssetDetailScreen() {
   const mk = useVault((s) => s.mk)
   const { state, reveal, hide } = useAssetSecret(assetId, t.biometricPrompt)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const openRecipients = () =>
+    router.push({
+      pathname: "/assets/[id]/recipients",
+      params: { id: assetId },
+    })
 
   // Tier one: the label, opened as soon as the screen has both the row and MK.
   const label = useMemo(() => {
@@ -148,16 +155,25 @@ export function AssetDetailScreen() {
         />
       )}
 
-      {/* Recipients — a list, never a ratio. Section ٥ fills it; until then
-          the unassigned variant is the honest one, and it is the same warning
-          4.1 shows on the row that led here. */}
+      {/* Recipients — a list, never a ratio. */}
       <View className="mt-4 gap-2">
         <Text variant="sectionLabel">{t.recipientsLabel}</Text>
-        <AlertBanner
-          variant="security"
-          title={t.recipientsNone}
-          description={t.recipientsNoneBody}
-        />
+        {asset.recipientRule === "default" ? (
+          <AlertBanner
+            variant="security"
+            title={t.recipientsNone}
+            description={t.recipientsNoneBody}
+            actions={
+              <Button size="sm" variant="outline" onPress={openRecipients}>
+                <Text>{t.recipientsEdit}</Text>
+              </Button>
+            }
+          />
+        ) : (
+          <Button variant="outline" onPress={openRecipients}>
+            <Text>{t.recipientsEdit}</Text>
+          </Button>
+        )}
       </View>
 
       <View className="grow" />

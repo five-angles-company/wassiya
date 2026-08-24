@@ -28,6 +28,12 @@ import {
   NEW_PHOTOS,
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
+import {
+  HEIRS,
+  HEIR_NEW,
+  HEIR_PREVIEW,
+  ROUTING,
+} from "@/i18n/strings/will"
 
 export const SCREEN_STRINGS = {
   common: COMMON,
@@ -58,6 +64,11 @@ export const SCREEN_STRINGS = {
   "assets/new/photos": NEW_PHOTOS,
   "assets/new/account": NEW_ACCOUNT,
   "assets/new/note": NEW_NOTE,
+
+  heirs: HEIRS,
+  "heirs/new": HEIR_NEW,
+  "will/routing": ROUTING,
+  "heirs/preview": HEIR_PREVIEW,
 
   recovery: RECOVERY_STUB,
 } as const

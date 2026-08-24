@@ -166,9 +166,10 @@ export const ASSET_DETAIL = {
   recipientsLabel: { ar: "من يستلمه؟", en: "Who receives it?" },
   recipientsNone: { ar: "بلا مستلم", en: "No recipient" },
   recipientsNoneBody: {
-    ar: "لن يصل هذا الأصل إلى أحد. تحديد المستلمين يصل مع شاشة الورثة.",
-    en: "This asset reaches nobody yet. Assigning recipients arrives with the heirs screen.",
+    ar: "لن يصل هذا الأصل إلى أحد. اختر من يستلمه.",
+    en: "This asset reaches nobody. Choose who receives it.",
   },
+  recipientsEdit: { ar: "من يستلمه؟", en: "Who receives it?" },
 
   deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
   deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },
