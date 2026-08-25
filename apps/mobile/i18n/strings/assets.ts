@@ -141,6 +141,14 @@ export const ADD_ASSET = {
  * "آخر إظهار" stamp is the visible end of the audit trail every reveal writes.
  */
 export const ASSET_DETAIL = {
+  // Row labels for the asset's grouped list.
+  toLabel: { ar: "إلى", en: "To" },
+  lastOpenedLabel: { ar: "آخر فتح", en: "Last opened" },
+  filesRowLabel: { ar: "الملفات", en: "Files" },
+  // The live countdown, replacing a static "يختفي بعد ١٠ ثوانٍ" — a timer the
+  // owner can watch is one they do not walk away from.
+  countdown: { ar: "يختفي بعد {n} ثوانٍ", en: "Hides in {n}s" },
+
   secretLabel: { ar: "المحتوى المحمي", en: "Protected content" },
   revealPrompt: { ar: "المس البصمة للإظهار", en: "Touch to reveal" },
   // The OS sheet's own message — it says what is about to be shown.
@@ -176,9 +184,10 @@ export const ASSET_DETAIL = {
 
   // Field labels for a revealed secret. Before these existed the screen
   // printed the stored JSON, key names and all.
-  // The address line on the envelope. "إلى" is what is written on something
-  // being left for someone, and that is what this asset is.
-  toLabel: { ar: "إلى", en: "To" },
+  // The two section headings. "من يستلمه بعدك" is the sentence that makes this
+  // an inheritance vault rather than a password manager.
+  handoverLabel: { ar: "من يستلمه بعدك", en: "Who receives it after you" },
+  contentLabel: { ar: "المحتوى المحمي", en: "Protected content" },
 
   fieldService: { ar: "الخدمة", en: "Service" },
   fieldUsername: { ar: "اسم المستخدم", en: "Username" },

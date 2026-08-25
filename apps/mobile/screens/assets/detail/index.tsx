@@ -1,25 +1,28 @@
 /**
- * One asset, as a sealed envelope addressed to a person.
+ * One asset, as a grouped row list.
  *
- * ## Why the shape changed
+ * ## Why this shape
  *
- * Four rewrites of this screen were the same thing: a scroll of headed sections
- * — identity, recipients, content, maintenance — reordered and recoloured. That
- * shape describes a *record*, which is why it kept coming out looking like a
- * form however it was styled.
+ * Six earlier versions were variations on one idea — a stack of headed sections,
+ * each thing in its own card — and no amount of restyling fixed it, because the
+ * problem was that a page of competing surfaces has no hierarchy to read. This
+ * is the shape the owner picked: **no card per item, one soft container per
+ * group**, hairlines between rows. It is what section ٩ has always been, which
+ * is why Settings was never one of the screens that got called ugly.
  *
- * An asset here is not a record. It is a thing being left to a named person, so
- * the screen is one object and one action: an addressed envelope, and a seal.
- * The recipient is **on** the envelope rather than in a section below it —
- * nothing about this asset can be read without reading who it is for — and the
- * contents stay sealed until a fingerprint opens them.
+ * The title sits on the page rather than in a container: it is the page's
+ * subject, and a surface around it makes it a card about itself.
  *
- * ## Two-tier decryption throughout
+ * ## Two-tier decryption, unchanged
  *
  * The label opens when the screen does; the payload only behind a fresh
- * biometric, on a ten-second timer, under a screenshot guard. File-backed types
- * have no single revealable string and no viewer yet, so they say so rather
- * than offering a seal that could not be broken.
+ * biometric, on a ten-second timer, under a screenshot guard. `SecretRow` moved
+ * the presentation into the group but `use-asset-secret.ts` still owns every
+ * part of that — the biometric call, the countdown, clearing the plaintext.
+ *
+ * File-backed types have no single revealable string and no viewer yet, so they
+ * get a count-and-size row and say so, rather than offering a control that could
+ * not deliver.
  */
 import { useMemo, useState } from "react"
 import { useQuery } from "convex/react"
@@ -27,8 +30,8 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { openLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { router, useLocalSearchParams } from "expo-router"
 import { View } from "react-native"
@@ -37,19 +40,14 @@ import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_TONE, type AssetType } from "@/lib/asset-types"
+import { type AssetType } from "@/lib/asset-types"
 import { DeleteAssetButton } from "@/screens/assets/detail/components/delete-asset-button"
-import { AssetEnvelope } from "@/screens/assets/detail/components/asset-envelope"
-import { SecretBlock } from "@/screens/assets/detail/components/secret-block"
-import { SecretFieldList } from "@/screens/assets/detail/components/secret-field-list"
+import { SecretRow } from "@/screens/assets/detail/components/secret-row"
 import {
   isPhrasePayload,
   parseSecret,
 } from "@/screens/assets/detail/secret-fields"
-import {
-  REVEAL_SECONDS,
-  useAssetSecret,
-} from "@/screens/assets/detail/use-asset-secret"
+import { useAssetSecret } from "@/screens/assets/detail/use-asset-secret"
 import { useVault } from "@/stores/vault"
 
 /** Category copy per type, reused from the vault list rather than restated. */
@@ -72,9 +70,7 @@ export function AssetDetailScreen() {
   const assetId = id as Id<"assets">
   const { t, locale } = useStrings("assets/detail")
   const { t: common } = useStrings("common")
-  // "كل الورثة" / "الوصي" live with the routing screen that owns those concepts.
   const { t: routing } = useStrings("will/routing")
-  // Category names live with the list that names them; reused, not duplicated.
   const { t: assetCopy } = useStrings("assets")
   // The whole screen can put a secret on display, so the guard covers all of it
   // rather than only the moment of reveal.
@@ -82,12 +78,11 @@ export function AssetDetailScreen() {
 
   const asset = useQuery(api.assets.get, { assetId })
   const lastRevealed = useQuery(api.assets.lastRevealedAt, { assetId })
+  const recipients = useQuery(api.routing.forAsset, { assetId })
+  const heirs = useQuery(api.heirs.list)
   const mk = useVault((s) => s.mk)
   const { state, reveal, hide } = useAssetSecret(assetId, t.biometricPrompt)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  const openRecipients = () =>
-    router.push({ pathname: "/assets/[id]/recipients", params: { id: assetId } })
 
   // Tier one: the label, opened as soon as the screen has both the row and MK.
   const label = useMemo(() => {
@@ -102,14 +97,7 @@ export function AssetDetailScreen() {
     }
   }, [asset, mk])
 
-  /**
-   * The revealed payload, as labelled fields.
-   *
-   * `null` for a phrase (drawn as pills) or a payload that does not parse — a
-   * rotated format, a hand-edited row. The block then falls back to plain text,
-   * which is ugly but honest: refusing to show a secret the owner has just
-   * authenticated for would be worse than showing it plainly.
-   */
+  /** `null` for a phrase (drawn as pills) or a payload that does not parse. */
   const fields = useMemo(() => {
     if (state.status !== "revealed" || asset === undefined || asset === null) {
       return null
@@ -117,6 +105,28 @@ export function AssetDetailScreen() {
     if (isPhrasePayload(asset.type, state.text)) return null
     return parseSecret(asset.type, state.text, t)
   }, [state, asset, t])
+
+  /**
+   * The recipients, as one line.
+   *
+   * Names rather than a count: "٢ مستلمين" tells an owner nothing they can act
+   * on, while seeing who is there lets them notice who isn't.
+   */
+  const to = useMemo(() => {
+    if (recipients === undefined) return undefined
+    if (recipients.length === 0) return null
+    return recipients
+      .map((row) => {
+        // Bound to a `const` first: narrowing on `row.recipient` does not
+        // survive into the `find` callback, which reads a fresh closure.
+        const target = row.recipient
+        if (target.kind === "allHeirs") return routing.allHeirs
+        if (target.kind === "executor") return routing.executor
+        return heirs?.find((heir) => heir.id === target.heirId)?.name ?? ""
+      })
+      .filter((name) => name.length > 0)
+      .join(" · ")
+  }, [recipients, heirs, routing])
 
   if (asset === undefined) {
     return (
@@ -136,48 +146,41 @@ export function AssetDetailScreen() {
     <Screen>
       <BackButton label={common.back} />
 
-      <AssetEnvelope
-        className="mt-4"
-        assetId={assetId}
-        kicker={assetCopy[CATEGORY_KEY[asset.type]]!}
-        title={label?.title ?? t.revealFailed}
-        subtitle={label?.subtitle}
-        tone={ASSET_TYPE_TONE[asset.type]}
-        toLabel={t.toLabel}
-        allHeirsLabel={routing.allHeirs}
-        executorLabel={routing.executor}
-        unaddressedLabel={t.recipientsNone}
-      />
+      <View className="mb-header mt-4 gap-1">
+        <Text variant="screenTitle" numberOfLines={3}>
+          {label?.title ?? t.revealFailed}
+        </Text>
+        <Text variant="metaSm">
+          {label?.subtitle ?? assetCopy[CATEGORY_KEY[asset.type]]}
+        </Text>
+      </View>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="mt-3 self-start px-5"
-        onPress={openRecipients}
-      >
-        <Text>{t.recipientsEdit}</Text>
-      </Button>
+      {/*
+        One container, hairlines between rows, `px-4` so nothing sits flush
+        against a 26px radius. Every other grouped list in the app omits that
+        padding and lets its labels touch the curve; this is the version that
+        should spread, not the other way round.
+      */}
+      <View className="rounded-card bg-card overflow-hidden px-4 shadow-sm">
+        <SettingsRow
+          label={t.toLabel}
+          value={to === undefined ? "" : (to ?? t.recipientsNone)}
+          valueTone={to === null ? "action" : "default"}
+          divider
+          onPress={() =>
+            router.push({
+              pathname: "/assets/[id]/recipients",
+              params: { id: assetId },
+            })
+          }
+        />
 
-      {/* The seal. */}
-      <View className="mt-header gap-2.5">
-        {isFileType ? (
-          <View className="rounded-card bg-sand-100 gap-1.5 p-4 shadow-sm">
-            <Text variant="rowTitle">
-              {t.filesCount
-                .replace("{n}", fmtNum(asset.storageIds.length, locale))
-                .replace("{size}", formatSize(asset.meta.byteSize ?? 0, locale))}
-            </Text>
-            <Text variant="footnote">{t.viewerSoon}</Text>
-          </View>
-        ) : url === null ? null : (
-          <SecretBlock
-            title={t.secretLabel}
+        {isFileType || url === null ? null : (
+          <SecretRow
+            label={t.secretLabel}
             state={state}
-            wordCount={asset.meta.itemCount ?? 0}
             asWords={WORD_TYPES.includes(asset.type)}
-            revealedBody={
-              fields === null ? undefined : <SecretFieldList fields={fields} />
-            }
+            fields={fields}
             locale={locale}
             labels={{
               revealPrompt: t.revealPrompt,
@@ -185,22 +188,41 @@ export function AssetDetailScreen() {
               hide: t.hide,
               revealDenied: t.revealDenied,
               revealFailed: t.revealFailed,
-              terms: t.revealTerms.replace("{n}", fmtNum(REVEAL_SECONDS, locale)),
+              countdown: t.countdown,
             }}
             onReveal={() => reveal(url, asset.dekWrappedByMk)}
             onHide={hide}
+            divider
           />
         )}
 
-        <Text variant="footnote">
-          {lastRevealed == null
-            ? t.neverRevealed
-            : t.lastRevealed.replace(
-                "{date}",
-                fmtDate(new Date(lastRevealed), locale)
-              )}
-        </Text>
+        {isFileType ? (
+          <SettingsRow
+            label={t.filesRowLabel}
+            value={t.filesCount
+              .replace("{n}", fmtNum(asset.storageIds.length, locale))
+              .replace("{size}", formatSize(asset.meta.byteSize ?? 0, locale))}
+            chevron={false}
+            divider
+          />
+        ) : null}
+
+        <SettingsRow
+          label={t.lastOpenedLabel}
+          value={
+            lastRevealed == null
+              ? t.neverRevealed
+              : fmtDate(new Date(lastRevealed), locale)
+          }
+          chevron={false}
+        />
       </View>
+
+      {isFileType ? (
+        <Text variant="footnote" className="mt-2">
+          {t.viewerSoon}
+        </Text>
+      ) : null}
 
       <View className="grow" />
 
