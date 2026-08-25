@@ -70,6 +70,18 @@
   --text-title--line-height: 1.2;
   --text-body: 15px;
   --text-body--line-height: 1.55;
+
+  /* -- Prose --------------------------------------------------------------
+     The role the scale was missing, and the reason 58 sites hand-wrote a
+     `leading-[…]`. A *paragraph* of explanatory copy needs looser leading than
+     a row label at the same size (`--text-row` is 1.35, which is right for one
+     line and airless for four). Both steps are body sizes with paragraph
+     leading; the sizes match `--text-body` and `--text-row` on purpose so
+     prose sits on the same rhythm as the rows beside it. */
+  --text-prose: 15px;
+  --text-prose--line-height: 1.75;
+  --text-prose-sm: 14.5px;
+  --text-prose-sm--line-height: 1.7;
   --text-row: 14.5px;
   --text-row--line-height: 1.35;
   --text-notice: 14px;

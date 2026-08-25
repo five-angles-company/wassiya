@@ -1,25 +1,36 @@
 /**
- * ٣.١ — الرئيسية. The app's resting state.
+ * الرئيسية — the readiness surface.
  *
- * ## The constraint that shapes this whole screen
+ * ## What changed, and why
+ *
+ * Home used to be a dashboard: a 4/5 ring, a row of chips, an amber banner, a
+ * grid of category tiles and a routing summary — seven blocks, none of which
+ * answered the question an owner actually has. It also duplicated the
+ * Protection Centre, which rendered the same score object one tap away.
+ *
+ * It now leads with the two things that matter, in the order they're used:
+ *
+ *  1. **The check-in.** Declaring you're alive is the only thing anyone does in
+ *     this app more than once. It gets the most space on the screen.
+ *  2. **The verdict.** One sentence answering *would this actually work?*, and
+ *     at most one action. Not a percentage — 4/5 can't distinguish "you should
+ *     reprint a sheet" from "your family will receive nothing".
+ *
+ * ## The constraint that still shapes everything here
  *
  * *"Category counts come from encrypted metadata (count + type are plaintext;
- * titles and payloads are not), so this screen renders before any
- * decryption."*
+ * titles and payloads are not), so this screen renders before any decryption."*
  *
- * So there is **no `useVault` anywhere in this file** and nothing here waits on
- * a fingerprint. Every number shown — the protection score, the category
- * counts, the routed totals — comes from server metadata the deployment is
- * already allowed to see. That is what lets Home be the screen you land on
- * rather than a wall in front of one, and it is the reason the asset
- * *categories* are shown here while the asset *names* are not: names are
- * ciphertext and live on 4.1, behind the unlock.
+ * There is still **no `useVault` in this file** and nothing waits on a
+ * fingerprint. Every figure comes from server metadata the deployment already
+ * sees. That's what lets Home be the screen you land on rather than a wall in
+ * front of one.
  *
- * ## Exactly one amber row
+ * ## ⚠️ The check-in hero navigates. It never confirms.
  *
- * The board allows one at a time — the highest-ranked incomplete protection.
- * `useProtectionScore` owns that ranking so Home and 6.1 cannot disagree; this
- * screen renders only `topGap`, where 6.1 renders the whole list.
+ * See `CheckInHero` — confirming is biometric-gated and lives only in the
+ * prompt. An unlocked phone that could tap "I'm well" here would be able to
+ * suppress delivery forever.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
@@ -27,41 +38,46 @@ import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { CheckInHero } from "@workspace/ui-native/components/wassiya/check-in-hero"
 import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
-import { ProtectionScore } from "@workspace/ui-native/components/wassiya/protection-score"
-import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
-import { fmtNum, fmtTime } from "@workspace/ui-native/lib/format"
+import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import { ChevronLeft } from "lucide-react-native"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, View } from "react-native"
 
-import { useProtectionScore } from "@/hooks/use-protection-score"
+import { Screen } from "@/components/screen"
+import { useCheckInState } from "@/hooks/use-checkin-state"
+import { useReadiness } from "@/hooks/use-readiness"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ICON, ASSET_TYPES, type AssetType } from "@/lib/asset-types"
+import { ReadinessVerdict } from "@/screens/home/components/readiness-verdict"
 
 export function HomeScreen() {
   const { t, locale } = useStrings("home")
-  const { t: assets } = useStrings("assets")
+  const { t: claimCopy } = useStrings("protection/claim")
   const me = useQuery(api.users.me)
-  // `assets.list` returns type, meta and the routing rule in the clear. The
-  // sealed label comes back too and is simply not opened here.
   const rows = useQuery(api.assets.list, {})
   const heirs = useQuery(api.heirs.list)
+  const claims = useQuery(api.claims.againstMe)
 
-  const score = useProtectionScore({
-    identity: t.itemIdentity,
-    key: t.itemKey,
-    guardian: t.itemGuardian,
-    sheet: t.itemSheet,
-    heirs: t.itemHeirs,
-    routing: t.itemRouting,
-    checkin: t.itemCheckin,
-  })
+  const checkin = useCheckInState()
+  const { verdict } = useReadiness(
+    {
+      identity: t.itemIdentity,
+      key: t.itemKey,
+      guardian: t.itemGuardian,
+      sheet: t.itemSheet,
+      heirs: t.itemHeirs,
+      routing: t.itemRouting,
+      checkin: t.itemCheckin,
+    },
+    heirs?.length ?? 0
+  )
 
+  const openClaim = claims?.find((claim) => claim.canVeto) ?? null
   const total = rows?.length ?? 0
-  const routed = rows?.filter((row) => row.recipientRule === "explicit").length ?? 0
-  const unrouted = total - routed
+  const unrouted =
+    rows?.filter((row) => row.recipientRule !== "explicit").length ?? 0
 
   const heirForms: CountForms = {
     zero: t.countZero,
@@ -70,159 +86,152 @@ export function HomeScreen() {
     few: t.countFew,
     many: t.countMany,
   }
+  const heirLabel = fmtCount(
+    heirs?.length ?? 0,
+    fmtNum(heirs?.length ?? 0, locale),
+    heirForms,
+    locale
+  )
+  const assetLabel = fmtCount(total, fmtNum(total, locale), {
+    zero: t.assetZero,
+    one: t.assetOne,
+    two: t.assetTwo,
+    few: t.assetFew,
+    many: t.assetMany,
+  }, locale)
+
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-6"
-    >
-      {/* Greeting. First name only — the board's own choice, and it is what
-          makes a security dashboard read as someone's own vault. */}
+    <Screen inset="tab" contentClassName="gap-header">
+      {/* Greeting. First name only — what makes a security app read as
+          someone's own vault rather than an admin console. */}
       <View className="flex-row items-center gap-3">
         <InitialDisc name={me?.name ?? ""} />
-        <View>
-          <Text variant="metaSm" className="text-muted-foreground">
-            {greeting(t)}
-          </Text>
+        <View className="min-w-0 flex-1">
+          <Text variant="metaSm">{greeting(t)}</Text>
           <Text variant="pageTitle">{firstName(me?.name)}</Text>
         </View>
       </View>
 
-      {/* The protection ring, as a summary. 6.1 renders the same object as a
-          to-do list. */}
-      <Pressable
-        onPress={() => router.push("/protection")}
-        accessibilityRole="button"
-        className="rounded-card bg-card mt-header flex-row items-center gap-4 p-4 active:bg-sand-300"
-      >
-        <ProtectionScore earned={score.earned} total={score.total} />
-        <View className="min-w-0 flex-1">
-          <Text variant="rowTitle">
-            {score.earned === score.total ? t.protectedTitle : t.protectedPartial}
-          </Text>
-          <Text variant="metaSm" className="text-muted-foreground mt-0.5">
-            {t.lastSync.replace("{time}", fmtTime(new Date(), locale))}
-          </Text>
-        </View>
-        <Icon as={ChevronLeft} className="text-muted-foreground size-5" flip />
-      </Pressable>
-
-      {/* The protection chips, as the board draws them. Done ones recede; the
-          single outstanding one is the amber row below, not a chip. */}
-      <View className="mt-3 flex-row flex-wrap gap-2">
-        {score.items
-          .filter((item) => item.done)
-          .map((item) => (
-            <StatusPill key={item.id} status="confirmed">
-              {item.label}
-            </StatusPill>
-          ))}
-      </View>
-
-      {/* Exactly one. */}
-      {score.topGap !== null ? (
+      {/* Above even the check-in: a veto window is measured in days and closes
+          whether or not anyone opened the app. Nothing outranks it. */}
+      {openClaim !== null ? (
         <AlertBanner
-          className="mt-4"
           variant="security"
-          title={score.topGap.label}
-          description={t.gapNotOn}
+          title={claimCopy.title}
+          description={claimCopy.intro.replace(
+            "{name}",
+            openClaim.claimantName
+          )}
           actions={
-            score.topGap.href === undefined ? undefined : (
-              <Button
-                size="sm"
-                onPress={() => router.push(score.topGap!.href!)}
-              >
-                <Text>{t.fix}</Text>
-              </Button>
-            )
+            <Button size="sm" onPress={() => router.push("/protection/claim")}>
+              <Text>{claimCopy.review}</Text>
+            </Button>
           }
         />
       ) : null}
 
-      {/* Categories, from plaintext metadata. No decryption, no unlock. */}
-      <View className="mt-header flex-row items-center justify-between">
-        <Text variant="sectionLabel">{t.assetsTitle}</Text>
-        <Pressable
-          onPress={() => router.push("/assets")}
-          accessibilityRole="button"
-          className="px-2 py-1"
-        >
-          <Text variant="metaSm" className="text-terracotta-700">
-            {t.seeAll}
-          </Text>
-        </Pressable>
-      </View>
+      <CheckInHero
+        state={checkin.state}
+        detail={checkin.detail}
+        locale={locale}
+        onPress={() => router.push("/protection/checkin")}
+      />
 
-      {total === 0 ? (
-        <Text variant="metaSm" className="text-muted-foreground mt-2">
-          {t.emptyAssets}
-        </Text>
-      ) : (
-        <View className="mt-2 flex-row flex-wrap gap-2">
-          {ASSET_TYPES.map((type) => {
-            const count = rows?.filter((row) => row.type === type).length ?? 0
-            if (count === 0) return null
-            return (
-              <Pressable
-                key={type}
-                onPress={() => router.push("/assets")}
-                accessibilityRole="button"
-                className="rounded-row bg-card min-w-[46%] grow flex-row items-center gap-3 p-3.5 active:bg-sand-300"
-              >
-                <View className="bg-background size-9 items-center justify-center rounded-full">
-                  <Icon
-                    as={ASSET_TYPE_ICON[type]}
-                    className="text-terracotta-700 size-4"
-                  />
-                </View>
-                <Text variant="metaSm" className="flex-1">
-                  {assets[CATEGORY_KEY[type]]}
-                </Text>
-                <Text variant="rowTitle">{fmtNum(count, locale)}</Text>
-              </Pressable>
-            )
-          })}
-        </View>
-      )}
+      {/*
+        Always rendered. When the check-in is the blocker the hero above states
+        *what* is wrong and this states *why it matters* — two different
+        sentences — and only the hero carries a button, so there is still
+        exactly one action on screen.
+      */}
+      <ReadinessVerdict {...verdictProps(verdict, t, heirLabel)} />
 
-      {/* Who receives what, in one line. */}
+      {/* The vault in one quiet line. The old grid of six category tiles put
+          "how many notes do I have" at the same visual weight as "would this
+          reach my family", which is the wrong ranking on this screen — the
+          Vault tab is one tap away and exists to answer it properly. */}
       <Pressable
-        onPress={() => router.push("/will/routing")}
+        onPress={() => router.push("/assets")}
         accessibilityRole="button"
-        className="rounded-card bg-card mt-header gap-1.5 p-4 active:bg-sand-300"
+        className="active:bg-sand-300 rounded-row bg-card flex-row items-center gap-3 px-4 py-3.5"
       >
-        <Text variant="rowTitle">
-          {heirs === undefined || heirs.length === 0
-            ? t.noHeirs
-            : t.heirsSummary
-                .replace(
-                  "{heirs}",
-                  fmtCount(
-                    heirs.length,
-                    fmtNum(heirs.length, locale),
-                    heirForms,
-                    locale
-                  )
-                )
-                .replace("{routed}", fmtNum(routed, locale))
-                .replace("{total}", fmtNum(total, locale))}
-        </Text>
-        {unrouted > 0 ? (
-          <Text variant="metaSm" className="text-muted-foreground">
-            {t.defaultRule.replace("{n}", fmtNum(unrouted, locale))}
+        <View className="min-w-0 flex-1">
+          <Text variant="rowTitle">
+            {total === 0
+              ? t.emptyAssets
+              : t.vaultLine
+                  .replace("{assets}", assetLabel)
+                  .replace("{heirs}", heirLabel)}
           </Text>
-        ) : null}
+          {unrouted > 0 ? (
+            <Text variant="metaSm" className="mt-0.5">
+              {t.unroutedLine.replace("{n}", fmtNum(unrouted, locale))}
+            </Text>
+          ) : null}
+        </View>
+        <Icon as={ChevronLeft} className="text-muted-foreground size-5" flip />
       </Pressable>
-    </ScrollView>
+    </Screen>
   )
 }
 
 /**
- * Time-of-day greeting.
+ * Maps the verdict to its sentence and its single action.
  *
- * Read at render on purpose and not memoised: it is a label, not a countdown,
- * and being an hour stale across a long session is invisible where a frozen
- * day-counter would not be.
+ * **The `checkin` gap deliberately carries no action.** The hero directly above
+ * already offers "فعّله الآن" for exactly that, and two buttons for one task is
+ * the duplication this redesign exists to remove. The verdict still states the
+ * consequence, because "the switch is off" and "nothing will ever be delivered"
+ * are different sentences and only the second one lands.
+ */
+function verdictProps(
+  verdict: ReturnType<typeof useReadiness>["verdict"],
+  t: Record<string, string>,
+  heirLabel: string
+) {
+  const question = t.question!
+
+  if (verdict.kind === "ready") {
+    return {
+      kind: "ready" as const,
+      question,
+      answer: t.answerReady!.replace("{heirs}", heirLabel),
+    }
+  }
+
+  // Loading resolves in a frame or two. Showing the question with no answer
+  // beats a spinner that flashes a verdict the moment it lands.
+  if (verdict.kind === "loading") {
+    return { kind: "ready" as const, question, answer: "" }
+  }
+
+  const { id, href } = verdict.gap
+  const COPY: Record<string, { answer?: string; fix?: string }> = {
+    heirs: { answer: t.blockedHeirs, fix: t.fixHeirs },
+    routing: { answer: t.blockedRouting, fix: t.fixRouting },
+    identity: { answer: t.blockedIdentity, fix: t.fixIdentity },
+    key: { answer: t.blockedIdentity },
+    checkin: { answer: t.blockedCheckin },
+    sheet: { answer: t.riskSheet, fix: t.fixSheet },
+    guardian: { answer: t.riskGuardian, fix: t.fixGuardian },
+  }
+  const copy = COPY[id] ?? {}
+
+  return {
+    kind: verdict.kind,
+    question,
+    answer: copy.answer ?? "",
+    action:
+      copy.fix !== undefined && href !== undefined
+        ? { label: copy.fix, onPress: () => router.push(href) }
+        : undefined,
+  }
+}
+
+/**
+ * Time-of-day greeting. Read at render on purpose and not memoised: it's a
+ * label, not a countdown, and being an hour stale across a long session is
+ * invisible where a frozen day-counter would not be.
  */
 function greeting(t: Record<string, string>): string {
   const hour = new Date().getHours()
@@ -231,17 +240,7 @@ function greeting(t: Record<string, string>): string {
   return t.greetEvening!
 }
 
-/** The board greets by first name. Arabic names are space-separated. */
+/** Greeted by first name. Arabic names are space-separated. */
 function firstName(full: string | null | undefined): string {
   return (full ?? "").trim().split(/\s+/u)[0] ?? ""
 }
-
-/** Category labels live in the assets dictionary; reused, not duplicated. */
-const CATEGORY_KEY = {
-  crypto: "filterCrypto",
-  bank: "filterBank",
-  document: "filterDocument",
-  photos: "filterPhotos",
-  digital: "filterDigital",
-  note: "filterNote",
-} as const satisfies Record<AssetType, string>

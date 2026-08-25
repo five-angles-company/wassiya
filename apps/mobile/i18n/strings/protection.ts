@@ -226,6 +226,9 @@ export const CLAIM_VETO = {
   },
   daysLeft: { ar: "{n} يوماً متبقياً", en: "{n} days left" },
 
+  // Home links here; it must NOT read as the veto itself. Stopping a claim is
+  // biometric-gated and happens on the claim screen, not from a banner.
+  review: { ar: "راجع الطلب", en: "Review the claim" },
   veto: { ar: "أوقف الطلب — أنا بخير", en: "Stop this claim — I'm well" },
   vetoing: { ar: "جارٍ الإيقاف…", en: "Stopping…" },
   vetoPrompt: {

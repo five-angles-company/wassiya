@@ -10,8 +10,65 @@ export const HOME = {
   greetAfternoon: { ar: "مساء الخير", en: "Good afternoon" },
   greetEvening: { ar: "مساء الخير", en: "Good evening" },
 
-  protectedTitle: { ar: "خزنتك محمية", en: "Your vault is protected" },
-  protectedPartial: { ar: "خزنتك شبه محمية", en: "Your vault is nearly protected" },
+  // -- The verdict -----------------------------------------------------------
+  // The question is printed above the answer because most owners have never
+  // actually asked it. No pronoun: "لو حدث لك/لكِ" would force a gender the app
+  // has no business assuming, and dropping it reads better anyway.
+  question: {
+    ar: "لو حدث شيء اليوم — هل تصل خزنتك إلى ورثتك؟",
+    en: "If something happened today — would your vault reach your heirs?",
+  },
+  answerReady: {
+    ar: "نعم. خزنتك تصل إلى {heirs}.",
+    en: "Yes. Your vault reaches {heirs}.",
+  },
+
+  // Delivery failures. Each names the consequence, not the missing checkbox:
+  // "لم تُضف ورثة" is a to-do, "فلا أحد يستلم شيئاً" is why it matters.
+  blockedHeirs: {
+    ar: "لا. لم تُضف ورثة بعد، فلا أحد يستلم شيئاً.",
+    en: "No. You haven't added any heirs, so nobody would receive anything.",
+  },
+  blockedRouting: {
+    ar: "لا. لا شيء في خزنتك موجَّه إلى أحد بعد.",
+    en: "No. Nothing in your vault is routed to anyone yet.",
+  },
+  blockedCheckin: {
+    ar: "لا. بدون نبض الحياة لن يعرف أحد أن شيئاً حدث، ولن يُسلَّم شيء.",
+    en: "No. Without the life check-in nobody learns anything happened, and nothing is ever delivered.",
+  },
+  blockedIdentity: {
+    ar: "لا. لم يكتمل التحقق من هويتك بعد.",
+    en: "No. Your identity check isn't finished.",
+  },
+
+  // Access risks. The vault still reaches the family — the person exposed is
+  // the owner. Saying "your heirs are at risk" here would be false and cruel.
+  riskSheet: {
+    ar: "تصل إلى ورثتك. لكنك قد تفقد أنت الوصول — لم تطبع وثيقة الاسترداد.",
+    en: "It reaches your heirs. But you could lose access yourself — your recovery sheet isn't printed.",
+  },
+  riskGuardian: {
+    ar: "تصل إلى ورثتك. لكن بلا وصي لا يمكن استرداد خزنتك على جهاز جديد.",
+    en: "It reaches your heirs. But without a guardian it can't be recovered on a new device.",
+  },
+
+  fixHeirs: { ar: "أضف وارثاً", en: "Add an heir" },
+  fixRouting: { ar: "وجّه أصولك", en: "Route your assets" },
+  fixIdentity: { ar: "أكمل التحقق", en: "Finish verification" },
+  fixSheet: { ar: "اطبع الوثيقة", en: "Print the sheet" },
+  fixGuardian: { ar: "اختر وصياً", en: "Choose a guardian" },
+
+  // -- The check-in hero -----------------------------------------------------
+  checkinConfirmed: {
+    ar: "آخر تأكيد: {last} · التالي: {next}",
+    en: "Last confirmed {last} · next {next}",
+  },
+  checkinDue: { ar: "حان وقت التأكيد", en: "It's time to confirm" },
+  checkinOverdue: {
+    ar: "تأخّر التأكيد. بدأ التنبيه يتصاعد.",
+    en: "Overdue. Escalation has started.",
+  },
   // "آخر مزامنة مشفّرة" — the word مشفّرة is doing real work: it says the sync
   // moved ciphertext, not contents.
   lastSync: { ar: "آخر مزامنة مشفّرة: {time}", en: "Last encrypted sync: {time}" },
@@ -28,6 +85,13 @@ export const HOME = {
   assetsTitle: { ar: "أصولك", en: "Your assets" },
   seeAll: { ar: "الكل", en: "All" },
   emptyAssets: { ar: "لم تُضف أصولاً بعد", en: "No assets yet" },
+  vaultLine: { ar: "{assets} · {heirs}", en: "{assets} · {heirs}" },
+  // The number that actually matters on this row: an asset with no
+  // destination is the commonest silent failure in the product.
+  unroutedLine: {
+    ar: "{n} منها بلا وجهة",
+    en: "{n} with no destination",
+  },
 
   heirsSummary: {
     ar: "{heirs} · {routed} من {total} أصلاً لها مستلم",
@@ -43,6 +107,14 @@ export const HOME = {
   gapPrefix: { ar: "{label}", en: "{label}" },
   gapNotOn: { ar: "غير مفعّل — أكمله لتكتمل السلسلة", en: "Not set — finish it to complete the chain" },
   fix: { ar: "أكمله", en: "Finish" },
+
+  // Assets need their own forms: "١ أصلاً" is the 11+ accusative applied to
+  // one thing, which reads the way "1 assets" does. See i18n/plural.ts.
+  assetZero: { ar: "لا أصول", en: "No assets" },
+  assetOne: { ar: "أصل واحد", en: "1 asset" },
+  assetTwo: { ar: "أصلان", en: "2 assets" },
+  assetFew: { ar: "{n} أصول", en: "{n} assets" },
+  assetMany: { ar: "{n} أصلاً", en: "{n} assets" },
 
   countZero: { ar: "لا ورثة", en: "No heirs" },
   countOne: { ar: "وارث واحد", en: "1 heir" },

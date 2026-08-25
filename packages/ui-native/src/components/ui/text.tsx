@@ -43,8 +43,25 @@ const textVariants = cva(
         noticeTitle: 'font-body-bold text-notice',
         /** The primary line of a list row. */
         rowTitle: 'font-body-semibold text-row',
-        /** Secondary line under a row title. */
-        meta: 'text-meta',
+        /**
+         * A paragraph of explanatory copy — the variant the scale was missing.
+         *
+         * Every screen used to hand-write `text-[15px] leading-[1.75]
+         * text-muted-foreground`, which is this, spelled out 58 times. Muted is
+         * baked in because prose in this product is always secondary to the
+         * heading it sits under; when it isn't, it's a `title`, not prose.
+         */
+        prose: 'text-muted-foreground text-prose',
+        /** The same paragraph, tightened for cards and dense rows. */
+        proseSm: 'text-muted-foreground text-prose-sm',
+        /**
+         * Secondary line under a row title.
+         *
+         * Muted, matching `metaSm`. It previously wasn't, which is why callers
+         * kept appending `text-muted-foreground` by hand and why the two
+         * smallest steps disagreed about their own colour.
+         */
+        meta: 'text-muted-foreground text-meta',
         /** The smallest supporting line; already dimmed. */
         metaSm: 'text-muted-foreground text-metasm',
         /** Inline text action ("الكل", "تعديل"). */
