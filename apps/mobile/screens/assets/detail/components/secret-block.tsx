@@ -5,6 +5,7 @@ import { SecretWordPills } from "@workspace/ui-native/components/wassiya/secret-
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
 import { Eye, EyeOff, Fingerprint } from "lucide-react-native"
+import type * as React from "react"
 import { View } from "react-native"
 
 import type { SecretState } from "@/screens/assets/detail/use-asset-secret"
@@ -14,8 +15,14 @@ export type SecretBlockProps = {
   state: SecretState
   /** Words in the phrase, for the masked pills. Ignored unless `asWords`. */
   wordCount: number
-  /** True for a mnemonic — pills; false for JSON-shaped payloads — text. */
+  /** True for a mnemonic — pills; false for structured payloads — fields. */
   asWords: boolean
+  /**
+   * What to draw once revealed, for payloads that are neither a phrase nor
+   * plain text. The screen owns parsing, because the shapes are the wizards'
+   * contract; this component owns the reveal gate and the countdown.
+   */
+  revealedBody?: React.ReactNode
   labels: Record<string, string>
   locale: Locale
   onReveal: () => void
@@ -37,6 +44,7 @@ export function SecretBlock({
   state,
   wordCount,
   asWords,
+  revealedBody,
   labels,
   locale,
   onReveal,
@@ -71,9 +79,15 @@ export function SecretBlock({
             revealed
           />
         ) : (
-          <View className="rounded-box bg-background p-3">
-            <Text className="text-[14px] leading-[1.8]">{state.text}</Text>
-          </View>
+          // `revealedBody` or nothing dressed up as something. Printing
+          // `state.text` here is what showed owners raw JSON — braces, quotes
+          // and key names — on the one screen they had just authenticated to
+          // reach.
+          (revealedBody ?? (
+            <View className="rounded-box bg-background p-3">
+              <Text className="text-prose-sm text-foreground">{state.text}</Text>
+            </View>
+          ))
         )
       ) : asWords ? (
         <SecretWordPills count={wordCount} revealed={false} />

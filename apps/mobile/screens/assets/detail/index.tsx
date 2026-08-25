@@ -18,10 +18,8 @@ import { openLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
-import { cn } from "@workspace/ui-native/lib/utils"
 import { router, useLocalSearchParams } from "expo-router"
 import { View } from "react-native"
 
@@ -29,14 +27,15 @@ import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import {
-  ASSET_TYPE_ICON,
-  ASSET_TYPE_TONE,
-  type AssetType,
-} from "@/lib/asset-types"
+import { type AssetType } from "@/lib/asset-types"
 import { DeleteAssetButton } from "@/screens/assets/detail/components/delete-asset-button"
 import { RecipientSummary } from "@/screens/assets/detail/components/recipient-summary"
 import { SecretBlock } from "@/screens/assets/detail/components/secret-block"
+import { SecretFieldList } from "@/screens/assets/detail/components/secret-field-list"
+import {
+  isPhrasePayload,
+  parseSecret,
+} from "@/screens/assets/detail/secret-fields"
 import {
   REVEAL_SECONDS,
   useAssetSecret,
@@ -45,16 +44,6 @@ import { useVault } from "@/stores/vault"
 
 /** Types whose payload is a phrase, so it renders as pills rather than text. */
 const WORD_TYPES: AssetType[] = ["crypto"]
-/**
- * The hero cover, per tone. Same fills the list rows use, so an asset looks
- * like itself whether you are scanning the vault or standing inside one.
- */
-const COVER = {
-  terracotta: { fill: "bg-terracotta-200", glyph: "text-terracotta-700" },
-  olive: { fill: "bg-olive-200", glyph: "text-olive-700" },
-  sand: { fill: "bg-sand-300", glyph: "text-sand-800" },
-} as const
-
 /** Types stored as files, which have no single revealable string. */
 const FILE_TYPES: AssetType[] = ["document", "photos"]
 
@@ -74,6 +63,22 @@ export function AssetDetailScreen() {
   const mk = useVault((s) => s.mk)
   const { state, reveal, hide } = useAssetSecret(assetId, t.biometricPrompt)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  /**
+   * The revealed payload, as labelled fields.
+   *
+   * `null` when the payload is a phrase (rendered as pills) or does not parse
+   * (a rotated format, a hand-edited row) — the block then falls back to plain
+   * text, which is ugly but honest. Refusing to show a secret the owner has
+   * just authenticated for would be worse than showing it plainly.
+   */
+  const fields = useMemo(() => {
+    if (state.status !== "revealed" || asset === undefined || asset === null) {
+      return null
+    }
+    if (isPhrasePayload(asset.type, state.text)) return null
+    return parseSecret(asset.type, state.text, t)
+  }, [state, asset, t])
 
   const openRecipients = () =>
     router.push({
@@ -111,26 +116,13 @@ export function AssetDetailScreen() {
   return (
     <Screen>
       {/*
-        `ScreenHeader` is not used here, deliberately. An asset leads with a
-        tinted cover carrying its type — the same mark the list rows wear, at
-        screen scale — and that is a different shape from the title-and-back the
-        header exists to standardise. `Screen` still owns the scaffold.
+        No type glyph up here. The list row already showed it, the title says
+        what the thing is, and a decorative 42px mark at the top of a detail
+        screen is a header pretending to be a hero. What this screen owes its
+        reader is the secret and the recipients, not a restatement of the icon
+        they just tapped.
       */}
       <BackButton label={common.back} />
-
-      <View
-        className={cn(
-          "rounded-card mt-4 h-28 items-center justify-center",
-          COVER[ASSET_TYPE_TONE[asset.type]].fill
-        )}
-      >
-        <Icon
-          as={ASSET_TYPE_ICON[asset.type]}
-          size={42}
-          strokeWidth={2.5}
-          className={COVER[ASSET_TYPE_TONE[asset.type]].glyph}
-        />
-      </View>
 
       <View className="mb-header mt-4 gap-1">
         <Text variant="pageTitle" numberOfLines={3}>
@@ -177,6 +169,7 @@ export function AssetDetailScreen() {
                   )
             }`,
           }}
+          revealedBody={fields === null ? undefined : <SecretFieldList fields={fields} />}
           onReveal={() => reveal(url, asset.dekWrappedByMk)}
           onHide={hide}
         />

@@ -175,6 +175,24 @@ export const ASSET_DETAIL = {
     en: "In-app file viewing arrives in a later stage",
   },
 
+  // Field labels for a revealed secret. Before these existed the screen
+  // printed the stored JSON, key names and all.
+  fieldService: { ar: "الخدمة", en: "Service" },
+  fieldUsername: { ar: "اسم المستخدم", en: "Username" },
+  fieldPassword: { ar: "كلمة المرور", en: "Password" },
+  fieldTwoFactor: { ar: "التحقق بخطوتين", en: "Two-factor" },
+  fieldRecoveryCodes: { ar: "رموز الاسترداد", en: "Recovery codes" },
+  fieldDisposition: { ar: "ما يُفعل بالحساب", en: "What to do with it" },
+  fieldBank: { ar: "المصرف", en: "Bank" },
+  fieldIban: { ar: "الآيبان", en: "IBAN" },
+  fieldAccountType: { ar: "نوع الحساب", en: "Account type" },
+  fieldBranch: { ar: "الفرع", en: "Branch" },
+  fieldCurrency: { ar: "العملة", en: "Currency" },
+  fieldInstructions: { ar: "تعليمات", en: "Instructions" },
+  fieldNetwork: { ar: "الشبكة", en: "Network" },
+  fieldAccount: { ar: "الحساب", en: "Account" },
+  fieldBody: { ar: "النص", en: "Text" },
+
   recipientsLabel: { ar: "من يستلمه؟", en: "Who receives it?" },
   recipientsNone: { ar: "بلا مستلم", en: "No recipient" },
   recipientsNoneBody: {
