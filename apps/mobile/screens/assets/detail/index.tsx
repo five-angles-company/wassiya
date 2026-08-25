@@ -1,26 +1,25 @@
 /**
- * One asset — read as a handover, not as a record.
+ * One asset, as a sealed envelope addressed to a person.
  *
- * ## What this screen is for
+ * ## Why the shape changed
  *
- * It used to be ordered like a password manager: the secret first, the
- * recipients last and only as a button that said *edit*. That ordering answers
- * "what is my password", and nobody opens an inheritance vault to look up their
- * own iCloud password — they know it. They open it to check the plan still
- * works.
+ * Four rewrites of this screen were the same thing: a scroll of headed sections
+ * — identity, recipients, content, maintenance — reordered and recoloured. That
+ * shape describes a *record*, which is why it kept coming out looking like a
+ * form however it was styled.
  *
- * So the screen leads with **who receives this after you**, which is the only
- * question that makes this app different from a password manager, and the
- * secret sits below as the payload that person will be handed. Everything else
- * — sizes, dates, deletion — is quiet and at the bottom, where maintenance
- * belongs.
+ * An asset here is not a record. It is a thing being left to a named person, so
+ * the screen is one object and one action: an addressed envelope, and a seal.
+ * The recipient is **on** the envelope rather than in a section below it —
+ * nothing about this asset can be read without reading who it is for — and the
+ * contents stay sealed until a fingerprint opens them.
  *
  * ## Two-tier decryption throughout
  *
  * The label opens when the screen does; the payload only behind a fresh
  * biometric, on a ten-second timer, under a screenshot guard. File-backed types
- * have no single revealable string and no viewer yet, so they get an honest
- * summary rather than a reveal button that could not deliver.
+ * have no single revealable string and no viewer yet, so they say so rather
+ * than offering a seal that could not be broken.
  */
 import { useMemo, useState } from "react"
 import { useQuery } from "convex/react"
@@ -30,7 +29,6 @@ import { openLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { router, useLocalSearchParams } from "expo-router"
 import { View } from "react-native"
@@ -39,9 +37,9 @@ import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { type AssetType } from "@/lib/asset-types"
+import { ASSET_TYPE_TONE, type AssetType } from "@/lib/asset-types"
 import { DeleteAssetButton } from "@/screens/assets/detail/components/delete-asset-button"
-import { RecipientSummary } from "@/screens/assets/detail/components/recipient-summary"
+import { AssetEnvelope } from "@/screens/assets/detail/components/asset-envelope"
 import { SecretBlock } from "@/screens/assets/detail/components/secret-block"
 import { SecretFieldList } from "@/screens/assets/detail/components/secret-field-list"
 import {
@@ -53,6 +51,16 @@ import {
   useAssetSecret,
 } from "@/screens/assets/detail/use-asset-secret"
 import { useVault } from "@/stores/vault"
+
+/** Category copy per type, reused from the vault list rather than restated. */
+const CATEGORY_KEY = {
+  crypto: "filterCrypto",
+  bank: "filterBank",
+  document: "filterDocument",
+  photos: "filterPhotos",
+  digital: "filterDigital",
+  note: "filterNote",
+} as const satisfies Record<AssetType, string>
 
 /** Types whose payload is a phrase, so it renders as pills rather than fields. */
 const WORD_TYPES: AssetType[] = ["crypto"]
@@ -66,6 +74,8 @@ export function AssetDetailScreen() {
   const { t: common } = useStrings("common")
   // "كل الورثة" / "الوصي" live with the routing screen that owns those concepts.
   const { t: routing } = useStrings("will/routing")
+  // Category names live with the list that names them; reused, not duplicated.
+  const { t: assetCopy } = useStrings("assets")
   // The whole screen can put a secret on display, so the guard covers all of it
   // rather than only the moment of reveal.
   useSecureScreen("assets/detail")
@@ -121,71 +131,35 @@ export function AssetDetailScreen() {
 
   const isFileType = FILE_TYPES.includes(asset.type)
   const url = asset.urls[0] ?? null
-  const routed = asset.recipientRule !== "default"
 
   return (
     <Screen>
       <BackButton label={common.back} />
 
-      {/* Identity. No type glyph: the row you tapped already showed it, and a
-          decorative mark here is a header pretending to be a hero. */}
-      <View className="mb-header mt-4 gap-1">
-        <Text variant="screenTitle" numberOfLines={3}>
-          {label?.title ?? t.revealFailed}
-        </Text>
-        {label?.subtitle ? (
-          <Text variant="metaSm" numberOfLines={2}>
-            {label.subtitle}
-          </Text>
-        ) : null}
-      </View>
+      <AssetEnvelope
+        className="mt-4"
+        assetId={assetId}
+        kicker={assetCopy[CATEGORY_KEY[asset.type]]!}
+        title={label?.title ?? t.revealFailed}
+        subtitle={label?.subtitle}
+        tone={ASSET_TYPE_TONE[asset.type]}
+        toLabel={t.toLabel}
+        allHeirsLabel={routing.allHeirs}
+        executorLabel={routing.executor}
+        unaddressedLabel={t.recipientsNone}
+      />
 
-      {/*
-        The handover, first.
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-3 self-start px-5"
+        onPress={openRecipients}
+      >
+        <Text>{t.recipientsEdit}</Text>
+      </Button>
 
-        "من يستلمه بعدك" is the sentence that makes this an inheritance vault
-        rather than a password manager, and it belongs above the secret for the
-        same reason the secret used to lead: the owner already knows their own
-        password. What they came to check is that this reaches the right person.
-      */}
-      <View className="gap-2.5">
-        <Text variant="sectionLabel">{t.handoverLabel}</Text>
-
-        {routed ? (
-          <>
-            <RecipientSummary
-              assetId={assetId}
-              allHeirsLabel={routing.allHeirs}
-              executorLabel={routing.executor}
-              emptyLabel={t.recipientsNone}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="self-start px-5"
-              onPress={openRecipients}
-            >
-              <Text>{t.recipientsEdit}</Text>
-            </Button>
-          </>
-        ) : (
-          <AlertBanner
-            variant="security"
-            title={t.recipientsNone}
-            description={t.recipientsNoneBody}
-            actions={
-              <Button size="sm" variant="outline" onPress={openRecipients}>
-                <Text>{t.recipientsEdit}</Text>
-              </Button>
-            }
-          />
-        )}
-      </View>
-
-      {/* The payload that person will be handed. */}
+      {/* The seal. */}
       <View className="mt-header gap-2.5">
-        <Text variant="sectionLabel">{t.contentLabel}</Text>
-
         {isFileType ? (
           <View className="rounded-card bg-sand-100 gap-1.5 p-4 shadow-sm">
             <Text variant="rowTitle">
@@ -211,19 +185,13 @@ export function AssetDetailScreen() {
               hide: t.hide,
               revealDenied: t.revealDenied,
               revealFailed: t.revealFailed,
-              terms: t.revealTerms.replace(
-                "{n}",
-                fmtNum(REVEAL_SECONDS, locale)
-              ),
+              terms: t.revealTerms.replace("{n}", fmtNum(REVEAL_SECONDS, locale)),
             }}
             onReveal={() => reveal(url, asset.dekWrappedByMk)}
             onHide={hide}
           />
         )}
 
-        {/* Lifted out of the block's own subtitle, where it rode along with the
-            reveal terms as one run-on line. When it was last opened is a fact
-            about the asset, not a condition of opening it. */}
         <Text variant="footnote">
           {lastRevealed == null
             ? t.neverRevealed

@@ -176,10 +176,9 @@ export const ASSET_DETAIL = {
 
   // Field labels for a revealed secret. Before these existed the screen
   // printed the stored JSON, key names and all.
-  // The two section headings. "من يستلمه بعدك" is the sentence that makes this
-  // an inheritance vault rather than a password manager.
-  handoverLabel: { ar: "من يستلمه بعدك", en: "Who receives it after you" },
-  contentLabel: { ar: "المحتوى المحمي", en: "Protected content" },
+  // The address line on the envelope. "إلى" is what is written on something
+  // being left for someone, and that is what this asset is.
+  toLabel: { ar: "إلى", en: "To" },
 
   fieldService: { ar: "الخدمة", en: "Service" },
   fieldUsername: { ar: "اسم المستخدم", en: "Username" },
