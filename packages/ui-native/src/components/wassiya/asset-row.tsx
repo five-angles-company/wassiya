@@ -6,7 +6,7 @@ import {
 } from '@workspace/ui-native/components/wassiya/status-pill';
 import type { Tone } from '@workspace/ui-native/lib/tone';
 import { cn } from '@workspace/ui-native/lib/utils';
-import { ChevronLeft, type LucideIcon } from 'lucide-react-native';
+import { ChevronRight, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -83,11 +83,11 @@ export function AssetRow({
     <>
       <View
         className={cn(
-          'rounded-box size-13 shrink-0 items-center justify-center',
+          'rounded-box size-12 shrink-0 items-center justify-center',
           skin.cover
         )}
       >
-        <Icon as={icon} size={24} strokeWidth={2.5} className={skin.glyph} />
+        <Icon as={icon} size={22} strokeWidth={2.5} className={skin.glyph} />
       </View>
 
       <View className="min-w-0 flex-1 gap-0.5">
@@ -104,13 +104,31 @@ export function AssetRow({
       {recipientStatus !== undefined ? (
         <StatusPill status={recipientStatus}>{recipientLabel}</StatusPill>
       ) : onPress !== undefined ? (
-        <Icon as={ChevronLeft} size={18} className="text-muted-foreground" flip />
+        /*
+          Authored as the LTR-forward glyph and mirrored by `flip`, which is the
+          only combination that survives both directions. `ChevronLeft` + `flip`
+          renders *right*-pointing under RTL — sitting at the trailing edge
+          aiming back into the row it belongs to.
+        */
+        <Icon
+          as={ChevronRight}
+          size={17}
+          strokeWidth={2.5}
+          className="text-sand-500 shrink-0"
+          flip
+        />
       ) : null}
     </>
   );
 
   const shell = cn(
-    'rounded-row bg-sand-100 flex-row items-center gap-3.5 p-3 shadow-sm',
+    // `shadow-sm`, deliberately. Twelve rows each carrying a 10px blur reads
+    // as smudge rather than depth; what lifts a row is being lighter than the
+    // page, and the shadow only has to hint at the edge.
+        // 48px mark + 12px padding = a 72px row. At 52/14 it stood 90px tall for
+    // two short lines of text, which is what made the trailing chevron look
+    // marooned: the emptier a row is, the more space it has to be empty in.
+    'rounded-row bg-sand-100 flex-row items-center gap-3 p-3 shadow-sm',
     className
   );
 
