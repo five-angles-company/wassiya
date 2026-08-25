@@ -15,23 +15,21 @@ import Animated, {
 /**
  * One asset, as a square in the vault grid.
  *
- * ## Bold fills, and a big glyph instead of a small disc
+ * ## Why it kept reading as flat
  *
- * Earlier versions used a 100-level tint carrying a 40px disc with a 19px icon
- * inside it. At that weight a tile is a pale rectangle with a speck in the
- * corner: the type is unreadable at a glance, the grid has no rhythm, and the
- * screen reads as unfinished however the rest is arranged.
+ * Three separate causes, fixed together — see `SKIN` for the colour half:
  *
- * The fill is a **200-level tone** — clearly separated from the page and from
- * the other two tones — and the icon is drawn **32px directly on it** in the
- * tone's 700 step. No disc. What made the tile feel empty was a small mark in
- * a large space, and putting a container around that mark makes it smaller.
+ *  1. The fill was **darker than the page**, so the tile sank into it. A card
+ *     has to be lighter than its ground before a shadow can mean anything.
+ *  2. `shadow-sm` is 1px at 14%, which is invisible on a warm ground. The grid
+ *     looked printed on the page rather than laid out over it.
+ *  3. Glyph and fill were one hue at two brightnesses. Muddy by construction.
  *
  * ## Square, deliberately
  *
  * A tile sized by its content is as tall as its title, so a grid of mixed names
  * has a ragged edge and every tile looks like a different kind of thing. A
- * square is a decision: room for the glyph, a fixed place for the title, and a
+ * square is a decision: room for the chip, a fixed place for the title, and a
  * rhythm the eye can sweep. An earlier attempt set a min-height while keeping
  * the pale styling and only made the emptiness taller — the shape was never the
  * problem, the weight was.
@@ -64,16 +62,31 @@ export type AssetTileProps = {
 };
 
 /**
- * Fill and glyph per tone, at a weight you can actually see.
+ * A card that **lifts off the page**, and a saturated chip on it.
  *
- * `sand` sits at 300 rather than 200: the 200 step is within a few percent of
- * the page, so notes and bank entries would read as holes in the grid rather
- * than as things in it.
+ * The previous fills sat at 200/300 — `sand-300` (#dcd3c4) is *darker* than the
+ * #f5ead8 ground, so the tile read as a hole punched in the page rather than an
+ * object resting on it. Every fill here is lighter than the ground, which is
+ * what makes a shadow mean anything: light surface, dark edge, air underneath.
+ *
+ * The glyph moves back into a **solid** chip, but a real one — 44px carrying a
+ * 22px icon in the tone's foreground, not a 40px wash carrying a tinted speck.
+ * A saturated mark against a near-white card is the contrast the tile never had;
+ * sand-800 on sand-300 was one hue at two brightnesses, which is the definition
+ * of muddy.
  */
-const SKIN: Record<Tone, { fill: string; glyph: string }> = {
-  terracotta: { fill: 'bg-terracotta-200', glyph: 'text-terracotta-700' },
-  olive: { fill: 'bg-olive-200', glyph: 'text-olive-700' },
-  sand: { fill: 'bg-sand-300', glyph: 'text-sand-800' },
+const SKIN: Record<Tone, { card: string; chip: string; onChip: string }> = {
+  terracotta: {
+    card: 'bg-terracotta-100',
+    chip: 'bg-primary',
+    onChip: 'text-primary-foreground',
+  },
+  olive: {
+    card: 'bg-olive-100',
+    chip: 'bg-secondary',
+    onChip: 'text-secondary-foreground',
+  },
+  sand: { card: 'bg-sand-100', chip: 'bg-sand-600', onChip: 'text-sand-100' },
 };
 
 export function AssetTile({
@@ -110,12 +123,22 @@ export function AssetTile({
         onPressOut={() => {
           pressed.value = withSpring(0, { damping: 18, stiffness: 260 });
         }}
+        // `shadow-md`, not `sm`. The small step is 1px at 14% — invisible against
+        // a warm ground, which is why the grid looked printed on rather than
+        // laid out.
         className={cn(
-          'rounded-card aspect-square justify-between p-4 shadow-sm',
-          skin.fill
+          'rounded-card aspect-square justify-between p-4 shadow-md',
+          skin.card
         )}
       >
-        <Icon as={icon} size={32} strokeWidth={2.5} className={skin.glyph} />
+        <View
+          className={cn(
+            'size-11 items-center justify-center rounded-full',
+            skin.chip
+          )}
+        >
+          <Icon as={icon} size={22} strokeWidth={2.75} className={skin.onChip} />
+        </View>
 
         <View className="gap-0.5">
           {/* Two lines, then ellipsis. "حساب الراجحي الجاري للمصاريف" should
