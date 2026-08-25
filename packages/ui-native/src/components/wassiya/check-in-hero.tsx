@@ -110,7 +110,6 @@ export function CheckInHero({
   const skin = settled
     ? {
         card: 'bg-olive-100',
-        accent: 'bg-olive-200',
         title: 'text-olive-800',
         body: 'text-olive-700',
         pill: 'bg-secondary active:bg-olive-600',
@@ -120,7 +119,6 @@ export function CheckInHero({
       }
     : {
         card: 'bg-terracotta-100',
-        accent: 'bg-terracotta-200',
         title: 'text-terracotta-800',
         body: 'text-terracotta-700',
         pill: 'bg-primary active:bg-terracotta-600',
@@ -131,32 +129,23 @@ export function CheckInHero({
 
   return (
     <View
-      className={cn('rounded-summary overflow-hidden px-5 pb-5 pt-7', skin.card, className)}
+      className={cn('rounded-summary px-5 pb-5 pt-6', skin.card, className)}
     >
-      {/* A washed circle bleeding off the start corner — the design system's
-          "soft circular accent". Without it the card is a flat tinted
-          rectangle, which is what made an earlier version read as a wireframe. */}
-      <View className={cn('absolute -top-16 -start-14 size-44 rounded-full opacity-60', skin.accent)} />
-
       <View className="items-center">
         <View>
           <PulsingHeart tone={settled ? 'olive' : 'terracotta'} />
-          {/* The heart stays the motif in every state; a check rides the corner
-              when the clock is satisfied, rather than replacing it. */}
-          {/*
-            Anchored to the disc's rim, not the container's corner. The heart is
-            an 86px disc centred in a 144px ripple field, so a `bottom-1 end-1`
-            badge floats ~29px out on the halo and reads as detached. 20px puts
-            it on the edge of the heart itself.
-          */}
+          {/* The heart stays the motif in every state; a check rides its rim
+              when the clock is satisfied, rather than replacing it. The disc is
+              60px and the ripple expands from that same edge, so the badge sits
+              on the corner rather than floating out in a halo. */}
           {settled ? (
             <View
               className={cn(
-                'border-olive-100 absolute bottom-5 end-5 size-9 items-center justify-center rounded-full border-4',
+                'border-olive-100 absolute -bottom-1 -end-1 size-7 items-center justify-center rounded-full border-[3px]',
                 skin.badge
               )}
             >
-              <Icon as={Check} size={16} strokeWidth={3.5} className={skin.onBadge} />
+              <Icon as={Check} size={13} strokeWidth={3.5} className={skin.onBadge} />
             </View>
           ) : null}
         </View>

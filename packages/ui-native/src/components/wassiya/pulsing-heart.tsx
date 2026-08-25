@@ -22,25 +22,31 @@ import Animated, {
  * A single sine pulse reads as a notification badge demanding a tap. A heart
  * does **lub-dub**: a strong contraction, a quick lighter second one, then a
  * rest about twice as long as the two beats together. That rhythm is what the
- * eye recognises as *alive* rather than *urgent*, which matters a great deal on
- * a screen whose entire question is whether you still are. The timings below
- * are that shape — ~1.4s per cycle, roughly 43bpm, deliberately slower than a
- * resting pulse so it reads as calm.
+ * eye recognises as *alive* rather than *urgent*, which matters on a screen
+ * whose entire question is whether you still are. ~1.4s per cycle — roughly
+ * 43bpm, deliberately slower than a resting pulse so it reads as calm.
  *
- * A ring ripples outward once per cycle and fades, the way a pulse travels.
+ * ## Nothing here is decoration
+ *
+ * An earlier version sat the heart inside a static halo, inside a washed
+ * accent circle bleeding off the card corner. Three concentric pale shapes
+ * around one icon is a bubble bath, not a design, and it made the disc read as
+ * far bigger than it was. What remains is the disc and one ring that expands
+ * out of it and fades on each beat — the ring is *motion*, and it is gone from
+ * the frame most of the time.
  *
  * ## Animated transforms and colour are kept apart
  *
  * Uniwind styles components it has been taught about; `Animated.View` is not
  * one of them, so a `className` on it is silently dropped — the failure mode
  * being an invisible or uncoloured shape with no error anywhere. Every animated
- * wrapper here therefore carries **only** `style` (transform, opacity) and
- * holds a plain `View` that carries the colour classes.
+ * wrapper here carries **only** `style` (transform, opacity) and holds a plain
+ * `View` that carries the colour classes.
  *
  * ## Reduced motion
  *
- * Honoured: when the OS asks for less motion the heart is drawn still. An
- * animation someone cannot tolerate is worse than no animation, and this one is
+ * Honoured: the heart is drawn still when the OS asks for less motion. An
+ * animation someone cannot tolerate is worse than none, and this one is
  * decorative — nothing it conveys is unavailable from the tone and the label.
  */
 export type PulsingHeartProps = {
@@ -50,8 +56,8 @@ export type PulsingHeartProps = {
 };
 
 const SKIN = {
-  olive: { halo: 'bg-olive-200', ring: 'bg-olive-300', disc: 'bg-secondary', icon: 'text-secondary-foreground' },
-  terracotta: { halo: 'bg-terracotta-200', ring: 'bg-terracotta-300', disc: 'bg-primary', icon: 'text-primary-foreground' },
+  olive: { ring: 'bg-olive-300', disc: 'bg-secondary', icon: 'text-secondary-foreground' },
+  terracotta: { ring: 'bg-terracotta-300', disc: 'bg-primary', icon: 'text-primary-foreground' },
 } as const;
 
 export function PulsingHeart({ tone = 'olive', className }: PulsingHeartProps) {
@@ -76,7 +82,7 @@ export function PulsingHeart({ tone = 'olive', className }: PulsingHeartProps) {
       false
     );
 
-    // One outward ripple per cycle, then a pause the length of the rest.
+    // One ring out of the disc per cycle, then a pause the length of the rest.
     ripple.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 1000, easing: Easing.out(Easing.quad) }),
@@ -95,28 +101,24 @@ export function PulsingHeart({ tone = 'olive', className }: PulsingHeartProps) {
 
   const beatStyle = useAnimatedStyle(() => ({ transform: [{ scale: beat.value }] }));
   const rippleStyle = useAnimatedStyle(() => ({
-    opacity: (1 - ripple.value) * 0.5,
-    transform: [{ scale: 0.9 + ripple.value * 0.45 }],
+    opacity: (1 - ripple.value) * 0.35,
+    transform: [{ scale: 1 + ripple.value * 0.7 }],
   }));
 
   return (
-    <View className={cn('size-36 items-center justify-center', className)}>
-      {/* The travelling ripple, behind everything. */}
+    <View className={cn('size-15 items-center justify-center', className)}>
       <Animated.View style={[{ position: 'absolute' }, rippleStyle]}>
-        <View className={cn('size-36 rounded-full', skin.ring)} />
+        <View className={cn('size-15 rounded-full', skin.ring)} />
       </Animated.View>
-
-      {/* A still halo, so the shape still reads when motion is off. */}
-      <View className={cn('absolute size-30 rounded-full', skin.halo)} />
 
       <Animated.View style={beatStyle}>
         <View
           className={cn(
-            'size-21.5 items-center justify-center rounded-full shadow-md',
+            'size-15 items-center justify-center rounded-full shadow-md',
             skin.disc
           )}
         >
-          <Icon as={Heart} size={38} strokeWidth={2.75} className={skin.icon} />
+          <Icon as={Heart} size={28} strokeWidth={2.75} className={skin.icon} />
         </View>
       </Animated.View>
     </View>
