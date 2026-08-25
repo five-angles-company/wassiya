@@ -97,13 +97,14 @@ export function AssetList({
           </View>
 
           <View className="gap-row flex-row flex-wrap">
-            {group.rows.map((row) => (
+            {group.rows.map((row, i) => (
               <AssetTile
                 key={row.id}
                 icon={ASSET_TYPE_ICON[row.type]}
                 title={row.title}
                 category={categoryLabel(row)}
                 tone={ASSET_TYPE_TONE[row.type]}
+                index={i}
                 onPress={() => onOpen(row.id)}
               />
             ))}

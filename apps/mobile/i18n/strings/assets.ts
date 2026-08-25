@@ -27,6 +27,13 @@ export const ASSETS = {
   // Destination groups. A heading says where its bucket *goes*, so rows inside
   // don't repeat it — only "بلا وجهة" carries a per-row badge, because there
   // the count is the whole point.
+  // The whole product in one line: it reframes the task from filing to
+  // protecting, which is the difference between a chore and a reason.
+  suggestTitle: {
+    ar: "أضف ما يصعب على عائلتك إيجاده",
+    en: "Add what your family would struggle to find",
+  },
+
   groupNone: { ar: "بلا وجهة", en: "No destination" },
   groupAll: { ar: "إلى جميع الورثة", en: "To all heirs" },
   groupExplicit: { ar: "موجَّهة", en: "Routed" },

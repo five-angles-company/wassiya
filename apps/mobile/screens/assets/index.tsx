@@ -34,6 +34,7 @@ import type { DestinationKind } from "@/screens/assets/group-by-destination"
 import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetList } from "@/screens/assets/components/asset-list"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
+import { AssetSuggestions } from "@/screens/assets/components/asset-suggestions"
 import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
@@ -217,6 +218,17 @@ export function AssetsScreen() {
         onClear={clearFilters}
         onOpen={(id) => router.push({ pathname: "/assets/[id]", params: { id } })}
       />
+
+      {/* Only while the vault cannot yet stand on its own. Past this it is
+          clutter, and the grid has enough to say for itself. */}
+      {total < 4 ? (
+        <AssetSuggestions
+          className="mt-header"
+          title={t.suggestTitle}
+          labelFor={(type) => t[FILTER_KEY[type]]!}
+          onPick={(type) => router.push(ASSET_TYPE_ROUTE[type])}
+        />
+      ) : null}
 
       {/* A sibling of the scroll area rather than a child. TrueSheet's host view
           is `absoluteFill` with `zIndex: -9999`, so it takes no layout space
