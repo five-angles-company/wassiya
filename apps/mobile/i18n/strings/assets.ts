@@ -27,6 +27,10 @@ export const ASSETS = {
   // Destination groups. A heading says where its bucket *goes*, so rows inside
   // don't repeat it — only "بلا وجهة" carries a per-row badge, because there
   // the count is the whole point.
+  // The header line. Not a count — whether anything reaches nobody.
+  headerAllRouted: { ar: "كل شيء له وجهة", en: "Everything has a destination" },
+  headerUnrouted: { ar: "{n} بلا وجهة", en: "{n} with no destination" },
+
   groupNone: { ar: "بلا وجهة", en: "No destination" },
   groupAll: { ar: "إلى جميع الورثة", en: "To all heirs" },
   groupExplicit: { ar: "موجَّهة", en: "Routed" },

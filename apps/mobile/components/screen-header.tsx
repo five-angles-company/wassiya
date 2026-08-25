@@ -48,8 +48,12 @@ export type ScreenHeaderProps = {
   back?: "none" | Href
   /** Trailing slot — a count, an edit action, a status pill. */
   trailing?: React.ReactNode
-  /** One line of prose under the title. */
-  description?: string
+  /**
+   * One line under the title. A plain string renders as muted prose; pass a
+   * node when the line needs its own tone — a vault with unrouted assets says
+   * so in terracotta, and that is the screen's most useful sentence.
+   */
+  description?: React.ReactNode
   /** Renders the progress meter for a multi-step flow. */
   step?: { index: number; total: number }
   className?: string
@@ -83,9 +87,13 @@ export function ScreenHeader({
       </View>
 
       {description !== undefined ? (
-        <Text variant="prose" className="mt-2">
-          {description}
-        </Text>
+        typeof description === "string" ? (
+          <Text variant="prose" className="mt-2">
+            {description}
+          </Text>
+        ) : (
+          <View className="mt-2">{description}</View>
+        )
       ) : null}
 
       {step !== undefined ? (

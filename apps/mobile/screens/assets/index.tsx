@@ -58,6 +58,9 @@ export function AssetsScreen() {
 
   const groupLabel = (kind: DestinationKind) => GROUP_KEY[kind](t)
 
+  /** Reaches nobody — the count decides, not the rule. See `destinationOf`. */
+  const unrouted = (rows ?? []).filter((row) => row.recipientCount === 0).length
+
   /**
    * Chrome earns its place.
    *
@@ -156,10 +159,27 @@ export function AssetsScreen() {
         </View>
       }
     >
+      {/*
+        The header says the one thing worth knowing, in its own colour.
+
+        It used to carry a bare count, which the group heading directly beneath
+        it repeated — "1 asset" twice, forty pixels apart, saying nothing. What
+        an owner needs from this screen at a glance is not how much is in the
+        vault but whether any of it reaches nobody.
+      */}
       <ScreenHeader
         title={t.title}
         level="root"
-        trailing={<Text variant="metaSm">{count(total, assetForms)}</Text>}
+        description={
+          <Text
+            variant="metaSm"
+            className={unrouted > 0 ? "text-terracotta-700" : "text-olive-700"}
+          >
+            {unrouted > 0
+              ? t.headerUnrouted.replace("{n}", fmtNum(unrouted, locale))
+              : t.headerAllRouted}
+          </Text>
+        }
       />
 
       {showSearch ? (

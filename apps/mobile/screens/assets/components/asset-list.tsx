@@ -78,23 +78,34 @@ export function AssetList({
     )
   }
 
+  const groups = groupByDestination(rows)
+  /*
+    A heading over the only group is bureaucracy: it names a distinction that
+    isn't being drawn, and repeats a count the header already gives. Headings
+    exist to separate one bucket from another, so they appear when there is
+    something to separate.
+  */
+  const showHeadings = groups.length > 1
+
   return (
     <View className="gap-header">
-      {groupByDestination(rows).map((group) => (
+      {groups.map((group) => (
         <View key={group.kind} className="gap-2.5">
-          {/*
-            Name and count are two Texts, not one interpolated string.
-            "موجَّهة · ١" mixes an Arabic word, a middot and an Arabic-Indic
-            numeral in one run, and the bidi algorithm is free to reorder the
-            separator around the digit — which it does. Two nodes in a row let
-            the layout place them instead of the text engine.
-          */}
-          <View className="flex-row items-baseline justify-between gap-2">
-            <Text variant="sectionLabel" className={cn(HEADING_TONE[group.kind])}>
-              {groupLabel(group.kind)}
-            </Text>
-            <Text variant="metaSm">{groupCount(group.rows.length)}</Text>
-          </View>
+          {showHeadings ? (
+            /*
+              Name and count are two Texts, not one interpolated string.
+              "موجَّهة · ١" mixes an Arabic word, a middot and an Arabic-Indic
+              numeral in one run, and the bidi algorithm is free to reorder the
+              separator around the digit — which it does. Two nodes in a row let
+              layout place them instead of the text engine.
+            */
+            <View className="flex-row items-baseline justify-between gap-2">
+              <Text variant="sectionLabel" className={cn(HEADING_TONE[group.kind])}>
+                {groupLabel(group.kind)}
+              </Text>
+              <Text variant="metaSm">{groupCount(group.rows.length)}</Text>
+            </View>
+          ) : null}
 
           <View className="gap-row flex-row flex-wrap">
             {group.rows.map((row, i) => (
