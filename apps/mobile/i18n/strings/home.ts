@@ -10,55 +10,6 @@ export const HOME = {
   greetAfternoon: { ar: "مساء الخير", en: "Good afternoon" },
   greetEvening: { ar: "مساء الخير", en: "Good evening" },
 
-  // -- The verdict -----------------------------------------------------------
-  // The question is printed above the answer because most owners have never
-  // actually asked it. No pronoun: "لو حدث لك/لكِ" would force a gender the app
-  // has no business assuming, and dropping it reads better anyway.
-  question: {
-    ar: "لو حدث شيء اليوم — هل تصل خزنتك إلى ورثتك؟",
-    en: "If something happened today — would your vault reach your heirs?",
-  },
-  answerReady: {
-    ar: "نعم. خزنتك تصل إلى {heirs}.",
-    en: "Yes. Your vault reaches {heirs}.",
-  },
-
-  // Delivery failures. Each names the consequence, not the missing checkbox:
-  // "لم تُضف ورثة" is a to-do, "فلا أحد يستلم شيئاً" is why it matters.
-  blockedHeirs: {
-    ar: "لا. لم تُضف ورثة بعد، فلا أحد يستلم شيئاً.",
-    en: "No. You haven't added any heirs, so nobody would receive anything.",
-  },
-  blockedRouting: {
-    ar: "لا. لا شيء في خزنتك موجَّه إلى أحد بعد.",
-    en: "No. Nothing in your vault is routed to anyone yet.",
-  },
-  blockedCheckin: {
-    ar: "لا. بدون نبض الحياة لن يعرف أحد أن شيئاً حدث، ولن يُسلَّم شيء.",
-    en: "No. Without the life check-in nobody learns anything happened, and nothing is ever delivered.",
-  },
-  blockedIdentity: {
-    ar: "لا. لم يكتمل التحقق من هويتك بعد.",
-    en: "No. Your identity check isn't finished.",
-  },
-
-  // Access risks. The vault still reaches the family — the person exposed is
-  // the owner. Saying "your heirs are at risk" here would be false and cruel.
-  riskSheet: {
-    ar: "تصل إلى ورثتك. لكنك قد تفقد أنت الوصول — لم تطبع وثيقة الاسترداد.",
-    en: "It reaches your heirs. But you could lose access yourself — your recovery sheet isn't printed.",
-  },
-  riskGuardian: {
-    ar: "تصل إلى ورثتك. لكن بلا وصي لا يمكن استرداد خزنتك على جهاز جديد.",
-    en: "It reaches your heirs. But without a guardian it can't be recovered on a new device.",
-  },
-
-  fixHeirs: { ar: "أضف وارثاً", en: "Add an heir" },
-  fixRouting: { ar: "وجّه أصولك", en: "Route your assets" },
-  fixIdentity: { ar: "أكمل التحقق", en: "Finish verification" },
-  fixSheet: { ar: "اطبع الوثيقة", en: "Print the sheet" },
-  fixGuardian: { ar: "اختر وصياً", en: "Choose a guardian" },
-
   // -- The check-in hero -----------------------------------------------------
   checkinConfirmed: {
     ar: "آخر تأكيد: {last} · التالي: {next}",
@@ -72,6 +23,21 @@ export const HOME = {
   // "آخر مزامنة مشفّرة" — the word مشفّرة is doing real work: it says the sync
   // moved ciphertext, not contents.
   lastSync: { ar: "آخر مزامنة مشفّرة: {time}", en: "Last encrypted sync: {time}" },
+
+  // -- Tile labels and states ----------------------------------------------
+  // Short by design: colour carries the urgency, so the words only have to
+  // name the thing. A sentence here was the previous version.
+  itemAssets: { ar: "الأصول", en: "Assets" },
+  allReady: { ar: "كل شيء جاهز", en: "Everything is ready" },
+  missing: { ar: "ينقصك: {what}", en: "Missing: {what}" },
+  stateOn: { ar: "مفعّل", en: "On" },
+  stateOff: { ar: "غير مفعّل", en: "Not set" },
+  stateVerified: { ar: "موثّقة", en: "Verified" },
+  stateUnverified: { ar: "غير موثّقة", en: "Not verified" },
+  statePrinted: { ar: "مطبوعة", en: "Printed" },
+  stateNotPrinted: { ar: "غير مطبوعة", en: "Not printed" },
+  stateRouted: { ar: "الكل موجَّه", en: "All routed" },
+  stateUnrouted: { ar: "{n} بلا وجهة", en: "{n} with no destination" },
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
