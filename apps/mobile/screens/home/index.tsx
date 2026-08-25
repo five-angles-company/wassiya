@@ -26,11 +26,15 @@
  * sees. That's what lets Home be the screen you land on rather than a wall in
  * front of one.
  *
- * ## ⚠️ The check-in hero navigates. It never confirms.
+ * ## ⚠️ The check-in confirms HERE, behind a fingerprint
  *
- * See `CheckInHero` — confirming is biometric-gated and lives only in the
- * prompt. An unlocked phone that could tap "I'm well" here would be able to
- * suppress delivery forever.
+ * The confirm affordance lives on this screen — it moved from the prompt
+ * screen rather than being added alongside it, so there is still exactly one.
+ * `useConfirmAlive` runs `LocalAuthentication` with `disableDeviceFallback`
+ * and only then records; a tap alone can never say "still alive". That is the
+ * property AGENTS.md protects — an unlocked phone in the wrong hands must not
+ * be able to suppress delivery forever — and it is the fingerprint, not the
+ * route, that provides it.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
@@ -40,6 +44,7 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { CheckInHero } from "@workspace/ui-native/components/wassiya/check-in-hero"
 import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
+import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import { ChevronLeft } from "lucide-react-native"
@@ -47,6 +52,7 @@ import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { useCheckInState } from "@/hooks/use-checkin-state"
+import { useConfirmAlive } from "@/hooks/use-confirm-alive"
 import { useReadiness } from "@/hooks/use-readiness"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
@@ -61,6 +67,8 @@ export function HomeScreen() {
   const claims = useQuery(api.claims.againstMe)
 
   const checkin = useCheckInState()
+  // The gate. The hero renders the button; this runs the fingerprint.
+  const alive = useConfirmAlive()
   const { verdict } = useReadiness(
     {
       identity: t.itemIdentity,
@@ -92,13 +100,14 @@ export function HomeScreen() {
     heirForms,
     locale
   )
-  const assetLabel = fmtCount(total, fmtNum(total, locale), {
+  const assetForms: CountForms = {
     zero: t.assetZero,
     one: t.assetOne,
     two: t.assetTwo,
     few: t.assetFew,
     many: t.assetMany,
-  }, locale)
+  }
+  const assetLabel = fmtCount(total, fmtNum(total, locale), assetForms, locale)
 
 
   return (
@@ -135,7 +144,10 @@ export function HomeScreen() {
         state={checkin.state}
         detail={checkin.detail}
         locale={locale}
-        onPress={() => router.push("/protection/checkin")}
+        failed={alive.failed}
+        onConfirm={alive.confirm}
+        onEnable={() => router.push("/protection/checkin")}
+        onOpenSettings={() => router.push("/protection/checkin")}
       />
 
       {/*
@@ -146,10 +158,56 @@ export function HomeScreen() {
       */}
       <ReadinessVerdict {...verdictProps(verdict, t, heirLabel)} />
 
+      {/*
+        Who would actually receive it.
+
+        The abstraction this product suffers from is that "routing" is a table
+        of rules nobody pictures. Names and faces are what make an owner notice
+        that a person they meant to provide for is receiving nothing — and it
+        gives Home something worth its space rather than a decorative filler.
+      */}
+      {heirs !== undefined && heirs.length > 0 ? (
+        <View className="gap-3">
+          <Text variant="sectionLabel">{t.whoReceives}</Text>
+          <View className="gap-row">
+            {heirs.slice(0, 4).map((heir) => (
+              <Pressable
+                key={heir.id}
+                accessibilityRole="button"
+                onPress={() => router.push(`/heirs/${heir.id}/preview`)}
+                className="active:bg-sand-300 rounded-row bg-card flex-row items-center gap-3 px-4 py-3"
+              >
+                <InitialDisc name={heir.name} />
+                <View className="min-w-0 flex-1">
+                  <Text variant="rowTitle">{heir.name}</Text>
+                  <Text variant="metaSm" className="mt-0.5">
+                    {heir.routedAssetCount === 0
+                      ? t.receivesNothing
+                      : t.receives.replace(
+                          "{n}",
+                          fmtCount(
+                            heir.routedAssetCount,
+                            fmtNum(heir.routedAssetCount, locale),
+                            assetForms,
+                            locale
+                          )
+                        )}
+                  </Text>
+                </View>
+                {/* The amber case, and the only one on this row. */}
+                {heir.routedAssetCount === 0 ? (
+                  <StatusPill status="action">{t.unrouted}</StatusPill>
+                ) : null}
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
       {/* The vault in one quiet line. The old grid of six category tiles put
           "how many notes do I have" at the same visual weight as "would this
-          reach my family", which is the wrong ranking on this screen — the
-          Vault tab is one tap away and exists to answer it properly. */}
+          reach my family", which is the wrong ranking here — the Vault tab is
+          one tap away and exists to answer it properly. */}
       <Pressable
         onPress={() => router.push("/assets")}
         accessibilityRole="button"

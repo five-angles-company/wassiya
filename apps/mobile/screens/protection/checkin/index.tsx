@@ -1,17 +1,15 @@
 /**
  * ٦.٤ — the life check-in.
  *
- * ⚠️ **The load-bearing product rule, restated because this file is where it
- * is enforced:** confirming life is ALWAYS biometric-gated and exists in
- * exactly ONE place — this prompt. Rows, notifications and widgets may report
- * and navigate, never confirm. `AGENTS.md` says no alternate confirm affordance
- * may ever be added, and the reason is specific: an unlocked phone in the wrong
- * hands could otherwise suppress delivery forever, which is the one failure
- * this whole product exists to prevent.
- *
- * `CheckInPrompt.onConfirm` is the gate. It returns a boolean and the primitive
- * refuses to record anything on `false`, so the biometric is not advisory —
- * a declined prompt cannot check in.
+ * ⚠️ **The load-bearing product rule, and where it now lives:** confirming life
+ * is ALWAYS biometric-gated and exists in exactly ONE place. That place is now
+ * **Home's `CheckInHero`** — the affordance moved there at the owner's
+ * request, it was not duplicated, and this screen no longer offers a confirm.
+ * The reason for the rule is unchanged and specific: an unlocked phone in the
+ * wrong hands must not be able to suppress delivery forever, which is the one
+ * failure this whole product exists to prevent. It is the fingerprint that
+ * provides that, not the route — see `hooks/use-confirm-alive.ts`, which is the
+ * single implementation of the gate.
  *
  * The screen has two halves because the switch has two states: not configured
  * (a cadence to choose) and running (a question to answer). They are one route
@@ -24,9 +22,7 @@ import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
-import { CheckInPrompt } from "@workspace/ui-native/components/wassiya/check-in-prompt"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
-import * as LocalAuthentication from "expo-local-authentication"
 import { ScrollView, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
@@ -38,12 +34,10 @@ export function CheckInScreen() {
   const { t: common } = useStrings("common")
   const config = useQuery(api.checkin.get)
   const configure = useMutation(api.checkin.configure)
-  const confirm = useMutation(api.checkin.confirm)
 
   const [cadence, setCadence] = useState("6")
   const [grace, setGrace] = useState("30")
   const [saving, setSaving] = useState(false)
-  const [failedBiometric, setFailedBiometric] = useState(false)
 
   async function enable() {
     setSaving(true)
@@ -54,34 +48,6 @@ export function CheckInScreen() {
       })
     } finally {
       setSaving(false)
-    }
-  }
-
-  /**
-   * The single confirmation path in the product.
-   *
-   * Returning `false` on anything other than a successful biometric is the
-   * whole contract — the primitive will not record a check-in without a `true`,
-   * so there is no code path where a tap alone says "still alive".
-   */
-  async function confirmAlive(): Promise<boolean> {
-    setFailedBiometric(false)
-    try {
-      const auth = await LocalAuthentication.authenticateAsync({
-        promptMessage: t.confirmPrompt,
-        // No passcode fallback. A device passcode is something a person who
-        // has the phone may also have; the point of this gate is presence.
-        disableDeviceFallback: true,
-      })
-      if (!auth.success) {
-        setFailedBiometric(true)
-        return false
-      }
-      await confirm({})
-      return true
-    } catch {
-      setFailedBiometric(true)
-      return false
     }
   }
 
@@ -126,41 +92,33 @@ export function CheckInScreen() {
           </Button>
         </View>
       ) : config === undefined ? null : (
-        <View className="mt-header gap-4">
-          <CheckInPrompt
-            // `escalationState` is the server-materialised view of overdue —
-            // a query is not rerun because time passed, so a `Date.now()`
-            // comparison here would be stale exactly when it matters. See the
-            // note in `convex/checkin.ts`.
-            state={
-              failedBiometric
-                ? "biometricFailed"
-                : config.escalationState === "idle"
-                  ? "due"
-                  : "overdue"
-            }
-            cadence={cadenceLabel(config.cadenceMonths, t, locale)}
-            lastConfirmedAt={fmtDate(new Date(config.lastConfirmedAt), locale)}
-            locale={locale}
-            labels={{
-              confirm: t.confirm,
-              snooze: t.snooze,
-            }}
-            onConfirm={confirmAlive}
-          />
-
-          <Text variant="metaSm" className="text-muted-foreground">
-            {t.nextDue.replace(
-              "{date}",
-              fmtDate(new Date(config.nextDueAt), locale)
-            )}
-          </Text>
-
-          {failedBiometric ? (
-            <Text variant="meta" className="text-terracotta-800 leading-[1.7]">
-              {t.biometricFailed}
+        <View className="mt-header gap-3">
+          {/*
+            Status and settings only — **no confirm affordance lives here any
+            more.** It moved to Home's hero, where the owner asked for it and
+            where the action actually belongs. It was moved, not duplicated:
+            there is still exactly one place in the product that can record a
+            check-in, and it is still behind a fingerprint (`useConfirmAlive`).
+          */}
+          <View className="rounded-card bg-card gap-1.5 p-4">
+            <Text variant="rowTitle">
+              {cadenceLabel(config.cadenceMonths, t, locale)}
             </Text>
-          ) : null}
+            <Text variant="metaSm">
+              {t.lastConfirmed.replace(
+                "{date}",
+                fmtDate(new Date(config.lastConfirmedAt), locale)
+              )}
+            </Text>
+            <Text variant="metaSm">
+              {t.nextDue.replace(
+                "{date}",
+                fmtDate(new Date(config.nextDueAt), locale)
+              )}
+            </Text>
+          </View>
+
+          <Text variant="prose">{t.confirmOnHome}</Text>
         </View>
       )}
     </ScrollView>

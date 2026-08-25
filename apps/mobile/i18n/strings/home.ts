@@ -86,6 +86,10 @@ export const HOME = {
   seeAll: { ar: "الكل", en: "All" },
   emptyAssets: { ar: "لم تُضف أصولاً بعد", en: "No assets yet" },
   vaultLine: { ar: "{assets} · {heirs}", en: "{assets} · {heirs}" },
+  whoReceives: { ar: "من يستلم", en: "Who receives" },
+  receives: { ar: "يستلم {n}", en: "Receives {n}" },
+  receivesNothing: { ar: "لا يستلم شيئاً بعد", en: "Receives nothing yet" },
+  unrouted: { ar: "بلا وجهة", en: "unrouted" },
   // The number that actually matters on this row: an asset with no
   // destination is the commonest silent failure in the product.
   unroutedLine: {

@@ -159,6 +159,12 @@ export const GUARDIAN_ACCEPT = {
 
 /** ٦.٤ — the life check-in. */
 export const CHECKIN = {
+  // Says where the button went, so this screen isn't a dead end for anyone
+  // who came here looking for it.
+  confirmOnHome: {
+    ar: "تأكيد الحياة يتم من الشاشة الرئيسية، ببصمتك.",
+    en: "You confirm you're well from the home screen, with your fingerprint.",
+  },
   title: { ar: "تأكيد الحياة", en: "Life check-in" },
   intro: {
     ar: "نسألك بين حين وآخر إن كنت بخير. إذا لم تجب خلال المهلة، تبدأ إجراءات التسليم لورثتك.",
