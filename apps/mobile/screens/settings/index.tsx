@@ -40,7 +40,9 @@ import { usePreferences } from "@/stores/preferences"
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
   const { t: autoLock } = useStrings("settings/lock")
+  const { t: approve } = useStrings("recovery/approve")
   const me = useQuery(api.users.me)
+  const guardianships = useQuery(api.guardians.guardianFor)
   const saveProfile = useMutation(api.users.saveProfile)
   const { signOut } = useClerk()
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
@@ -105,13 +107,6 @@ export function SettingsScreen() {
           onPress={() => router.push("/settings/lock")}
         />
         <SettingsRow
-          icon={ShieldCheck}
-          label={t.rowGuardian}
-          chevron
-          divider
-          onPress={() => router.push("/protection/guardian")}
-        />
-        <SettingsRow
           icon={Smartphone}
           label={t.rowDevices}
           chevron
@@ -122,8 +117,28 @@ export function SettingsScreen() {
           icon={ScrollText}
           label={t.rowAudit}
           chevron
+          divider={guardianships !== undefined && guardianships.length > 0}
           onPress={() => router.push("/settings/audit")}
         />
+        {/*
+          The app's second persona, and the only place it can live.
+
+          A guardian you *name* is a person in your plan, so that row moved to
+          the plan tab. Being someone else's guardian is a role you hold as a
+          user of this app — it belongs here. It had no home at all until now,
+          which is why the approve screen once shipped unreachable.
+
+          `guardianFor` is server-derived from accepted invitations, so this is
+          not a door anyone can find by guessing.
+        */}
+        {guardianships !== undefined && guardianships.length > 0 ? (
+          <SettingsRow
+            icon={ShieldCheck}
+            label={approve.title}
+            chevron
+            onPress={() => router.push("/recovery/approve")}
+          />
+        ) : null}
       </Group>
 
       <Group label={t.groupPlan}>

@@ -33,11 +33,14 @@ export const COMMON = {
 // the route, the key and the label all say "will" and the screen inside keeps
 // its own name.
 export const TABS = {
+  // Named for the question each answers, not for the domain noun. "الأصول"
+  // (assets) is what the app stores; "الخزنة" (the vault) is what the owner
+  // thinks they have. "خطتي" replaces "الوصيّة" because the tab holds people —
+  // heirs, routing, the guardian — not a legal document.
   home: { ar: "الرئيسية", en: "Home" },
-  assets: { ar: "الأصول", en: "Assets" },
-  will: { ar: "الوصيّة", en: "Will" },
-  protection: { ar: "الحماية", en: "Protection" },
-  settings: { ar: "الإعدادات", en: "Settings" },
+  assets: { ar: "الخزنة", en: "Vault" },
+  plan: { ar: "خطتي", en: "My plan" },
+  settings: { ar: "حسابي", en: "Account" },
   placeholderTitle: { ar: "قريباً", en: "Coming next" },
   placeholderBody: {
     ar: "هذه الشاشة تُبنى في المرحلة التالية. خزنتك جاهزة وآمنة في هذه الأثناء.",

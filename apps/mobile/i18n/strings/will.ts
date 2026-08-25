@@ -14,7 +14,17 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 /** ٥.١ — the heirs list. */
 export const HEIRS = {
-  title: { ar: "الورثة", en: "Your heirs" },
+  // The guardian sits on this tab because a guardian is a person you name in
+  // your plan — an heir *receives*, a guardian *verifies*. It previously lived
+  // under Account > Security, which is how "who is in my plan" ended up
+  // answered in two different tabs.
+  guardianLabel: { ar: "الوصي", en: "Guardian" },
+  guardianRow: { ar: "من يؤكّد وفاتك", en: "Who confirms your death" },
+  guardianOn: { ar: "مفعّل", en: "Active" },
+  guardianOff: { ar: "غير مفعّل", en: "Not set" },
+  // The tab is خطتي and the screen holds more than heirs — the guardian sits
+  // here too — so the title names the plan rather than one list inside it.
+  title: { ar: "خطتي", en: "My plan" },
   countZero: { ar: "لا ورثة بعد", en: "No heirs yet" },
   countOne: { ar: "وارث واحد", en: "1 heir" },
   countTwo: { ar: "وارثان", en: "2 heirs" },
@@ -30,6 +40,13 @@ export const HEIRS = {
   unroutedWarning: {
     ar: "{n} أصلاً بلا مستلم — منها {example}",
     en: "{n} assets have no recipient — including {example}",
+  },
+  // The same warning without naming an asset. Titles are ciphertext, so a
+  // locked vault can still say *how many* are unrouted — it just cannot say
+  // which. Counting is what makes the gap actionable; the name is a courtesy.
+  unroutedWarningLocked: {
+    ar: "{n} أصلاً بلا مستلم",
+    en: "{n} assets have no recipient",
   },
   allRouted: {
     ar: "كل أصولك لها مستلم",

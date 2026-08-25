@@ -3,9 +3,8 @@ import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Redirect, Tabs } from "expo-router"
 import {
   Home,
-  ScrollText,
+  Users,
   Settings,
-  ShieldCheck,
   Wallet,
 } from "lucide-react-native"
 
@@ -15,11 +14,24 @@ import { useStrings } from "@/i18n/use-strings"
 /**
  * The app's resting state.
  *
- * **Five tabs, not four.** The bar rendered in the board's own 4.1 screenshot
- * is الرئيسية · الأصول · الوصيّة · الحماية · الإعدادات; this app shipped four
- * because the shell was written before anyone had read a screen that contained
- * it. الوصيّة (section ٥) is the tab the heirs list lives *inside*, and الحماية
- * (section ٦) is its own destination, not a row on another screen.
+ * **Four tabs, and they are the user's questions rather than the domain's
+ * nouns.** الرئيسية (would this work?) · الخزنة (what's in it?) · خطتي (who
+ * gets it?) · حسابي (everything about me).
+ *
+ * It was five. الحماية went because it duplicated الرئيسية outright — both
+ * rendered the same protection-score object, so "how protected am I?" was
+ * answered in two places and owned by neither. Home's tile grid is that answer
+ * now; the Protection Centre screen is gone and its sub-routes
+ * (`/protection/checkin`, `/protection/claim`, `/protection/guardian`) are
+ * pushed destinations reached from the tab that owns them.
+ *
+ * الوصيّة became خطتي and its route became `plan`, because the file was named
+ * `will.tsx` and rendered `HeirsScreen` — a tab named for a concept it did not
+ * contain. The tab owns *people*: heirs, routing, and the guardian you name.
+ *
+ * A note for anyone comparing this to the design board: the board's 4.1
+ * screenshot draws five tabs. The owner directed a ground-up redesign that
+ * supersedes it — see the plan in `.claude/plans/`.
  *
  * It gates only on having a session. The vault-readiness gate lives on the
  * splash: a signed-in user whose evidence says setup is unfinished never
@@ -75,17 +87,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="will"
+        name="plan"
         options={{
-          title: t.will,
-          tabBarIcon: ({ color }) => <Icon as={ScrollText} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="protection"
-        options={{
-          title: t.protection,
-          tabBarIcon: ({ color }) => <Icon as={ShieldCheck} color={color} />,
+          title: t.plan,
+          tabBarIcon: ({ color }) => <Icon as={Users} color={color} />,
         }}
       />
       <Tabs.Screen

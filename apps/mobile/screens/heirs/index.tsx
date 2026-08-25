@@ -20,39 +20,55 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { HeirCard } from "@workspace/ui-native/components/wassiya/heir-card"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { fmtNum, fmtPhoneMasked } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { Plus, Users } from "lucide-react-native"
+import { Plus, ShieldCheck, Users } from "lucide-react-native"
 import { ScrollView, View } from "react-native"
 
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
+import { isGuardianLive } from "@/lib/guardian"
 import { useVaultGate } from "@/hooks/use-vault-gate"
-import { AssetsLocked } from "@/screens/assets/components/assets-locked"
 import { ScreenFrame } from "@/screens/assets/components/screen-frame"
 import { useAssetList } from "@/screens/assets/use-asset-list"
 
 export function HeirsScreen() {
   const { t, locale } = useStrings("heirs")
   const { t: assets } = useStrings("assets")
-  const { status, unlocked, unlock } = useVaultGate()
+  // Only the unrouted asset's *name* needs the vault; nothing here gates on it.
+  const { unlocked } = useVaultGate()
   const heirs = useQuery(api.heirs.list)
+  // Plaintext: type, byte size and the routing rule. No decryption, no gate.
+  const assetRows = useQuery(api.assets.list, {})
+  const guardianLive = isGuardianLive(
+    useQuery(api.guardians.list),
+    useQuery(api.keyring.get)
+  )
   // Reuses 4.1's decrypt pass: the coverage line needs the *name* of an
   // unrouted asset, and names are ciphertext.
   const { rows } = useAssetList("", null, assets.undecryptable)
 
+  /**
+   * Counts from plaintext, the example name from the vault.
+   *
+   * `recipientRule` and the row count are columns the deployment already sees,
+   * so "how much of this reaches someone" is answerable locked. Only the
+   * *title* of an unrouted asset is ciphertext — so that, and only that, waits
+   * for the fingerprint.
+   */
   const coverage = useMemo(() => {
-    if (rows === undefined) return null
-    const unrouted = rows.filter((row) => !row.routed)
+    if (assetRows === undefined) return null
+    const unrouted = assetRows.filter((row) => row.recipientRule !== "explicit")
     return {
-      total: rows.length,
-      routed: rows.length - unrouted.length,
+      total: assetRows.length,
+      routed: assetRows.length - unrouted.length,
       unroutedCount: unrouted.length,
       // The one the user is most likely to care about is the one the sort
       // already put first.
-      example: unrouted[0]?.title ?? null,
+      example: unlocked ? (rows?.find((row) => !row.routed)?.title ?? null) : null,
     }
-  }, [rows])
+  }, [assetRows, rows, unlocked])
 
   const heirForms: CountForms = {
     zero: t.countZero,
@@ -60,20 +76,6 @@ export function HeirsScreen() {
     two: t.countTwo,
     few: t.countFew,
     many: t.countMany,
-  }
-
-  if (!unlocked) {
-    return (
-      <ScreenFrame title={t.title}>
-        <AssetsLocked
-          title={assets.lockedTitle}
-          body={assets.lockedBody}
-          actionLabel={status === "unlocking" ? assets.unlocking : assets.unlock}
-          onUnlock={unlock}
-          busy={status === "unlocking"}
-        />
-      </ScreenFrame>
-    )
   }
 
   if (heirs !== undefined && heirs.length === 0) {
@@ -118,14 +120,15 @@ export function HeirsScreen() {
             {coverage.unroutedCount > 0 ? (
               <AlertBanner
                 variant="security"
-                description={t.unroutedWarning
-                  .replace("{n}", fmtNum(coverage.unroutedCount, locale))
-                  .replace("{example}", coverage.example ?? "")}
+                description={(coverage.example === null
+                  ? t.unroutedWarningLocked
+                  : t.unroutedWarning.replace("{example}", coverage.example)
+                ).replace("{n}", fmtNum(coverage.unroutedCount, locale))}
                 actions={
                   <Button
                     size="sm"
                     variant="outline"
-                    onPress={() => router.push("/will/routing")}
+                    onPress={() => router.push("/plan/routing")}
                   >
                     <Text>{t.routingLink}</Text>
                   </Button>
@@ -170,10 +173,36 @@ export function HeirsScreen() {
             />
           ))}
         </View>
+        {/*
+          The guardian belongs on this tab, not in Account.
+
+          A guardian is a person you name in your plan, exactly like an heir —
+          the difference is that an heir *receives* and a guardian *verifies*.
+          They lived under Account > Security, which is how "who is in my plan"
+          ended up answered in two tabs.
+        */}
+        <View className="mt-header gap-2">
+          <Text variant="sectionLabel">{t.guardianLabel}</Text>
+          <SettingsRow
+            className="rounded-card bg-card overflow-hidden"
+            icon={ShieldCheck}
+            label={t.guardianRow}
+            value={
+              guardianLive === undefined
+                ? undefined
+                : guardianLive
+                  ? t.guardianOn
+                  : t.guardianOff
+            }
+            valueTone={guardianLive === false ? "action" : "default"}
+            chevron
+            onPress={() => router.push("/protection/guardian")}
+          />
+        </View>
       </ScrollView>
 
       <View className="px-gutter absolute bottom-0 start-0 end-0 gap-2 pb-5">
-        <Button variant="outline" onPress={() => router.push("/will/routing")}>
+        <Button variant="outline" onPress={() => router.push("/plan/routing")}>
           <Text>{t.routingLink}</Text>
         </Button>
         <Button onPress={() => router.push("/heirs/new")}>

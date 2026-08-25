@@ -199,11 +199,12 @@ function actionsFor(kind: string, t: Record<string, string>): React.ReactNode {
     )
   }
   if (kind === "recovery.attempted") {
-    // "Wasn't me" goes to the Protection Centre rather than acting inline: a
-    // recovery attempt is answered by rotating the sheet and reviewing the
-    // guardian, not by a button on a list row.
+    // "Wasn't me" navigates rather than acting inline: a recovery attempt is
+    // answered by rotating the sheet and reviewing the guardian, not by a
+    // button on a list row. The Protection Centre used to hold both; the
+    // guardian is the actionable half and now lives on the plan tab.
     return (
-      <Button size="sm" onPress={() => router.push("/protection")}>
+      <Button size="sm" onPress={() => router.push("/protection/guardian")}>
         <Text>{t.wasntMe}</Text>
       </Button>
     )

@@ -156,7 +156,7 @@ export function HomeScreen() {
             value={fmtNum(heirCount, locale)}
             emphasis="count"
             tone={heirCount === 0 ? "terracotta" : "sand"}
-            onPress={() => router.push("/will")}
+            onPress={() => router.push("/plan")}
           />
           {/* The commonest silent failure in the product gets a tile of its own
               rather than a footnote on the assets one. */}
@@ -169,7 +169,7 @@ export function HomeScreen() {
                 : t.stateUnrouted.replace("{n}", fmtNum(unrouted, locale))
             }
             tone={unrouted === 0 ? "olive" : "terracotta"}
-            onPress={() => router.push("/will/routing")}
+            onPress={() => router.push("/plan/routing")}
           />
           <StatTile
             icon={ShieldCheck}

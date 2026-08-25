@@ -42,6 +42,8 @@ import { api } from "@workspace/backend/api"
 import type { ProtectionItem } from "@workspace/ui-native/components/wassiya/protection-score-list"
 import type { Href } from "expo-router"
 
+import { isGuardianLive } from "@/lib/guardian"
+
 export type ProtectionId =
   | "identity"
   | "key"
@@ -79,12 +81,9 @@ export function useProtectionScore(
   const checkin = useQuery(api.checkin.get)
 
   const items = useMemo((): ProtectionEntry[] => {
-    // A guardian counts only once their share has actually been sealed. An
-    // accepted invitation with no sealed share is a guardian who cannot help
-    // recover anything — see `useGuardianSeal`.
-    const guardianLive =
-      guardians?.some((g) => g.status === "accepted") === true &&
-      keyring?.hasGuardianShare === true
+    // Shared with the plan tab — see `lib/guardian.ts` for why this predicate
+    // may exist in exactly one place.
+    const guardianLive = isGuardianLive(guardians, keyring) === true
 
     return [
       {
@@ -116,7 +115,7 @@ export function useProtectionScore(
         id: "routing",
         label: labels.routing,
         done: heirs?.some((heir) => heir.routedAssetCount > 0) === true,
-        href: "/will/routing",
+        href: "/plan/routing",
       },
       {
         id: "checkin",

@@ -86,7 +86,10 @@ export function GuardianAcceptScreen() {
           {t.acceptedBody}
         </Text>
         <View className="grow" />
-        <Button onPress={() => router.replace("/protection")}>
+        {/* Home via the splash, not a fixed destination. Someone who just
+            accepted may be a guardian and nothing else — no vault, no tabs —
+            and `/` is the one route that resolves by their own evidence. */}
+        <Button onPress={() => router.replace("/")}>
           <Text>{common.continue}</Text>
         </Button>
       </ScrollView>
