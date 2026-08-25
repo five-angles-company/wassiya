@@ -168,7 +168,6 @@ export const ASSET_DETAIL = {
   // File-backed types have no phrase to peek at; opening them needs a viewer
   // that does not exist yet, so the row says what is stored rather than
   // offering a button that cannot deliver.
-  filesLabel: { ar: "ملفات مشفّرة", en: "Encrypted files" },
   filesCount: { ar: "{n} ملف · {size}", en: "{n} files · {size}" },
   viewerSoon: {
     ar: "عرض الملفات داخل التطبيق يصل في مرحلة لاحقة",
@@ -177,6 +176,11 @@ export const ASSET_DETAIL = {
 
   // Field labels for a revealed secret. Before these existed the screen
   // printed the stored JSON, key names and all.
+  // The two section headings. "من يستلمه بعدك" is the sentence that makes this
+  // an inheritance vault rather than a password manager.
+  handoverLabel: { ar: "من يستلمه بعدك", en: "Who receives it after you" },
+  contentLabel: { ar: "المحتوى المحمي", en: "Protected content" },
+
   fieldService: { ar: "الخدمة", en: "Service" },
   fieldUsername: { ar: "اسم المستخدم", en: "Username" },
   fieldPassword: { ar: "كلمة المرور", en: "Password" },

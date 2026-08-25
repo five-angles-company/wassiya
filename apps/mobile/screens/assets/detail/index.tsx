@@ -1,14 +1,26 @@
 /**
- * ٤.٩ — one asset.
+ * One asset — read as a handover, not as a record.
  *
- * The board's three-part shape: an identity row, **one** tinted guarded block,
- * then plain surface cards. Two-tier decryption throughout — the label opens
- * when the screen does, the payload only behind a fresh biometric.
+ * ## What this screen is for
  *
- * File-backed types (document, photos) have no phrase to peek at and no viewer
- * yet, so they get a summary card instead of a reveal button. That is the
- * honest shape: the bytes are there and encrypted, and nothing on this screen
- * can render them until a viewer exists.
+ * It used to be ordered like a password manager: the secret first, the
+ * recipients last and only as a button that said *edit*. That ordering answers
+ * "what is my password", and nobody opens an inheritance vault to look up their
+ * own iCloud password — they know it. They open it to check the plan still
+ * works.
+ *
+ * So the screen leads with **who receives this after you**, which is the only
+ * question that makes this app different from a password manager, and the
+ * secret sits below as the payload that person will be handed. Everything else
+ * — sizes, dates, deletion — is quiet and at the bottom, where maintenance
+ * belongs.
+ *
+ * ## Two-tier decryption throughout
+ *
+ * The label opens when the screen does; the payload only behind a fresh
+ * biometric, on a ten-second timer, under a screenshot guard. File-backed types
+ * have no single revealable string and no viewer yet, so they get an honest
+ * summary rather than a reveal button that could not deliver.
  */
 import { useMemo, useState } from "react"
 import { useQuery } from "convex/react"
@@ -42,7 +54,7 @@ import {
 } from "@/screens/assets/detail/use-asset-secret"
 import { useVault } from "@/stores/vault"
 
-/** Types whose payload is a phrase, so it renders as pills rather than text. */
+/** Types whose payload is a phrase, so it renders as pills rather than fields. */
 const WORD_TYPES: AssetType[] = ["crypto"]
 /** Types stored as files, which have no single revealable string. */
 const FILE_TYPES: AssetType[] = ["document", "photos"]
@@ -64,27 +76,8 @@ export function AssetDetailScreen() {
   const { state, reveal, hide } = useAssetSecret(assetId, t.biometricPrompt)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  /**
-   * The revealed payload, as labelled fields.
-   *
-   * `null` when the payload is a phrase (rendered as pills) or does not parse
-   * (a rotated format, a hand-edited row) — the block then falls back to plain
-   * text, which is ugly but honest. Refusing to show a secret the owner has
-   * just authenticated for would be worse than showing it plainly.
-   */
-  const fields = useMemo(() => {
-    if (state.status !== "revealed" || asset === undefined || asset === null) {
-      return null
-    }
-    if (isPhrasePayload(asset.type, state.text)) return null
-    return parseSecret(asset.type, state.text, t)
-  }, [state, asset, t])
-
   const openRecipients = () =>
-    router.push({
-      pathname: "/assets/[id]/recipients",
-      params: { id: assetId },
-    })
+    router.push({ pathname: "/assets/[id]/recipients", params: { id: assetId } })
 
   // Tier one: the label, opened as soon as the screen has both the row and MK.
   const label = useMemo(() => {
@@ -99,6 +92,22 @@ export function AssetDetailScreen() {
     }
   }, [asset, mk])
 
+  /**
+   * The revealed payload, as labelled fields.
+   *
+   * `null` for a phrase (drawn as pills) or a payload that does not parse — a
+   * rotated format, a hand-edited row. The block then falls back to plain text,
+   * which is ugly but honest: refusing to show a secret the owner has just
+   * authenticated for would be worse than showing it plainly.
+   */
+  const fields = useMemo(() => {
+    if (state.status !== "revealed" || asset === undefined || asset === null) {
+      return null
+    }
+    if (isPhrasePayload(asset.type, state.text)) return null
+    return parseSecret(asset.type, state.text, t)
+  }, [state, asset, t])
+
   if (asset === undefined) {
     return (
       <Screen scroll={false}>
@@ -112,20 +121,16 @@ export function AssetDetailScreen() {
 
   const isFileType = FILE_TYPES.includes(asset.type)
   const url = asset.urls[0] ?? null
+  const routed = asset.recipientRule !== "default"
 
   return (
     <Screen>
-      {/*
-        No type glyph up here. The list row already showed it, the title says
-        what the thing is, and a decorative 42px mark at the top of a detail
-        screen is a header pretending to be a hero. What this screen owes its
-        reader is the secret and the recipients, not a restatement of the icon
-        they just tapped.
-      */}
       <BackButton label={common.back} />
 
+      {/* Identity. No type glyph: the row you tapped already showed it, and a
+          decorative mark here is a header pretending to be a hero. */}
       <View className="mb-header mt-4 gap-1">
-        <Text variant="pageTitle" numberOfLines={3}>
+        <Text variant="screenTitle" numberOfLines={3}>
           {label?.title ?? t.revealFailed}
         </Text>
         {label?.subtitle ? (
@@ -135,51 +140,35 @@ export function AssetDetailScreen() {
         ) : null}
       </View>
 
-      {isFileType ? (
-        <View className="rounded-card bg-card gap-1.5 p-4">
-          <Text variant="rowTitle">{t.filesLabel}</Text>
-          <Text variant="metaSm">
-            {t.filesCount
-              .replace("{n}", fmtNum(asset.storageIds.length, locale))
-              .replace("{size}", formatSize(asset.meta.byteSize ?? 0, locale))}
-          </Text>
-          <Text variant="metaSm" className="text-muted-foreground mt-1">
-            {t.viewerSoon}
-          </Text>
-        </View>
-      ) : url === null ? null : (
-        <SecretBlock
-          title={t.secretLabel}
-          state={state}
-          wordCount={asset.meta.itemCount ?? 0}
-          asWords={WORD_TYPES.includes(asset.type)}
-          locale={locale}
-          labels={{
-            revealPrompt: t.revealPrompt,
-            revealing: t.revealing,
-            hide: t.hide,
-            revealDenied: t.revealDenied,
-            revealFailed: t.revealFailed,
-            terms: `${t.revealTerms.replace("{n}", fmtNum(REVEAL_SECONDS, locale))} · ${
-              lastRevealed == null
-                ? t.neverRevealed
-                : t.lastRevealed.replace(
-                    "{date}",
-                    fmtDate(new Date(lastRevealed), locale)
-                  )
-            }`,
-          }}
-          revealedBody={fields === null ? undefined : <SecretFieldList fields={fields} />}
-          onReveal={() => reveal(url, asset.dekWrappedByMk)}
-          onHide={hide}
-        />
-      )}
+      {/*
+        The handover, first.
 
-      {/* Recipients — a list of names, never a ratio and never just a button. */}
-      <View className="mt-header gap-2.5">
-        <Text variant="sectionLabel">{t.recipientsLabel}</Text>
+        "من يستلمه بعدك" is the sentence that makes this an inheritance vault
+        rather than a password manager, and it belongs above the secret for the
+        same reason the secret used to lead: the owner already knows their own
+        password. What they came to check is that this reaches the right person.
+      */}
+      <View className="gap-2.5">
+        <Text variant="sectionLabel">{t.handoverLabel}</Text>
 
-        {asset.recipientRule === "default" ? (
+        {routed ? (
+          <>
+            <RecipientSummary
+              assetId={assetId}
+              allHeirsLabel={routing.allHeirs}
+              executorLabel={routing.executor}
+              emptyLabel={t.recipientsNone}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-start px-5"
+              onPress={openRecipients}
+            >
+              <Text>{t.recipientsEdit}</Text>
+            </Button>
+          </>
+        ) : (
           <AlertBanner
             variant="security"
             title={t.recipientsNone}
@@ -190,19 +179,59 @@ export function AssetDetailScreen() {
               </Button>
             }
           />
-        ) : (
-          <>
-            <RecipientSummary
-              assetId={assetId}
-              allHeirsLabel={routing.allHeirs}
-              executorLabel={routing.executor}
-              emptyLabel={t.recipientsNone}
-            />
-            <Button variant="outline" onPress={openRecipients}>
-              <Text>{t.recipientsEdit}</Text>
-            </Button>
-          </>
         )}
+      </View>
+
+      {/* The payload that person will be handed. */}
+      <View className="mt-header gap-2.5">
+        <Text variant="sectionLabel">{t.contentLabel}</Text>
+
+        {isFileType ? (
+          <View className="rounded-card bg-sand-100 gap-1.5 p-4 shadow-sm">
+            <Text variant="rowTitle">
+              {t.filesCount
+                .replace("{n}", fmtNum(asset.storageIds.length, locale))
+                .replace("{size}", formatSize(asset.meta.byteSize ?? 0, locale))}
+            </Text>
+            <Text variant="footnote">{t.viewerSoon}</Text>
+          </View>
+        ) : url === null ? null : (
+          <SecretBlock
+            title={t.secretLabel}
+            state={state}
+            wordCount={asset.meta.itemCount ?? 0}
+            asWords={WORD_TYPES.includes(asset.type)}
+            revealedBody={
+              fields === null ? undefined : <SecretFieldList fields={fields} />
+            }
+            locale={locale}
+            labels={{
+              revealPrompt: t.revealPrompt,
+              revealing: t.revealing,
+              hide: t.hide,
+              revealDenied: t.revealDenied,
+              revealFailed: t.revealFailed,
+              terms: t.revealTerms.replace(
+                "{n}",
+                fmtNum(REVEAL_SECONDS, locale)
+              ),
+            }}
+            onReveal={() => reveal(url, asset.dekWrappedByMk)}
+            onHide={hide}
+          />
+        )}
+
+        {/* Lifted out of the block's own subtitle, where it rode along with the
+            reveal terms as one run-on line. When it was last opened is a fact
+            about the asset, not a condition of opening it. */}
+        <Text variant="footnote">
+          {lastRevealed == null
+            ? t.neverRevealed
+            : t.lastRevealed.replace(
+                "{date}",
+                fmtDate(new Date(lastRevealed), locale)
+              )}
+        </Text>
       </View>
 
       <View className="grow" />
