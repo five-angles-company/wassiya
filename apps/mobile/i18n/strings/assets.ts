@@ -9,7 +9,8 @@
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 export const ASSETS = {
-  title: { ar: "أصولك", en: "Your assets" },
+  // Matches the tab. The screen was "أصولك" while the tab said "الخزنة".
+  title: { ar: "الخزنة", en: "Vault" },
 
   // "٤٣ أصلاً" on the board — the 11+ form, which is where the naive
   // one/other split visibly breaks.
@@ -23,6 +24,13 @@ export const ASSETS = {
 
   // The filter chips name *categories*, so they are plural — where 4.2's tiles
   // name one thing you are about to create and stay singular.
+  // Destination groups. A heading says where its bucket *goes*, so rows inside
+  // don't repeat it — only "بلا وجهة" carries a per-row badge, because there
+  // the count is the whole point.
+  groupNone: { ar: "بلا وجهة", en: "No destination" },
+  groupAll: { ar: "إلى جميع الورثة", en: "To all heirs" },
+  groupExplicit: { ar: "موجَّهة", en: "Routed" },
+
   filterAll: { ar: "الكل", en: "All" },
   filterCrypto: { ar: "عملات رقمية", en: "Crypto" },
   filterBank: { ar: "بنوك", en: "Banks" },

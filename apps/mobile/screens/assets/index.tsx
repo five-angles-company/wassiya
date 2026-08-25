@@ -1,11 +1,19 @@
 /**
- * ٤.١ — the vault's contents.
+ * الخزنة — the vault's contents, grouped by where they go.
+ *
+ * ## Three resting states, kept distinct
  *
  * Everything a row shows is ciphertext until MK is in memory, so this screen
  * has three resting states rather than the usual two: locked, empty, and full.
- * They are kept distinct on purpose — "خزنتك فارغة" and "خزنتك مقفلة" are
- * opposite situations, and a single grey placeholder for both would tell a user
- * with forty assets that they have none.
+ * "خزنتك فارغة" and "خزنتك مقفلة" are opposite situations, and one grey
+ * placeholder for both would tell a user with forty assets that they have none.
+ *
+ * ## Destination, not type
+ *
+ * The list groups by where a thing goes, with "بلا وجهة" pinned first — see
+ * `group-by-destination.ts` for why. Type survives as a filter, because finding
+ * a thing and checking the vault is complete are different jobs and only the
+ * second one belongs in the structure.
  */
 import { useRef, useState } from "react"
 import { Button } from "@workspace/ui-native/components/ui/button"
@@ -15,19 +23,21 @@ import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Plus } from "lucide-react-native"
 import { router } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
+import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useVaultGate } from "@/hooks/use-vault-gate"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPE_ROUTE, ASSET_TYPES, type AssetType } from "@/lib/asset-types"
+import type { DestinationKind } from "@/screens/assets/group-by-destination"
 import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetList } from "@/screens/assets/components/asset-list"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
 import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
-import { ScreenFrame } from "@/screens/assets/components/screen-frame"
 import { useAssetList } from "@/screens/assets/use-asset-list"
 
 export function AssetsScreen() {
@@ -53,6 +63,8 @@ export function AssetsScreen() {
   }
   const count = (n: number, forms: CountForms) =>
     fmtCount(n, fmtNum(n, locale), forms, locale)
+
+  const groupLabel = (kind: DestinationKind) => GROUP_KEY[kind](t)
 
   // 4.2 lives here rather than in a route, so opening it cannot disturb this
   // screen's scroll position — which is the board's stated reason for making
@@ -80,7 +92,8 @@ export function AssetsScreen() {
   // and nothing to search, so the controls are withheld rather than disabled.
   if (!unlocked) {
     return (
-      <ScreenFrame title={t.title}>
+      <Screen inset="tab">
+        <ScreenHeader title={t.title} level="root" />
         <AssetsLocked
           title={t.lockedTitle}
           body={t.lockedBody}
@@ -88,7 +101,7 @@ export function AssetsScreen() {
           onUnlock={unlock}
           busy={status === "unlocking"}
         />
-      </ScreenFrame>
+      </Screen>
     )
   }
 
@@ -96,7 +109,8 @@ export function AssetsScreen() {
   // empty vault — `total` is only meaningful once the decryption pass has run.
   if (rows !== undefined && total === 0) {
     return (
-      <ScreenFrame title={t.title}>
+      <Screen inset="tab">
+        <ScreenHeader title={t.title} level="root" />
         <AssetsEmpty
           title={t.emptyTitle}
           body={t.emptyBody}
@@ -105,82 +119,81 @@ export function AssetsScreen() {
           onAdd={openAddSheet}
         />
         <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
-      </ScreenFrame>
+      </Screen>
     )
   }
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView
-        contentContainerClassName="grow pb-28 pt-6"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View className="px-gutter mb-header">
-          <Text variant="screenTitle">{t.title}</Text>
-          <Text variant="meta" className="text-muted-foreground mt-1">
-            {count(total, assetForms)}
-          </Text>
-        </View>
-
-        <View className="px-gutter mb-3">
-          <AssetSearchField
-            value={search}
-            onChangeText={setSearch}
-            placeholder={t.searchPlaceholder}
-            clearLabel={t.clearFilters}
-          />
-        </View>
-
-        <View className="mb-header">
-          <AssetFilterChips
-            chips={[
-              { type: null, label: t.filterAll, count: total },
-              ...ASSET_TYPES.map((type) => ({
-                type,
-                label: t[FILTER_KEY[type]],
-                count: byType[type],
-              })),
-            ]}
-            selected={filter}
-            onSelect={setFilter}
-          />
-        </View>
-
-        <View className="px-gutter">
-          <AssetList
-            rows={rows}
-            recipientLabel={(n) => count(n, recipientForms)}
-            noResultsTitle={t.noResultsTitle}
-            noResultsBody={t.noResultsBody}
-            clearLabel={t.clearFilters}
-            onClear={clearFilters}
-            onOpen={(id) =>
-              router.push({ pathname: "/assets/[id]", params: { id } })
-            }
-          />
-        </View>
-      </ScrollView>
-
-      {/* Pinned rather than trailing the list: with forty assets a button at
-          the end of the scroll is unreachable without scrolling to it, and
-          adding is the screen's primary action at any scroll position. */}
-      <View className="px-gutter absolute bottom-0 start-0 end-0 pb-5">
+    <Screen
+      inset="footer"
+      keyboard
+      /* Pinned rather than trailing the list: with forty assets a button at the
+         end of the scroll is unreachable without scrolling to it, and adding is
+         the screen's primary action at any scroll position. */
+      footer={
         <Button onPress={openAddSheet}>
           <Icon as={Plus} className="text-primary-foreground size-4.5" />
           <Text>{t.add}</Text>
         </Button>
+      }
+    >
+      <ScreenHeader
+        title={t.title}
+        level="root"
+        trailing={<Text variant="metaSm">{count(total, assetForms)}</Text>}
+      />
+
+      <AssetSearchField
+        value={search}
+        onChangeText={setSearch}
+        placeholder={t.searchPlaceholder}
+        clearLabel={t.clearFilters}
+      />
+
+      {/* Bleeds past the gutter so the chip strip can scroll edge to edge —
+          the only thing on this screen that should. */}
+      <View className="-mx-gutter my-3">
+        <AssetFilterChips
+          chips={[
+            { type: null, label: t.filterAll, count: total },
+            ...ASSET_TYPES.map((type) => ({
+              type,
+              label: t[FILTER_KEY[type]],
+              count: byType[type],
+            })),
+          ]}
+          selected={filter}
+          onSelect={setFilter}
+        />
       </View>
 
-      {/* A sibling of the ScrollView rather than a child. Not a requirement —
-          TrueSheet's host view is `absoluteFill` with `zIndex: -9999`, so it
-          takes no layout space wherever it sits, and `SheetSelect` mounts one
-          inside a scroller on 4.4 without trouble. It is here because the sheet
-          belongs to the screen, not to the list, and a child of the content
-          container would be positioned against the scrolled content. */}
+      <AssetList
+        rows={rows}
+        recipientLabel={(n) => count(n, recipientForms)}
+        groupLabel={groupLabel}
+        groupCount={(n) => count(n, assetForms)}
+        noResultsTitle={t.noResultsTitle}
+        noResultsBody={t.noResultsBody}
+        clearLabel={t.clearFilters}
+        onClear={clearFilters}
+        onOpen={(id) => router.push({ pathname: "/assets/[id]", params: { id } })}
+      />
+
+      {/* A sibling of the scroll area rather than a child. TrueSheet's host view
+          is `absoluteFill` with `zIndex: -9999`, so it takes no layout space
+          wherever it sits; it lives here because the sheet belongs to the
+          screen, not to the list. */}
       <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
-    </View>
+    </Screen>
   )
 }
+
+/** Group headings, keyed by destination kind. */
+const GROUP_KEY = {
+  none: (t: Record<string, string>) => t.groupNone!,
+  all: (t: Record<string, string>) => t.groupAll!,
+  explicit: (t: Record<string, string>) => t.groupExplicit!,
+} as const satisfies Record<DestinationKind, (t: Record<string, string>) => string>
 
 /** Chip copy lives under its own key per type, so the table stays flat. */
 const FILTER_KEY = {
