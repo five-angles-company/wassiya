@@ -74,7 +74,10 @@ export function NewAccountScreen() {
       }),
       meta: {},
     })
-    if (saved) router.back()
+    if (saved) router.replace({
+      pathname: "/assets/[id]/recipients",
+      params: { id: saved, step: "2" },
+    })
   }
 
   return (

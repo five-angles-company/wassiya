@@ -1,7 +1,6 @@
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import type * as React from "react"
-import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
@@ -23,19 +22,17 @@ export type WizardFrameProps = {
  * The chrome every ٤.٣–٤.٨ wizard shares: back, title, step meter, a scrolling
  * body and one pinned action.
  *
- * ## About the footer label
+ * ## Two steps, and the second one exists now
  *
- * The board's button reads "التالي: من يستلمه؟" — *next: who receives it?* —
- * because each wizard is two steps and the second is heir assignment (5.3).
- * That screen does not exist yet, so this says **"احفظ في الخزنة"** and means
- * it: the asset is encrypted, uploaded and saved, and the run ends. Keeping the
- * board's label over a button that does not go there would promise a step that
- * silently is not taken, on the one screen where "who gets this" is the whole
- * point.
+ * The board meters every wizard "١ من ٢" because the second step is heir
+ * assignment. That screen did not exist when this frame was written, so the
+ * button said "احفظ في الخزنة" and meant it — the run ended, the asset landed
+ * unrouted, and a caveat under the button explained the badge it would carry.
  *
- * The line under the button carries the rest of the truth — the asset lands
- * unrouted, and 4.1 will show it with the terracotta "بلا مستلم" badge until
- * 5.3 lands. That badge is not a defect; it is the list doing its job.
+ * `/assets/[id]/recipients` exists, so the wizard hands off to it and the
+ * button promises what it now actually does. The caveat is gone with it: an
+ * asset is no longer created unrouted and then abandoned, so explaining that it
+ * would be is worse than silence.
  */
 export function WizardFrame({
   title,
@@ -57,14 +54,9 @@ export function WizardFrame({
          the action was below the fold and reached only by scrolling past
          fields the user had already filled. */
       footer={
-        <View className="gap-2">
-          <Button onPress={onSubmit} disabled={!canSubmit || submitting}>
-            <Text>{submitting ? t.saving : t.save}</Text>
-          </Button>
-          <Text variant="metaSm" className="text-center">
-            {t.unroutedNote}
-          </Text>
-        </View>
+        <Button onPress={onSubmit} disabled={!canSubmit || submitting}>
+          <Text>{submitting ? t.saving : t.save}</Text>
+        </Button>
       }
     >
       <ScreenHeader

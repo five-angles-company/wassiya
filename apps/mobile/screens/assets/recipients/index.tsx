@@ -45,7 +45,13 @@ type Selection = {
 const EMPTY_SET: Set<string> = new Set()
 
 export function AssetRecipientsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  /**
+   * `step` is set only by the create wizards, which hand off here as their
+   * second step. Reached from an asset's detail screen to change recipients
+   * later, there is no run in progress — a "٢ من ٢" meter would be inventing
+   * one, and a progress bar that lies about where you are is worse than none.
+   */
+  const { id, step } = useLocalSearchParams<{ id: string; step?: string }>()
   const assetId = id as Id<"assets">
   const { t, locale } = useStrings("will/routing")
 
@@ -136,7 +142,11 @@ export function AssetRecipientsScreen() {
         </Button>
       }
     >
-      <ScreenHeader title={t.recipientsTitle} back="/assets" />
+      <ScreenHeader
+        title={t.recipientsTitle}
+        back="/assets"
+        step={step === "2" ? { index: 2, total: 2 } : undefined}
+      />
 
       {heirs !== undefined && heirs.length === 0 ? (
         <AlertBanner variant="security" description={t.noHeirs} />

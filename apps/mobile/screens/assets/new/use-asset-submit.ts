@@ -11,6 +11,7 @@
 import { useCallback, useRef, useState } from "react"
 import { utf8ToBytes } from "@workspace/crypto/bytes"
 import type { AssetLabel } from "@workspace/crypto/label"
+import type { Id } from "@workspace/backend/dataModel"
 
 import type { UploadProgress } from "@/lib/asset-upload"
 import type { AssetType } from "@/lib/asset-types"
@@ -38,7 +39,8 @@ export type AssetSubmitInput = {
 }
 
 export type AssetSubmit = {
-  submit: (input: AssetSubmitInput) => Promise<boolean>
+  /** The new asset's id, or `null` if it was not created. */
+  submit: (input: AssetSubmitInput) => Promise<Id<"assets"> | null>
   submitting: boolean
   error: string | null
 }
@@ -56,7 +58,10 @@ export function useAssetSubmit(): AssetSubmit {
 
   const submit = useCallback(
     async ({ type, label, secret, files, meta, onProgress }: AssetSubmitInput) => {
-      if (inFlight.current) return false
+      // `null`, not `false`: the id is the return value now, because the wizard
+      // hands off to recipient selection for that asset and cannot ask for it
+      // afterwards without a round trip.
+      if (inFlight.current) return null
       inFlight.current = true
       setSubmitting(true)
       setError(null)
@@ -68,8 +73,7 @@ export function useAssetSubmit(): AssetSubmit {
             : [{ read: () => Promise.resolve(utf8ToBytes(secret)) }]),
           ...(files ?? []),
         ]
-        await create({ type, label, payloads, meta, onProgress })
-        return true
+        return await create({ type, label, payloads, meta, onProgress })
       } catch (cause) {
         // Three outcomes, three sentences. A lapsed subscription and an
         // auto-locked vault are both normal events with their own remedies;
@@ -88,7 +92,7 @@ export function useAssetSubmit(): AssetSubmit {
               : t.saveFailed
         )
         console.warn("[wassiya] asset create failed", cause)
-        return false
+        return null
       } finally {
         inFlight.current = false
         setSubmitting(false)

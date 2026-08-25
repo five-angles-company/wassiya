@@ -16,12 +16,11 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 export const ASSET_NEW = {
   back: { ar: "رجوع", en: "Back" },
   stepSeparator: { ar: "من", en: "of" },
-  save: { ar: "احفظ في الخزنة", en: "Save to your vault" },
+  // The board's own label. It was replaced by "احفظ في الخزنة" while 5.3 did
+  // not exist and the run really did end here; it does exist, so the button
+  // can promise the step it actually takes again.
+  save: { ar: "التالي: من يستلمه؟", en: "Next: who receives it?" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
-  unroutedNote: {
-    ar: "ستحدّد من يستلمه بعد إضافته",
-    en: "You'll choose who receives it after adding it",
-  },
   // The promise 4.3 prints under its secret field, and the reason every one of
   // these screens can ask for what it asks for.
   encryptNote: {

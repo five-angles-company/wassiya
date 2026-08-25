@@ -130,7 +130,10 @@ export function NewPhotosScreen() {
     // The plaintext thumbnails have done their job either way — encrypted
     // copies are stored, or the save failed and they are stale.
     for (const uri of thumbUris) discardLocalFile(uri)
-    if (saved) router.back()
+    if (saved) router.replace({
+      pathname: "/assets/[id]/recipients",
+      params: { id: saved, step: "2" },
+    })
   }
 
   return (

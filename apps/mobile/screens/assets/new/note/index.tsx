@@ -76,7 +76,10 @@ export function NewNoteScreen() {
     if (saved) {
       // The plaintext draft must not outlive its ciphertext.
       draft.clear()
-      router.back()
+      router.replace({
+      pathname: "/assets/[id]/recipients",
+      params: { id: saved, step: "2" },
+    })
     }
   }
 

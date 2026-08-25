@@ -168,7 +168,10 @@ export function NewDocumentScreen() {
     if (saved) {
       // The ciphertext is stored; the plaintext PDF has no further use.
       clearGenerated()
-      router.back()
+      router.replace({
+      pathname: "/assets/[id]/recipients",
+      params: { id: saved, step: "2" },
+    })
     }
   }
 
