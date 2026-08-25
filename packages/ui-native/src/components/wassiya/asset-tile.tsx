@@ -100,14 +100,7 @@ export function AssetTile({
         onPressOut={() => {
           pressed.value = withSpring(0, { damping: 18, stiffness: 260 });
         }}
-        // `min-h-36`: a tile holding a short title collapsed to barely more
-        // than its icon, so a grid of mixed-length names had a ragged bottom
-        // edge and each tile read as an afterthought. A floor gives them the
-        // presence of objects rather than labels.
-        className={cn(
-          'rounded-card min-h-36 justify-between gap-3 p-4 shadow-sm',
-          FILL[tone]
-        )}
+        className={cn('rounded-card gap-3 p-4 shadow-sm', FILL[tone])}
       >
         <View
           className={cn(

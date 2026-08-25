@@ -20,7 +20,7 @@ import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { fmtNum } from "@workspace/ui-native/lib/format"
-import { Plus, Search } from "lucide-react-native"
+import { Plus } from "lucide-react-native"
 import { router } from "expo-router"
 import { Pressable, View } from "react-native"
 
@@ -34,7 +34,6 @@ import type { DestinationKind } from "@/screens/assets/group-by-destination"
 import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetList } from "@/screens/assets/components/asset-list"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
-import { AssetSuggestions } from "@/screens/assets/components/asset-suggestions"
 import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
@@ -44,7 +43,6 @@ export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
-  const [searching, setSearching] = useState(false)
   const [filter, setFilter] = useState<AssetType | null>(null)
   const { rows, total, byType } = useAssetList(search, filter, t.undecryptable)
 
@@ -71,7 +69,10 @@ export function AssetsScreen() {
    */
   const CHROME_THRESHOLD = 7
   const showChips = total >= CHROME_THRESHOLD
-  const showSearch = searching || search.length > 0 || total >= CHROME_THRESHOLD
+  // No toggle, no icon, no hidden state: the field is simply absent until the
+  // vault is big enough that scanning it stops working. A control that hides
+  // and reappears is a puzzle; a control that isn't there yet is just quiet.
+  const showSearch = total >= CHROME_THRESHOLD || search.length > 0
 
   // 4.2 lives here rather than in a route, so opening it cannot disturb this
   // screen's scroll position — which is the board's stated reason for making
@@ -158,23 +159,7 @@ export function AssetsScreen() {
       <ScreenHeader
         title={t.title}
         level="root"
-        trailing={
-          <View className="flex-row items-center gap-3">
-            <Text variant="metaSm">{count(total, assetForms)}</Text>
-            {/* The field itself is the exception, not the default — see
-                `showSearch`. This is how you ask for it. */}
-            {!showSearch ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t.searchPlaceholder}
-                onPress={() => setSearching(true)}
-                className="active:bg-sand-300 bg-card size-10 items-center justify-center rounded-full"
-              >
-                <Icon as={Search} size={18} strokeWidth={2.75} />
-              </Pressable>
-            ) : null}
-          </View>
-        }
+        trailing={<Text variant="metaSm">{count(total, assetForms)}</Text>}
       />
 
       {showSearch ? (
@@ -218,17 +203,6 @@ export function AssetsScreen() {
         onClear={clearFilters}
         onOpen={(id) => router.push({ pathname: "/assets/[id]", params: { id } })}
       />
-
-      {/* Only while the vault cannot yet stand on its own. Past this it is
-          clutter, and the grid has enough to say for itself. */}
-      {total < 4 ? (
-        <AssetSuggestions
-          className="mt-header"
-          title={t.suggestTitle}
-          labelFor={(type) => t[FILTER_KEY[type]]!}
-          onPick={(type) => router.push(ASSET_TYPE_ROUTE[type])}
-        />
-      ) : null}
 
       {/* A sibling of the scroll area rather than a child. TrueSheet's host view
           is `absoluteFill` with `zIndex: -9999`, so it takes no layout space
