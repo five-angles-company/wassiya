@@ -1,6 +1,6 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AssetRowSkeleton } from "@workspace/ui-native/components/wassiya/asset-row-skeleton"
-import { AssetTile } from "@workspace/ui-native/components/wassiya/asset-tile"
+import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { cn } from "@workspace/ui-native/lib/utils"
 import { SearchX } from "lucide-react-native"
@@ -107,18 +107,17 @@ export function AssetList({
             </View>
           ) : null}
 
-          <View className="gap-row flex-row flex-wrap">
-            {group.rows.map((row, i) => (
-              <AssetTile
+          <View className="gap-row">
+            {group.rows.map((row) => (
+              <AssetRow
                 key={row.id}
                 icon={ASSET_TYPE_ICON[row.type]}
                 title={row.title}
                 // The asset's own second line where it has one; the category
-                // only when it doesn't. A tile that repeats its own icon in
+                // only when it doesn't. A row that repeats its own icon in
                 // words has wasted the only supporting line it gets.
                 meta={row.subtitle ?? categoryLabel(row)}
                 tone={ASSET_TYPE_TONE[row.type]}
-                index={i}
                 onPress={() => onOpen(row.id)}
               />
             ))}

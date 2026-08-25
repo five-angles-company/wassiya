@@ -4,16 +4,50 @@ import {
   StatusPill,
   type StatusPillStatus,
 } from '@workspace/ui-native/components/wassiya/status-pill';
+import type { Tone } from '@workspace/ui-native/lib/tone';
 import { cn } from '@workspace/ui-native/lib/utils';
-import type { LucideIcon } from 'lucide-react-native';
+import { ChevronLeft, type LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
+/**
+ * One asset, as a row.
+ *
+ * ## The leading mark is a cover, not an icon
+ *
+ * The old row put a 36px disc of the page's own colour at the start, which made
+ * every row identical at a glance: same shape, same weight, the type readable
+ * only by squinting at a small glyph. The mark is now a **52px tinted square**
+ * carrying the glyph in that tone's dark step — the same "cover" idea the grid
+ * experiment used, kept at row scale. It gives a list of mixed assets colour
+ * and rhythm down its leading edge, which is what makes a long vault scannable
+ * rather than uniform.
+ *
+ * ## The card sits above the page
+ *
+ * `bg-sand-100` is lighter than the #f5ead8 ground. That ordering matters more
+ * than any shadow value: a surface darker than its background reads as a hole
+ * punched in the page, and no amount of blur fixes it.
+ *
+ * ## The trailing slot earns its place or yields
+ *
+ * A row shows its recipient state only when the caller passes one. In a list
+ * already grouped by destination every row in a group shares an answer, so
+ * repeating it per row is noise; on 5.3 routing and the heir preview it is the
+ * whole point. No status means a chevron, which at least says "this opens".
+ */
 export type AssetRowProps = {
   icon: LucideIcon;
-  /** Decrypted title. Decrypt lazily, per visible row — never the whole list. */
+  /** Decrypted title. */
   title: string;
-  /** Type, chain, masked IBAN, file size — whatever identifies it at a glance. */
+  /** Address, chain, masked IBAN, file size — whatever identifies it at a glance. */
   meta?: string;
+  /** From `ASSET_TYPE_TONE` — what the asset holds. Colours the leading mark. */
+  tone?: Tone;
   /** Recipient state. `action` = "بلا مستلم", the one thing a user must fix. */
   recipientStatus?: StatusPillStatus;
   recipientLabel?: string;
@@ -21,52 +55,84 @@ export type AssetRowProps = {
   className?: string;
 };
 
-/**
- * A single asset in the vault list.
- *
- * The recipient badge is the **only** status this row shows. An unrouted asset
- * takes the terracotta pill because it is a genuine warning — a vault that
- * delivers nothing is the outcome this product exists to prevent — while a
- * routed one takes olive and recedes.
- *
- * `title` and `meta` arrive already decrypted. Count and type are plaintext
- * metadata, so the list can render before any decryption; the strings cannot.
- */
+/** Cover fill and glyph per tone. `sand` takes 300; its 200 matches the page. */
+const SKIN: Record<Tone, { cover: string; glyph: string }> = {
+  terracotta: { cover: 'bg-terracotta-200', glyph: 'text-terracotta-700' },
+  olive: { cover: 'bg-olive-200', glyph: 'text-olive-700' },
+  sand: { cover: 'bg-sand-300', glyph: 'text-sand-800' },
+};
+
 export function AssetRow({
   icon,
   title,
   meta,
+  tone = 'sand',
   recipientStatus,
   recipientLabel,
   onPress,
   className,
 }: AssetRowProps) {
-  const Row = onPress ? Pressable : View;
-  return (
-    <Row
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      className={cn(
-        'bg-card flex-row items-center gap-3 rounded-row px-4 py-3.5',
-        onPress && 'active:bg-sand-300',
-        className
-      )}>
-      <View className="bg-background size-10 shrink-0 items-center justify-center rounded-full">
-        <Icon as={icon} className="text-terracotta-700 size-4.5" />
+  const pressed = useSharedValue(0);
+  const skin = SKIN[tone];
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - pressed.value * 0.02 }],
+  }));
+
+  const body = (
+    <>
+      <View
+        className={cn(
+          'rounded-box size-13 shrink-0 items-center justify-center',
+          skin.cover
+        )}
+      >
+        <Icon as={icon} size={24} strokeWidth={2.5} className={skin.glyph} />
       </View>
+
       <View className="min-w-0 flex-1 gap-0.5">
         <Text variant="rowTitle" numberOfLines={1}>
           {title}
         </Text>
-        {meta ? (
+        {meta !== undefined ? (
           <Text variant="metaSm" numberOfLines={1}>
             {meta}
           </Text>
         ) : null}
       </View>
-      {recipientStatus && recipientLabel ? (
+
+      {recipientStatus !== undefined ? (
         <StatusPill status={recipientStatus}>{recipientLabel}</StatusPill>
+      ) : onPress !== undefined ? (
+        <Icon as={ChevronLeft} size={18} className="text-muted-foreground" flip />
       ) : null}
-    </Row>
+    </>
+  );
+
+  const shell = cn(
+    'rounded-row bg-sand-100 flex-row items-center gap-3.5 p-3 shadow-sm',
+    className
+  );
+
+  // A row with no handler is a record, not a control — `AssetRow` is used that
+  // way on the heir preview, where nothing is tappable.
+  if (onPress === undefined) return <View className={shell}>{body}</View>;
+
+  return (
+    <Animated.View style={pressStyle}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        onPressIn={() => {
+          pressed.value = withSpring(1, { damping: 18, stiffness: 260 });
+        }}
+        onPressOut={() => {
+          pressed.value = withSpring(0, { damping: 18, stiffness: 260 });
+        }}
+        className={shell}
+      >
+        {body}
+      </Pressable>
+    </Animated.View>
   );
 }
