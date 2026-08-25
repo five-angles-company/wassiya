@@ -21,6 +21,7 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
+import { cn } from "@workspace/ui-native/lib/utils"
 import { router, useLocalSearchParams } from "expo-router"
 import { View } from "react-native"
 
@@ -28,8 +29,13 @@ import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
+import {
+  ASSET_TYPE_ICON,
+  ASSET_TYPE_TONE,
+  type AssetType,
+} from "@/lib/asset-types"
 import { DeleteAssetButton } from "@/screens/assets/detail/components/delete-asset-button"
+import { RecipientSummary } from "@/screens/assets/detail/components/recipient-summary"
 import { SecretBlock } from "@/screens/assets/detail/components/secret-block"
 import {
   REVEAL_SECONDS,
@@ -39,6 +45,16 @@ import { useVault } from "@/stores/vault"
 
 /** Types whose payload is a phrase, so it renders as pills rather than text. */
 const WORD_TYPES: AssetType[] = ["crypto"]
+/**
+ * The hero cover, per tone. Same fills the list rows use, so an asset looks
+ * like itself whether you are scanning the vault or standing inside one.
+ */
+const COVER = {
+  terracotta: { fill: "bg-terracotta-200", glyph: "text-terracotta-700" },
+  olive: { fill: "bg-olive-200", glyph: "text-olive-700" },
+  sand: { fill: "bg-sand-300", glyph: "text-sand-800" },
+} as const
+
 /** Types stored as files, which have no single revealable string. */
 const FILE_TYPES: AssetType[] = ["document", "photos"]
 
@@ -47,6 +63,8 @@ export function AssetDetailScreen() {
   const assetId = id as Id<"assets">
   const { t, locale } = useStrings("assets/detail")
   const { t: common } = useStrings("common")
+  // "كل الورثة" / "الوصي" live with the routing screen that owns those concepts.
+  const { t: routing } = useStrings("will/routing")
   // The whole screen can put a secret on display, so the guard covers all of it
   // rather than only the moment of reveal.
   useSecureScreen("assets/detail")
@@ -93,32 +111,36 @@ export function AssetDetailScreen() {
   return (
     <Screen>
       {/*
-        `ScreenHeader` is not used here, deliberately. An asset's title comes
-        with a type icon and a decrypted subtitle, which is a different shape
-        from the title-and-optional-back the header exists to standardise —
-        forcing it in would mean a `leading` slot that only this screen ever
-        passes. `Screen` still owns the scaffold, which is where the drift was.
+        `ScreenHeader` is not used here, deliberately. An asset leads with a
+        tinted cover carrying its type — the same mark the list rows wear, at
+        screen scale — and that is a different shape from the title-and-back the
+        header exists to standardise. `Screen` still owns the scaffold.
       */}
       <BackButton label={common.back} />
 
-      {/* Identity row. */}
-      <View className="mb-header mt-4 flex-row items-center gap-3">
-        <View className="bg-card size-12 shrink-0 items-center justify-center rounded-full">
-          <Icon
-            as={ASSET_TYPE_ICON[asset.type]}
-            className="text-terracotta-700 size-5.5"
-          />
-        </View>
-        <View className="min-w-0 flex-1">
-          <Text variant="pageTitle" numberOfLines={2}>
-            {label?.title ?? t.revealFailed}
+      <View
+        className={cn(
+          "rounded-card mt-4 h-28 items-center justify-center",
+          COVER[ASSET_TYPE_TONE[asset.type]].fill
+        )}
+      >
+        <Icon
+          as={ASSET_TYPE_ICON[asset.type]}
+          size={42}
+          strokeWidth={2.5}
+          className={COVER[ASSET_TYPE_TONE[asset.type]].glyph}
+        />
+      </View>
+
+      <View className="mb-header mt-4 gap-1">
+        <Text variant="pageTitle" numberOfLines={3}>
+          {label?.title ?? t.revealFailed}
+        </Text>
+        {label?.subtitle ? (
+          <Text variant="metaSm" numberOfLines={2}>
+            {label.subtitle}
           </Text>
-          {label?.subtitle ? (
-            <Text variant="metaSm" numberOfLines={1}>
-              {label.subtitle}
-            </Text>
-          ) : null}
-        </View>
+        ) : null}
       </View>
 
       {isFileType ? (
@@ -160,9 +182,10 @@ export function AssetDetailScreen() {
         />
       )}
 
-      {/* Recipients — a list, never a ratio. */}
-      <View className="mt-4 gap-2">
+      {/* Recipients — a list of names, never a ratio and never just a button. */}
+      <View className="mt-header gap-2.5">
         <Text variant="sectionLabel">{t.recipientsLabel}</Text>
+
         {asset.recipientRule === "default" ? (
           <AlertBanner
             variant="security"
@@ -175,9 +198,17 @@ export function AssetDetailScreen() {
             }
           />
         ) : (
-          <Button variant="outline" onPress={openRecipients}>
-            <Text>{t.recipientsEdit}</Text>
-          </Button>
+          <>
+            <RecipientSummary
+              assetId={assetId}
+              allHeirsLabel={routing.allHeirs}
+              executorLabel={routing.executor}
+              emptyLabel={t.recipientsNone}
+            />
+            <Button variant="outline" onPress={openRecipients}>
+              <Text>{t.recipientsEdit}</Text>
+            </Button>
+          </>
         )}
       </View>
 
