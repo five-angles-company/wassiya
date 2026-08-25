@@ -16,14 +16,13 @@
  * second one belongs in the structure.
  */
 import { useRef, useState } from "react"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { fmtNum } from "@workspace/ui-native/lib/format"
-import { Plus } from "lucide-react-native"
+import { Plus, Search } from "lucide-react-native"
 import { router } from "expo-router"
-import { View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
@@ -44,6 +43,7 @@ export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
+  const [searching, setSearching] = useState(false)
   const [filter, setFilter] = useState<AssetType | null>(null)
   const { rows, total, byType } = useAssetList(search, filter, t.undecryptable)
 
@@ -54,17 +54,23 @@ export function AssetsScreen() {
     few: t.countFew,
     many: t.countMany,
   }
-  const recipientForms: CountForms = {
-    zero: t.recipientsZero,
-    one: t.recipientsOne,
-    two: t.recipientsTwo,
-    few: t.recipientsFew,
-    many: t.recipientsMany,
-  }
   const count = (n: number, forms: CountForms) =>
     fmtCount(n, fmtNum(n, locale), forms, locale)
 
   const groupLabel = (kind: DestinationKind) => GROUP_KEY[kind](t)
+
+  /**
+   * Chrome earns its place.
+   *
+   * Six filter chips and a full-width search field over three assets is more
+   * furniture than content — and the filters cannot even narrow anything
+   * useful until there is something to narrow. Both appear once the vault is
+   * big enough to need them, and the search field appears immediately if the
+   * user asks for it.
+   */
+  const CHROME_THRESHOLD = 7
+  const showChips = total >= CHROME_THRESHOLD
+  const showSearch = searching || search.length > 0 || total >= CHROME_THRESHOLD
 
   // 4.2 lives here rather than in a route, so opening it cannot disturb this
   // screen's scroll position — which is the board's stated reason for making
@@ -127,49 +133,82 @@ export function AssetsScreen() {
     <Screen
       inset="footer"
       keyboard
-      /* Pinned rather than trailing the list: with forty assets a button at the
-         end of the scroll is unreachable without scrolling to it, and adding is
-         the screen's primary action at any scroll position. */
+      /*
+        A round button in the corner rather than a full-width slab.
+        Adding is the screen's primary action at any scroll position, so it
+        stays pinned — but a bar across the whole width competed with the
+        content it sits under, permanently, for a tap most sessions never make.
+        It rides `Screen`'s footer slot, which is already outside the scroll
+        area, so it needs no absolute positioning of its own.
+      */
       footer={
-        <Button onPress={openAddSheet}>
-          <Icon as={Plus} className="text-primary-foreground size-4.5" />
-          <Text>{t.add}</Text>
-        </Button>
+        <View className="items-end">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.add}
+            onPress={openAddSheet}
+            className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
+          >
+            <Icon as={Plus} size={26} strokeWidth={2.75} className="text-primary-foreground" />
+          </Pressable>
+        </View>
       }
     >
       <ScreenHeader
         title={t.title}
         level="root"
-        trailing={<Text variant="metaSm">{count(total, assetForms)}</Text>}
+        trailing={
+          <View className="flex-row items-center gap-3">
+            <Text variant="metaSm">{count(total, assetForms)}</Text>
+            {/* The field itself is the exception, not the default — see
+                `showSearch`. This is how you ask for it. */}
+            {!showSearch ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t.searchPlaceholder}
+                onPress={() => setSearching(true)}
+                className="active:bg-sand-300 bg-card size-10 items-center justify-center rounded-full"
+              >
+                <Icon as={Search} size={18} strokeWidth={2.75} />
+              </Pressable>
+            ) : null}
+          </View>
+        }
       />
 
-      <AssetSearchField
-        value={search}
-        onChangeText={setSearch}
-        placeholder={t.searchPlaceholder}
-        clearLabel={t.clearFilters}
-      />
+      {showSearch ? (
+        <View className="mb-3">
+          <AssetSearchField
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t.searchPlaceholder}
+            clearLabel={t.clearFilters}
+          />
+        </View>
+      ) : null}
 
-      {/* Bleeds past the gutter so the chip strip can scroll edge to edge —
-          the only thing on this screen that should. */}
-      <View className="-mx-gutter my-3">
-        <AssetFilterChips
-          chips={[
-            { type: null, label: t.filterAll, count: total },
-            ...ASSET_TYPES.map((type) => ({
-              type,
-              label: t[FILTER_KEY[type]],
-              count: byType[type],
-            })),
-          ]}
-          selected={filter}
-          onSelect={setFilter}
-        />
-      </View>
+      {showChips ? (
+        /* Bleeds past the gutter so the chip strip scrolls edge to edge — the
+           only thing on this screen that should. */
+        <View className="-mx-gutter mb-3">
+          <AssetFilterChips
+            chips={[
+              { type: null, label: t.filterAll, count: total },
+              ...ASSET_TYPES.map((type) => ({
+                type,
+                label: t[FILTER_KEY[type]],
+                count: byType[type],
+              })),
+            ]}
+            selected={filter}
+            onSelect={setFilter}
+          />
+        </View>
+      ) : null}
 
       <AssetList
         rows={rows}
-        recipientLabel={(n) => count(n, recipientForms)}
+        categoryLabel={(row) => t[FILTER_KEY[row.type]]!}
         groupLabel={groupLabel}
         groupCount={(n) => count(n, assetForms)}
         noResultsTitle={t.noResultsTitle}

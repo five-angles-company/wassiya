@@ -1,12 +1,12 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
 import { AssetRowSkeleton } from "@workspace/ui-native/components/wassiya/asset-row-skeleton"
+import { AssetTile } from "@workspace/ui-native/components/wassiya/asset-tile"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { cn } from "@workspace/ui-native/lib/utils"
 import { SearchX } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
-import { ASSET_TYPE_ICON } from "@/lib/asset-types"
+import { ASSET_TYPE_ICON, ASSET_TYPE_TONE } from "@/lib/asset-types"
 import {
   groupByDestination,
   type DestinationKind,
@@ -16,8 +16,8 @@ import type { AssetListRow } from "@/screens/assets/use-asset-list"
 export type AssetListProps = {
   /** Undefined while the query or the decryption pass is still running. */
   rows: AssetListRow[] | undefined
-  /** The badge text for a row, already pluralised. */
-  recipientLabel: (count: number) => string
+  /** The category name for a row's type: "مستند", "عملة رقمية". */
+  categoryLabel: (row: AssetListRow) => string
   /** The group's name. */
   groupLabel: (kind: DestinationKind) => string
   /** Its size, already pluralised. Rendered separately — see below. */
@@ -29,23 +29,24 @@ export type AssetListProps = {
   onOpen: (id: AssetListRow["id"]) => void
 }
 
-/** Only the gap is coloured. Two amber headings would rank neither. */
+/**
+ * Only the gap is coloured, and only here.
+ *
+ * The tiles carry a *type* tint on their icon, which means "this holds a
+ * secret" — a different thing from "this needs attention". Keeping the
+ * destination signal on the heading is what stops one surface carrying both
+ * meanings at once.
+ */
 const HEADING_TONE: Record<DestinationKind, string> = {
   none: "text-terracotta-700",
   all: "",
   explicit: "",
 }
 
-/**
- * The rows, grouped by where they go, plus the two states that replace them.
- *
- * Rows open ٤.٩. `AssetRow` renders a plain `View` when given no `onPress`,
- * which is what it did while the detail screen did not exist — passing the
- * handler is the whole difference.
- */
+/** The grid, plus the two states that replace it. */
 export function AssetList({
   rows,
-  recipientLabel,
+  categoryLabel,
   groupLabel,
   groupCount,
   noResultsTitle,
@@ -80,7 +81,7 @@ export function AssetList({
   return (
     <View className="gap-header">
       {groupByDestination(rows).map((group) => (
-        <View key={group.kind} className="gap-2">
+        <View key={group.kind} className="gap-2.5">
           {/*
             Name and count are two Texts, not one interpolated string.
             "موجَّهة · ١" mixes an Arabic word, a middot and an Arabic-Indic
@@ -95,22 +96,14 @@ export function AssetList({
             <Text variant="metaSm">{groupCount(group.rows.length)}</Text>
           </View>
 
-          <View className="gap-row">
+          <View className="gap-row flex-row flex-wrap">
             {group.rows.map((row) => (
-              <AssetRow
+              <AssetTile
                 key={row.id}
                 icon={ASSET_TYPE_ICON[row.type]}
                 title={row.title}
-                meta={row.subtitle}
-                // The heading already says where this group goes, so the row's
-                // own badge would repeat it — except in the group that reaches
-                // nobody, where the count is the point.
-                recipientStatus={row.recipientCount === 0 ? "action" : "confirmed"}
-                recipientLabel={
-                  group.kind === "explicit"
-                    ? recipientLabel(row.recipientCount)
-                    : undefined
-                }
+                category={categoryLabel(row)}
+                tone={ASSET_TYPE_TONE[row.type]}
                 onPress={() => onOpen(row.id)}
               />
             ))}
