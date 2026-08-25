@@ -1,19 +1,20 @@
 import { Icon } from '@workspace/ui-native/components/ui/icon';
 import { Text } from '@workspace/ui-native/components/ui/text';
+import { PulsingHeart } from '@workspace/ui-native/components/wassiya/pulsing-heart';
 import { resolveLabels, type LabelledProps, type LabelSet } from '@workspace/ui-native/lib/labels';
 import { cn } from '@workspace/ui-native/lib/utils';
-import { Check, Fingerprint, Heart } from 'lucide-react-native';
+import { Check, Fingerprint } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
 /**
- * The heartbeat — one bar across the top of Home.
+ * The heartbeat — the top of Home, and the only thing on it that is a *verb*
+ * rather than a number.
  *
- * It used to be a tall centred card with a 128px ring motif. On a grid of
- * tiles that reads as two unrelated screens stacked on top of each other, so
- * it's a bar now: state on the start edge, the confirm on the end edge, one
- * row. It still leads the screen, and it is still the only thing on Home that
- * is a *verb* rather than a number.
+ * The heart beats. It is the one animation in the product and it earns its
+ * place: the whole screen asks whether you are alive, and a still icon answers
+ * that less well than a pulse does. `PulsingHeart` carries the rhythm — a real
+ * lub-dub, not a scale loop — and honours reduced-motion.
  *
  * ## ⚠️ The gate, which has not moved
  *
@@ -35,31 +36,37 @@ export type CheckInHeroState = 'off' | 'confirmed' | 'due' | 'overdue';
 
 type Key =
   | 'offTitle'
+  | 'offBody'
   | 'offCta'
   | 'askTitle'
+  | 'askBody'
   | 'cta'
   | 'confirming'
   | 'confirmedTitle'
+  | 'settings'
   | 'failed';
 
 const LABELS: LabelSet<Key> = {
   // Named for what it protects, not for the mechanism. "Dead man's switch" is
   // an accurate phrase and a terrible thing to read on your own phone.
   offTitle: { ar: 'نبض الحياة غير مفعّل', en: 'Life check-in is off' },
-  offCta: { ar: 'فعّله', en: 'Turn on' },
+  offBody: { ar: 'اختر كل كم شهر نطمئن عليك.', en: 'Choose how often we check on you.' },
+  offCta: { ar: 'فعّله الآن', en: 'Turn it on' },
   askTitle: { ar: 'هل أنت بخير؟', en: 'Are you well?' },
+  askBody: { ar: 'تأكيد واحد ببصمتك، ويعود العدّ من جديد.', en: 'One touch, and the clock resets.' },
   cta: { ar: 'أنا بخير', en: "I'm well" },
-  confirming: { ar: '…', en: '…' },
+  confirming: { ar: 'جارٍ التأكيد…', en: 'Confirming…' },
   confirmedTitle: { ar: 'نبضك مسجَّل', en: "You're checked in" },
+  settings: { ar: 'إعدادات النبض', en: 'Check-in settings' },
   failed: {
-    ar: 'لم يتم التحقق. لم يُسجَّل شيء.',
-    en: 'Not verified. Nothing was recorded.',
+    ar: 'لم يتم التحقق من بصمتك. لم يُسجَّل شيء — حاول مرة أخرى.',
+    en: "Your fingerprint wasn't verified. Nothing was recorded — try again.",
   },
 };
 
 export type CheckInHeroProps = LabelledProps<Key> & {
   state: CheckInHeroState;
-  /** The next-due line. Short — this is a bar. */
+  /** Last-confirmed / next-due, or the escalation note. Formatted by the caller. */
   detail?: string;
   /** MUST run a biometric and resolve `false` if it did not succeed. */
   onConfirm: () => Promise<boolean>;
@@ -103,84 +110,103 @@ export function CheckInHero({
   const skin = settled
     ? {
         card: 'bg-olive-100',
-        disc: 'bg-secondary',
-        onDisc: 'text-secondary-foreground',
+        accent: 'bg-olive-200',
         title: 'text-olive-800',
         body: 'text-olive-700',
         pill: 'bg-secondary active:bg-olive-600',
         onPill: 'text-secondary-foreground',
+        badge: 'bg-secondary',
+        onBadge: 'text-secondary-foreground',
       }
     : {
         card: 'bg-terracotta-100',
-        disc: 'bg-primary',
-        onDisc: 'text-primary-foreground',
+        accent: 'bg-terracotta-200',
         title: 'text-terracotta-800',
         body: 'text-terracotta-700',
         pill: 'bg-primary active:bg-terracotta-600',
         onPill: 'text-primary-foreground',
+        badge: 'bg-primary',
+        onBadge: 'text-primary-foreground',
       };
 
   return (
-    <View className={cn('rounded-card gap-2 p-4', skin.card, className)}>
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          accessibilityRole="button"
-          onPress={onOpenSettings}
-          className="flex-row items-center gap-3"
-        >
-          <View
-            className={cn('size-11 items-center justify-center rounded-full', skin.disc)}
-          >
-            <Icon
-              as={settled ? Check : Heart}
-              size={22}
-              strokeWidth={settled ? 3.5 : 2.75}
-              className={skin.onDisc}
-            />
-          </View>
-        </Pressable>
+    <View
+      className={cn('rounded-summary overflow-hidden px-5 pb-5 pt-7', skin.card, className)}
+    >
+      {/* A washed circle bleeding off the start corner — the design system's
+          "soft circular accent". Without it the card is a flat tinted
+          rectangle, which is what made an earlier version read as a wireframe. */}
+      <View className={cn('absolute -top-16 -start-14 size-44 rounded-full opacity-60', skin.accent)} />
 
-        <View className="min-w-0 flex-1 gap-0.5">
-          <Text variant="rowTitle" numberOfLines={1} className={skin.title}>
-            {settled ? t.confirmedTitle : off ? t.offTitle : t.askTitle}
-          </Text>
-          {detail !== undefined ? (
-            <Text numberOfLines={1} className={cn('text-metasm', skin.body)}>
-              {detail}
-            </Text>
+      <View className="items-center">
+        <View>
+          <PulsingHeart tone={settled ? 'olive' : 'terracotta'} />
+          {/* The heart stays the motif in every state; a check rides the corner
+              when the clock is satisfied, rather than replacing it. */}
+          {/*
+            Anchored to the disc's rim, not the container's corner. The heart is
+            an 86px disc centred in a 144px ripple field, so a `bottom-1 end-1`
+            badge floats ~29px out on the halo and reads as detached. 20px puts
+            it on the edge of the heart itself.
+          */}
+          {settled ? (
+            <View
+              className={cn(
+                'border-olive-100 absolute bottom-5 end-5 size-9 items-center justify-center rounded-full border-4',
+                skin.badge
+              )}
+            >
+              <Icon as={Check} size={16} strokeWidth={3.5} className={skin.onBadge} />
+            </View>
           ) : null}
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={off ? onEnable : () => void run()}
-          disabled={busy}
-          className={cn(
-            'h-11 shrink-0 flex-row items-center justify-center gap-2 rounded-full px-4',
-            skin.pill
-          )}
-        >
-          {busy ? (
-            <ActivityIndicator size="small" color="#fff2eb" />
-          ) : off ? null : (
-            <Icon as={Fingerprint} size={17} strokeWidth={2.75} className={skin.onPill} />
-          )}
-          {/* `shrink-0`: RN lets a Text shrink inside a flex row, and a row
-              this tight gives it no width to claim — "أنا بخير" rendered as
-              "أنا" with the second word clipped away. */}
-          <Text
-            variant="metaSm"
-            numberOfLines={1}
-            className={cn('shrink-0 font-body-bold', skin.onPill)}
-          >
-            {busy ? t.confirming : off ? t.offCta : t.cta}
-          </Text>
-        </Pressable>
       </View>
 
+      <Text variant="h1" className={cn('mt-4 text-center', skin.title)}>
+        {settled ? t.confirmedTitle : off ? t.offTitle : t.askTitle}
+      </Text>
+      <Text className={cn('text-prose-sm mt-1.5 text-center', skin.body)}>
+        {detail ?? (off ? t.offBody : t.askBody)}
+      </Text>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={off ? onEnable : () => void run()}
+        disabled={busy}
+        className={cn(
+          'mt-5 h-14 flex-row items-center justify-center gap-2.5 rounded-full',
+          skin.pill
+        )}
+      >
+        {busy ? (
+          <ActivityIndicator size="small" color="#fff2eb" />
+        ) : off ? null : (
+          <Icon as={Fingerprint} size={20} strokeWidth={2.75} className={skin.onPill} />
+        )}
+        {/* `shrink-0`: RN lets a Text shrink inside a centred flex row, which
+            rendered "أنا بخير" as "أنا" with the second word clipped away. */}
+        <Text
+          variant="rowTitle"
+          numberOfLines={1}
+          className={cn('shrink-0 font-body-bold', skin.onPill)}
+        >
+          {busy ? t.confirming : off ? t.offCta : t.cta}
+        </Text>
+      </Pressable>
+
       {failed ? (
-        <Text className={cn('text-metasm', skin.title)}>{t.failed}</Text>
+        <Text className={cn('text-metasm mt-3 text-center leading-[1.6]', skin.title)}>
+          {t.failed}
+        </Text>
       ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={onOpenSettings}
+        className="mt-3.5 items-center py-1"
+      >
+        <Text className={cn('text-metasm font-body-semibold', skin.body)}>{t.settings}</Text>
+      </Pressable>
     </View>
   );
 }
