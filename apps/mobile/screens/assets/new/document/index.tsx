@@ -237,7 +237,7 @@ export function NewDocumentScreen() {
           onChange={setKind}
         />
 
-        <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+        <Text variant="footnote">
           {chrome.encryptNote}
         </Text>
 

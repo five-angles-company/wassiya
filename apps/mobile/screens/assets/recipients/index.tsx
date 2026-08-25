@@ -29,9 +29,10 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { RecipientPickerRow } from "@workspace/ui-native/components/wassiya/recipient-picker-row"
 import { router, useLocalSearchParams } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 type Selection = {
@@ -47,7 +48,6 @@ export function AssetRecipientsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const assetId = id as Id<"assets">
   const { t, locale } = useStrings("will/routing")
-  const { t: common } = useStrings("common")
 
   const heirs = useQuery(api.heirs.list)
   const current = useQuery(api.routing.forAsset, { assetId })
@@ -128,79 +128,74 @@ export function AssetRecipientsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="px-gutter grow pb-28 pt-4">
-        <BackButton label={common.back} />
-        <Text variant="screenTitle" className="mb-header mt-4">
-          {t.recipientsTitle}
-        </Text>
-
-        {heirs !== undefined && heirs.length === 0 ? (
-          <AlertBanner variant="security" description={t.noHeirs} />
-        ) : null}
-
-        <View className="gap-row">
-          {/* The joint bucket first. Selecting it supersedes the individual
-              picks rather than adding to them — "all heirs" and "these three
-              heirs" are two different edges, and storing both would produce a
-              duplicate envelope for anyone in the list. */}
-          <RecipientPickerRow
-            kind="allHeirs"
-            name={t.allHeirs}
-            selected={allHeirs}
-            onToggle={() => edit({ allHeirs: !allHeirs })}
-            locale={locale}
-          />
-
-          {!allHeirs
-            ? (heirs ?? []).map((heir) => (
-                <RecipientPickerRow
-                  key={heir.id}
-                  kind="heir"
-                  name={heir.name}
-                  detail={heir.relation}
-                  selected={selected.has(heir.id)}
-                  onToggle={() => toggle(heir.id)}
-                  locale={locale}
-                />
-              ))
-            : null}
-
-          <RecipientPickerRow
-            kind="executor"
-            name={t.executor}
-            detail={t.executorNote}
-            selected={executor}
-            onToggle={() => edit({ executor: !executor })}
-            locale={locale}
-          />
-        </View>
-
-        <Text
-          variant="metaSm"
-          className="text-muted-foreground mt-4 leading-[1.7]"
-        >
-          {t.wholeAssetNote}
-        </Text>
-
-        {/* Saved routing is not yet deliverable routing. Said here rather than
-            left to be inferred from a screen that says "حفظ". */}
-        <Text variant="metaSm" className="text-muted-foreground mt-3 leading-[1.7]">
-          {t.pendingBundles}
-        </Text>
-
-        {failed ? (
-          <Text variant="meta" className="text-terracotta-800 mt-3">
-            {t.saveFailed}
-          </Text>
-        ) : null}
-      </ScrollView>
-
-      <View className="px-gutter absolute bottom-0 start-0 end-0 pb-5">
+    <Screen
+      inset="footer"
+      footer={
         <Button onPress={() => void save()} disabled={saving || !ready}>
           <Text>{saving ? t.saving : t.saveRecipients}</Text>
         </Button>
+      }
+    >
+      <ScreenHeader title={t.recipientsTitle} back="/assets" />
+
+      {heirs !== undefined && heirs.length === 0 ? (
+        <AlertBanner variant="security" description={t.noHeirs} />
+      ) : null}
+
+      <View className="gap-row">
+        {/* The joint bucket first. Selecting it supersedes the individual
+            picks rather than adding to them — "all heirs" and "these three
+            heirs" are two different edges, and storing both would produce a
+            duplicate envelope for anyone in the list. */}
+        <RecipientPickerRow
+          kind="allHeirs"
+          name={t.allHeirs}
+          selected={allHeirs}
+          onToggle={() => edit({ allHeirs: !allHeirs })}
+          locale={locale}
+        />
+
+        {!allHeirs
+          ? (heirs ?? []).map((heir) => (
+              <RecipientPickerRow
+                key={heir.id}
+                kind="heir"
+                name={heir.name}
+                detail={heir.relation}
+                selected={selected.has(heir.id)}
+                onToggle={() => toggle(heir.id)}
+                locale={locale}
+              />
+            ))
+          : null}
+
+        <RecipientPickerRow
+          kind="executor"
+          name={t.executor}
+          detail={t.executorNote}
+          selected={executor}
+          onToggle={() => edit({ executor: !executor })}
+          locale={locale}
+        />
       </View>
-    </View>
+
+      <Text
+        variant="footnote" className="mt-4"
+      >
+        {t.wholeAssetNote}
+      </Text>
+
+      {/* Saved routing is not yet deliverable routing. Said here rather than
+          left to be inferred from a screen that says "حفظ". */}
+      <Text variant="footnote" className="mt-3">
+        {t.pendingBundles}
+      </Text>
+
+      {failed ? (
+        <Text variant="meta" className="text-terracotta-800 mt-3">
+          {t.saveFailed}
+        </Text>
+      ) : null}
+    </Screen>
   )
 }

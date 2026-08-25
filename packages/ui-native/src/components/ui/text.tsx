@@ -54,6 +54,8 @@ const textVariants = cva(
         prose: 'text-muted-foreground text-prose',
         /** The same paragraph, tightened for cards and dense rows. */
         proseSm: 'text-muted-foreground text-prose-sm',
+        /** Small print that wraps: a caveat under a field, a note under a button. */
+        footnote: 'text-muted-foreground text-footnote',
         /**
          * Secondary line under a row title.
          *

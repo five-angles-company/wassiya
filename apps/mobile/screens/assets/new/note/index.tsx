@@ -153,10 +153,10 @@ export function NewNoteScreen() {
           </View>
         </View>
 
-        <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+        <Text variant="footnote">
           {t.draftNote}
         </Text>
-        <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+        <Text variant="footnote">
           {chrome.encryptNote}
         </Text>
 

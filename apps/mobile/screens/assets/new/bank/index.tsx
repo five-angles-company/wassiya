@@ -139,7 +139,7 @@ export function NewBankScreen() {
           className="h-auto min-h-24 py-3"
         />
 
-        <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+        <Text variant="footnote">
           {chrome.encryptNote}
         </Text>
 

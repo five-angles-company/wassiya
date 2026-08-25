@@ -62,7 +62,7 @@ export function ExchangeFields({
         multiline
         className="h-auto min-h-20 py-3"
       />
-      <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+      <Text variant="footnote">
         {labels.exchangeNote}
       </Text>
     </View>

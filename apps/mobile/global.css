@@ -82,6 +82,12 @@
   --text-prose--line-height: 1.75;
   --text-prose-sm: 14.5px;
   --text-prose-sm--line-height: 1.7;
+  /* Small print that still runs to two or three lines — the note under a
+     wizard's save button, a caveat below a field. `--text-metasm` is the same
+     size but tuned for one-line labels at 1.45, which is airless once it
+     wraps. Ten sites hand-wrote this exact pair before it had a name. */
+  --text-footnote: 11.5px;
+  --text-footnote--line-height: 1.7;
   --text-row: 14.5px;
   --text-row--line-height: 1.35;
   --text-notice: 14px;

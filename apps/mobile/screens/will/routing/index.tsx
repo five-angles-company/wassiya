@@ -138,7 +138,7 @@ export function RoutingScreen() {
           )
         })}
 
-        <Text variant="metaSm" className="text-muted-foreground mt-6 leading-[1.7]">
+        <Text variant="footnote" className="mt-6">
           {t.pendingBundles}
         </Text>
       </ScrollView>

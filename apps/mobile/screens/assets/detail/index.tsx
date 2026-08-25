@@ -22,9 +22,10 @@ import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { router, useLocalSearchParams } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
@@ -77,12 +78,12 @@ export function AssetDetailScreen() {
 
   if (asset === undefined) {
     return (
-      <View className="px-gutter flex-1 bg-background pt-4">
+      <Screen scroll={false}>
         <BackButton label={common.back} />
-        <Text variant="meta" className="text-muted-foreground mt-6">
+        <Text variant="meta" className="mt-6">
           {common.loading}
         </Text>
-      </View>
+      </Screen>
     )
   }
 
@@ -90,10 +91,14 @@ export function AssetDetailScreen() {
   const url = asset.urls[0] ?? null
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
+      {/*
+        `ScreenHeader` is not used here, deliberately. An asset's title comes
+        with a type icon and a decrypted subtitle, which is a different shape
+        from the title-and-optional-back the header exists to standardise —
+        forcing it in would mean a `leading` slot that only this screen ever
+        passes. `Screen` still owns the scaffold, which is where the drift was.
+      */}
       <BackButton label={common.back} />
 
       {/* Identity row. */}
@@ -189,7 +194,7 @@ export function AssetDetailScreen() {
         labels={t}
         onError={() => setDeleteError(t.deleteFailed)}
       />
-    </ScrollView>
+    </Screen>
   )
 }
 

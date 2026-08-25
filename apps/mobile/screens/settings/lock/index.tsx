@@ -58,7 +58,7 @@ export function AutoLockScreen() {
         <Text variant="metaSm" className="leading-[1.7]">
           {t.capNote}
         </Text>
-        <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+        <Text variant="footnote">
           {t.perDevice}
         </Text>
       </View>

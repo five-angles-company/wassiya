@@ -1,11 +1,10 @@
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { MeterBar } from "@workspace/ui-native/components/wassiya/meter-bar"
-import { fmtNum } from "@workspace/ui-native/lib/format"
 import type * as React from "react"
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native"
+import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 export type WizardFrameProps = {
@@ -47,45 +46,33 @@ export function WizardFrame({
   onSubmit,
   children,
 }: WizardFrameProps) {
-  const { t, locale } = useStrings("assets/new")
+  const { t } = useStrings("assets/new")
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      // Only iOS needs this; Android's adjustResize already reflows the window,
-      // and doubling them lifts the footer twice as far as the keyboard.
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerClassName="px-gutter grow pb-6 pt-4"
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-      >
-        <BackButton label={t.back} />
-
-        <View className="mb-header mt-4 gap-2">
-          <Text variant="screenTitle">{title}</Text>
-          <View className="flex-row items-center gap-3">
-            <MeterBar className="flex-1" value={step / stepCount} />
-            <Text variant="metaSm" className="text-muted-foreground">
-              {`${fmtNum(step, locale)} ${t.stepSeparator} ${fmtNum(stepCount, locale)}`}
-            </Text>
-          </View>
-        </View>
-
-        {children}
-
-        <View className="grow" />
-
-        <View className="mt-6 gap-2">
+    <Screen
+      keyboard
+      inset="footer"
+      /* Pinned, where it used to sit after a `grow` spacer at the end of the
+         scroll. On a long form — the document and photos wizards both are —
+         the action was below the fold and reached only by scrolling past
+         fields the user had already filled. */
+      footer={
+        <View className="gap-2">
           <Button onPress={onSubmit} disabled={!canSubmit || submitting}>
             <Text>{submitting ? t.saving : t.save}</Text>
           </Button>
-          <Text variant="metaSm" className="text-muted-foreground text-center">
+          <Text variant="metaSm" className="text-center">
             {t.unroutedNote}
           </Text>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      }
+    >
+      <ScreenHeader
+        title={title}
+        back="/assets"
+        step={{ index: step, total: stepCount }}
+      />
+      {children}
+    </Screen>
   )
 }

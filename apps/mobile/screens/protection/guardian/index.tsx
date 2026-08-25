@@ -195,7 +195,7 @@ export function GuardianScreen() {
       {token !== null ? (
         <View className="rounded-card bg-card mt-4 gap-3 p-4">
           <Text variant="rowTitle">{t.inviteReady}</Text>
-          <Text variant="metaSm" className="text-muted-foreground leading-[1.7]">
+          <Text variant="footnote">
             {t.inviteBody.replace("{name}", name.trim())}
           </Text>
           <Text className="font-latin-medium text-[15px] tracking-[1px]">
