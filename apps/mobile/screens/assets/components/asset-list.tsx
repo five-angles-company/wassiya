@@ -16,7 +16,7 @@ import type { AssetListRow } from "@/screens/assets/use-asset-list"
 export type AssetListProps = {
   /** Undefined while the query or the decryption pass is still running. */
   rows: AssetListRow[] | undefined
-  /** The category name for a row's type: "مستند", "عملة رقمية". */
+  /** Fallback second line for a row whose asset carries no subtitle. */
   categoryLabel: (row: AssetListRow) => string
   /** The group's name. */
   groupLabel: (kind: DestinationKind) => string
@@ -113,7 +113,10 @@ export function AssetList({
                 key={row.id}
                 icon={ASSET_TYPE_ICON[row.type]}
                 title={row.title}
-                category={categoryLabel(row)}
+                // The asset's own second line where it has one; the category
+                // only when it doesn't. A tile that repeats its own icon in
+                // words has wasted the only supporting line it gets.
+                meta={row.subtitle ?? categoryLabel(row)}
                 tone={ASSET_TYPE_TONE[row.type]}
                 index={i}
                 onPress={() => onOpen(row.id)}

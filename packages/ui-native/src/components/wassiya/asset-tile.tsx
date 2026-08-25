@@ -13,32 +13,37 @@ import Animated, {
 } from 'react-native-reanimated';
 
 /**
- * One asset, as a square in the vault grid.
+ * One asset, as a two-zone card: a tinted cover over a label.
  *
- * ## Why it kept reading as flat
+ * ## Why it stopped being an app icon
  *
- * Three separate causes, fixed together — see `SKIN` for the colour half:
+ * Every earlier version was the same shape — a small mark in a corner with text
+ * under it — and restyling that shape (paler, bolder, shadowed, squared) never
+ * fixed it, because the shape was the problem. A chip in the corner of a card
+ * is the grammar of an *app launcher*: it says "tap to open a tool". A vault
+ * holds objects, and an object wants a face.
  *
- *  1. The fill was **darker than the page**, so the tile sank into it. A card
- *     has to be lighter than its ground before a shadow can mean anything.
- *  2. `shadow-sm` is 1px at 14%, which is invisible on a warm ground. The grid
- *     looked printed on the page rather than laid out over it.
- *  3. Glyph and fill were one hue at two brightnesses. Muddy by construction.
+ * So the colour stops being a 44px chip and becomes a **cover** — a tinted
+ * field across the top of the card with the glyph centred in it, the label
+ * sitting below on near-white. That is the grammar of a card in a wallet, a
+ * book on a shelf, a file in a drawer: a face, then a name.
  *
- * ## Square, deliberately
+ * ## The second line says something now
  *
- * A tile sized by its content is as tall as its title, so a grid of mixed names
- * has a ragged edge and every tile looks like a different kind of thing. A
- * square is a decision: room for the chip, a fixed place for the title, and a
- * rhythm the eye can sweep. An earlier attempt set a min-height while keeping
- * the pale styling and only made the emptiness taller — the shape was never the
- * problem, the weight was.
+ * It used to repeat the category — "حسابات رقمية" under a glyph that already
+ * means digital account. The tile spent its only supporting line restating its
+ * own icon. It carries the asset's **subtitle** instead: the address, the
+ * exchange, the last digits. The category is the fallback, for assets that have
+ * no subtitle to give.
  *
- * ## Motion
+ * ## Fixed zones, so the grid has an edge
  *
- * Tiles rise in staggered by position and spring under a finger. The entrance
- * honours reduced-motion; the press spring does not, because it is feedback
- * rather than decoration and its absence reads as an unresponsive control.
+ * Cover and label are both fixed heights rather than content-sized. A tile as
+ * tall as its title gives a grid of mixed names a ragged bottom edge and makes
+ * every tile look like a different kind of thing; two fixed bands make a set.
+ * Titles get two lines inside their band, which is what a vault owes a name
+ * like "حساب الراجحي الجاري" — truncating at the first word would be worse
+ * than any layout problem it solves.
  *
  * ## Animated wrappers carry no className
  *
@@ -51,8 +56,11 @@ export type AssetTileProps = {
   icon: LucideIcon;
   /** The decrypted name. */
   title: string;
-  /** What kind of thing it is: "مستند", "عملة رقمية". */
-  category: string;
+  /**
+   * The asset's own second line — an address, an exchange, a masked tail.
+   * Callers pass the category only when the asset has no subtitle.
+   */
+  meta: string;
   /** From `ASSET_TYPE_TONE` — what the asset holds. */
   tone?: Tone;
   /** Position in its group, for the entrance stagger. */
@@ -62,37 +70,22 @@ export type AssetTileProps = {
 };
 
 /**
- * A card that **lifts off the page**, and a saturated chip on it.
+ * The cover, and the glyph on it.
  *
- * The previous fills sat at 200/300 — `sand-300` (#dcd3c4) is *darker* than the
- * #f5ead8 ground, so the tile read as a hole punched in the page rather than an
- * object resting on it. Every fill here is lighter than the ground, which is
- * what makes a shadow mean anything: light surface, dark edge, air underneath.
- *
- * The glyph moves back into a **solid** chip, but a real one — 44px carrying a
- * 22px icon in the tone's foreground, not a 40px wash carrying a tinted speck.
- * A saturated mark against a near-white card is the contrast the tile never had;
- * sand-800 on sand-300 was one hue at two brightnesses, which is the definition
- * of muddy.
+ * 200-level covers sit clearly above the #f5ead8 page while staying quiet
+ * enough to carry a name underneath. `sand` takes 300: its 200 step is within a
+ * few percent of the ground, and a cover that matches the page is not a cover.
  */
-const SKIN: Record<Tone, { card: string; chip: string; onChip: string }> = {
-  terracotta: {
-    card: 'bg-terracotta-100',
-    chip: 'bg-primary',
-    onChip: 'text-primary-foreground',
-  },
-  olive: {
-    card: 'bg-olive-100',
-    chip: 'bg-secondary',
-    onChip: 'text-secondary-foreground',
-  },
-  sand: { card: 'bg-sand-100', chip: 'bg-sand-600', onChip: 'text-sand-100' },
+const SKIN: Record<Tone, { cover: string; glyph: string }> = {
+  terracotta: { cover: 'bg-terracotta-200', glyph: 'text-terracotta-700' },
+  olive: { cover: 'bg-olive-200', glyph: 'text-olive-700' },
+  sand: { cover: 'bg-sand-300', glyph: 'text-sand-800' },
 };
 
 export function AssetTile({
   icon,
   title,
-  category,
+  meta,
   tone = 'sand',
   index = 0,
   onPress,
@@ -123,31 +116,21 @@ export function AssetTile({
         onPressOut={() => {
           pressed.value = withSpring(0, { damping: 18, stiffness: 260 });
         }}
-        // `shadow-md`, not `sm`. The small step is 1px at 14% — invisible against
-        // a warm ground, which is why the grid looked printed on rather than
-        // laid out.
-        className={cn(
-          'rounded-card aspect-square justify-between p-4 shadow-md',
-          skin.card
-        )}
+        // The card is lighter than the page, which is what lets a shadow read
+        // as air underneath rather than dirt on top. `overflow-hidden` is what
+        // makes the cover meet the rounded corner instead of squaring it off.
+        className="rounded-card bg-sand-100 overflow-hidden shadow-md"
       >
-        <View
-          className={cn(
-            'size-11 items-center justify-center rounded-full',
-            skin.chip
-          )}
-        >
-          <Icon as={icon} size={22} strokeWidth={2.75} className={skin.onChip} />
+        <View className={cn('h-24 items-center justify-center', skin.cover)}>
+          <Icon as={icon} size={34} strokeWidth={2.5} className={skin.glyph} />
         </View>
 
-        <View className="gap-0.5">
-          {/* Two lines, then ellipsis. "حساب الراجحي الجاري للمصاريف" should
-              wrap rather than be cut after the first word. */}
+        <View className="h-20 justify-center gap-0.5 px-3.5">
           <Text variant="rowTitle" numberOfLines={2}>
             {title}
           </Text>
           <Text variant="metaSm" numberOfLines={1}>
-            {category}
+            {meta}
           </Text>
         </View>
       </Pressable>
