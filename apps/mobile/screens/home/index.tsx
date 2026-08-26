@@ -160,7 +160,7 @@ export function HomeScreen() {
             value={fmtNum(heirCount, locale)}
             emphasis="count"
             tone={heirCount === 0 ? "terracotta" : "sand"}
-            onPress={() => router.push("/plan")}
+            onPress={() => router.push("/heirs")}
           />
           {/* The commonest silent failure in the product gets a tile of its own
               rather than a footnote on the assets one. */}
@@ -173,7 +173,12 @@ export function HomeScreen() {
                 : t.stateUnrouted.replace("{n}", fmtNum(unrouted, locale))
             }
             tone={unrouted === 0 ? "olive" : "terracotta"}
-            onPress={() => router.push("/plan/routing")}
+            // Into ٤.١ with its "بلا مستلم" chip already set. "من يستلم ماذا؟"
+            // was a separate screen whose only content was this same list,
+            // grouped and filtered — so it is now this same list, filtered.
+            onPress={() =>
+              router.push({ pathname: "/assets", params: { filter: "unrouted" } })
+            }
           />
           <StatTile
             icon={ShieldCheck}

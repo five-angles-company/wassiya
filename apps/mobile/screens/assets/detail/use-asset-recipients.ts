@@ -26,7 +26,7 @@ export type AssetRecipients = {
 }
 
 export function useAssetRecipients(assetId: Id<"assets">): AssetRecipients {
-  const { t } = useStrings("will/routing")
+  const { t } = useStrings("assets/recipients")
   const rows = useQuery(api.routing.forAsset, { assetId })
   const heirs = useQuery(api.heirs.list)
 

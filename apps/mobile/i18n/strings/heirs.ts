@@ -1,5 +1,5 @@
 /**
- * ٥ — الوصيّة والورثة.
+ * ٥ — الورثة ومن يستلم ماذا.
  *
  * One rule governs the copy on every screen in this section, and the board
  * states it twice: **الأنصبة يحدّدها القانون، لا التطبيق**. There are no
@@ -105,26 +105,19 @@ export const HEIR_NEW = {
   failed: { ar: "تعذّرت الإضافة. حاول مرة أخرى.", en: "Could not add. Try again." },
 } satisfies LabelSet<string>
 
-/** ٥.٣ and ٥.٣b — routing. */
-export const ROUTING = {
-  title: { ar: "من يستلم ماذا؟", en: "Who receives what?" },
-  // The manifesto, verbatim from the board. It is the reason this screen
-  // replaces a share calculator rather than containing one.
-  manifesto: {
-    ar: "الأنصبة يحدّدها القانون، لا التطبيق. وصيّة توصّل الوصول فقط — وتقسيم القيمة يبقى للورثة وفق الفرائض الشرعية.",
-    en: "Shares are set by law, not by an app. Wassiya delivers access only — dividing value stays with the heirs under the fara'id.",
-  },
-
-  defaultRuleTitle: { ar: "القاعدة الافتراضية مفعّلة", en: "Default rule is on" },
-  defaultRuleBody: {
-    ar: "{n} أصلاً غير موجّهة تذهب إلى جميع الورثة مجتمعين.",
-    en: "{n} unrouted assets go to all heirs jointly.",
-  },
-  defaultRuleNone: {
-    ar: "كل أصل له مستلم محدّد.",
-    en: "Every asset has an explicit recipient.",
-  },
-  edit: { ar: "تعديل", en: "Edit" },
+/**
+ * ٥.٣b — choosing an asset's recipients.
+ *
+ * Was `ROUTING`, and carried an overview screen's copy too: a title ("من يستلم
+ * ماذا؟"), a default-rule card, and the board's manifesto. That screen is gone —
+ * it was ٤.١ grouped and filtered, and ٤.١ now groups and filters itself — so
+ * what is left is exactly the picker's own words.
+ *
+ * The manifesto went with it and is not missing: `wholeAssetNote` below says
+ * the same thing on this very screen, at the moment someone is choosing who
+ * gets what, and the legal screen states it again in full.
+ */
+export const RECIPIENTS = {
   allHeirs: { ar: "كل الورثة", en: "All heirs" },
   executor: { ar: "الوصي", en: "Executor" },
 
@@ -150,7 +143,6 @@ export const ROUTING = {
     en: "Every recipient gets the whole asset — a phrase or a document cannot be split. Dividing value happens after delivery, under the fara'id.",
   },
   saveRecipients: { ar: "حفظ المستلمين", en: "Save recipients" },
-  savePlan: { ar: "حفظ خطة التسليم", en: "Save the delivery plan" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
   saveFailed: { ar: "تعذّر الحفظ. لم يتغيّر شيء.", en: "Could not save. Nothing changed." },
 

@@ -42,8 +42,8 @@ import {
   HEIR_NEW,
   HEIR_EDIT,
   HEIR_PREVIEW,
-  ROUTING,
-} from "@/i18n/strings/will"
+  RECIPIENTS,
+} from "@/i18n/strings/heirs"
 import {
   CHECKIN,
   CLAIM_VETO,
@@ -95,7 +95,7 @@ export const SCREEN_STRINGS = {
   heirs: HEIRS,
   "heirs/new": HEIR_NEW,
   "heirs/edit": HEIR_EDIT,
-  "will/routing": ROUTING,
+  "assets/recipients": RECIPIENTS,
   "heirs/preview": HEIR_PREVIEW,
 
   protection: PROTECTION,

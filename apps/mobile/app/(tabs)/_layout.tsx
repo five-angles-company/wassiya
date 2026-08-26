@@ -29,8 +29,9 @@ import { useStrings } from "@/i18n/use-strings"
  * rendered `HeirsScreen`, so the tab was named for a document it never held;
  * `plan` was broad enough to absorb anything, and did — routing and the
  * guardian both accreted onto it. The tab now owns **people you name to
- * receive**, and nothing else. Routing is asset division and lives at
- * `/plan/routing`, reached from Home and the vault; the guardian verifies
+ * receive**, and nothing else. Routing is asset division and now belongs to
+ * ٤.١, which groups by type and filters by "بلا مستلم" — the overview screen
+ * that used to own it was that same list with headings. The guardian verifies
  * rather than inherits, and is reached from Home.
  *
  * A note for anyone comparing this to the design board: the board's 4.1

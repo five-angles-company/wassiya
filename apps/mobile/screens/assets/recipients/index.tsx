@@ -55,7 +55,7 @@ export function AssetRecipientsScreen() {
    */
   const { id, step } = useLocalSearchParams<{ id: string; step?: string }>()
   const assetId = id as Id<"assets">
-  const { t } = useStrings("will/routing")
+  const { t } = useStrings("assets/recipients")
   const { t: common } = useStrings("common")
   // Only for the eight relation labels the heir records store as English keys.
   const { t: heirFields } = useStrings("heirs/new")

@@ -34,7 +34,7 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { VaultRow } from "@workspace/ui-native/components/wassiya/vault-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Plus, Search } from "lucide-react-native"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -52,7 +52,7 @@ import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
-import { useAssetList } from "@/screens/assets/use-asset-list"
+import { useAssetList, type AssetFilter } from "@/screens/assets/use-asset-list"
 
 /** Chip copy per type, keyed flat so the strings table stays flat. */
 const FILTER_KEY = {
@@ -66,17 +66,32 @@ const FILTER_KEY = {
 
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
-  const { t: routing } = useStrings("will/routing")
+  const { t: routing } = useStrings("assets/recipients")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
   const [searching, setSearching] = useState(false)
-  const [filter, setFilter] = useState<AssetType | null>(null)
-  const { rows, total, routedTotal, vaultSize, heirNames, byType } = useAssetList(
-    search,
-    filter,
-    t.undecryptable,
-    { executor: routing.executor! }
-  )
+  const [filter, setFilter] = useState<AssetFilter>(null)
+
+  /**
+   * Home's التوجيه tile arrives with `?filter=unrouted`.
+   *
+   * Adjusted during render rather than in an effect — the React-sanctioned way
+   * to react to a changed prop — so the first paint after the tap is already
+   * filtered instead of flashing the whole vault. Tapping the الخزنة tab plainly
+   * arrives with no param, which resets the view, and that is the behaviour you
+   * want: the tab means "my vault", not "wherever I last was".
+   */
+  const { filter: filterParam } = useLocalSearchParams<{ filter?: string }>()
+  const [seenParam, setSeenParam] = useState<string | undefined>(undefined)
+  if (filterParam !== seenParam) {
+    setSeenParam(filterParam)
+    setFilter(filterParam === "unrouted" ? "unrouted" : null)
+  }
+
+  const { rows, sections, total, routedTotal, vaultSize, heirNames, byType } =
+    useAssetList(search, filter, t.undecryptable, {
+      executor: routing.executor!,
+    })
 
   /**
    * The chip row. Fixed set, always in this order — a filter that reorders
@@ -85,8 +100,21 @@ export function AssetsScreen() {
    * `byType` deliberately counts the whole vault rather than the current view,
    * so selecting a chip does not renumber the others.
    */
-  const chips = [
+  const unrouted = total - routedTotal
+  const chips: { type: AssetFilter; label: string; count: number }[] = [
     { type: null, label: t.filterAll!, count: total },
+    // Second, not last: it is the only chip that can be urgent, and a chip you
+    // may need is worth more than one more category you already know you have.
+    // Absent at zero — see the component's own note.
+    ...(unrouted > 0
+      ? [
+          {
+            type: "unrouted" as const,
+            label: t.filterUnrouted!,
+            count: unrouted,
+          },
+        ]
+      : []),
     ...ASSET_TYPES.map((type) => ({
       type,
       label: t[FILTER_KEY[type]]!,
@@ -151,14 +179,16 @@ export function AssetsScreen() {
           addLabel={t.addAsset!}
           onAdd={openAdd}
         />
-        <AssetTypeSheet ref={addSheet} onSelect={(type) => void chooseType(type)} />
+        <AssetTypeSheet
+          ref={addSheet}
+          onSelect={(type) => void chooseType(type)}
+        />
       </Screen>
     )
   }
 
-  // Both from the whole vault, never the filtered view — see `routedTotal`.
+  // From the whole vault, never the filtered view — see `routedTotal`.
   const routed = routedTotal
-  const unrouted = total - routedTotal
 
   return (
     <Screen
@@ -179,9 +209,14 @@ export function AssetsScreen() {
           accessibilityRole="button"
           accessibilityLabel={t.addAsset}
           onPress={openAdd}
-          className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
+          className="size-14 items-center justify-center rounded-full bg-primary shadow-md active:bg-terracotta-600"
         >
-          <Icon as={Plus} size={26} strokeWidth={2.75} className="text-background" />
+          <Icon
+            as={Plus}
+            size={26}
+            strokeWidth={2.75}
+            className="text-background"
+          />
         </Pressable>
       }
     >
@@ -190,7 +225,9 @@ export function AssetsScreen() {
       <View className="flex-row items-center gap-3">
         <View className="min-w-0 flex-1">
           <Text variant="metaSm">
-            {t.vaultCount!.replace("{n}", num(total)).replace("{m}", num(routed))}
+            {t
+              .vaultCount!.replace("{n}", num(total))
+              .replace("{m}", num(routed))}
           </Text>
           <Text variant="pageTitle">{t.vaultTitle}</Text>
         </View>
@@ -198,9 +235,14 @@ export function AssetsScreen() {
           accessibilityRole="button"
           accessibilityLabel={t.searchPlaceholder}
           onPress={() => setSearching((was) => !was)}
-          className="bg-card active:bg-sand-300 size-10 shrink-0 items-center justify-center rounded-full"
+          className="size-10 shrink-0 items-center justify-center rounded-full bg-card active:bg-sand-300"
         >
-          <Icon as={Search} size={18} strokeWidth={2.75} className="text-foreground" />
+          <Icon
+            as={Search}
+            size={18}
+            strokeWidth={2.75}
+            className="text-foreground"
+          />
         </Pressable>
       </View>
 
@@ -224,10 +266,15 @@ export function AssetsScreen() {
           actions={
             <Pressable
               accessibilityRole="button"
-              onPress={() => router.push("/plan/routing")}
+              // Selects the chip rather than pushing a screen. "من يستلم ماذا؟"
+              // was a whole route whose only job was this list, filtered.
+              onPress={() => setFilter("unrouted")}
               hitSlop={8}
             >
-              <Text variant="action" className="text-terracotta-800 font-body-bold">
+              <Text
+                variant="action"
+                className="font-body-bold text-terracotta-800"
+              >
                 {t.unroutedAction}
               </Text>
             </Pressable>
@@ -252,7 +299,10 @@ export function AssetsScreen() {
             hitSlop={8}
             className="mt-1 self-start"
           >
-            <Text variant="action" className="text-terracotta-800 font-body-bold">
+            <Text
+              variant="action"
+              className="font-body-bold text-terracotta-800"
+            >
               {t.clearFilters}
             </Text>
           </Pressable>
@@ -261,36 +311,53 @@ export function AssetsScreen() {
 
       {/* `gap-row` — Home's tile spacing. Cards separate themselves, so there
           are no hairlines between them. */}
-      <View className={rows.length === 0 ? "hidden" : "gap-row mb-auto"}>
-        {rows.map((row) => (
-          <VaultRow
-            key={row.id}
-            icon={ASSET_TYPE_ICON[row.type]}
-            title={row.title}
-            // The shared bucket is not a name, so it never reaches
-            // `recipients` — without this the card's second line is blank and
-            // the row is a different height from every other one.
-            recipients={
-              row.allHeirs
-                ? [routing.allHeirs!, ...row.recipients].join("، ")
-                : row.recipients.join("، ")
-            }
-            unroutedLabel={
-              row.recipientCount === 0 ? t.recipientsZero : undefined
-            }
-            faces={row.recipients}
-            allHeirsLabel={row.allHeirs ? t.allHeirsShort : undefined}
-            onPress={() =>
-              router.push({
-                pathname: "/assets/[id]",
-                params: { id: row.id },
-              })
-            }
-          />
+      {/* Grouped by category, with the heading dropped whenever a chip is set:
+          a single section under a heading that repeats the selected chip is the
+          list telling you what you just told it. Search keeps its headings —
+          a query can match across types, and there the heading is the only
+          thing saying which is which. */}
+      <View className={rows.length === 0 ? "hidden" : "gap-header mb-auto"}>
+        {sections.map((section) => (
+          <View key={section.type} className="gap-2">
+            {filter === null ? (
+              <Text variant="sectionLabel">{t[FILTER_KEY[section.type]]}</Text>
+            ) : null}
+            <View className="gap-row">
+              {section.rows.map((row) => (
+                <VaultRow
+                  key={row.id}
+                  icon={ASSET_TYPE_ICON[row.type]}
+                  title={row.title}
+                  // The shared bucket is not a name, so it never reaches
+                  // `recipients` — without this the card's second line is blank and
+                  // the row is a different height from every other one.
+                  recipients={
+                    row.allHeirs
+                      ? [routing.allHeirs!, ...row.recipients].join("، ")
+                      : row.recipients.join("، ")
+                  }
+                  unroutedLabel={
+                    row.recipientCount === 0 ? t.recipientsZero : undefined
+                  }
+                  faces={row.recipients}
+                  allHeirsLabel={row.allHeirs ? t.allHeirsShort : undefined}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/assets/[id]",
+                      params: { id: row.id },
+                    })
+                  }
+                />
+              ))}
+            </View>
+          </View>
         ))}
       </View>
 
-      <AssetTypeSheet ref={addSheet} onSelect={(type) => void chooseType(type)} />
+      <AssetTypeSheet
+        ref={addSheet}
+        onSelect={(type) => void chooseType(type)}
+      />
     </Screen>
   )
 }

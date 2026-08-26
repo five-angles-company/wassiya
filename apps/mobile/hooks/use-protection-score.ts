@@ -115,7 +115,9 @@ export function useProtectionScore(
         id: "routing",
         label: labels.routing,
         done: heirs?.some((heir) => heir.routedAssetCount > 0) === true,
-        href: "/plan/routing",
+        // ٤.١ with its "بلا مستلم" chip set — the routing overview screen was
+        // that same list, grouped and filtered, and ٤.١ now does both itself.
+        href: "/assets?filter=unrouted",
       },
       {
         id: "checkin",

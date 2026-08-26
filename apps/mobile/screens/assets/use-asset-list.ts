@@ -55,6 +55,17 @@ export type AssetListRow = {
   createdAt: number
 }
 
+/**
+ * What the chip row can be set to.
+ *
+ * `null` is "الكل". `"unrouted"` is not a category — it is the one *state* worth
+ * filtering by, and it exists because ٤.١ groups by type now: an asset that
+ * reaches nobody used to sort to the top of one flat list, and grouping
+ * scatters those across every heading. This filter is what gives that answer
+ * back, and it is where Home's التوجيه tile and the vault's own alarm both land.
+ */
+export type AssetFilter = AssetType | "unrouted" | null
+
 export type AssetListResult = {
   /** Undefined until the query answers; the screen shows skeletons meanwhile. */
   rows: AssetListRow[] | undefined
@@ -84,11 +95,18 @@ export type AssetListResult = {
    * one would renumber the rest.
    */
   byType: Record<AssetType, number>
+  /**
+   * The visible rows already split into type sections, in `ASSET_TYPES` order,
+   * with empty types dropped. Sections are built from the *filtered* rows, so a
+   * search that matches two types yields two sections and a type chip yields
+   * one — the screen never has to re-group what this already grouped.
+   */
+  sections: { type: AssetType; rows: AssetListRow[] }[]
 }
 
 export function useAssetList(
   search: string,
-  filter: AssetType | null,
+  filter: AssetFilter,
   undecryptableLabel: string,
   /** Copy for the two non-person destinations. */
   routingLabels: { executor: string } = { executor: "" }
@@ -147,7 +165,13 @@ export function useAssetList(
     if (decrypted === undefined) return undefined
     const query = search.trim()
     return decrypted
-      .filter((row) => filter === null || row.type === filter)
+      .filter((row) =>
+        filter === null
+          ? true
+          : filter === "unrouted"
+            ? !row.routed
+            : row.type === filter
+      )
       .filter(
         (row) =>
           query.length === 0 ||
@@ -165,8 +189,22 @@ export function useAssetList(
     return counts
   }, [decrypted])
 
+  /**
+   * Grouped after the sort, so `compareRows` still decides the order *inside* a
+   * section — unrouted first, then newest. Grouping only decides which heading
+   * a row sits under.
+   */
+  const sections = useMemo(() => {
+    if (rows === undefined) return []
+    return ASSET_TYPES.map((type) => ({
+      type,
+      rows: rows.filter((row) => row.type === type),
+    })).filter((section) => section.rows.length > 0)
+  }, [rows])
+
   return {
     rows,
+    sections,
     total: decrypted?.length ?? 0,
     routedTotal: (decrypted ?? []).filter((row) => row.recipientCount > 0).length,
     vaultSize: assets?.length ?? 0,

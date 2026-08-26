@@ -60,6 +60,10 @@ export const ASSETS = {
   groupExplicit: { ar: "موجَّهة", en: "Routed" },
 
   filterAll: { ar: "الكل", en: "All" },
+  // A state, not a category — and the only chip that can be urgent. It is
+  // absent at zero rather than dimmed: an empty category still teaches what the
+  // vault holds, an empty gap is just not news.
+  filterUnrouted: { ar: "بلا مستلم", en: "No recipient" },
   filterCrypto: { ar: "عملات رقمية", en: "Crypto" },
   filterBank: { ar: "بنوك", en: "Banks" },
   filterDocument: { ar: "مستندات", en: "Docs" },
