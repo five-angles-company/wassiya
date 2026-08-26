@@ -80,7 +80,21 @@ const buttonVariants = cva(
 );
 
 const buttonTextVariants = cva(
-  cn('font-heading-extrabold', Platform.select({ web: 'pointer-events-none transition-colors' })),
+  cn(
+    // `line-clamp-1`, because a button label is one line and a pill is a fixed
+    // height. Without it "تسجيل الدخول" broke across two lines inside ١.١'s 50dp
+    // secondary and the second line rendered *below* the border — measured, not
+    // guessed: the label came out 95dp wide inside a 326dp button, so it was
+    // never short of room. RN wrapped it anyway.
+    //
+    // It compiles to `overflow: hidden` + `display: flex` + box-orient, **not**
+    // to `numberOfLines` — verified in the bundle. The clamp is what keeps the
+    // label on one line here, and clipping is the right failure mode for a
+    // label too long for its pill: a button that grows a second line breaks the
+    // layout around it, where a clipped one only looks tight.
+    'font-heading-extrabold line-clamp-1',
+    Platform.select({ web: 'pointer-events-none transition-colors' })
+  ),
   {
     variants: {
       variant: {
@@ -104,11 +118,25 @@ const buttonTextVariants = cva(
           Platform.select({ web: 'underline-offset-4 hover:underline group-hover:underline' })
         ),
       },
+      /**
+       * Sizes, and **no line height**.
+       *
+       * The type scale pairs every size with a leading meant for running text
+       * — `--text-title` is 17px at 1.2, so 20.4px. Cairo 800's own line box at
+       * 17px is taller than that, and forcing the smaller value pushes the
+       * glyphs off centre inside a fixed-height pill: the label sits high, and
+       * on Arabic it clips the marks that hang below the baseline.
+       *
+       * A button label is one line centred in a pill by `items-center`, so it
+       * wants a size and nothing else. `primary-cta` has always written it as a
+       * bare `text-[17px]` for this reason; these are the same numbers the
+       * tokens carry, minus the leading.
+       */
       size: {
-        default: 'text-title',
-        lg: 'text-title',
-        sm: 'text-row',
-        xs: 'text-section',
+        default: 'text-[17px]',
+        lg: 'text-[17px]',
+        sm: 'text-[14.5px]',
+        xs: 'text-[13.5px]',
         icon: '',
       },
     },
