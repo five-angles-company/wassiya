@@ -4,8 +4,9 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { KeyCard } from "@workspace/ui-native/components/wassiya/key-card"
 import { router } from "expo-router"
 import { Fingerprint, KeyRound, Printer, Shield } from "lucide-react-native"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -27,10 +28,7 @@ export function ExplainerScreen() {
   const { t: common } = useStrings("common")
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.explainer}
         locale={locale}
@@ -78,6 +76,6 @@ export function ExplainerScreen() {
       >
         <Text>{t.cta}</Text>
       </Button>
-    </ScrollView>
+    </Screen>
   )
 }

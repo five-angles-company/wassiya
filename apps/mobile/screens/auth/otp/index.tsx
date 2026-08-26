@@ -7,9 +7,10 @@ import { OtpInput } from "@workspace/ui-native/components/wassiya/otp-input"
 import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import { router } from "expo-router"
 import { useEffect, useRef, useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { useOnboarding } from "@/stores/onboarding"
 
@@ -185,11 +186,7 @@ export function OtpScreen() {
   const canResend = cooldown === 0 && sends < MAX_SENDS && phase !== "verifying"
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-6 pt-3.5"
-      keyboardShouldPersistTaps="handled"
-    >
+    <Screen inset="flow">
       <BackButton
         label={common.back}
         fallbackHref="/auth/signup"
@@ -274,6 +271,6 @@ export function OtpScreen() {
       </Button>
 
       <View nativeID="clerk-captcha" />
-    </ScrollView>
+    </Screen>
   )
 }

@@ -52,9 +52,10 @@ import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-dis
 import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import * as Clipboard from "expo-clipboard"
 import { ShieldCheck } from "lucide-react-native"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { readGuardianKey, VaultKeyLostError } from "@/lib/secure-vault"
@@ -111,10 +112,7 @@ export function GuardianApproveScreen() {
 
   if (state.status === "open") {
     return (
-      <ScrollView
-        className="flex-1 bg-background"
-        contentContainerClassName="px-gutter grow pb-10 pt-4"
-      >
+      <Screen>
         <BackButton label={common.back} />
         <Text variant="screenTitle" className="mt-4">
           {t.shareTitle}
@@ -161,15 +159,12 @@ export function GuardianApproveScreen() {
             <Text>{t.done}</Text>
           </Button>
         </View>
-      </ScrollView>
+      </Screen>
     )
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -216,6 +211,6 @@ export function GuardianApproveScreen() {
           {state.status === "keyLost" ? t.keyLost : t.failed}
         </Text>
       ) : null}
-    </ScrollView>
+    </Screen>
   )
 }

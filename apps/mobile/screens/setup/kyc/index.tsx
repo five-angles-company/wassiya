@@ -9,14 +9,15 @@ import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
 import { IdCard } from "lucide-react-native"
 import { useState } from "react"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { CountryPicker } from "@/components/country-picker"
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
-import { RequirementRow } from "@/screens/setup/kyc/components/requirement-row"
 import { useStrings } from "@/i18n/use-strings"
 import { DEFAULT_COUNTRY, findCountry } from "@/lib/countries"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
+import { RequirementRow } from "@/screens/setup/kyc/components/requirement-row"
 
 /**
  * 2.1 — the blocking identity gate.
@@ -72,10 +73,7 @@ export function KycScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         locale={locale}
@@ -159,6 +157,6 @@ export function KycScreen() {
           <Text>{t.guardianHere}</Text>
         </Button>
       ) : null}
-    </ScrollView>
+    </Screen>
   )
 }

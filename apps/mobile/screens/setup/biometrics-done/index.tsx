@@ -3,8 +3,9 @@ import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { router } from "expo-router"
 import { Check, Info, KeyRound } from "lucide-react-native"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -26,10 +27,7 @@ export function BiometricsDoneScreen() {
   const { t: common } = useStrings("common")
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.biometrics}
         complete
@@ -74,6 +72,6 @@ export function BiometricsDoneScreen() {
       >
         <Text>{t.cta}</Text>
       </Button>
-    </ScrollView>
+    </Screen>
   )
 }

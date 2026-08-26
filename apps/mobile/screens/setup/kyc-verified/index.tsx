@@ -6,8 +6,9 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import { Redirect, router } from "expo-router"
 import { Check } from "lucide-react-native"
-import { ActivityIndicator, ScrollView, View } from "react-native"
+import { ActivityIndicator, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -45,10 +46,7 @@ export function KycVerifiedScreen() {
     status.verifiedAt === null ? null : new Date(status.verifiedAt)
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         complete
@@ -91,7 +89,7 @@ export function KycVerifiedScreen() {
       >
         <Text>{t.cta}</Text>
       </Button>
-    </ScrollView>
+    </Screen>
   )
 }
 

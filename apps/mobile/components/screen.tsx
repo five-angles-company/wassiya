@@ -30,8 +30,15 @@ import {
  * that's the whole story behind `pb-28` vs `pb-10`, written out as a guess on
  * every screen. Naming it removes the guess:
  *
- *   `page`   — the default, and right for almost everything
+ *   `page`   — the default: a scrolling page of content
+ *   `flow`   — an onboarding or auth step; see below
  *   `footer` — a pinned footer owns the bottom, so the scroll area stops short
+ *
+ * `flow` is not drift dressed up as a variant. Every setup/* and auth/* screen
+ * is full-height with a single action pushed to the floor by a `grow` spacer,
+ * and a step whose CTA *is* the bottom wants less room under it than a list
+ * that scrolls past the fold. Eleven of them had converged on pt-3.5/pb-5
+ * independently; naming it is what stops the twelfth from inventing pt-5.5.
  *
  * There was a third, `tab`, worth 112px "to clear the tab bar". It was wrong:
  * this app's bar is laid out in **normal flow**, not over the content, so the
@@ -56,7 +63,7 @@ export type ScreenProps = {
   scroll?: boolean
   /** For any screen with a text field. iOS-only by design — see below. */
   keyboard?: boolean
-  inset?: "page" | "footer"
+  inset?: "page" | "flow" | "footer"
   /**
    * Pinned below the scroll area rather than after the content. Use it for a
    * primary action that must stay reachable while the keyboard is open.
@@ -83,8 +90,15 @@ export type ScreenProps = {
  * is the single likeliest way to break this refactor, so every value a variant
  * can take appears literally here.
  */
+const TOP = {
+  page: "pt-4",
+  flow: "pt-3.5",
+  footer: "pt-4",
+} as const
+
 const BOTTOM = {
   page: "pb-10",
+  flow: "pb-5",
   footer: "pb-4",
 } as const
 
@@ -108,7 +122,7 @@ export function Screen({
 }: ScreenProps) {
   const padding = cn(
     !bleed && "px-gutter",
-    "pt-4",
+    TOP[inset],
     float !== undefined ? FLOAT_CLEARANCE : BOTTOM[inset]
   )
 

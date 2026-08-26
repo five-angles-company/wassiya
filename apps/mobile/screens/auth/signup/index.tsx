@@ -5,11 +5,12 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { router } from "expo-router"
 import { Lock } from "lucide-react-native"
 import { useState } from "react"
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
 import { CountryPicker } from "@/components/country-picker"
 import { Field } from "@/components/field"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { DEFAULT_COUNTRY } from "@/lib/countries"
 import { splitFullName, useOnboarding } from "@/stores/onboarding"
@@ -91,83 +92,75 @@ export function SignUpScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.select({ ios: "padding", default: undefined })}
-    >
-      <ScrollView
-        contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-        keyboardShouldPersistTaps="handled"
-      >
-        <BackButton
-          label={common.back}
-          fallbackHref="/welcome"
-          className="mb-header"
+    <Screen keyboard inset="flow">
+      <BackButton
+        label={common.back}
+        fallbackHref="/welcome"
+        className="mb-header"
+      />
+
+      <Text variant="screenTitle" className="mb-2 text-[30px]">
+        {t.title}
+      </Text>
+      <Text className="mb-5.5 text-[14.5px] text-muted-foreground">
+        {t.subtitle}
+      </Text>
+
+      <View className="gap-4">
+        <Field
+          label={t.nameLabel}
+          placeholder={t.namePlaceholder}
+          value={fullName}
+          onChangeText={setFullName}
+          autoCapitalize="words"
+          autoComplete="name"
+          editable={!busy}
         />
 
-        <Text variant="screenTitle" className="mb-2 text-[30px]">
-          {t.title}
-        </Text>
-        <Text className="mb-5.5 text-[14.5px] text-muted-foreground">
-          {t.subtitle}
-        </Text>
-
-        <View className="gap-4">
-          <Field
-            label={t.nameLabel}
-            placeholder={t.namePlaceholder}
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-            autoComplete="name"
-            editable={!busy}
-          />
-
-          <Field
-            label={t.emailLabel}
-            placeholder={t.emailPlaceholder}
-            value={email}
-            onChangeText={setEmail}
-            error={fieldError ?? undefined}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            editable={!busy}
-            // The address is Latin inside an Arabic form; keeping the field
-            // itself LTR stops the caret and any placeholder from mirroring.
-            style={{ writingDirection: "ltr", textAlign: "left" }}
-          />
-
-          <CountryPicker
-            label={t.countryLabel}
-            hint={t.countryHint}
-            value={country}
-            onChange={setCountry}
-            locale={locale}
-          />
-        </View>
-
-        <AlertBanner
-          className="mt-5"
-          variant="success"
-          icon={Lock}
-          description={t.nameNotice}
+        <Field
+          label={t.emailLabel}
+          placeholder={t.emailPlaceholder}
+          value={email}
+          onChangeText={setEmail}
+          error={fieldError ?? undefined}
+          autoCapitalize="none"
+          autoComplete="email"
+          keyboardType="email-address"
+          editable={!busy}
+          // The address is Latin inside an Arabic form; keeping the field
+          // itself LTR stops the caret and any placeholder from mirroring.
+          style={{ writingDirection: "ltr", textAlign: "left" }}
         />
 
-        <View className="grow" />
+        <CountryPicker
+          label={t.countryLabel}
+          hint={t.countryHint}
+          value={country}
+          onChange={setCountry}
+          locale={locale}
+        />
+      </View>
 
-        <Text variant="metaSm" className="mt-5 mb-3 text-muted-foreground">
-          {t.legal}
-        </Text>
+      <AlertBanner
+        className="mt-5"
+        variant="success"
+        icon={Lock}
+        description={t.nameNotice}
+      />
 
-        <Button disabled={!ready} onPress={() => void submit()}>
-          <Text>{t.cta}</Text>
-        </Button>
+      <View className="grow" />
 
-        {/* Clerk's bot protection is on by default and needs this mount point
-            on any screen that can create a sign-up. */}
-        <View nativeID="clerk-captcha" />
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Text variant="metaSm" className="mt-5 mb-3 text-muted-foreground">
+        {t.legal}
+      </Text>
+
+      <Button disabled={!ready} onPress={() => void submit()}>
+        <Text>{t.cta}</Text>
+      </Button>
+
+      {/* Clerk's bot protection is on by default and needs this mount point
+          on any screen that can create a sign-up. */}
+      <View nativeID="clerk-captcha" />
+    </Screen>
   )
 }

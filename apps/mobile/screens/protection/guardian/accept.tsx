@@ -25,10 +25,11 @@ import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { router } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import {
   generateAndStoreGuardianKey,
@@ -75,10 +76,7 @@ export function GuardianAcceptScreen() {
 
   if (state === "done") {
     return (
-      <ScrollView
-        className="flex-1 bg-background"
-        contentContainerClassName="px-gutter grow pb-10 pt-4"
-      >
+      <Screen>
         <Text variant="screenTitle" className="mt-4">
           {t.acceptedTitle}
         </Text>
@@ -92,16 +90,12 @@ export function GuardianAcceptScreen() {
         <Button onPress={() => router.replace("/")}>
           <Text>{common.continue}</Text>
         </Button>
-      </ScrollView>
+      </Screen>
     )
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-      keyboardShouldPersistTaps="handled"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -150,6 +144,6 @@ export function GuardianAcceptScreen() {
       >
         <Text>{state === "working" ? t.accepting : t.accept}</Text>
       </Button>
-    </ScrollView>
+    </Screen>
   )
 }

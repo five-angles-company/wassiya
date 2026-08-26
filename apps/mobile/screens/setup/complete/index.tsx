@@ -8,8 +8,9 @@ import {
   type ProtectionItem,
 } from "@workspace/ui-native/components/wassiya/protection-score-list"
 import { router } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 /**
@@ -66,10 +67,7 @@ export function SetupCompleteScreen() {
   const earned = items.filter((item) => item.done).length
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-6 pb-6 pt-5.5"
-    >
+    <Screen inset="flow">
       <View className="mb-6 flex-row items-center gap-3.5">
         <ProtectionScore
           earned={earned}
@@ -109,6 +107,6 @@ export function SetupCompleteScreen() {
           <Text>{t.addAsset}</Text>
         </Button>
       </View>
-    </ScrollView>
+    </Screen>
   )
 }

@@ -32,6 +32,7 @@ import { Inbox, Pencil } from "lucide-react-native"
 import { Pressable, ScrollView, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPE_ICON } from "@/lib/asset-types"
 import { useVault } from "@/stores/vault"
@@ -50,10 +51,7 @@ export function HeirPreviewScreen() {
   const name = preview?.heir.name ?? ""
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
 
       {/* ٤.١'s header shape: the name takes the row, one 40px circle at the far
@@ -141,7 +139,7 @@ export function HeirPreviewScreen() {
           ) : null}
         </View>
       )}
-    </ScrollView>
+    </Screen>
   )
 }
 

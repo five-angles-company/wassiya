@@ -11,15 +11,16 @@ import {
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
 import { useCallback, useState } from "react"
-import { ActivityIndicator, ScrollView, View } from "react-native"
+import { ActivityIndicator, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
-import { KitActions } from "@/screens/setup/recovery-kit/components/kit-actions"
-import { KitQr } from "@/screens/setup/recovery-kit/components/kit-qr"
-import { useRecoveryMaterial } from "@/screens/setup/recovery-kit/use-recovery-material"
 import { useStrings } from "@/i18n/use-strings"
 import { buildRecoverySheetHtml } from "@/lib/recovery-sheet-html"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
+import { KitActions } from "@/screens/setup/recovery-kit/components/kit-actions"
+import { KitQr } from "@/screens/setup/recovery-kit/components/kit-qr"
+import { useRecoveryMaterial } from "@/screens/setup/recovery-kit/use-recovery-material"
 
 /**
  * 2.4 — the printed recovery sheet.
@@ -168,10 +169,7 @@ export function RecoveryKitScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.recoveryKit}
         locale={locale}
@@ -219,6 +217,6 @@ export function RecoveryKitScreen() {
           onShare={() => void run("share")}
         />
       </View>
-    </ScrollView>
+    </Screen>
   )
 }

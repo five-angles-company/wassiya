@@ -5,12 +5,13 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Redirect, router } from "expo-router"
-import { ActivityIndicator, ScrollView, View } from "react-native"
+import { ActivityIndicator, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
-import { SubstepRow } from "@/screens/setup/kyc-pending/components/substep-row"
 import { useStrings } from "@/i18n/use-strings"
 import { identityRetriesExhausted, SETUP_STEP_INDEX } from "@/lib/setup-flow"
+import { SubstepRow } from "@/screens/setup/kyc-pending/components/substep-row"
 
 /**
  * 2.1b — while Didit reviews.
@@ -47,10 +48,7 @@ export function KycPendingScreen() {
   const submitted = status.hasOpenSession
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-gutter pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         locale={locale}
@@ -92,7 +90,7 @@ export function KycPendingScreen() {
       )}
 
       <View className="grow" />
-    </ScrollView>
+    </Screen>
   )
 }
 

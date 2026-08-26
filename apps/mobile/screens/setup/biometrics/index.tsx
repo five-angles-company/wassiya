@@ -8,14 +8,9 @@ import * as LocalAuthentication from "expo-local-authentication"
 import { router } from "expo-router"
 import { Fingerprint } from "lucide-react-native"
 import { useCallback, useEffect, useState } from "react"
-import {
-  ActivityIndicator,
-  Linking,
-  Platform,
-  ScrollView,
-  View,
-} from "react-native"
+import { ActivityIndicator, Linking, Platform, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import {
@@ -144,10 +139,7 @@ export function BiometricsScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="grow px-6 pb-5 pt-3.5"
-    >
+    <Screen inset="flow">
       <SetupStepMeter
         step={SETUP_STEP_INDEX.biometrics}
         locale={locale}
@@ -204,6 +196,6 @@ export function BiometricsScreen() {
           </Button>
         </>
       )}
-    </ScrollView>
+    </Screen>
   )
 }

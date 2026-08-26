@@ -3,18 +3,13 @@ import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { router } from "expo-router"
 import { useState } from "react"
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native"
+import { Pressable, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
-import { NewDeviceCard } from "@/screens/auth/signin/components/new-device-card"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
+import { NewDeviceCard } from "@/screens/auth/signin/components/new-device-card"
 import { useOnboarding } from "@/stores/onboarding"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -68,64 +63,54 @@ export function SignInScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-background"
-      behavior={Platform.select({ ios: "padding", default: undefined })}
-    >
-      <ScrollView
-        contentContainerClassName="grow px-gutter pb-6 pt-3.5"
-        keyboardShouldPersistTaps="handled"
+    <Screen keyboard inset="flow">
+      <BackButton
+        label={common.back}
+        fallbackHref="/welcome"
+        className="mb-header"
+      />
+
+      <Text variant="screenTitle" className="mb-2 text-[30px]">
+        {t.title}
+      </Text>
+      <Text className="mb-6.5 text-[14.5px] text-muted-foreground">
+        {t.subtitle}
+      </Text>
+
+      <Field
+        label={t.emailLabel}
+        value={email}
+        onChangeText={setEmail}
+        error={fieldError ?? undefined}
+        autoCapitalize="none"
+        autoComplete="email"
+        keyboardType="email-address"
+        editable={!busy}
+        style={{ writingDirection: "ltr", textAlign: "left" }}
+        className="text-[17px]"
+        containerClassName="mb-4.5"
+      />
+
+      <Button
+        className="mb-6.5"
+        disabled={!ready}
+        onPress={() => void submit()}
       >
-        <BackButton
-          label={common.back}
-          fallbackHref="/welcome"
-          className="mb-header"
-        />
+        <Text>{t.cta}</Text>
+      </Button>
 
-        <Text variant="screenTitle" className="mb-2 text-[30px]">
-          {t.title}
-        </Text>
-        <Text className="mb-6.5 text-[14.5px] text-muted-foreground">
-          {t.subtitle}
-        </Text>
+      <NewDeviceCard title={t.newDeviceTitle} body={t.newDeviceBody} />
 
-        <Field
-          label={t.emailLabel}
-          value={email}
-          onChangeText={setEmail}
-          error={fieldError ?? undefined}
-          autoCapitalize="none"
-          autoComplete="email"
-          keyboardType="email-address"
-          editable={!busy}
-          style={{ writingDirection: "ltr", textAlign: "left" }}
-          className="text-[17px]"
-          containerClassName="mb-4.5"
-        />
+      <View className="grow" />
 
-        <Button
-          className="mb-6.5"
-          disabled={!ready}
-          onPress={() => void submit()}
-        >
-          <Text>{t.cta}</Text>
-        </Button>
-
-        <NewDeviceCard title={t.newDeviceTitle} body={t.newDeviceBody} />
-
-        <View className="grow" />
-
-        <Pressable
-          accessibilityRole="button"
-          className="mt-6 flex-row justify-center gap-1"
-          onPress={() => router.replace("/auth/signup")}
-        >
-          <Text className="text-section">{t.noAccount}</Text>
-          <Text className="text-section text-terracotta-700">
-            {t.createOne}
-          </Text>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      <Pressable
+        accessibilityRole="button"
+        className="mt-6 flex-row justify-center gap-1"
+        onPress={() => router.replace("/auth/signup")}
+      >
+        <Text className="text-section">{t.noAccount}</Text>
+        <Text className="text-section text-terracotta-700">{t.createOne}</Text>
+      </Pressable>
+    </Screen>
   )
 }
