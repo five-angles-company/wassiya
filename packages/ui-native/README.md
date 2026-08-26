@@ -165,8 +165,22 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `heart-badge` | `confirmed` | heart · check | inside `check-in-prompt` |
 | `storage-meter` | `quotaBytes`, `segments[{label,bytes,color?}]`, `formatSize`, `empty` | active · empty; segments are shares of the **quota** | **9.4** subscription |
 | `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · quiet · with accessory | all of section ٩ |
-| `editable-row` | `label`, `value`, `onChangeText`, `secret`, `expand`, `summary`, `mono`, `readOnly`, `hint`, `error`, `divider`, plus `TextInputProps` | plain · masked (eye) · revealed · expanded editor · read-only · error | **4.9** the asset edit form — `settings-row`'s metrics with a field in the value slot |
-| `choice-row` | `label`, `value`, `options[{value,label}]`, `onChange`, `placeholder`, `tone`, `divider` | chosen · unchosen (`placeholder`) | 4.9 disposition/network/country inside a grouped list — `sheet-select`'s sheet on a row-shaped trigger |
+| `field-row` | `label`, `hint`, `active`, `dimmed`, `trailing`, `divider`, `onPress` | resting · active (terracotta label + 2px rule) · dimmed (45%) | **the vault's core unit** — label over value on a hairline, ٤.٣–٤.٩ |
+| `field-value` | `prose`, `ltr`, `readOnly`, plus `TextInputProps` | plain · prose · read-only | the editable half of a `field-row`; a `TextInput` at rest, so editing has no mode |
+| `field-cell` | `label`, `value`, `dim`, `ltr` | plain · derived (55%) | three short values sharing one row — ١٥ type/currency/branch |
+| `secret-value` | `value`, `onChangeText`, `masked`, `mask` | masked (fixed dot pattern) · revealed (field) | every masked secret; never carries `visible-password` |
+| `reveal-pill` | `label`, `onPress`, `disabled`, `busy` | filled · surface-toned when another field is active | ٢ the seed phrase — the one reveal behind a fingerprint |
+| `choice-field` | `label`, `value`, `options[{value,label}]`, `onChange`, `placeholder` | chosen · unchosen (`placeholder`) | a one-of-N *value* inside a `field-row`; shares `sheet-select`'s sheet |
+| `chip-row` | `options[{value,label}]`, `value`, `onChange` | selected (solid terracotta) · unselected (surface pill) | ٤.٣ network/kind, ٤.٤ account type, ٤.٥ document kind |
+| `radio-row` | `title`, `detail`, `selected`, `onPress`, `divider` | selected · unselected; nothing pre-selected | ٤.٧ disposition — options that each need a sentence |
+| `seed-grid` | `words`, `formatIndex` | — | ٤.٣ — the one enclosed thing on that screen; indices kept because an heir reads back in order |
+| `vault-row` | `icon`, `title`, `recipients`, `unroutedLabel`, `faces`, `allHeirsLabel`, `divider`, `onPress` | routed (faces) · unrouted (terracotta + dashed ring) | **٤.١** the vault list |
+| `picker-row` | `icon`, `title`, `examples`, `disabled`, `divider` | default · disabled (lapsed plan) | ٤.٢ — the list's own vocabulary, not a menu |
+| `recipient-row` | `name`, `detail`, `selected`, `onToggle`, `group`, `divider` | chosen (olive disc + tick) · unchosen · group (icon, never a letter) | ٣ recipients |
+| `recipient-card` | `label`, `value`, `faces`, `allHeirsLabel`, `unrouted`, `onPress` | routed (surface) · unrouted (terracotta + dashed ring) | ٤.٩ — the one card on the asset screen |
+| `avatar-stack` | `names`, `size`, `ring`, `allHeirsLabel` | faces · dashed ring (nobody) · group word | wherever "who receives this" is answered |
+| `primary-cta` | `label`, `disabledLabel`, `icon`, `iconSize`, `disabled`, `busy` | live · surface-toned when disabled, **never a faded primary** | every bottom action, 56px |
+| `screen-top` / `screen-top-action` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing text ("إلغاء") | the top of every vault screen |
 | `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every sheet the board draws |
 | `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder` | selected · unselected | 1.3 / 2.1 country field; any single-choice field |
 | `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |

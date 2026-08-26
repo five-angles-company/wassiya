@@ -80,6 +80,26 @@ cannot answer has to go back to the board.
 
 **Where the design file and a written brief disagree, the design file wins.**
 
+⚠️ **The vault is built from `Wassiya Vault v2.dc.html`, not from the onboarding
+board.** That file is the current source for sections ٤.١–٤.٩ and supersedes the
+first vault board, which the designer kept only as history. It states its own
+grammar in one paragraph at the bottom — read that before touching a vault
+screen:
+
+> Fields are label-over-value rows separated by hairlines — no boxed inputs, no
+> cards, except around a secret or the recipient set. One accent per screen.
+> Titles 28px Cairo 800, labels 12px/50%, values 16px/600, prose 14.5–15.5px.
+> Chips are pills on `--color-surface`; the selected one is solid terracotta.
+> Primary CTA 56px; a disabled CTA is surface-toned, never a faded primary.
+> Status is carried by faces and one line of olive or terracotta text — no
+> badges, no bars, no scores.
+
+Its colours map 1:1 onto the app's theme: `--color-accent` → `primary`,
+`--color-accent-2-*` → `olive-*`, `--color-neutral-*` → `sand-*`,
+`--color-divider` → `border`, `--color-bg` → `background`, `--color-surface` →
+`card`. Note that button text is `--color-bg` (#f5ead8), **not** the app's
+`primary-foreground` (#fff2eb).
+
 ⚠️ **`get_file` hard-caps at 256 KiB** and sets `truncated: true`. The
 onboarding board is roughly 500–550 KiB, so a read stops mid-section-5 and
 returns exactly 262,144 bytes. **Sections ٦–١٠ have never been read** — the
