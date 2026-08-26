@@ -84,7 +84,16 @@ const buttonTextVariants = cva(
   {
     variants: {
       variant: {
-        default: 'text-primary-foreground',
+        /**
+         * `background` (#f5ead8), not `primary-foreground` (#fff2eb).
+         *
+         * The board is explicit that label-on-terracotta is the page ground,
+         * and `primary-cta` has always drawn it that way — this variant was the
+         * one filled button in the product using the other white. The two are
+         * close enough to look like a rendering artefact rather than a choice,
+         * which is exactly how it read on ١.١'s "ابدأ الآن".
+         */
+        default: 'text-background',
         protect: 'text-secondary-foreground',
         secondary: 'text-secondary-foreground',
         outline: 'text-foreground',

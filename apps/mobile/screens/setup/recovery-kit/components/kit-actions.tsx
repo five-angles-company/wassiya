@@ -34,7 +34,9 @@ export function KitActions({
   return (
     <View className="gap-2.25">
       <Button disabled={disabled} onPress={onPrint}>
-        <Icon as={Printer} className="size-5 text-primary-foreground" />
+        {/* Matches the label beside it — both are content on terracotta,
+            which the board sets in `background`. */}
+        <Icon as={Printer} className="text-background size-5" />
         <Text>{printLabel}</Text>
       </Button>
       <View className="flex-row gap-2.5">
