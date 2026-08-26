@@ -2,7 +2,10 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { View } from "react-native"
 
 import { Field } from "@/components/field"
-import { SECRET_INPUT_PROPS } from "@/lib/secret-input-props"
+import {
+  MASKED_SECRET_INPUT_PROPS,
+  SECRET_INPUT_PROPS,
+} from "@/lib/secret-input-props"
 
 export type ExchangeCredentials = {
   account: string
@@ -46,8 +49,10 @@ export function ExchangeFields({
         autoCapitalize="none"
         keyboardType="email-address"
       />
+      {/* Masked — see `MASKED_SECRET_INPUT_PROPS`. `visible-password` would
+          defeat `secureTextEntry` and show this password in the clear. */}
       <Field
-        {...SECRET_INPUT_PROPS}
+        {...MASKED_SECRET_INPUT_PROPS}
         label={labels.exchangePassword}
         value={value.password}
         onChangeText={(password) => onChange({ password })}

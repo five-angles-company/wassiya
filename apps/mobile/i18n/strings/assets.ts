@@ -213,6 +213,30 @@ export const ASSET_DETAIL = {
   },
   recipientsEdit: { ar: "من يستلمه؟", en: "Who receives it?" },
 
+  // ── Editing ──────────────────────────────────────────────────────────────
+  save: { ar: "حفظ", en: "Save" },
+  saving: { ar: "يُحفظ…", en: "Saving…" },
+  // The collapsed summary on the recovery-codes row. A count, not the codes.
+  codesCount: { ar: "{n} رموز", en: "{n} codes" },
+  choosePlaceholder: { ar: "اختر", en: "Choose" },
+  saveFailed: {
+    ar: "تعذّر الحفظ. لم يتغيّر شيء في خزنتك.",
+    en: "Could not save. Nothing in your vault changed.",
+  },
+  saveLocked: {
+    ar: "أُقفلت الخزنة أثناء التحرير. افتحها ثم احفظ مرة أخرى.",
+    en: "The vault locked while you were editing. Unlock it, then save again.",
+  },
+  // Leaving with edits in hand. A password typed and silently dropped is worse
+  // than a question.
+  discardTitle: { ar: "تترك دون حفظ؟", en: "Leave without saving?" },
+  discardBody: {
+    ar: "تعديلاتك على هذا الأصل لم تُحفظ بعد.",
+    en: "Your edits to this asset have not been saved.",
+  },
+  discardConfirm: { ar: "تجاهل التعديلات", en: "Discard edits" },
+  keepEditing: { ar: "متابعة التحرير", en: "Keep editing" },
+
   deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
   deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },
   deleteBodyUnrouted: {

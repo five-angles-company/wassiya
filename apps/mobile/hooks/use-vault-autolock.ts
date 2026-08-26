@@ -1,10 +1,16 @@
 /**
- * Drives the two events that close an unlocked vault: the app leaving the
+ * Drives the events that close an unlocked vault: the app leaving the
  * foreground, and the session cap elapsing.
  *
- * The cap is measured from the unlock and nothing extends it — see
- * `AUTO_LOCK_MS`, which explains why this is not the inactivity timer ٩.٢ will
- * eventually want.
+ * **Both are off under the default policy.** ٩.٢ now offers
+ * `LOCK_WHILE_OPEN`, and under it neither event fires — the session ends with
+ * the process instead, which needs no code here: MK is process memory and
+ * `useVault` has no `persist`, so a cold start is always locked. Choosing a
+ * duration instead restores both events exactly as they were.
+ *
+ * A duration is a cap measured from the unlock and nothing extends it — see
+ * `isExpired` in `stores/vault`, which explains why this is not the inactivity
+ * timer it might look like.
  *
  * Mounted **once**, from the tabs layout — the vault is only reachable from
  * there, and mounting it per screen would run one timer per mounted route.
@@ -22,6 +28,7 @@
 import { useEffect } from "react"
 import { AppState, type AppStateStatus } from "react-native"
 
+import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 import { useVault } from "@/stores/vault"
 
 /**
@@ -31,13 +38,22 @@ import { useVault } from "@/stores/vault"
  */
 const LOCK_POLL_MS = 15 * 1000
 
+/** Read at event time, never captured — ٩.٢ takes effect on the next tick. */
+function locksOnBackground(): boolean {
+  return usePreferences.getState().autoLockMinutes !== LOCK_WHILE_OPEN
+}
+
 export function useVaultAutoLock(): void {
   useEffect(() => {
     const subscription = AppState.addEventListener(
       "change",
       (state: AppStateStatus) => {
         // See the note above — `inactive` is the biometric prompt itself.
-        if (state === "background") useVault.getState().lock()
+        if (state !== "background") return
+        // "While open" means exactly that: switching apps, taking a call and
+        // pulling down the shade all leave the vault as it was.
+        if (!locksOnBackground()) return
+        useVault.getState().lock()
       }
     )
 

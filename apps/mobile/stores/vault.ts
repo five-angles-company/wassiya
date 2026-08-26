@@ -32,39 +32,34 @@
 import { create } from "zustand"
 
 import { readMk, VaultKeyLostError } from "@/lib/secure-vault"
-import {
-  DEFAULT_AUTO_LOCK_MINUTES,
-  usePreferences,
-} from "@/stores/preferences"
+import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 
 /**
- * How long an unlocked vault survives before it closes itself.
+ * How long an unlocked vault survives, or `null` to survive for the life of
+ * the process.
  *
- * **This is a session cap, not an inactivity timer.** It is measured from the
- * unlock, and nothing extends it — a real "five minutes since the user last did
- * something" needs a source of interaction events (a root-level responder, or a
- * navigation subscription), and this app has neither yet. Saying so plainly
- * because the alternative is a store that claims to track idleness, stamps its
- * timestamp exactly once, and locks a reader out mid-scroll anyway.
+ * **A duration here is a session cap, not an inactivity timer.** It is measured
+ * from the unlock, and nothing extends it — a real "five minutes since the user
+ * last did something" needs a source of interaction events (a root-level
+ * responder, or a navigation subscription), and this app has neither yet.
+ * Saying so plainly because the alternative is a store that claims to track
+ * idleness, stamps its timestamp exactly once, and locks a reader out
+ * mid-scroll anyway.
  *
- * Section ٩.٢ ("القفل التلقائي") owns the value and now sets it: the window is
- * read from `usePreferences` at check time, and this constant is only the
- * default until that store rehydrates. The *policy* — a cap rather than an
- * idle timer — is still unchanged, and still owned by a board that has never
- * been readable past section ٥.
- */
-export const AUTO_LOCK_MS = DEFAULT_AUTO_LOCK_MINUTES * 60 * 1000
-
-/**
- * The configured window, or the default until preferences rehydrate.
+ * `null` is the default policy, `LOCK_WHILE_OPEN` — no cap at all. That is not
+ * a looser cap to be compared against; it is the absence of one, which is why
+ * this returns `null` rather than `Infinity` or a very large number that some
+ * later arithmetic could quietly wrap.
  *
- * Read at check time rather than captured, so changing it in ٩.٢ takes effect
- * on the next tick instead of on the next app launch. Read from
+ * Section ٩.٢ ("القفل التلقائي") owns the value: it is read from
+ * `usePreferences` at check time rather than captured, so a change there takes
+ * effect on the next tick instead of on the next app launch. Read through
  * `getState()` rather than a hook because `isExpired` is called from an
  * interval, not from a render.
  */
-function autoLockMs(): number {
-  return usePreferences.getState().autoLockMinutes * 60 * 1000
+function autoLockMs(): number | null {
+  const minutes = usePreferences.getState().autoLockMinutes
+  return minutes === LOCK_WHILE_OPEN ? null : minutes * 60 * 1000
 }
 
 export type VaultStatus =
@@ -86,7 +81,7 @@ export type VaultState = {
    * so a list that decrypted on unlock would never notice the lock.
    */
   mk: Uint8Array | null
-  /** When the session opened. See {@link AUTO_LOCK_MS} — it is a cap, not idle. */
+  /** When the session opened. See `autoLockMs` — a duration caps, not idles. */
   unlockedAt: number | null
   unlock: (authenticationPrompt: string) => Promise<void>
   lock: () => void
@@ -159,6 +154,10 @@ export const useVault = create<VaultState>()((set, get) => ({
   isExpired: (now) => {
     const { status, unlockedAt } = get()
     if (status !== "unlocked" || unlockedAt === null) return false
-    return now - unlockedAt >= autoLockMs()
+    const cap = autoLockMs()
+    // "While open": the session ends with the process, not with a clock, so
+    // there is nothing here for the poll to expire.
+    if (cap === null) return false
+    return now - unlockedAt >= cap
   },
 }))

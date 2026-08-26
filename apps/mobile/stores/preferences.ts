@@ -23,18 +23,37 @@ export type PreferencesState = {
   setHasSeenWelcome: (value: boolean) => void
 
   /**
-   * Minutes an unlocked vault survives. See `AUTO_LOCK_MS` in `stores/vault`
-   * for what this actually measures — it is a session cap, not an idle timer.
+   * Minutes an unlocked vault survives, or {@link LOCK_WHILE_OPEN} to keep it
+   * open for the life of the process. A duration is a session cap, not an idle
+   * timer — `isExpired` in `stores/vault` explains why.
    */
   autoLockMinutes: number
   setAutoLockMinutes: (minutes: number) => void
 }
 
-/** The choices ٩.٢ offers. Immediate is the strictest the model allows. */
-export const AUTO_LOCK_CHOICES = [1, 5, 15, 60] as const
+/**
+ * "ما دام التطبيق مفتوحاً" — no timer, and backgrounding does not lock either.
+ * The session then ends only when the process does, which needs no code at all:
+ * MK is plain process memory and `useVault` has no `persist`, so a cold start
+ * is always locked.
+ *
+ * Named rather than compared against a bare `0` in four files, because `0`
+ * reads like "lock immediately" — the exact opposite of what it means here.
+ */
+export const LOCK_WHILE_OPEN = 0
 
-/** Matches the board's "قُفلت تلقائياً بعد ٥ دقائق" on 3.2. */
-export const DEFAULT_AUTO_LOCK_MINUTES = 5
+/** The choices ٩.٢ offers, loosest first. */
+export const AUTO_LOCK_CHOICES = [LOCK_WHILE_OPEN, 1, 5, 15, 60] as const
+
+/**
+ * Staying open while the app is open is the default, at the owner's request.
+ *
+ * The trade is stated on ٩.٢ rather than buried: anyone holding the unlocked
+ * phone can reopen Wassiya from the app switcher and read the vault. A seed
+ * phrase still needs a fingerprint to *display*, which is the one gate that
+ * survives this setting.
+ */
+export const DEFAULT_AUTO_LOCK_MINUTES = LOCK_WHILE_OPEN
 
 export const usePreferences = create<PreferencesState>()(
   persist(
@@ -50,10 +69,27 @@ export const usePreferences = create<PreferencesState>()(
       // AsyncStorage is async, so the store rehydrates after the first render
       // (initial render shows defaults). No SSR hydration concern on native.
       //
-      // That matters for auto-lock specifically: until rehydration lands the
-      // vault uses the 5-minute default, which is the *stricter* end of the
-      // range for anyone who chose 15 or 60. Erring tight rather than loose is
-      // the right way round for a lock.
+      // For auto-lock that gap now errs *loose* rather than tight, because the
+      // default is "while open". It is a sub-frame window before rehydration
+      // lands, and erring tight instead would flash a locked vault open.
+      version: 1,
+      /**
+       * v0 shipped a five-minute cap as the default. Anyone who never opened
+       * ٩.٢ still carries that 5 in storage, so changing the default alone
+       * would do nothing on an existing install — the persisted value wins.
+       *
+       * Only the *old default* moves. An explicit 1, 15 or 60 is a choice
+       * someone made and is left exactly as it is. A 5 that was chosen rather
+       * than inherited is indistinguishable from one that was not and gets
+       * migrated too; ٩.٢ is one tap away for anyone who wants it back.
+       */
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Partial<PreferencesState>
+        if (version === 0 && state.autoLockMinutes === 5) {
+          return { ...state, autoLockMinutes: LOCK_WHILE_OPEN }
+        }
+        return state
+      },
       storage: createJSONStorage(() => AsyncStorage),
     }
   )

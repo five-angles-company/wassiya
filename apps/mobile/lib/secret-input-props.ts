@@ -41,3 +41,28 @@ export const SECRET_INPUT_PROPS = {
   keyboardType: "visible-password",
   textContentType: "none",
 } as const satisfies TextInputProps
+
+/**
+ * ⚠️ The same protections, for a field that is **masked**.
+ *
+ * `keyboardType: "visible-password"` and `secureTextEntry` cannot both apply.
+ * On Android they set the same input-type *variation* bits — `VISIBLE_PASSWORD`
+ * against `PASSWORD` — and the keyboard type wins, so a field carrying both
+ * renders its value in the clear while every prop says it is hidden. Nothing
+ * warns; the dots simply never appear.
+ *
+ * Dropping `keyboardType` costs nothing here, because `secureTextEntry` maps to
+ * Android's password variation, and IMEs already exclude password fields from
+ * personalised learning. The flag was only ever a way to buy that exclusion for
+ * fields that are *not* masked — a seed phrase, a 2FA note, recovery codes,
+ * all of which are visible by design.
+ *
+ * So: masked field → this. Visible secret → {@link SECRET_INPUT_PROPS}.
+ */
+export const MASKED_SECRET_INPUT_PROPS = {
+  autoComplete: "off",
+  autoCorrect: false,
+  spellCheck: false,
+  importantForAutofill: "no",
+  textContentType: "none",
+} as const satisfies TextInputProps

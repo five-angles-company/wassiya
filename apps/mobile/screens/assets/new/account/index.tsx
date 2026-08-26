@@ -23,7 +23,10 @@ import { Field } from "@/components/field"
 import { useSecretPaste } from "@/hooks/use-secret-paste"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { SECRET_INPUT_PROPS } from "@/lib/secret-input-props"
+import {
+  MASKED_SECRET_INPUT_PROPS,
+  SECRET_INPUT_PROPS,
+} from "@/lib/secret-input-props"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
@@ -107,8 +110,11 @@ export function NewAccountScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
+        {/* Masked, so it must NOT carry `keyboardType: "visible-password"` —
+            that flag and `secureTextEntry` fight over the same Android input
+            type and the keyboard wins, showing the password in the clear. */}
         <Field
-          {...SECRET_INPUT_PROPS}
+          {...MASKED_SECRET_INPUT_PROPS}
           label={t.passwordLabel}
           value={password}
           onChangeText={setPassword}

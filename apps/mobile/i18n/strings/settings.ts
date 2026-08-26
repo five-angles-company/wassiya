@@ -55,13 +55,21 @@ export const SETTINGS = {
 export const AUTO_LOCK = {
   title: { ar: "القفل التلقائي", en: "Auto-lock" },
   intro: {
-    ar: "بعد هذه المدة تُقفل خزنتك وتحتاج بصمتك مرة أخرى. تُقفل فوراً عند خروج التطبيق من الشاشة، مهما كان الإعداد.",
-    en: "After this long your vault locks and needs your biometrics again. It always locks the moment the app leaves the screen, whatever this is set to.",
+    ar: "متى تُقفل خزنتك وتحتاج بصمتك مرة أخرى.",
+    en: "When your vault locks and needs your biometrics again.",
   },
-  // The honest description of what the timer measures.
+  whileOpen: { ar: "ما دام التطبيق مفتوحاً", en: "While the app is open" },
+  // Shown only under "while open". The trade belongs on the screen, not in a
+  // comment: this setting is the one that decides whether a found phone opens
+  // the vault, and an owner who was never told cannot have chosen it.
+  whileOpenNote: {
+    ar: "تبقى الخزنة مفتوحة عند التنقّل بين التطبيقات، ولا تُقفل إلا بإغلاق التطبيق تماماً. مَن يمسك هاتفك وهو مفتوح يستطيع فتح وصية وقراءة خزنتك — وتبقى عبارة الاسترداد وحدها خلف بصمتك.",
+    en: "The vault stays open while you switch apps, and closes only when the app is fully closed. Anyone holding your unlocked phone can reopen Wassiya and read it — only a seed phrase still needs your fingerprint.",
+  },
+  // Shown only under a duration: the honest description of what it measures.
   capNote: {
-    ar: "تُحسب المدة من لحظة الفتح، لا من آخر لمسة.",
-    en: "Measured from when you unlocked, not from your last tap.",
+    ar: "تُحسب المدة من لحظة الفتح، لا من آخر لمسة. وتُقفل الخزنة فوراً عند خروج التطبيق من الشاشة.",
+    en: "Measured from when you unlocked, not from your last tap. The vault also locks the moment the app leaves the screen.",
   },
   minute1: { ar: "دقيقة واحدة", en: "1 minute" },
   minute5: { ar: "٥ دقائق", en: "5 minutes" },

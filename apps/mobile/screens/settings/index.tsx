@@ -35,7 +35,7 @@ import { Alert, ScrollView, View } from "react-native"
 
 import { useStrings } from "@/i18n/use-strings"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
-import { usePreferences } from "@/stores/preferences"
+import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
@@ -187,6 +187,7 @@ function Group({
 
 /** The current window, in the same words ٩.٢ offers. */
 function minutesLabel(minutes: number, t: Record<string, string>): string {
+  if (minutes === LOCK_WHILE_OPEN) return t.whileOpen!
   if (minutes === 1) return t.minute1!
   if (minutes === 15) return t.minute15!
   if (minutes === 60) return t.minute60!

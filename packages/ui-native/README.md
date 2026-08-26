@@ -165,6 +165,8 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `heart-badge` | `confirmed` | heart · check | inside `check-in-prompt` |
 | `storage-meter` | `quotaBytes`, `segments[{label,bytes,color?}]`, `formatSize`, `empty` | active · empty; segments are shares of the **quota** | **9.4** subscription |
 | `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · quiet · with accessory | all of section ٩ |
+| `editable-row` | `label`, `value`, `onChangeText`, `secret`, `expand`, `summary`, `mono`, `readOnly`, `hint`, `error`, `divider`, plus `TextInputProps` | plain · masked (eye) · revealed · expanded editor · read-only · error | **4.9** the asset edit form — `settings-row`'s metrics with a field in the value slot |
+| `choice-row` | `label`, `value`, `options[{value,label}]`, `onChange`, `placeholder`, `tone`, `divider` | chosen · unchosen (`placeholder`) | 4.9 disposition/network/country inside a grouped list — `sheet-select`'s sheet on a row-shaped trigger |
 | `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every sheet the board draws |
 | `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder` | selected · unselected | 1.3 / 2.1 country field; any single-choice field |
 | `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |

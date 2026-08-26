@@ -40,7 +40,8 @@ import { View } from "react-native"
 
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { AUTO_LOCK_MS, useVault } from "@/stores/vault"
+import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
+import { useVault } from "@/stores/vault"
 
 export type VaultLockProps = {
   onUnlock: () => void
@@ -53,6 +54,7 @@ export type VaultLockProps = {
 export function VaultLock({ onUnlock, busy, denied = false }: VaultLockProps) {
   const { t, locale } = useStrings("lock")
   const status = useVault((s) => s.status)
+  const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
   useSecureScreen("lock")
 
   const keyLost = status === "lost"
@@ -78,12 +80,12 @@ export function VaultLock({ onUnlock, busy, denied = false }: VaultLockProps) {
         {keyLost ? t.keyLost : denied ? t.denied : t.body}
       </Text>
 
-      {!keyLost ? (
+      {/* Read live rather than from a constant: ٩.٢ owns this number, and the
+          default policy has no number at all — under "while open" nothing
+          auto-locked, so there is no elapsed window to report. */}
+      {!keyLost && autoLockMinutes !== LOCK_WHILE_OPEN ? (
         <Text variant="metaSm" className="text-muted-foreground mt-4">
-          {t.autoLocked.replace(
-            "{n}",
-            fmtNum(Math.round(AUTO_LOCK_MS / 60_000), locale)
-          )}
+          {t.autoLocked.replace("{n}", fmtNum(autoLockMinutes, locale))}
         </Text>
       ) : null}
 

@@ -186,8 +186,30 @@ export const create = mutation({
 })
 
 /**
- * Renaming, re-tagging, and re-wrapping after an MK rotation. Deliberately not
- * gated on the subscription: an existing vault stays fully editable.
+ * Editing an asset: renaming, re-tagging, replacing the encrypted payload, and
+ * re-wrapping after an MK rotation. Deliberately not gated on the subscription
+ * — a lapsed card blocks *adding* assets and nothing else, so an existing vault
+ * stays fully editable.
+ *
+ * ## `storageIds` is a full replacement, and only the dropped blobs are deleted
+ *
+ * The caller sends the complete new list. Anything on the row that is *not* in
+ * that list is superseded and deleted; anything in both is retained. The set
+ * difference matters — an owner adding two photos to an album of five sends
+ * seven ids, five of which already exist, and deleting "the old ones" would
+ * destroy the five they kept.
+ *
+ * ## The DEK is not rotated here, on purpose
+ *
+ * A caller re-encrypting a payload reuses the asset's existing DEK and does not
+ * pass `dekWrappedByMk`. **This is a requirement, not laziness:** heir release
+ * bundles carry the routed DEKs, so minting a fresh DEK on an ordinary edit
+ * would silently break delivery for every heir already routed to this asset,
+ * and nothing would surface it until a claim. It is safe because the sealing
+ * primitives derive fresh per-call randomness — see `wrap.ts` and
+ * `assetHeader.ts`, whose salt exists precisely so a deliberately reused DEK
+ * stays safe. `dekWrappedByMk` remains accepted for the one case that *is* a
+ * rotation: MK itself changing.
  */
 export const update = mutation({
   args: {
@@ -195,6 +217,7 @@ export const update = mutation({
     labelSealed: v.optional(v.bytes()),
     meta: v.optional(assetMeta),
     dekWrappedByMk: v.optional(v.bytes()),
+    storageIds: v.optional(v.array(v.id("_storage"))),
   },
   handler: async (ctx, { assetId, ...fields }) => {
     const user = await requireUser(ctx)
@@ -202,7 +225,39 @@ export const update = mutation({
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
     }
-    await ctx.db.patch("assets", assetId, fields)
+    if (fields.storageIds !== undefined && fields.storageIds.length === 0) {
+      // Every type stores at least one blob — the secret, or the files. An
+      // empty list is a caller bug that would leave an unopenable row behind.
+      throw new Error("An asset cannot have zero payloads")
+    }
+
+    // `ctx.db.patch` is shallow, so patching a partial `meta` would REPLACE the
+    // object and drop whatever it omitted — `mimeType` and `itemCount` are the
+    // ones that would go. Callers are expected to send a complete `meta`; this
+    // merge is the safety net for the day one of them does not.
+    const meta = fields.meta === undefined ? undefined : { ...asset.meta, ...fields.meta }
+    await ctx.db.patch("assets", assetId, { ...fields, ...(meta && { meta }) })
+
+    // Deleted after the patch rather than before it: the row no longer points
+    // at them, so there is no window in which it references a missing blob.
+    if (fields.storageIds !== undefined) {
+      const kept = new Set<string>(fields.storageIds)
+      for (const storageId of asset.storageIds) {
+        if (!kept.has(storageId)) {
+          await ctx.storage.delete(storageId)
+        }
+      }
+    }
+
+    // `create` counts `meta.byteSize` and `remove` gives it back, so an edit
+    // owes the difference. Credential types leave `byteSize` unset and so have
+    // never been counted at all — a delta of zero keeps them that way rather
+    // than half-counting them from the first edit onwards.
+    if (meta !== undefined) {
+      const delta = (meta.byteSize ?? 0) - (asset.meta.byteSize ?? 0)
+      await bumpStorageUsed(ctx, user._id, delta)
+    }
+
     await writeAudit(ctx, {
       userId: user._id,
       event: "asset.updated",
