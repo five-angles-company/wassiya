@@ -60,9 +60,21 @@ export function parseDigital(raw: string): DigitalForm | null {
   let data: Record<string, unknown>
   try {
     const parsed: unknown = JSON.parse(raw)
-    if (typeof parsed !== "object" || parsed === null) return null
+    // `typeof [] === "object"`, so the array case has to be named explicitly or
+    // it slips through and every field below reads as empty.
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return null
+    }
     data = parsed as Record<string, unknown>
   } catch {
+    return null
+  }
+
+  // An object carrying none of this type's own fields is not this type's
+  // payload. Without this the parser "succeeds" into an all-blank form, and the
+  // screen then offers to overwrite whatever was really there with nothing —
+  // the precise failure the `null` contract exists to prevent.
+  if (!("service" in data) && !("username" in data) && !("password" in data)) {
     return null
   }
 

@@ -75,6 +75,13 @@ export type EditableRowProps = Omit<
   hint?: string;
   /** Replaces `hint` and tints the value. */
   error?: string;
+  /**
+   * Fired when a masked value becomes visible — not when it is re-hidden, and
+   * not on mount. The asset screen writes its audit line from this: decrypting
+   * a payload into a masked field is not a disclosure, and a human choosing to
+   * look at one is.
+   */
+  onReveal?: () => void;
   divider?: boolean;
   className?: string;
 };
@@ -118,6 +125,7 @@ export function EditableRow({
   readOnly = false,
   hint,
   error,
+  onReveal,
   divider,
   className,
   ...input
@@ -133,6 +141,9 @@ export function EditableRow({
 
   const toggle = () => {
     if (secret) {
+      // Only the masked -> visible edge. Re-hiding is not a second disclosure,
+      // and firing on both would double every audit line.
+      if (!revealed) onReveal?.();
       setRevealed((was) => !was);
       return;
     }

@@ -15,14 +15,18 @@
  * it. The seed phrase is the one value that keeps a fingerprint on top, because
  * it is the one whose disclosure is unrecoverable.
  *
- * ## The reveal is still recorded
+ * ## The reveal is recorded when a secret is actually looked at
  *
- * `recordReveal` fires once per successful open. Under the old model that was
- * "the owner peeked"; under this one, opening the screen genuinely is opening
- * the content, and the row on the screen is already labelled *آخر فتح*. A vault
- * whose contents can be read without leaving a trace cannot tell its owner
- * whether anyone else has read them, and moving the gate must not quietly cost
- * that. Guarded by a ref, so a re-render does not write a second line.
+ * `noteReveal` is wired to the eye, not to the screen opening. Recording on
+ * open was the obvious first move and it is wrong: the screen renders *آخر فتح*
+ * from `lastRevealedAt`, so a line written by opening makes that row read "now"
+ * every single time anyone looks at it. The row exists to tell an owner that
+ * somebody **else** opened this asset, and evidence that fires on the act of
+ * checking it carries no information at all.
+ *
+ * The line drawn instead: decrypting a payload into a masked field is not a
+ * disclosure, and a human tapping an eye is. Guarded by a ref, so three secrets
+ * revealed on one visit write one line rather than three.
  *
  * ## Only the decryption is state
  *
@@ -76,8 +80,15 @@ export function useAssetEditor(assetId: Id<"assets">) {
   const [decrypted, setDecrypted] = useState<Decrypted>({ status: "pending" })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<SaveError | null>(null)
-  /** One audit line per open, not one per render. */
-  const recorded = useRef<string | null>(null)
+  /** One audit line per visit, however many secrets get revealed on it. */
+  const recorded = useRef(false)
+
+  /** Hand to every secret field's `onReveal`. */
+  const noteReveal = useCallback(() => {
+    if (recorded.current) return
+    recorded.current = true
+    void recordReveal({ assetId })
+  }, [assetId, recordReveal])
 
   useEffect(() => {
     if (asset === undefined || mk === null) return
@@ -107,16 +118,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
           decryptAsset(await downloadCiphertext(url), dek)
         )
         if (!live) return
-
-        if (recorded.current !== assetId) {
-          recorded.current = assetId
-          // Awaited before the payload reaches state, exactly as the reveal
-          // flow did: the stamp is the owner's evidence that something *was*
-          // opened, and evidence written before the open could succeed is
-          // worth less than none.
-          await recordReveal({ assetId })
-        }
-        if (live) setDecrypted({ status: "ready", secret, title, subtitle })
+        setDecrypted({ status: "ready", secret, title, subtitle })
       } catch {
         if (live) {
           setDecrypted({ status: "unreadable", title: "", subtitle: "" })
@@ -129,7 +131,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
     return () => {
       live = false
     }
-  }, [asset, mk, assetId, recordReveal])
+  }, [asset, mk])
 
   const load: EditorLoad =
     asset === undefined
@@ -170,5 +172,13 @@ export function useAssetEditor(assetId: Id<"assets">) {
     [asset, assetId, updateAsset]
   )
 
-  return { asset, load, save, saving, error, clearError: () => setError(null) }
+  return {
+    asset,
+    load,
+    save,
+    saving,
+    error,
+    noteReveal,
+    clearError: () => setError(null),
+  }
 }

@@ -19,8 +19,9 @@
  * Not a gate in front of the screen — a form cannot be prefilled from a blob it
  * has not opened. Instead: every secret masked individually with its own eye
  * (`EditableRow`), the keyboard hardened on each of them, the whole screen under
- * `useSecureScreen`, and the open still written to the audit log. See
- * `use-asset-editor.ts`, which owns all of that.
+ * `useSecureScreen`, and an audit line written the first time an eye is tapped
+ * rather than when the screen opens — otherwise *آخر فتح* would read "now" every
+ * time anyone looked at it. See `use-asset-editor.ts`, which owns all of that.
  *
  * ## Leaving is guarded
  *
@@ -63,7 +64,7 @@ export function AssetEditScreen({ assetId }: { assetId: Id<"assets"> }) {
   // rather than only the moment an eye is tapped.
   useSecureScreen("assets/detail")
 
-  const { load, save, saving, error } = useAssetEditor(assetId)
+  const { load, save, saving, error, noteReveal } = useAssetEditor(assetId)
   const { form, patch, dirty, commit } = useEditForm(
     load.status === "ready" ? load.secret : null,
     parseDigital
@@ -216,6 +217,7 @@ export function AssetEditScreen({ assetId }: { assetId: Id<"assets"> }) {
             labels={t}
             account={account}
             locale={locale}
+            onReveal={noteReveal}
           />
         </View>
       )}

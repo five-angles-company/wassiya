@@ -37,6 +37,8 @@ export type DigitalFieldsProps = {
   /** The `assets/new/account` dictionary — the disposition options. */
   account: Record<string, string>
   locale: Locale
+  /** Called the first time any secret here is unmasked — writes the audit line. */
+  onReveal: () => void
 }
 
 /** What a masked value shows when its editor is closed. */
@@ -48,6 +50,7 @@ export function DigitalFields({
   labels,
   account,
   locale,
+  onReveal,
 }: DigitalFieldsProps) {
   const codes = recoveryCount(value.recovery)
 
@@ -76,6 +79,7 @@ export function DigitalFields({
         onChangeText={(password) => onChange({ password })}
         secret
         mono
+        onReveal={onReveal}
         divider
       />
       <EditableRow
@@ -86,6 +90,7 @@ export function DigitalFields({
         secret
         expand
         summary={value.twoFactor.length > 0 ? MASK : "—"}
+        onReveal={onReveal}
         divider
       />
       <EditableRow
@@ -96,6 +101,7 @@ export function DigitalFields({
         secret
         expand
         mono
+        onReveal={onReveal}
         summary={
           codes > 0
             ? labels.codesCount!.replace("{n}", fmtNum(codes, locale))
