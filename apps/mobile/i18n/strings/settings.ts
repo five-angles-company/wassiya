@@ -17,6 +17,58 @@
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 /** ٩.١ — the index. */
+/**
+ * ٩.١b — الملف الشخصي.
+ *
+ * Two editable fields and three read-only ones, and the split is not arbitrary:
+ * the name and the country are the only parts of an owner this app is allowed
+ * to change. The email belongs to Clerk and moving it is a verification flow,
+ * not a text field; the identity name comes from the ID document Didit read,
+ * and it exists precisely so that nothing the owner types can move it.
+ */
+export const PROFILE = {
+  title: { ar: "الملف الشخصي", en: "Profile" },
+  nameLabel: { ar: "الاسم الكامل", en: "Full name" },
+  // The same advice ٢.٢ gives at signup. The app never sends this name
+  // anywhere — Didit reads the name off the document itself — but the advice is
+  // still true, and the one screen that lets you change it must not be the one
+  // screen that stops saying so.
+  nameNotice: {
+    ar: "اسمك يجب أن يطابق هويتك الرسمية — عليه يعتمد التحقق من الوفاة لاحقاً.",
+    en: "Your name must match your official ID — the later death-verification match depends on it.",
+  },
+  nameRequired: { ar: "الاسم مطلوب.", en: "A name is required." },
+
+  countryLabel: { ar: "الدولة", en: "Country" },
+  /**
+   * The consequence, stated before the change rather than discovered after it.
+   *
+   * useHeirForm validates every heir's number against *this* country, so a
+   * number stored as +213… stops round-tripping the moment the country becomes
+   * SA: that heir's form opens with Save already lit and an "invalid number"
+   * error against a number that was fine yesterday.
+   */
+  countryNotice: {
+    ar: "تُستخدم لتنسيق أرقام ورثتك وحساباتك البنكية. تغييرها قد يُظهر أرقاماً محفوظة كغير صالحة.",
+    en: "Used to format your heirs' numbers and bank accounts. Changing it can make stored numbers read as invalid.",
+  },
+  countryHeirsWarning: {
+    ar: "{n} من أرقام ورثتك محفوظة بترميز دولة أخرى.",
+    en: "{n} of your heirs' numbers are stored under a different country.",
+  },
+
+  emailLabel: { ar: "البريد الإلكتروني", en: "Email" },
+  emailReadOnly: { ar: "يُدار من حسابك", en: "Managed by your account" },
+  identityLabel: { ar: "الهوية", en: "Identity" },
+  identityVerified: { ar: "موثّقة", en: "Verified" },
+  identityUnverified: { ar: "غير موثّقة", en: "Not verified" },
+  identityNameLabel: { ar: "الاسم في هويتك", en: "Name on your ID" },
+
+  save: { ar: "حفظ", en: "Save" },
+  saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
+  saveFailed: { ar: "تعذّر الحفظ. حاول مرة أخرى.", en: "Could not save. Try again." },
+} satisfies LabelSet<string>
+
 export const SETTINGS = {
   // Matches the tab's own label. الرئيسية, الخزنة and الورثة each open with the
   // word the bar uses; this one opened with "الإعدادات" and was the only tab

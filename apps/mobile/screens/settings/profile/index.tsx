@@ -1,0 +1,204 @@
+/**
+ * ٩.١b — الملف الشخصي.
+ *
+ * ## What an owner is actually allowed to change
+ *
+ * Two things: their **name** and their **country**. Everything else on this
+ * screen is shown and not editable, and each for its own reason.
+ *
+ * The **email** is Clerk's. Moving it is a verification flow — a code to the
+ * new address, a fallback if it never arrives — not a text field, and pretending
+ * otherwise with a disabled-looking input would be worse than saying so.
+ *
+ * The **identity name** is whatever Didit read off the document. It exists so
+ * that nothing the owner types can move it: `claims.ts` shows a reviewer the
+ * death certificate's name against `identityVerifiedName`, never against this
+ * screen's name field. That separation is the whole reason editing the display
+ * name is safe, and it is why both are shown here — so the difference between
+ * "what I am called" and "what my ID says" is visible in one place.
+ *
+ * ## The name is cosmetic, and the notice is still true
+ *
+ * The app never sends this name anywhere. The Didit session carries
+ * `{ workflow_id, vendor_data, callback }` and no name at all; the provider
+ * reads the name from the document. So a typo here cannot fail a verification
+ * or a claim.
+ *
+ * The signup warning is carried onto the field anyway. The *advice* — make your
+ * name match your ID — is still good, and having the one screen that lets you
+ * change it be the one screen that stops giving it would be a strange place to
+ * go quiet.
+ *
+ * ## The country warning is not decoration
+ *
+ * `useHeirForm` validates every heir's phone against the owner's country. A
+ * number stored as `+213…` under `SA` fails `checkPhone` outright, so the heir's
+ * edit form opens with Save lit and an "invalid number" error on a number that
+ * was correct yesterday. The count of affected heirs is computed live and shown
+ * *before* the change, not discovered afterwards.
+ */
+import { useState } from "react"
+import { useUser } from "@clerk/expo"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@workspace/backend/api"
+import { Text } from "@workspace/ui-native/components/ui/text"
+import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { fmtNum } from "@workspace/ui-native/lib/format"
+import { router } from "expo-router"
+import { View } from "react-native"
+
+import { BackButton } from "@/components/back-button"
+import { CountryPicker } from "@/components/country-picker"
+import { Field } from "@/components/field"
+import { Screen } from "@/components/screen"
+import { useStrings } from "@/i18n/use-strings"
+import { checkPhone } from "@/lib/phone"
+import { splitFullName } from "@/stores/onboarding"
+
+export function ProfileScreen() {
+  const { t, locale } = useStrings("settings/profile")
+  const { t: common } = useStrings("common")
+
+  const me = useQuery(api.users.me)
+  const heirs = useQuery(api.heirs.list)
+  const saveProfile = useMutation(api.users.saveProfile)
+  const { user } = useUser()
+
+  const [draft, setDraft] = useState<{ name: string; country: string } | null>(
+    null
+  )
+  const [saving, setSaving] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  // Seeded from the query the first render it answers, rather than in an
+  // effect: `me` is undefined on mount and a `useState(me.name)` would latch
+  // onto that and never recover.
+  const initial = { name: me?.name ?? "", country: me?.country ?? "" }
+  const value = draft ?? initial
+  const edit = (patch: Partial<typeof initial>) =>
+    setDraft({ ...value, ...patch })
+
+  const dirty =
+    value.name.trim() !== initial.name.trim() ||
+    value.country !== initial.country
+
+  /**
+   * Heirs whose stored number would stop validating under the chosen country.
+   *
+   * Counted against the *draft* country, so the warning appears the moment the
+   * picker changes and disappears if it is changed back — it is a preview of
+   * the consequence, not a report on what already happened.
+   */
+  const strandedHeirs =
+    value.country === initial.country
+      ? 0
+      : (heirs ?? []).filter(
+          (heir) => checkPhone(heir.phone, value.country).status !== "valid"
+        ).length
+
+  async function save() {
+    if (!dirty || value.name.trim().length === 0) return
+    setSaving(true)
+    setFailed(false)
+    try {
+      // Two writes, and the order matters: the name lives on Clerk and reaches
+      // Convex through the user webhook, so it is sent first and the country —
+      // which this deployment owns outright — second. A failure on the first
+      // leaves both unchanged.
+      if (value.name.trim() !== initial.name.trim()) {
+        await user?.update(splitFullName(value.name))
+      }
+      if (value.country !== initial.country) {
+        await saveProfile({ country: value.country })
+      }
+      router.back()
+    } catch {
+      setFailed(true)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const verified = me?.identityStatus === "verified"
+
+  return (
+    <Screen keyboard contentClassName="gap-header">
+      <BackButton label={common.back} />
+      <Text variant="screenTitle">{t.title}</Text>
+
+      <View className="gap-4">
+        <Field
+          label={t.nameLabel}
+          value={value.name}
+          onChangeText={(name) => edit({ name })}
+          autoComplete="name"
+          hint={t.nameNotice}
+          error={
+            value.name.trim().length === 0 && draft !== null
+              ? t.nameRequired
+              : undefined
+          }
+        />
+
+        <CountryPicker
+          label={t.countryLabel}
+          value={value.country}
+          onChange={(country) => edit({ country })}
+          hint={t.countryNotice}
+          locale={locale}
+        />
+
+        {strandedHeirs > 0 ? (
+          <AlertBanner
+            variant="notice"
+            description={t.countryHeirsWarning!.replace(
+              "{n}",
+              fmtNum(strandedHeirs, locale)
+            )}
+          />
+        ) : null}
+      </View>
+
+      {failed ? (
+        <Text variant="meta" className="text-terracotta-800">
+          {t.saveFailed}
+        </Text>
+      ) : null}
+
+      {dirty ? (
+        <PrimaryCta
+          label={t.save!}
+          onPress={() => void save()}
+          disabled={value.name.trim().length === 0}
+          busy={saving}
+        />
+      ) : null}
+
+      {/* Shown, never editable — see this file's header for why each one is
+          here at all rather than simply omitted. */}
+      <View className="mb-auto">
+        <FieldRow label={t.emailLabel!} hint={t.emailReadOnly} divider>
+          <Text variant="rowTitle">{me?.email ?? ""}</Text>
+        </FieldRow>
+        <FieldRow
+          label={t.identityLabel!}
+          divider={me?.identityVerifiedName != null}
+        >
+          <Text
+            variant="rowTitle"
+            className={verified ? "text-olive-700" : "text-terracotta-800"}
+          >
+            {verified ? t.identityVerified : t.identityUnverified}
+          </Text>
+        </FieldRow>
+        {me?.identityVerifiedName != null ? (
+          <FieldRow label={t.identityNameLabel!}>
+            <Text variant="rowTitle">{me.identityVerifiedName}</Text>
+          </FieldRow>
+        ) : null}
+      </View>
+    </Screen>
+  )
+}

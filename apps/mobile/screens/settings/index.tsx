@@ -22,15 +22,7 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import {
-  FileText,
-  Fingerprint,
-  LogOut,
-  ScrollText,
-  ShieldCheck,
-  Smartphone,
-  Wallet,
-} from "lucide-react-native"
+import { FileText, Fingerprint, LogOut, ScrollText, ShieldCheck, Smartphone, UserRound, Wallet } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -40,6 +32,8 @@ import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
+  // Only for the row's label — the screen it opens owns the rest.
+  const { t: p } = useStrings("settings/profile")
   const { t: autoLock } = useStrings("settings/lock")
   const { t: approve } = useStrings("recovery/approve")
   const me = useQuery(api.users.me)
@@ -76,6 +70,14 @@ export function SettingsScreen() {
       </View>
 
       <Group label={t.groupAccount}>
+        <SettingsRow
+          icon={UserRound}
+          label={p.title}
+          detail={me?.name ?? undefined}
+          chevron
+          divider
+          onPress={() => router.push("/settings/profile")}
+        />
         <View className="rounded-card bg-card gap-3 p-4">
           <View className="flex-row items-center gap-3">
             <Text variant="rowTitle" className="flex-1">
