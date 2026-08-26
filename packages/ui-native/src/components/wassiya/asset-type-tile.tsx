@@ -12,8 +12,11 @@ export type AssetTypeTileProps = {
   /** What the form will ask for: "محافظ ومنصات". */
   description?: string;
   /**
-   * Icon tint, grouping the six types by what they hold:
-   * terracotta = secrets, olive = files, sand = instructions.
+   * Icon tint. Defaults to sand and every caller so far takes the default: a
+   * grouping map exists (terracotta = secrets, olive = files) but terracotta
+   * means **"needs you"** on Home and in the vault list, and a terracotta tile
+   * here would read as urgent when nothing on this screen is. The icons already
+   * tell the six apart.
    */
   tone?: Tone;
   onPress?: () => void;
@@ -33,13 +36,18 @@ export function AssetTypeTile({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      className={cn('bg-card active:bg-sand-300 flex-1 gap-2.5 rounded-row p-4', className)}>
+      className={cn(
+        // `StatTile`'s metrics, so a type tile and a Home tile are the same
+        // object rather than two things that merely resemble each other.
+        'bg-card active:bg-sand-300 rounded-card flex-1 gap-2.5 px-4 py-3.5',
+        className
+      )}>
       <View
         className={cn(
-          'size-9.5 items-center justify-center rounded-full',
+          'size-9 items-center justify-center rounded-full',
           TONE_DISC_BG[tone]
         )}>
-        <Icon as={icon} className={cn('size-4.5', TONE_DISC_FG[tone])} />
+        <Icon as={icon} size={18} strokeWidth={2.75} className={TONE_DISC_FG[tone]} />
       </View>
       <View className="gap-0.5">
         <Text variant="rowTitle">{title}</Text>

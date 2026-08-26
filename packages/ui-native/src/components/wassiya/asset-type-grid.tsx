@@ -29,9 +29,9 @@ export function AssetTypeGrid({ options, className }: AssetTypeGridProps) {
   for (let i = 0; i < options.length; i += 2) rows.push(options.slice(i, i + 2));
 
   return (
-    <View className={cn('gap-2.5', className)}>
+    <View className={cn('gap-row', className)}>
       {rows.map((row) => (
-        <View key={row.map((o) => o.id).join('-')} className="flex-row items-stretch gap-2.5">
+        <View key={row.map((o) => o.id).join('-')} className="gap-row flex-row items-stretch">
           {row.map(({ id, ...tile }) => (
             <AssetTypeTile key={id} {...tile} />
           ))}

@@ -151,9 +151,8 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `key-card` | `icon`, `title`, `description`, `pending` | live · pending | 2.2 the three-keys explainer |
 | `asset-row` | `icon`, `title`, `meta`, `recipientStatus`, `recipientLabel`, `onPress` | routed · unrouted (amber) · pressable | 4.1 assets list, 5.3 routing |
 | `asset-row-skeleton` | `count` | loading | 4.1 while rows decrypt |
-| `asset-type-grid` / `asset-type-tile` | `options[]`; tile takes `icon`, `title`, `description`, `tone` | — | 4.2 category picker |
+| `asset-type-grid` / `asset-type-tile` | `options[]`; tile takes `icon`, `title`, `description`, `tone` | rows of two, equal height; tone defaults to sand and callers keep it | ٤.٢ category picker — 2×3 inside the add sheet, on `stat-tile` metrics |
 | `heir-card` | `name`, `relation`, `inviteState`, `receivesSummary`, `tone` | `silent` · `accepted` · `pending` · `declined`; plus the "receives nothing" warning | 5.1 heirs list |
-| `recipient-picker-row` | `kind`, `name`, `detail`, `selected`, `onToggle`, `showWholeAssetNote`, `footnote` | selected · unselected; `heir` · `executor` · `allHeirs` | 5.3 routing, 5.3b per-asset recipients |
 | `timeline-steps` / `timeline-step` | `steps[{state,title,meta,daysRemaining}]` | `done` · `current` · `future`; countdown node | 7.4 claim waiting period, check-in escalation |
 | `checklist-card` | `title`, `items[{label,done}]` | counter derived from items; "last step" at 1 remaining | the persistent onboarding widget |
 | `alert-banner` | `variant`, `title`, `description`, `icon`, `actions` | `security` (terracotta + warning) · `notice` (terracotta + info) · `info` (sand) · `success` (olive); paired inline actions | 3.3 notifications, 5.3 default-rule notice, 9.4 lapse notice |
@@ -174,8 +173,8 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `chip-row` | `options[{value,label}]`, `value`, `onChange` | selected (solid terracotta) · unselected (surface pill) | ٤.٣ network/kind, ٤.٤ account type, ٤.٥ document kind |
 | `radio-row` | `title`, `detail`, `selected`, `onPress`, `divider` | selected · unselected; nothing pre-selected | ٤.٧ disposition — options that each need a sentence |
 | `seed-grid` | `words`, `formatIndex` | — | ٤.٣ — the one enclosed thing on that screen; indices kept because an heir reads back in order |
-| `vault-row` | `icon`, `title`, `recipients`, `unroutedLabel`, `faces`, `allHeirsLabel`, `divider`, `onPress` | routed (faces) · unrouted (terracotta + dashed ring) | **٤.١** the vault list |
-| `picker-row` | `icon`, `title`, `examples`, `disabled`, `divider` | default · disabled (lapsed plan) | ٤.٢ — the list's own vocabulary, not a menu |
+| `stat-tile` | `icon`, `label`, `value`, `emphasis`, `tone`, `onPress` | `emphasis="count"` renders the value as `screenTitle`, else `rowTitle`; `tone` tints disc and value together | ٣.١ Home's 2-up grid (`grow basis-[47%]`) — `vault-row` and `asset-type-tile` reuse its `rounded-card bg-card px-4 py-3.5` surface and `size-9` disc |
+| `vault-row` | `icon`, `title`, `recipients`, `unroutedLabel`, `faces`, `allHeirsLabel`, `onPress` | routed (sand disc + faces) · unrouted (terracotta disc + dashed ring) | **٤.١** the vault list — a full-width `stat-tile`, no hairlines |
 | `recipient-row` | `name`, `detail`, `selected`, `onToggle`, `group`, `divider` | chosen (olive disc + tick) · unchosen · group (icon, never a letter) | ٣ recipients |
 | `recipient-card` | `label`, `value`, `faces`, `allHeirsLabel`, `unrouted`, `onPress` | routed (surface) · unrouted (terracotta + dashed ring) | ٤.٩ — the one card on the asset screen |
 | `avatar-stack` | `names`, `size`, `ring`, `allHeirsLabel` | faces · dashed ring (nobody) · group word | wherever "who receives this" is answered |
