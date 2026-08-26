@@ -1,3 +1,4 @@
+import { cn } from "@workspace/ui-native/lib/utils"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Input } from "@workspace/ui-native/components/ui/input"
 import { Search, X } from "lucide-react-native"
@@ -8,6 +9,7 @@ export type AssetSearchFieldProps = {
   onChangeText: (value: string) => void
   placeholder: string
   clearLabel: string
+  className?: string
 }
 
 /**
@@ -23,9 +25,10 @@ export function AssetSearchField({
   onChangeText,
   placeholder,
   clearLabel,
+  className,
 }: AssetSearchFieldProps) {
   return (
-    <View className="relative justify-center">
+    <View className={cn("relative justify-center", className)}>
       <View className="pointer-events-none absolute start-4 z-10">
         <Icon as={Search} className="text-muted-foreground size-4.5" />
       </View>

@@ -1,53 +1,59 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
-import { Sprout } from "lucide-react-native"
-import { Pressable } from "react-native"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Plus } from "lucide-react-native"
+import { View } from "react-native"
 
-export type AssetsEmptyProps = {
-  title: string
-  body: string
-  actionLabel: string
-  browseLabel: string
-  onAdd: () => void
-}
+import { GhostRow } from "@/screens/assets/components/ghost-row"
 
 /**
  * ٤.١b — the vault with nothing in it yet.
  *
- * Both affordances open the same 4.2 picker, which is why the second is a
- * quiet text link and not a second button: the board allows exactly one primary
- * CTA, and "أضف أول أصل" and "أو استعرض الأنواع المتاحة" are two sentences
- * about one destination, not two choices.
+ * No illustration and no menu of suggested types. One sentence at 19px that
+ * teaches how to **choose** — *"whatever your family would lose today, without
+ * ever knowing it existed"* — and then the list's own skeleton in ghost form.
+ *
+ * Left-aligned and low in the frame. A centred empty state reads as an error;
+ * this one reads as a page that simply has not been filled in yet, which is
+ * exactly what it is.
  */
+export type AssetsEmptyProps = {
+  title: string
+  subtitle: string
+  /** The one sentence. */
+  lead: string
+  addLabel: string
+  onAdd: () => void
+}
+
 export function AssetsEmpty({
   title,
-  body,
-  actionLabel,
-  browseLabel,
+  subtitle,
+  lead,
+  addLabel,
   onAdd,
 }: AssetsEmptyProps) {
   return (
-    <EmptyState
-      icon={Sprout}
-      title={title}
-      subtitle={body}
-      action={
-        <Button onPress={onAdd} className="px-8">
-          <Text>{actionLabel}</Text>
-        </Button>
-      }
-      secondaryAction={
-        <Pressable
-          onPress={onAdd}
-          accessibilityRole="button"
-          className="px-2 py-1"
-        >
-          <Text variant="metaSm" className="text-muted-foreground underline">
-            {browseLabel}
-          </Text>
-        </Pressable>
-      }
-    />
+    <>
+      <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
+        {title}
+      </Text>
+      <Text className="text-[13px] opacity-55">{subtitle}</Text>
+
+      <Text className="mb-[30px] mt-8 max-w-[320px] text-[19px] leading-[1.6]">
+        {lead}
+      </Text>
+
+      {/* 32% — present enough to teach the shape, quiet enough not to be
+          mistaken for content that failed to load. */}
+      <View className="mb-auto opacity-[0.32]">
+        <GhostRow title="62%" meta="30%" divider />
+        <GhostRow title="48%" meta="22%" divider />
+        <View className="opacity-50">
+          <GhostRow title="55%" />
+        </View>
+      </View>
+
+      <PrimaryCta label={addLabel} onPress={onAdd} icon={Plus} />
+    </>
   )
 }

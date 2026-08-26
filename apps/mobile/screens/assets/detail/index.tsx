@@ -22,11 +22,11 @@ import { useLocalSearchParams } from "expo-router"
 import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
-import { AssetEditScreen } from "@/screens/assets/detail/edit-screen"
+import { BankEditScreen } from "@/screens/assets/detail/edit/bank"
+import { CryptoEditScreen } from "@/screens/assets/detail/edit/crypto"
+import { DigitalEditScreen } from "@/screens/assets/detail/edit/digital"
+import { NoteEditScreen } from "@/screens/assets/detail/edit/note"
 import { AssetReadScreen } from "@/screens/assets/detail/read-screen"
-
-/** Types whose edit form exists. The rest is the migration order. */
-const EDITABLE = ["digital"]
 
 export function AssetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -45,9 +45,16 @@ export function AssetDetailScreen() {
     )
   }
 
-  return EDITABLE.includes(asset.type) ? (
-    <AssetEditScreen assetId={assetId} />
-  ) : (
-    <AssetReadScreen assetId={assetId} />
-  )
+  switch (asset.type) {
+    case "digital":
+      return <DigitalEditScreen assetId={assetId} />
+    case "bank":
+      return <BankEditScreen assetId={assetId} />
+    case "crypto":
+      return <CryptoEditScreen assetId={assetId} />
+    case "note":
+      return <NoteEditScreen assetId={assetId} />
+    default:
+      return <AssetReadScreen assetId={assetId} />
+  }
 }

@@ -1,114 +1,82 @@
 /**
- * الخزنة — the vault's contents, grouped by where they go.
+ * ٤.١ — the vault list.
  *
- * ## Three resting states, kept distinct
+ * ## What this screen deliberately does not have
  *
- * Everything a row shows is ciphertext until MK is in memory, so this screen
- * has three resting states rather than the usual two: locked, empty, and full.
- * "خزنتك فارغة" and "خزنتك مقفلة" are opposite situations, and one grey
- * placeholder for both would tell a user with forty assets that they have none.
+ * No filter chips, no permanent search field, no group headings, no type
+ * sections, no badges, no protection bar, no per-row chevrons, no cards. All of
+ * it went, because *"a vault is a place you visit rarely and calmly — it should
+ * be almost empty."* A heading for every three rows is what made the last
+ * version feel heavy.
  *
- * ## Destination, not type
+ * Search is an **icon**. At forty-three items you scroll; a field standing open
+ * on the screen would imply otherwise. It surfaces on tap, and the design note
+ * expects it to become permanent only past a hundred items.
  *
- * The list groups by where a thing goes, with "بلا وجهة" pinned first — see
- * `group-by-destination.ts` for why. Type survives as a filter, because finding
- * a thing and checking the vault is complete are different jobs and only the
- * second one belongs in the structure.
+ * ## One flat list, irreplaceable first
+ *
+ * A seed phrase, then a deed, then a password. Nothing labels the order — the
+ * order simply *is* that, so the top of the list is always what matters most.
+ * Type lives in the small tile and never in a heading.
+ *
+ * ## One alarm
+ *
+ * The terracotta line at the top is the only urgent thing on the screen, and it
+ * vanishes at zero rather than turning olive: "everything is fine" is not news.
+ * Individual unrouted rows say so in their own recipient slot, so the gap reads
+ * both in summary and in place.
  */
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import type { TrueSheet } from "@lodev09/react-native-true-sheet"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { VaultRow } from "@workspace/ui-native/components/wassiya/vault-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
-import { Plus } from "lucide-react-native"
+import { Info, Plus, Search } from "lucide-react-native"
 import { router } from "expo-router"
 import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
-import { ScreenHeader } from "@/components/screen-header"
 import { useVaultGate } from "@/hooks/use-vault-gate"
-import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ROUTE, ASSET_TYPES, type AssetType } from "@/lib/asset-types"
-import type { DestinationKind } from "@/screens/assets/group-by-destination"
-import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
-import { AssetList } from "@/screens/assets/components/asset-list"
+import { ASSET_TYPE_ICON } from "@/lib/asset-types"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
-import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
+import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
 import { useAssetList } from "@/screens/assets/use-asset-list"
 
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
+  const { t: routing } = useStrings("will/routing")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState<AssetType | null>(null)
-  const { rows, total, byType } = useAssetList(search, filter, t.undecryptable)
+  const [searching, setSearching] = useState(false)
+  const { rows, total, vaultSize, heirNames } = useAssetList(
+    search,
+    null,
+    t.undecryptable,
+    { executor: routing.executor! }
+  )
 
-  const assetForms: CountForms = {
-    zero: t.countZero,
-    one: t.countOne,
-    two: t.countTwo,
-    few: t.countFew,
-    many: t.countMany,
-  }
-  const count = (n: number, forms: CountForms) =>
-    fmtCount(n, fmtNum(n, locale), forms, locale)
+  const num = (n: number) => fmtNum(n, locale)
 
-  const groupLabel = (kind: DestinationKind) => GROUP_KEY[kind](t)
-
-  /** Reaches nobody — the count decides, not the rule. See `destinationOf`. */
-  const unrouted = (rows ?? []).filter((row) => row.recipientCount === 0).length
-
-  /**
-   * Chrome earns its place.
-   *
-   * Six filter chips and a full-width search field over three assets is more
-   * furniture than content — and the filters cannot even narrow anything
-   * useful until there is something to narrow. Both appear once the vault is
-   * big enough to need them, and the search field appears immediately if the
-   * user asks for it.
-   */
-  const CHROME_THRESHOLD = 7
-  const showChips = total >= CHROME_THRESHOLD
-  // No toggle, no icon, no hidden state: the field is simply absent until the
-  // vault is big enough that scanning it stops working. A control that hides
-  // and reappears is a puzzle; a control that isn't there yet is just quiet.
-  const showSearch = total >= CHROME_THRESHOLD || search.length > 0
-
-  // 4.2 lives here rather than in a route, so opening it cannot disturb this
-  // screen's scroll position — which is the board's stated reason for making
-  // it a sheet.
-  const addSheet = useRef<TrueSheet>(null)
-  const openAddSheet = () => void addSheet.current?.present()
-
-  /**
-   * Dismiss before navigating. A sheet left open while a route pushes underneath
-   * it stays on screen over the new page on iOS, and dismissing it then reveals
-   * the wizard with no transition — so the sheet closes first, and the push
-   * reads as one movement.
-   */
-  const chooseType = async (type: AssetType) => {
-    await addSheet.current?.dismiss()
-    router.push(ASSET_TYPE_ROUTE[type])
-  }
-
-  const clearFilters = () => {
-    setSearch("")
-    setFilter(null)
-  }
-
-  // Locked is decided before the query: with no key there is nothing to show
-  // and nothing to search, so the controls are withheld rather than disabled.
   if (!unlocked) {
     return (
-      <Screen inset="tab">
-        <ScreenHeader title={t.title} level="root" />
+      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
         <AssetsLocked
-          title={t.lockedTitle}
-          body={t.lockedBody}
-          actionLabel={status === "unlocking" ? t.unlocking : t.unlock}
+          status={t.lockedStatus!}
+          count={num(vaultSize)}
+          countUnit={t.lockedCountUnit!}
+          heirsLine={
+            heirNames.length > 0
+              ? t.lockedHeirs!.replace("{n}", num(heirNames.length))
+              : undefined
+          }
+          heirNames={heirNames.slice(0, 3)}
+          deliveryLine={t.lockedDelivery!}
+          actionLabel={status === "unlocking" ? t.unlocking! : t.unlockCta!}
+          footnote={t.lockedFootnote!}
           onUnlock={unlock}
           busy={status === "unlocking"}
         />
@@ -116,136 +84,109 @@ export function AssetsScreen() {
     )
   }
 
-  // `rows === undefined` is still loading, and must not be mistaken for an
-  // empty vault — `total` is only meaningful once the decryption pass has run.
-  if (rows !== undefined && total === 0) {
+  // Undefined is "still decrypting", which is a different screen from "empty".
+  if (rows === undefined) {
     return (
-      <Screen inset="tab">
-        <ScreenHeader title={t.title} level="root" />
-        <AssetsEmpty
-          title={t.emptyTitle}
-          body={t.emptyBody}
-          actionLabel={t.emptyAction}
-          browseLabel={t.emptyBrowse}
-          onAdd={openAddSheet}
-        />
-        <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
+      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+        <AssetsDecrypting title={t.vaultTitle!} subtitle={t.vaultDecrypting!} />
       </Screen>
     )
   }
 
+  if (total === 0) {
+    return (
+      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+        <AssetsEmpty
+          title={t.vaultTitle!}
+          subtitle={t.emptySubtitle!}
+          lead={t.emptyLead!}
+          addLabel={t.addAsset!}
+          onAdd={() => router.push("/assets/new")}
+        />
+      </Screen>
+    )
+  }
+
+  const routed = rows.filter((row) => row.recipientCount > 0).length
+  const unrouted = rows.length - routed
+
   return (
-    <Screen
-      inset="footer"
-      keyboard
-      /*
-        A round button in the corner rather than a full-width slab.
-        Adding is the screen's primary action at any scroll position, so it
-        stays pinned — but a bar across the whole width competed with the
-        content it sits under, permanently, for a tap most sessions never make.
-        It rides `Screen`'s footer slot, which is already outside the scroll
-        area, so it needs no absolute positioning of its own.
-      */
-      footer={
-        <View className="items-end">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t.add}
-            onPress={openAddSheet}
-            className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
-          >
-            <Icon as={Plus} size={26} strokeWidth={2.75} className="text-primary-foreground" />
-          </Pressable>
-        </View>
-      }
-    >
-      {/*
-        The header says the one thing worth knowing, in its own colour.
-
-        It used to carry a bare count, which the group heading directly beneath
-        it repeated — "1 asset" twice, forty pixels apart, saying nothing. What
-        an owner needs from this screen at a glance is not how much is in the
-        vault but whether any of it reaches nobody.
-      */}
-      <ScreenHeader
-        title={t.title}
-        level="root"
-        description={
-          <Text
-            variant="metaSm"
-            className={unrouted > 0 ? "text-terracotta-700" : "text-olive-700"}
-          >
-            {unrouted > 0
-              ? t.headerUnrouted.replace("{n}", fmtNum(unrouted, locale))
-              : t.headerAllRouted}
+    <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+      <View className="mb-[26px] flex-row items-start gap-3">
+        <View className="flex-1">
+          <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
+            {t.vaultTitle}
           </Text>
-        }
-      />
-
-      {showSearch ? (
-        <View className="mb-3">
-          <AssetSearchField
-            value={search}
-            onChangeText={setSearch}
-            placeholder={t.searchPlaceholder}
-            clearLabel={t.clearFilters}
-          />
+          <Text className="text-[13px] opacity-55">
+            {t.vaultCount!.replace("{n}", num(total)).replace("{m}", num(routed))}
+          </Text>
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t.searchPlaceholder}
+          onPress={() => setSearching((was) => !was)}
+          className="bg-card size-10 shrink-0 items-center justify-center rounded-full active:opacity-70"
+        >
+          <Icon as={Search} size={18} strokeWidth={2.75} className="text-foreground" />
+        </Pressable>
+      </View>
+
+      {searching ? (
+        <AssetSearchField
+          value={search}
+          onChangeText={setSearch}
+          placeholder={t.searchPlaceholder!}
+          clearLabel={t.clearFilters!}
+          className="mb-[22px]"
+        />
       ) : null}
 
-      {showChips ? (
-        /* Bleeds past the gutter so the chip strip scrolls edge to edge — the
-           only thing on this screen that should. */
-        <View className="-mx-gutter mb-3">
-          <AssetFilterChips
-            chips={[
-              { type: null, label: t.filterAll, count: total },
-              ...ASSET_TYPES.map((type) => ({
-                type,
-                label: t[FILTER_KEY[type]],
-                count: byType[type],
-              })),
-            ]}
-            selected={filter}
-            onSelect={setFilter}
-          />
-        </View>
+      {/* The one alarm. Terracotta, one line, gone at zero. */}
+      {unrouted > 0 && !searching ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/plan/routing")}
+          className="bg-terracotta-100 mb-[22px] flex-row items-center gap-[11px] rounded-[22px] px-4 py-3.5 active:opacity-80"
+        >
+          <Icon as={Info} size={17} strokeWidth={2.75} className="text-terracotta-900 shrink-0" />
+          <Text className="text-terracotta-900 min-w-0 flex-1 text-[12.5px] leading-[1.45]">
+            {t.unroutedAlert!.replace("{n}", num(unrouted))}
+          </Text>
+          <Text className="text-terracotta-900 font-body-bold shrink-0 text-[12.5px]">
+            {t.unroutedAction}
+          </Text>
+        </Pressable>
       ) : null}
 
-      <AssetList
-        rows={rows}
-        categoryLabel={(row) => t[FILTER_KEY[row.type]]!}
-        groupLabel={groupLabel}
-        groupCount={(n) => count(n, assetForms)}
-        noResultsTitle={t.noResultsTitle}
-        noResultsBody={t.noResultsBody}
-        clearLabel={t.clearFilters}
-        onClear={clearFilters}
-        onOpen={(id) => router.push({ pathname: "/assets/[id]", params: { id } })}
-      />
+      <View className="mb-auto">
+        {rows.map((row, i) => (
+          <VaultRow
+            key={row.id}
+            icon={ASSET_TYPE_ICON[row.type]}
+            title={row.title}
+            recipients={row.recipients.join("، ")}
+            unroutedLabel={
+              row.recipientCount === 0 ? t.recipientsZero : undefined
+            }
+            faces={row.recipients}
+            allHeirsLabel={row.allHeirs ? t.allHeirsShort : undefined}
+            divider={i < rows.length - 1}
+            onPress={() =>
+              router.push({
+                pathname: "/assets/[id]",
+                params: { id: row.id },
+              })
+            }
+          />
+        ))}
+      </View>
 
-      {/* A sibling of the scroll area rather than a child. TrueSheet's host view
-          is `absoluteFill` with `zIndex: -9999`, so it takes no layout space
-          wherever it sits; it lives here because the sheet belongs to the
-          screen, not to the list. */}
-      <AssetTypeSheet ref={addSheet} onSelect={chooseType} />
+      <PrimaryCta
+        label={t.addAsset!}
+        icon={Plus}
+        onPress={() => router.push("/assets/new")}
+        className="mt-5"
+      />
     </Screen>
   )
 }
-
-/** Group headings, keyed by destination kind. */
-const GROUP_KEY = {
-  none: (t: Record<string, string>) => t.groupNone!,
-  all: (t: Record<string, string>) => t.groupAll!,
-  explicit: (t: Record<string, string>) => t.groupExplicit!,
-} as const satisfies Record<DestinationKind, (t: Record<string, string>) => string>
-
-/** Chip copy lives under its own key per type, so the table stays flat. */
-const FILTER_KEY = {
-  crypto: "filterCrypto",
-  bank: "filterBank",
-  document: "filterDocument",
-  photos: "filterPhotos",
-  digital: "filterDigital",
-  note: "filterNote",
-} as const satisfies Record<AssetType, string>

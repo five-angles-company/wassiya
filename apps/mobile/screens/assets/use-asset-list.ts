@@ -39,6 +39,17 @@ export type AssetListRow = {
   /** True when this row's label failed to decrypt. The row still renders. */
   undecryptable: boolean
   recipientCount: number
+  /**
+   * Who receives it, by name, resolved against `heirs.list`.
+   *
+   * The vault list draws faces from these. Names rather than a count because
+   * "٢ مستلمين" tells an owner nothing they can act on, while seeing who is
+   * there lets them notice who isn't — which is the only mistake this screen
+   * can help catch.
+   */
+  recipients: string[]
+  /** The shared bucket is routed here; it gets a word, not an initial. */
+  allHeirs: boolean
   /** `recipientRule === "explicit"` — the badge and the sort key on the board. */
   routed: boolean
   createdAt: number
@@ -50,6 +61,17 @@ export type AssetListResult = {
   /** Every asset the vault holds, before the search and filter are applied. */
   total: number
   /**
+   * The vault's size straight off the row count — **available while locked**.
+   *
+   * `total` counts decrypted rows and is therefore zero until MK is in memory.
+   * The locked screen has to state what is in there without opening anything,
+   * and this is the figure it states: the same one the list header carries, so
+   * the two screens agree.
+   */
+  vaultSize: number
+  /** Heir names, for the faces the locked screen shows. Also un-gated by MK. */
+  heirNames: string[]
+  /**
    * How many assets each category holds, ignoring the search and the active
    * chip — a chip has to report the vault, not the current view, or selecting
    * one would renumber the rest.
@@ -60,9 +82,14 @@ export type AssetListResult = {
 export function useAssetList(
   search: string,
   filter: AssetType | null,
-  undecryptableLabel: string
+  undecryptableLabel: string,
+  /** Copy for the two non-person destinations. */
+  routingLabels: { executor: string } = { executor: "" }
 ): AssetListResult {
   const assets = useQuery(api.assets.list, {})
+  // Names live on the heir record, not on the routing row — the deployment
+  // ships ids and this is where they become people.
+  const heirs = useQuery(api.heirs.list)
   // Subscribing to `mk` rather than reading it off `getState()` is what makes this
   // recompute on unlock: the getter would read the key without telling React
   // anything changed, and the list would stay locked until some other state
@@ -76,6 +103,14 @@ export function useAssetList(
         id: asset.id,
         type: asset.type,
         recipientCount: asset.recipientCount,
+        recipients: asset.recipients
+          .map((to) => {
+            if (to.kind === "executor") return routingLabels.executor
+            if (to.kind === "allHeirs") return ""
+            return heirs?.find((heir) => heir.id === to.heirId)?.name ?? ""
+          })
+          .filter((name) => name.length > 0),
+        allHeirs: asset.recipients.some((to) => to.kind === "allHeirs"),
         routed: asset.recipientRule === "explicit",
         createdAt: asset.createdAt,
       }
@@ -99,7 +134,7 @@ export function useAssetList(
         return { ...base, title: undecryptableLabel, undecryptable: true }
       }
     })
-  }, [assets, mk, undecryptableLabel])
+  }, [assets, mk, undecryptableLabel, heirs, routingLabels.executor])
 
   const rows = useMemo(() => {
     if (decrypted === undefined) return undefined
@@ -123,7 +158,13 @@ export function useAssetList(
     return counts
   }, [decrypted])
 
-  return { rows, total: decrypted?.length ?? 0, byType }
+  return {
+    rows,
+    total: decrypted?.length ?? 0,
+    vaultSize: assets?.length ?? 0,
+    heirNames: (heirs ?? []).map((heir) => heir.name),
+    byType,
+  }
 }
 
 /**

@@ -23,6 +23,8 @@
  */
 import type { AssetLabel } from "@workspace/crypto/label"
 
+import type { EditSource } from "@/screens/assets/detail/forms/source"
+
 /** Mirrors the board's three options, in its order. */
 export type Disposition = "handOver" | "delete" | "memorialise"
 
@@ -56,10 +58,10 @@ export const EMPTY_DIGITAL: DigitalForm = {
  * empty form in that case: doing so would offer to overwrite a payload it could
  * not read, which is how an owner loses a password by opening a screen.
  */
-export function parseDigital(raw: string): DigitalForm | null {
+export function parseDigital({ secret }: EditSource): DigitalForm | null {
   let data: Record<string, unknown>
   try {
-    const parsed: unknown = JSON.parse(raw)
+    const parsed: unknown = JSON.parse(secret)
     // `typeof [] === "object"`, so the array case has to be named explicitly or
     // it slips through and every field below reads as empty.
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {

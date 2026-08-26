@@ -1,50 +1,116 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
-import { Lock } from "lucide-react-native"
+import { AvatarStack } from "@workspace/ui-native/components/wassiya/avatar-stack"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Check, Fingerprint } from "lucide-react-native"
+import { View } from "react-native"
 
+/**
+ * ٤.١ before the vault is open.
+ *
+ * ## A locked vault should feel intact, not withheld
+ *
+ * So there is no padlock and no blurred list behind a scrim. Instead the screen
+ * states what is in there and that it still works: the count, the heirs, and
+ * the fact that delivery is unaffected. Someone who opens the app to reassure
+ * themselves gets the reassurance without unlocking anything.
+ *
+ * ## Nothing here decrypts
+ *
+ * The count and the heirs' initials come from unencrypted metadata the
+ * deployment already holds, which is why this paints instantly on a cold start
+ * — the one screen in the vault that never waits on a key. The figure is the
+ * same one the list's own header carries, so the two screens agree.
+ *
+ * ## No password fallback
+ *
+ * A failed fingerprint falls through to the device credential, and that is the
+ * end of the ladder. There is no Wassiya password to offer, because MK is bound
+ * to the keystore: a password would promise an unlock the keystore cannot
+ * perform.
+ */
 export type AssetsLockedProps = {
-  title: string
-  body: string
+  /** "مغلقة" — plus the last-opened stamp when there is one. */
+  status: string
+  /** The vault's size, in the locale's numerals. */
+  count: string
+  /** "أصلاً محفوظاً ومشفّراً على هذا الجهاز". */
+  countUnit: string
+  /** "يستلمها ٣ ورثة". Omitted when no heirs exist yet. */
+  heirsLine?: string
+  /** Initials for the faces beside it. */
+  heirNames?: string[]
+  /** "التسليم يعمل حتى وهي مغلقة". */
+  deliveryLine: string
   actionLabel: string
+  footnote: string
   onUnlock: () => void
   /** True while the OS prompt is up — the button must not stack a second one. */
   busy: boolean
 }
 
-/**
- * What the assets tab shows before the vault is open.
- *
- * The board's 4.1 has no lock screen, and this is not one: it is the empty
- * state's own template under the screen's own title, so الأصول still looks like
- * الأصول. The search field and category chips are withheld until there is
- * something to search — every label on this screen is ciphertext until the key
- * is in memory, so a filter over a locked vault would be a control that cannot
- * do anything.
- *
- * What it is *not* is an automatic biometric prompt on tab focus — tapping
- * الأصول to check a count should not summon Face ID.
- *
- * `EmptyState` keeps its olive blob here rather than a warning tint. A locked
- * vault is the correct resting state of a vault, not a problem with one.
- */
 export function AssetsLocked({
-  title,
-  body,
+  status,
+  count,
+  countUnit,
+  heirsLine,
+  heirNames = [],
+  deliveryLine,
   actionLabel,
+  footnote,
   onUnlock,
   busy,
 }: AssetsLockedProps) {
   return (
-    <EmptyState
-      icon={Lock}
-      title={title}
-      subtitle={body}
-      action={
-        <Button onPress={onUnlock} disabled={busy} className="px-8">
-          <Text>{actionLabel}</Text>
-        </Button>
-      }
-    />
+    <>
+      {/* Olive dot: the vault is well, merely shut. */}
+      <View className="mb-auto flex-row items-center gap-2.5">
+        <View className="bg-secondary size-2 shrink-0 rounded-full" />
+        <Text className="text-[12.5px] opacity-55">{status}</Text>
+      </View>
+
+      <View className="gap-1.5 pb-2">
+        <Text className="font-heading-black text-foreground text-[80px] leading-[0.88]">
+          {count}
+        </Text>
+        <Text className="max-w-[290px] text-[17px] leading-[1.5] opacity-80">
+          {countUnit}
+        </Text>
+      </View>
+
+      <View className="bg-border mb-[22px] mt-[26px] h-px" />
+
+      <View className="mb-[26px] gap-[11px]">
+        {heirsLine !== undefined ? (
+          <View className="flex-row items-center gap-3">
+            <Text className="flex-1 text-[13.5px] opacity-70">{heirsLine}</Text>
+            <View className="opacity-85">
+              <AvatarStack names={heirNames} size={26} ring="bg" />
+            </View>
+          </View>
+        ) : null}
+        <View className="flex-row items-center gap-3">
+          <Text className="flex-1 text-[13.5px] opacity-70">{deliveryLine}</Text>
+          <Icon
+            as={Check}
+            size={17}
+            strokeWidth={2.75}
+            className="text-olive-700 shrink-0"
+          />
+        </View>
+      </View>
+
+      <PrimaryCta
+        label={actionLabel}
+        icon={Fingerprint}
+        iconSize={21}
+        onPress={onUnlock}
+        busy={busy}
+      />
+
+      <Text className="mt-3.5 text-center text-[11.5px] leading-[1.6] opacity-50">
+        {footnote}
+      </Text>
+    </>
   )
 }

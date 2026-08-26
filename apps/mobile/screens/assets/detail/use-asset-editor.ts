@@ -50,9 +50,13 @@ import { bytesToUtf8, utf8ToBytes } from "@workspace/crypto/bytes"
 import { openLabel, type AssetLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
 
-import { downloadCiphertext } from "@/lib/asset-upload"
-import { VaultLockedError } from "@/screens/assets/new/use-create-asset"
+import { downloadCiphertext, type UploadProgress } from "@/lib/asset-upload"
+import {
+  VaultLockedError,
+  type AssetPayload,
+} from "@/screens/assets/new/use-create-asset"
 import { useUpdateAsset } from "@/screens/assets/detail/use-update-asset"
+import type { EditSource } from "@/screens/assets/detail/forms/source"
 import { useVault } from "@/stores/vault"
 
 export type EditorLoad =
@@ -61,17 +65,50 @@ export type EditorLoad =
   | { status: "locked" }
   /** The blob did not decrypt, or is not the format this type writes. */
   | { status: "unreadable"; title: string; subtitle: string }
-  | { status: "ready"; secret: string; title: string; subtitle: string }
+  | ({ status: "ready" } & EditSource)
 
 /** The half of {@link EditorLoad} that an async decryption actually produces. */
 type Decrypted =
   | { status: "pending" }
   | { status: "unreadable"; title: string; subtitle: string }
-  | { status: "ready"; secret: string; title: string; subtitle: string }
+  | ({ status: "ready" } & EditSource)
 
 export type SaveError = "locked" | "failed"
 
-export function useAssetEditor(assetId: Id<"assets">) {
+export type SaveInput = {
+  label: AssetLabel
+  /** Encrypted as one blob and stored first. Absent for the file types. */
+  secret?: string
+  /** Already-read plaintext file bytes, one blob each, after the secret. */
+  files?: AssetPayload[]
+  /** Existing blobs that survive this edit, ahead of everything new. */
+  keep?: Id<"_storage">[]
+  /**
+   * Compose the final `storageIds` from the ids just uploaded. Overrides
+   * `keep`. ٤.٦ needs it: an album stores every original and then every
+   * thumbnail, and `meta.itemCount` is the index where one ends and the other
+   * begins — so appending new blobs to the end would put a thumbnail where an
+   * original is expected and hand an heir a gallery of tiny pictures.
+   */
+  arrange?: (uploaded: Id<"_storage">[]) => Id<"_storage">[]
+  meta?: { itemCount?: number; byteSize?: number; mimeType?: string }
+  onProgress?: (fileIndex: number, progress: UploadProgress) => void
+}
+
+export type EditorOptions = {
+  /**
+   * Download and decrypt `storageIds[0]` as text. **False for the file types**:
+   * their first blob is a PDF or a JPEG, so decoding it as UTF-8 produces
+   * nothing usable, and doing it anyway would pull a 25 MB document over the
+   * wire every time the owner opened the screen to rename it.
+   */
+  payload?: boolean
+}
+
+export function useAssetEditor(
+  assetId: Id<"assets">,
+  { payload = true }: EditorOptions = {}
+) {
   const asset = useQuery(api.assets.get, { assetId })
   const mk = useVault((s) => s.mk)
   const recordReveal = useMutation(api.assets.recordReveal)
@@ -108,6 +145,19 @@ export function useAssetEditor(assetId: Id<"assets">) {
         const title = label?.title ?? ""
         const subtitle = label?.subtitle ?? ""
 
+        const common = {
+          title,
+          subtitle,
+          meta: asset.meta,
+          storageIds: asset.storageIds as string[],
+          urls: asset.urls,
+        }
+
+        if (!payload) {
+          if (live) setDecrypted({ status: "ready", secret: "", ...common })
+          return
+        }
+
         const url = asset.urls[0] ?? null
         if (url === null) {
           if (live) setDecrypted({ status: "unreadable", title, subtitle })
@@ -118,7 +168,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
           decryptAsset(await downloadCiphertext(url), dek)
         )
         if (!live) return
-        setDecrypted({ status: "ready", secret, title, subtitle })
+        setDecrypted({ status: "ready", secret, ...common })
       } catch {
         if (live) {
           setDecrypted({ status: "unreadable", title: "", subtitle: "" })
@@ -131,7 +181,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
     return () => {
       live = false
     }
-  }, [asset, mk])
+  }, [asset, mk, payload])
 
   const load: EditorLoad =
     asset === undefined
@@ -143,11 +193,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
           : decrypted
 
   const save = useCallback(
-    async (input: {
-      secret: string
-      label: AssetLabel
-      meta?: { itemCount?: number; byteSize?: number; mimeType?: string }
-    }): Promise<boolean> => {
+    async (input: SaveInput): Promise<boolean> => {
       if (asset === undefined) return false
       setSaving(true)
       setError(null)
@@ -156,8 +202,23 @@ export function useAssetEditor(assetId: Id<"assets">) {
           assetId,
           dekWrappedByMk: asset.dekWrappedByMk,
           label: input.label,
-          payloads: [{ read: () => Promise.resolve(utf8ToBytes(input.secret)) }],
+          // The secret leads, exactly as it does on create: `storageIds[0]` is
+          // the payload blob for every type that has one, and the file types
+          // have none, so a single ordering serves both.
+          payloads: [
+            ...(input.secret === undefined
+              ? []
+              : [
+                  {
+                    read: () => Promise.resolve(utf8ToBytes(input.secret!)),
+                  },
+                ]),
+            ...(input.files ?? []),
+          ],
+          keep: input.keep,
+          arrange: input.arrange,
           meta: input.meta,
+          onProgress: input.onProgress,
         })
         return true
       } catch (thrown) {

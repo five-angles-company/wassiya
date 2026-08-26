@@ -80,39 +80,48 @@ export const list = query({
             )
             .take(500)
 
-    const counts = await recipientCounts(ctx, user._id)
+    const routed = await recipientsByAsset(ctx, user._id)
 
-    return rows.map((row) => ({
-      id: row._id,
-      type: row.type,
-      labelSealed: row.labelSealed,
-      dekWrappedByMk: row.dekWrappedByMk,
-      meta: row.meta,
-      recipientRule: row.recipientRule,
-      recipientCount: counts.get(row._id) ?? 0,
-      fileCount: row.storageIds.length,
-      createdAt: row._creationTime,
-    }))
+    return rows.map((row) => {
+      const recipients = routed.get(row._id) ?? []
+      return {
+        id: row._id,
+        type: row.type,
+        labelSealed: row.labelSealed,
+        dekWrappedByMk: row.dekWrappedByMk,
+        meta: row.meta,
+        recipientRule: row.recipientRule,
+        // Who, not how many. The list names its recipients — "٢ مستلمين" tells
+        // an owner nothing they can act on, while seeing who is there lets them
+        // notice who isn't. The names themselves are resolved on the client
+        // against `heirs.list`; this deployment ships ids only.
+        recipients,
+        recipientCount: recipients.length,
+        fileCount: row.storageIds.length,
+        createdAt: row._creationTime,
+      }
+    })
   },
 })
 
 /**
- * How many recipients each of this owner's assets routes to.
+ * Who each of this owner's assets routes to.
  *
  * Convex indexes columns, not union branches, which is why `recipientKind`
  * exists as a denormalised discriminant — sweeping the three kinds covers every
  * routing row the owner has with three scans and no branch left unread.
  *
- * The 2000-row cap is per kind. An owner past it would see an undercounted
- * badge on their least recently routed assets, never a wrong *state*: an asset
- * with any routing at all still has `recipientRule: "explicit"`, which is what
- * the "بلا مستلم" warning and the sort actually key on.
+ * The 2000-row cap is per kind. An owner past it would see fewer faces than
+ * they have recipients on their least recently routed assets, never a wrong
+ * *state*: an asset with any routing at all still has
+ * `recipientRule: "explicit"`, which is what the "بلا مستلم" warning and the
+ * sort actually key on.
  */
-async function recipientCounts(
+async function recipientsByAsset(
   ctx: QueryCtx,
   userId: Id<"users">
-): Promise<Map<Id<"assets">, number>> {
-  const counts = new Map<Id<"assets">, number>()
+): Promise<Map<Id<"assets">, AssetRecipient[]>> {
+  const byAsset = new Map<Id<"assets">, AssetRecipient[]>()
   for (const kind of ["heir", "executor", "allHeirs"] as const) {
     const rows = await ctx.db
       .query("assetRecipients")
@@ -121,11 +130,19 @@ async function recipientCounts(
       )
       .take(2000)
     for (const row of rows) {
-      counts.set(row.assetId, (counts.get(row.assetId) ?? 0) + 1)
+      const list = byAsset.get(row.assetId)
+      if (list === undefined) byAsset.set(row.assetId, [row.recipient])
+      else list.push(row.recipient)
     }
   }
-  return counts
+  return byAsset
 }
+
+/** The routing union as the list hands it back — ids only, never names. */
+type AssetRecipient =
+  | { kind: "heir"; heirId: Id<"heirs"> }
+  | { kind: "executor" }
+  | { kind: "allHeirs" }
 
 /** The owner's device asks for this when it is about to decrypt an asset. */
 export const get = query({

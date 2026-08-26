@@ -12,6 +12,23 @@ export const ASSETS = {
   // Matches the tab. The screen was "أصولك" while the tab said "الخزنة".
   title: { ar: "الخزنة", en: "Vault" },
 
+  // ── The vault list, as the v2 board draws it ────────────────────────────
+  // "خزنتك" rather than "الخزنة": the tab is a place, this screen is theirs.
+  vaultTitle: { ar: "خزنتك", en: "Your vault" },
+  // The one subtitle, always in the same slot — the decrypting state puts its
+  // progress here too, so the header never changes height.
+  vaultCount: { ar: "{n} أصلاً · {m} لها مستلم", en: "{n} items · {m} reach someone" },
+  vaultDecrypting: { ar: "{n} أصلاً · يفكّ التشفير", en: "{n} items · opening" },
+  // The screen's only alarm. It vanishes at zero rather than turning green:
+  // "everything is fine" is not news, and a permanent bar is not an alert.
+  unroutedAlert: {
+    ar: "{n} أصول لا يستلمها أحد",
+    en: "{n} items reach nobody",
+  },
+  unroutedAction: { ar: "وجّهها", en: "Route" },
+  addAsset: { ar: "أضف", en: "Add" },
+  allHeirsShort: { ar: "الكل", en: "all" },
+
   // "٤٣ أصلاً" on the board — the 11+ form, which is where the naive
   // one/other split visibly breaks.
   countZero: { ar: "لا أصول", en: "No assets" },
@@ -86,6 +103,35 @@ export const ASSETS = {
   unlock: { ar: "افتح الخزنة", en: "Unlock" },
   unlocking: { ar: "جارٍ الفتح…", en: "Unlocking…" },
 
+  // ── Locked (v2) ─────────────────────────────────────────────────────────
+  // A locked vault should read as intact, not withheld: it says what is inside
+  // and that delivery is unaffected, rather than blurring the list behind a
+  // padlock. None of this decrypts anything, which is why it paints instantly.
+  lockedStatus: { ar: "مغلقة", en: "Locked" },
+  lockedCountUnit: {
+    ar: "أصلاً محفوظاً ومشفّراً على هذا الجهاز",
+    en: "items saved and encrypted on this device",
+  },
+  lockedHeirs: { ar: "يستلمها {n} ورثة", en: "{n} heirs receive them" },
+  lockedDelivery: {
+    ar: "التسليم يعمل حتى وهي مغلقة",
+    en: "Delivery works even while it's locked",
+  },
+  unlockCta: { ar: "افتح ببصمتك", en: "Open with your fingerprint" },
+  lockedFootnote: {
+    ar: "بصمتك هي المفتاح — لا نملك نسخة منه",
+    en: "Your fingerprint is the key — we hold no copy of it",
+  },
+
+  // ── Empty (v2) ──────────────────────────────────────────────────────────
+  emptySubtitle: { ar: "جاهزة وفارغة", en: "Ready and empty" },
+  // One sentence that teaches how to *choose*, in place of an illustration and
+  // a menu of suggested types.
+  emptyLead: {
+    ar: "ابدأ بشيء واحد: الذي لو غاب اليوم لضاع على عائلتك — ولم تعرف حتى أنه كان موجوداً.",
+    en: "Start with one thing: whatever your family would lose today, without ever knowing it existed.",
+  },
+
   // A row whose label will not open. Not a crash: the list still renders, and
   // the one broken row says so instead of the whole screen failing.
   undecryptable: { ar: "تعذّر فك التشفير", en: "Could not decrypt" },
@@ -104,6 +150,33 @@ export const ASSETS = {
  * deliberately different words.
  */
 export const ADD_ASSET = {
+  // ── /vault/new, as the v2 board draws it ────────────────────────────────
+  // Second lines are **examples, not definitions**: "بريد، متجر، بث" tells you
+  // more about what belongs here than "digital account" ever will.
+  pickTitle: { ar: "ماذا تضيف؟", en: "What are you adding?" },
+  cryptoName: { ar: "محفظة رقمية", en: "Crypto wallet" },
+  cryptoExamples: {
+    ar: "عبارة سرّية أو منصة تداول",
+    en: "A seed phrase or an exchange",
+  },
+  bankName: { ar: "حساب بنكي", en: "Bank account" },
+  bankExamples: { ar: "آيبان وتعليمات للوارث", en: "An IBAN and instructions" },
+  documentName: { ar: "مستند", en: "Document" },
+  documentExamples: {
+    ar: "صك، عقد، شهادة",
+    en: "A deed, a contract, a certificate",
+  },
+  photosName: { ar: "صور", en: "Photos" },
+  photosExamples: { ar: "ألبوم مشفّر", en: "An encrypted album" },
+  digitalName: { ar: "حساب رقمي", en: "Digital account" },
+  digitalExamples: { ar: "بريد، متجر، بث", en: "Email, store, streaming" },
+  noteName: { ar: "ملاحظة", en: "A note" },
+  noteExamples: {
+    ar: "تعليمات، مكان أشياء، وصية شخصية",
+    en: "Instructions, where things are, a letter",
+  },
+  close: { ar: "إغلاق", en: "Close" },
+
   title: { ar: "ما الذي تريد حفظه؟", en: "What do you want to keep safe?" },
   description: {
     ar: "كل نوع له نموذج مختلف — نطلب فقط ما يحتاجه الوارث فعلاً.",
@@ -213,12 +286,39 @@ export const ASSET_DETAIL = {
   },
   recipientsEdit: { ar: "من يستلمه؟", en: "Who receives it?" },
 
+  // ── The asset screen (v2 board) ─────────────────────────────────────────
+  cancel: { ar: "إلغاء", en: "Cancel" },
+  more: { ar: "المزيد", en: "More" },
+  receivedBy: { ar: "يستلمها", en: "Received by" },
+  nobodyYet: { ar: "لا أحد بعد", en: "Nobody yet" },
+  allHeirsShort: { ar: "الكل", en: "all" },
+  // One line of history, at 45%. "every reveal is logged" is the half that
+  // matters: it says the trail exists without making a feature of it.
+  lastRevealedLine: {
+    ar: "آخر إظهار {date} · كل إظهار يُسجّل",
+    en: "Last revealed {date} · every reveal is logged",
+  },
+
+  // ── Deleting — a sheet that names the cost ──────────────────────────────
+  deleteSheetTitle: { ar: "حذف {name}؟", en: "Delete {name}?" },
+  deleteFinal: {
+    ar: "الحذف نهائي — لا نحفظ نسخة يمكن استعادتها.",
+    en: "Deletion is final — we keep no copy to restore.",
+  },
+  losesAccess: { ar: "{name} يفقد الوصول", en: "{name} loses access" },
+  deletePermanently: { ar: "احذف نهائياً", en: "Delete permanently" },
+  keepIt: { ar: "إبقاء", en: "Keep it" },
+  deleting: { ar: "جارٍ الحذف…", en: "Deleting…" },
+
   // ── Editing ──────────────────────────────────────────────────────────────
   save: { ar: "حفظ", en: "Save" },
   saving: { ar: "يُحفظ…", en: "Saving…" },
   // The collapsed summary on the recovery-codes row. A count, not the codes.
   codesCount: { ar: "{n} رموز", en: "{n} codes" },
   choosePlaceholder: { ar: "اختر", en: "Choose" },
+  // For a value the vault genuinely does not hold — a wallet saved before ٤.٣
+  // recorded its network. Distinct from "اختر", which asks; this states.
+  notRecorded: { ar: "غير مسجّل", en: "Not recorded" },
   saveFailed: {
     ar: "تعذّر الحفظ. لم يتغيّر شيء في خزنتك.",
     en: "Could not save. Nothing in your vault changed.",

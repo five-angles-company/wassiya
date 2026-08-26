@@ -82,6 +82,21 @@ export type EditableRowProps = Omit<
    * look at one is.
    */
   onReveal?: () => void;
+  /**
+   * Raised before a masked value is shown; the value stays hidden unless it
+   * resolves `true`. For the one secret whose disclosure cannot be undone — a
+   * seed phrase — where a plain eye is not enough. Everything else is protected
+   * well enough by masking plus the screenshot guard.
+   */
+  onRequestReveal?: () => Promise<boolean>;
+  /**
+   * Open the editor on mount. For a value the owner came to read rather than to
+   * check — a note body is the asset, and collapsing it behind a word count
+   * makes the screen hide the only thing on it.
+   */
+  defaultOpen?: boolean;
+  /** Extra classes for the expanded editor — a taller writing surface. */
+  editorClassName?: string;
   divider?: boolean;
   className?: string;
 };
@@ -126,13 +141,18 @@ export function EditableRow({
   hint,
   error,
   onReveal,
+  onRequestReveal,
+  defaultOpen = false,
+  editorClassName,
   divider,
   className,
   ...input
 }: EditableRowProps) {
   const field = useRef<TextInput>(null);
   const [revealed, setRevealed] = useState(false);
-  const [open, setOpen] = useState(false);
+  // `defaultOpen` never applies to a secret: that would render a masked value
+  // unmasked on mount, which is the opposite of what `secret` asks for.
+  const [open, setOpen] = useState(defaultOpen && !secret);
 
   // A secret that expands cannot be masked while open — see the note above — so
   // the two states are one state.
@@ -140,14 +160,27 @@ export function EditableRow({
   const masked = secret && !revealed;
 
   const toggle = () => {
-    if (secret) {
-      // Only the masked -> visible edge. Re-hiding is not a second disclosure,
-      // and firing on both would double every audit line.
-      if (!revealed) onReveal?.();
-      setRevealed((was) => !was);
+    if (!secret) {
+      setOpen((was) => !was);
       return;
     }
-    setOpen((was) => !was);
+    // Re-hiding is never gated and never audited: it is not a disclosure, and
+    // firing on both edges would double every audit line.
+    if (revealed) {
+      setRevealed(false);
+      return;
+    }
+    if (onRequestReveal === undefined) {
+      onReveal?.();
+      setRevealed(true);
+      return;
+    }
+    void (async () => {
+      if (await onRequestReveal()) {
+        onReveal?.();
+        setRevealed(true);
+      }
+    })();
   };
 
   const press = () => {
@@ -229,7 +262,8 @@ export function EditableRow({
           textAlignVertical="top"
           className={cn(
             'rounded-box bg-background text-body mb-3.5 min-h-24 px-3.5 py-3',
-            mono && monoFont
+            mono && monoFont,
+            editorClassName
           )}
         />
       ) : null}

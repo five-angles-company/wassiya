@@ -18,10 +18,10 @@
 import {
   AtSign,
   Bitcoin,
-  FileText,
+  File,
   Image as ImageIcon,
   Landmark,
-  StickyNote,
+  Pencil,
   type LucideIcon,
 } from "lucide-react-native"
 import type { Tone } from "@workspace/ui-native/lib/tone"
@@ -40,11 +40,17 @@ export type AssetType = (typeof ASSET_TYPES)[number]
 
 export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
   crypto: Bitcoin,
+  // The board draws a gabled building. `Landmark` is lucide's bank — the same
+  // pediment, with columns — where `House` would read as real estate.
   bank: Landmark,
-  document: FileText,
+  // A plain page with a folded corner, not `FileText`: the board's glyph has no
+  // rules on it, and a document here is as often a scan as it is text.
+  document: File,
   photos: ImageIcon,
   digital: AtSign,
-  note: StickyNote,
+  // A pencil, not a sticky note. A note in this vault is something written to
+  // be read after you are gone; a memo pad is the wrong object entirely.
+  note: Pencil,
 }
 
 /**

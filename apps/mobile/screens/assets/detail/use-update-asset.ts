@@ -58,6 +58,12 @@ export type UpdateAssetInput = {
    * touched, and the mutation deletes exactly the difference.
    */
   keep?: Id<"_storage">[]
+  /**
+   * Compose the final list from the ids just uploaded, overriding `keep`.
+   * Whatever it returns *is* `storageIds`, and the mutation deletes exactly the
+   * blobs no longer in it — so dropping an id here is how a file is removed.
+   */
+  arrange?: (uploaded: Id<"_storage">[]) => Id<"_storage">[]
   /** Non-sensitive counters only; the server may read every field of this. */
   meta?: {
     itemCount?: number
@@ -79,6 +85,7 @@ export function useUpdateAsset(): (input: UpdateAssetInput) => Promise<void> {
       label,
       payloads,
       keep = [],
+      arrange,
       meta,
       onProgress,
     }: UpdateAssetInput) => {
@@ -92,7 +99,7 @@ export function useUpdateAsset(): (input: UpdateAssetInput) => Promise<void> {
       try {
         const labelSealed = sealLabel(label, dek)
 
-        const storageIds: Id<"_storage">[] = [...keep]
+        const uploaded: Id<"_storage">[] = []
         for (const [index, payload] of payloads.entries()) {
           const plaintext = await payload.read()
           const ciphertext = encryptAsset(plaintext, dek)
@@ -103,14 +110,14 @@ export function useUpdateAsset(): (input: UpdateAssetInput) => Promise<void> {
           const storageId = await uploadCiphertext(ciphertext, url, (p) =>
             onProgress?.(index, p)
           )
-          storageIds.push(storageId as Id<"_storage">)
+          uploaded.push(storageId as Id<"_storage">)
         }
 
         await update({
           assetId,
           labelSealed: toArrayBuffer(labelSealed),
           meta: meta ?? {},
-          storageIds,
+          storageIds: arrange ? arrange(uploaded) : [...keep, ...uploaded],
         })
       } finally {
         dek.fill(0)

@@ -39,12 +39,14 @@ export type EditForm<T> = {
   dirty: boolean
   /** Call after a successful save, so the screen stops offering to save again. */
   commit: () => void
+  /** Throw the edits away and go back to what was loaded. */
+  reset: () => void
 }
 
-export function useEditForm<T extends object>(
-  /** The decrypted payload, or `null` until it arrives. */
-  source: string | null,
-  parse: (raw: string) => T | null
+export function useEditForm<T extends object, S>(
+  /** The opened asset, or `null` until it arrives. */
+  source: S | null,
+  parse: (source: S) => T | null
 ): EditForm<T> {
   const [form, setForm] = useState<T | null>(null)
   const [baseline, setBaseline] = useState<string | null>(null)
@@ -67,8 +69,15 @@ export function useEditForm<T extends object>(
     setBaseline(form === null ? null : JSON.stringify(form))
   }, [form])
 
+  const reset = useCallback(() => {
+    // Back to the baseline, which is the last thing that was actually stored —
+    // not to the payload as first loaded, or cancelling after a save would
+    // undo the save.
+    setForm(baseline === null ? null : (JSON.parse(baseline) as T))
+  }, [baseline])
+
   const dirty =
     form !== null && baseline !== null && JSON.stringify(form) !== baseline
 
-  return { form, patch, dirty, commit }
+  return { form, patch, dirty, commit, reset }
 }
