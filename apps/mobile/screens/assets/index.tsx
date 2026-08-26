@@ -162,7 +162,6 @@ export function AssetsScreen() {
 
   return (
     <Screen
-      inset="footer"
       contentClassName="gap-header"
       /*
         A round button in the corner rather than a full-width slab. Adding is
@@ -170,20 +169,20 @@ export function AssetsScreen() {
         but a bar across the whole width competes with the list it sits under,
         permanently, for a tap most sessions never make.
 
-        It rides `Screen`'s footer slot, which is already outside the scroll
-        area, so it needs no absolute positioning of its own.
+        `float`, not `footer`: a footer sits *after* the scroll area and shortens
+        it, so the list ended at an opaque strip a couple of rows above the tab
+        bar. A float paints over the list instead, and `Screen` pads the content
+        so the last card still clears the button.
       */
-      footer={
-        <View className="items-end">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t.addAsset}
-            onPress={openAdd}
-            className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
-          >
-            <Icon as={Plus} size={26} strokeWidth={2.75} className="text-background" />
-          </Pressable>
-        </View>
+      float={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t.addAsset}
+          onPress={openAdd}
+          className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
+        >
+          <Icon as={Plus} size={26} strokeWidth={2.75} className="text-background" />
+        </Pressable>
       }
     >
       {/* Home's header block: a quiet line over a 19px name, one 40px circle

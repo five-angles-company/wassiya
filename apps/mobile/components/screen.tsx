@@ -33,6 +33,17 @@ import {
  *   `tab`    — inside `(tabs)`; clear the bar
  *   `page`   — a pushed route; the bar isn't there
  *   `footer` — a pinned footer owns the bottom, so the scroll area stops short
+ *
+ * ## `footer` vs `float`
+ *
+ * A **footer** is a bar. It sits after the scroll area in normal flow, so it
+ * displaces the list and content ends above it — which is what a full-width
+ * CTA wants.
+ *
+ * A **float** is a button. It paints *over* the scroll area, so the list runs
+ * on underneath it and only the last item needs clearance. Putting a FAB in
+ * `footer` instead cuts the list off at an opaque strip several rows early,
+ * which reads as a rendering bug rather than a pinned action.
  */
 export type ScreenProps = {
   children: React.ReactNode
@@ -46,6 +57,12 @@ export type ScreenProps = {
    * primary action that must stay reachable while the keyboard is open.
    */
   footer?: React.ReactNode
+  /**
+   * Painted **over** the scroll area, bottom-end, rather than displacing it —
+   * a FAB. Supersedes `inset`'s bottom padding with its own clearance, since
+   * the content has to end above the button and not at the screen inset.
+   */
+  float?: React.ReactNode
   /** Drops the 20px gutter, for content that runs edge to edge. */
   bleed?: boolean
   /** Centres children on both axes — splash, lock, single-question screens. */
@@ -67,18 +84,29 @@ const BOTTOM = {
   footer: "pb-4",
 } as const
 
+/**
+ * 96 = the 56px button, the 16px it sits off the bottom, and 24 of air, so the
+ * last row clears the FAB instead of tucking half under it.
+ */
+const FLOAT_CLEARANCE = "pb-24"
+
 export function Screen({
   children,
   scroll = true,
   keyboard = false,
   inset = "page",
   footer,
+  float,
   bleed = false,
   center = false,
   className,
   contentClassName,
 }: ScreenProps) {
-  const padding = cn(!bleed && "px-gutter", "pt-4", BOTTOM[inset])
+  const padding = cn(
+    !bleed && "px-gutter",
+    "pt-4",
+    float !== undefined ? FLOAT_CLEARANCE : BOTTOM[inset]
+  )
 
   const body = scroll ? (
     <ScrollView
@@ -113,6 +141,13 @@ export function Screen({
       {body}
       {footer !== undefined ? (
         <View className={cn(!bleed && "px-gutter", "pb-4 pt-3")}>{footer}</View>
+      ) : null}
+      {/* Last, so it paints over the scroll area. `box-none` keeps the
+          wrapper from swallowing taps meant for the rows beneath it. */}
+      {float !== undefined ? (
+        <View className="end-gutter absolute bottom-4" pointerEvents="box-none">
+          {float}
+        </View>
       ) : null}
     </>
   )
