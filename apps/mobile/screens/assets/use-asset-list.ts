@@ -72,6 +72,13 @@ export type AssetListResult = {
   /** Heir names, for the faces the locked screen shows. Also un-gated by MK. */
   heirNames: string[]
   /**
+   * How many of the **whole vault** reach someone — never just the current
+   * view. The header line and the unrouted alarm both read from this, and a
+   * filter that changed the alarm would let someone hide their own gap by
+   * tapping a chip.
+   */
+  routedTotal: number
+  /**
    * How many assets each category holds, ignoring the search and the active
    * chip — a chip has to report the vault, not the current view, or selecting
    * one would renumber the rest.
@@ -161,6 +168,7 @@ export function useAssetList(
   return {
     rows,
     total: decrypted?.length ?? 0,
+    routedTotal: (decrypted ?? []).filter((row) => row.recipientCount > 0).length,
     vaultSize: assets?.length ?? 0,
     heirNames: (heirs ?? []).map((heir) => heir.name),
     byType,

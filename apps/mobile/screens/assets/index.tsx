@@ -40,7 +40,13 @@ import { Pressable, View } from "react-native"
 import { Screen } from "@/components/screen"
 import { useVaultGate } from "@/hooks/use-vault-gate"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ICON, ASSET_TYPE_ROUTE, type AssetType } from "@/lib/asset-types"
+import {
+  ASSET_TYPES,
+  ASSET_TYPE_ICON,
+  ASSET_TYPE_ROUTE,
+  type AssetType,
+} from "@/lib/asset-types"
+import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
 import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
@@ -48,18 +54,45 @@ import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
 import { useAssetList } from "@/screens/assets/use-asset-list"
 
+/** Chip copy per type, keyed flat so the strings table stays flat. */
+const FILTER_KEY = {
+  crypto: "filterCrypto",
+  bank: "filterBank",
+  document: "filterDocument",
+  photos: "filterPhotos",
+  digital: "filterDigital",
+  note: "filterNote",
+} as const satisfies Record<AssetType, string>
+
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
   const { t: routing } = useStrings("will/routing")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
   const [searching, setSearching] = useState(false)
-  const { rows, total, vaultSize, heirNames } = useAssetList(
+  const [filter, setFilter] = useState<AssetType | null>(null)
+  const { rows, total, routedTotal, vaultSize, heirNames, byType } = useAssetList(
     search,
-    null,
+    filter,
     t.undecryptable,
     { executor: routing.executor! }
   )
+
+  /**
+   * The chip row. Fixed set, always in this order — a filter that reorders
+   * itself is one you have to read every time instead of reaching for.
+   *
+   * `byType` deliberately counts the whole vault rather than the current view,
+   * so selecting a chip does not renumber the others.
+   */
+  const chips = [
+    { type: null, label: t.filterAll!, count: total },
+    ...ASSET_TYPES.map((type) => ({
+      type,
+      label: t[FILTER_KEY[type]]!,
+      count: byType[type],
+    })),
+  ]
 
   const num = (n: number) => fmtNum(n, locale)
 
@@ -123,8 +156,9 @@ export function AssetsScreen() {
     )
   }
 
-  const routed = rows.filter((row) => row.recipientCount > 0).length
-  const unrouted = rows.length - routed
+  // Both from the whole vault, never the filtered view — see `routedTotal`.
+  const routed = routedTotal
+  const unrouted = total - routedTotal
 
   return (
     <Screen
@@ -180,6 +214,8 @@ export function AssetsScreen() {
         />
       ) : null}
 
+      <AssetFilterChips chips={chips} selected={filter} onSelect={setFilter} />
+
       {/* The same banner Home uses for its own alarm. One per screen, and gone
           at zero rather than turning olive — "everything is fine" is not news. */}
       {unrouted > 0 && !searching ? (
@@ -200,9 +236,33 @@ export function AssetsScreen() {
         />
       ) : null}
 
+      {/* A filter or a search can empty a vault that is not empty. Different
+          state, different words: nothing is missing, the view is just narrow. */}
+      {rows.length === 0 ? (
+        <View className="mb-auto gap-2 pt-2">
+          <Text variant="rowTitle">{t.noResultsTitle}</Text>
+          <Text variant="prose" className="text-muted-foreground">
+            {t.noResultsBody}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setFilter(null)
+              setSearch("")
+            }}
+            hitSlop={8}
+            className="mt-1 self-start"
+          >
+            <Text variant="action" className="text-terracotta-800 font-body-bold">
+              {t.clearFilters}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       {/* `gap-row` — Home's tile spacing. Cards separate themselves, so there
           are no hairlines between them. */}
-      <View className="gap-row mb-auto">
+      <View className={rows.length === 0 ? "hidden" : "gap-row mb-auto"}>
         {rows.map((row) => (
           <VaultRow
             key={row.id}
