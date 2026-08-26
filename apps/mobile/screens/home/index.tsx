@@ -35,6 +35,8 @@
  * tap alone can never say "still alive". An unlocked phone in the wrong hands
  * must not be able to suppress delivery forever.
  */
+import { useRef } from "react"
+import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
@@ -60,6 +62,7 @@ import { useCheckInState } from "@/hooks/use-checkin-state"
 import { useConfirmAlive } from "@/hooks/use-confirm-alive"
 import { useProtectionScore } from "@/hooks/use-protection-score"
 import { useStrings } from "@/i18n/use-strings"
+import { CheckInSettingsSheet } from "@/screens/home/components/checkin-settings-sheet"
 
 export function HomeScreen() {
   const { t, locale } = useStrings("home")
@@ -72,6 +75,9 @@ export function HomeScreen() {
   const checkin = useCheckInState()
   // The gate. The bar renders the button; this runs the fingerprint.
   const alive = useConfirmAlive()
+
+  const checkInSheet = useRef<TrueSheet>(null)
+  const openCheckInSettings = () => void checkInSheet.current?.present()
 
   const score = useProtectionScore({
     identity: t.itemIdentity,
@@ -116,7 +122,10 @@ export function HomeScreen() {
         <AlertBanner
           variant="security"
           title={claimCopy.title}
-          description={claimCopy.intro.replace("{name}", openClaim.claimantName)}
+          description={claimCopy.intro.replace(
+            "{name}",
+            openClaim.claimantName
+          )}
           actions={
             <Button size="sm" onPress={() => router.push("/protection/claim")}>
               <Text>{claimCopy.review}</Text>
@@ -125,14 +134,22 @@ export function HomeScreen() {
         />
       ) : null}
 
+      {/* `onEnable` and `onOpenSettings` open the same sheet. They are one
+          decision — how often to be asked — and having "off" push a screen
+          while "settings" opened a sheet would make one choice two objects. */}
       <CheckInHero
         state={checkin.state}
         detail={checkin.detail}
         locale={locale}
         failed={alive.failed}
         onConfirm={alive.confirm}
-        onEnable={() => router.push("/protection/checkin")}
-        onOpenSettings={() => router.push("/protection/checkin")}
+        onEnable={openCheckInSettings}
+        onOpenSettings={openCheckInSettings}
+      />
+
+      <CheckInSettingsSheet
+        ref={checkInSheet}
+        onSaved={() => void checkInSheet.current?.dismiss()}
       />
 
       <View className="gap-3">
@@ -177,7 +194,10 @@ export function HomeScreen() {
             // was a separate screen whose only content was this same list,
             // grouped and filtered — so it is now this same list, filtered.
             onPress={() =>
-              router.push({ pathname: "/assets", params: { filter: "unrouted" } })
+              router.push({
+                pathname: "/assets",
+                params: { filter: "unrouted" },
+              })
             }
           />
           <StatTile

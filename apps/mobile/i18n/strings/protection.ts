@@ -171,6 +171,9 @@ export const CHECKIN = {
     en: "We ask now and then whether you're well. If you don't answer within the grace period, delivery to your heirs begins.",
   },
 
+  // The sheet titles itself with the words on the link that opened it —
+  // "إعدادات النبض" — not with the section name. `title` still names the route.
+  settingsTitle: { ar: "إعدادات النبض", en: "Pulse settings" },
   cadenceLabel: { ar: "كل كم شهر نسألك؟", en: "How often should we ask?" },
   cadence3: { ar: "٣ أشهر", en: "3 months" },
   cadence6: { ar: "٦ أشهر", en: "6 months" },
