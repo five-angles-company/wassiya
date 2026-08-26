@@ -101,8 +101,10 @@ export const PROFILE = {
   },
 
   emailLabel: { ar: "البريد الإلكتروني", en: "Email" },
-  emailReadOnly: { ar: "يُدار من حسابك", en: "Managed by your account" },
   identityLabel: { ar: "الهوية", en: "Identity" },
+  // The section is "الهوية"; the row inside it needs its own word or the
+  // heading and the row would both read "الهوية".
+  identityStatusLabel: { ar: "الحالة", en: "Status" },
   identityVerified: { ar: "موثّقة", en: "Verified" },
   identityUnverified: { ar: "غير موثّقة", en: "Not verified" },
   identityNameLabel: { ar: "الاسم في هويتك", en: "Name on your ID" },

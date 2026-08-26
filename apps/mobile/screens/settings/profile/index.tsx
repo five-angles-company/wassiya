@@ -41,14 +41,13 @@ import { useState } from "react"
 import { useUser } from "@clerk/expo"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { FieldLink } from "@workspace/ui-native/components/wassiya/field-link"
 import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { ChevronRight } from "lucide-react-native"
 import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
@@ -161,6 +160,16 @@ export function ProfileScreen() {
             )}
           />
         ) : null}
+
+        {/* Boxed like the two above it, because it is the third thing on this
+            screen you can change. It was a hairline `field-row` — the vault's
+            grammar — which made the one editable thing that leaves for another
+            screen look like the one thing that is read-only. */}
+        <FieldLink
+          label={t.emailLabel!}
+          value={me?.email ?? ""}
+          onPress={() => router.push("/settings/email")}
+        />
       </View>
 
       {failed ? (
@@ -178,22 +187,13 @@ export function ProfileScreen() {
         />
       ) : null}
 
-      {/* The email pushes into its own flow; the identity rows are read-only
-          by design — see this file's header. */}
-      <View className="mb-auto">
-        {/* Pushes into ٩.١c rather than editing here: changing it is five
-            Clerk calls and a code to the new address, not a save. */}
+      {/* Below the fields and apart from them: this is the one block on the
+          screen nobody can change, and hairline rows say that where a box would
+          imply otherwise. */}
+      <View className="mb-auto gap-2">
+        <Text variant="sectionLabel">{t.identityLabel}</Text>
         <FieldRow
-          label={t.emailLabel!}
-          divider
-          onPress={() => router.push("/settings/email")}
-          trailing={
-            <Icon as={ChevronRight} flip className="size-4 shrink-0 opacity-40" />
-          }>
-          <Text variant="rowTitle">{me?.email ?? ""}</Text>
-        </FieldRow>
-        <FieldRow
-          label={t.identityLabel!}
+          label={t.identityStatusLabel!}
           divider={me?.identityVerifiedName != null}
         >
           <Text

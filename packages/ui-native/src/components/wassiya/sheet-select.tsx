@@ -1,9 +1,10 @@
 import { TrueSheet } from '@lodev09/react-native-true-sheet';
 import { Icon } from '@workspace/ui-native/components/ui/icon';
 import { Text } from '@workspace/ui-native/components/ui/text';
+import { FieldLink } from '@workspace/ui-native/components/wassiya/field-link';
 import { Sheet } from '@workspace/ui-native/components/wassiya/sheet';
 import { cn } from '@workspace/ui-native/lib/utils';
-import { Check, ChevronDown } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import type * as React from 'react';
 import { useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -112,28 +113,17 @@ export function SheetSelect({
   }
 
   return (
-    <View className={cn('gap-2', className)}>
-      <Text variant="meta" className="text-muted-foreground">
-        {label}
-      </Text>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        accessibilityValue={{ text: selected?.label }}
+    <View className={className}>
+      {/* The box is `field-link`'s, so this and ٩.١b's email row cannot drift
+          apart the next time a border or a height changes. */}
+      <FieldLink
+        label={label}
+        value={selected?.label ?? ''}
+        placeholder={placeholder}
+        hint={hint}
+        chevron="down"
         onPress={open}
-        className="rounded-box border-border bg-card h-12.5 flex-row items-center justify-between border px-4 active:bg-sand-300">
-        <Text className="text-body">{selected === null ? placeholder : selected.label}</Text>
-        {/* Chevron-down is vertical, so it needs no RTL mirroring. */}
-        <Icon as={ChevronDown} className="text-muted-foreground size-4" />
-      </Pressable>
-
-      {hint !== undefined ? (
-        <Text variant="metaSm" className="text-muted-foreground">
-          {hint}
-        </Text>
-      ) : null}
-
+      />
       {renderSheet()}
     </View>
   );
