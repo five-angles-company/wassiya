@@ -21,8 +21,8 @@ import type { Id } from "@workspace/backend/dataModel"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { useLocalSearchParams } from "expo-router"
 
-import { Screen } from "@/components/screen"
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { HeirEditForm } from "@/screens/heirs/edit/components/heir-edit-form"
 

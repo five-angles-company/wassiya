@@ -26,10 +26,11 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
 import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import * as Sharing from "expo-sharing"
-import { Alert, ScrollView, Share, View } from "react-native"
+import { Alert, Share, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { useGuardianSeal } from "@/screens/protection/guardian/use-guardian-seal"
 
@@ -87,10 +88,7 @@ export function GuardianScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -206,6 +204,6 @@ export function GuardianScreen() {
           </Button>
         </View>
       ) : null}
-    </ScrollView>
+    </Screen>
   )
 }

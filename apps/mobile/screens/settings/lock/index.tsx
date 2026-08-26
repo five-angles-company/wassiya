@@ -17,9 +17,10 @@
  * reach. So the screen says whichever one applies.
  */
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import {
@@ -37,10 +38,7 @@ export function AutoLockScreen() {
   const whileOpen = minutes === LOCK_WHILE_OPEN
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -67,7 +65,7 @@ export function AutoLockScreen() {
           {t.perDevice}
         </Text>
       </View>
-    </ScrollView>
+    </Screen>
   )
 }
 

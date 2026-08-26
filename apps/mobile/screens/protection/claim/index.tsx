@@ -29,9 +29,10 @@ import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import * as LocalAuthentication from "expo-local-authentication"
 import { ShieldCheck } from "lucide-react-native"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 type VetoState = "idle" | "working" | "done" | "denied" | "failed"
@@ -88,10 +89,7 @@ export function ClaimVetoScreen() {
       : Math.max(0, Math.ceil((open.vetoDeadline - now) / 86_400_000))
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
 
       {state === "done" ? (
@@ -149,6 +147,6 @@ export function ClaimVetoScreen() {
           ) : null}
         </View>
       )}
-    </ScrollView>
+    </Screen>
   )
 }

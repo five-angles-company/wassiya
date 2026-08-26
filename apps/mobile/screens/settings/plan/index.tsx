@@ -26,9 +26,10 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { StorageMeter } from "@workspace/ui-native/components/wassiya/storage-meter"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { CreditCard } from "lucide-react-native"
-import { Alert, ScrollView, View } from "react-native"
+import { Alert, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPES, type AssetType } from "@/lib/asset-types"
 
@@ -96,10 +97,7 @@ export function PlanScreen() {
     subscription?.renewsAt !== undefined && subscription.renewsAt < now
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mb-header mt-4">
         {t.title}
@@ -153,6 +151,6 @@ export function PlanScreen() {
           onPress={() => Alert.alert(t.manage, t.billingSoon)}
         />
       </View>
-    </ScrollView>
+    </Screen>
   )
 }

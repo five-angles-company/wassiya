@@ -12,9 +12,10 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import Constants from "expo-constants"
 import { FileText, Lock, ShieldCheck } from "lucide-react-native"
-import { Linking, ScrollView, View } from "react-native"
+import { Linking, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 const SITE = "https://wassiya.app"
@@ -24,10 +25,7 @@ export function LegalScreen() {
   const { t: common } = useStrings("common")
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mb-header mt-4">
         {t.title}
@@ -65,6 +63,6 @@ export function LegalScreen() {
       <Text variant="metaSm" className="text-muted-foreground mt-3">
         {t.version.replace("{v}", Constants.expoConfig?.version ?? "—")}
       </Text>
-    </ScrollView>
+    </Screen>
   )
 }

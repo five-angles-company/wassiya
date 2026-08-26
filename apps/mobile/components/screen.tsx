@@ -30,9 +30,14 @@ import {
  * that's the whole story behind `pb-28` vs `pb-10`, written out as a guess on
  * every screen. Naming it removes the guess:
  *
- *   `tab`    — inside `(tabs)`; clear the bar
- *   `page`   — a pushed route; the bar isn't there
+ *   `page`   — the default, and right for almost everything
  *   `footer` — a pinned footer owns the bottom, so the scroll area stops short
+ *
+ * There was a third, `tab`, worth 112px "to clear the tab bar". It was wrong:
+ * this app's bar is laid out in **normal flow**, not over the content, so the
+ * scroll area already stops above it. Every screen that used it was paying for
+ * clearance it had — Home and ٤.١ both visibly ended a third of a screen early.
+ * It is gone rather than corrected, so it cannot be reached for again.
  *
  * ## `footer` vs `float`
  *
@@ -51,7 +56,7 @@ export type ScreenProps = {
   scroll?: boolean
   /** For any screen with a text field. iOS-only by design — see below. */
   keyboard?: boolean
-  inset?: "tab" | "page" | "footer"
+  inset?: "page" | "footer"
   /**
    * Pinned below the scroll area rather than after the content. Use it for a
    * primary action that must stay reachable while the keyboard is open.
@@ -79,7 +84,6 @@ export type ScreenProps = {
  * can take appears literally here.
  */
 const BOTTOM = {
-  tab: "pb-28",
   page: "pb-10",
   footer: "pb-4",
 } as const

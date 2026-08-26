@@ -19,9 +19,10 @@ import { AuditRow } from "@workspace/ui-native/components/wassiya/audit-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import { Eye, FileText, KeyRound, ScrollText, ShieldCheck, Users } from "lucide-react-native"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 /** Events that are security-relevant get the terracotta tone, not olive. */
@@ -51,10 +52,7 @@ export function AuditScreen() {
   )
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -85,7 +83,7 @@ export function AuditScreen() {
           <Text>{t.loadMore}</Text>
         </Button>
       ) : null}
-    </ScrollView>
+    </Screen>
   )
 }
 

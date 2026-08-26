@@ -25,9 +25,10 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { Smartphone } from "lucide-react-native"
-import { Alert, ScrollView, View } from "react-native"
+import { Alert, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 export function DevicesScreen() {
@@ -48,10 +49,7 @@ export function DevicesScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -91,6 +89,6 @@ export function DevicesScreen() {
           ))}
         </View>
       )}
-    </ScrollView>
+    </Screen>
   )
 }

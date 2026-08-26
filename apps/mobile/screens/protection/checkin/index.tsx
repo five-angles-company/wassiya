@@ -23,9 +23,10 @@ import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 
@@ -52,10 +53,7 @@ export function CheckInScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-4"
-    >
+    <Screen>
       <BackButton label={common.back} />
       <Text variant="screenTitle" className="mt-4">
         {t.title}
@@ -121,7 +119,7 @@ export function CheckInScreen() {
           <Text variant="prose">{t.confirmOnHome}</Text>
         </View>
       )}
-    </ScrollView>
+    </Screen>
   )
 }
 

@@ -108,7 +108,7 @@ export function AssetsScreen() {
 
   if (!unlocked) {
     return (
-      <Screen inset="footer" contentClassName="gap-header">
+      <Screen contentClassName="gap-header">
         <AssetsLocked
           status={t.lockedStatus!}
           count={num(vaultSize)}
@@ -132,7 +132,7 @@ export function AssetsScreen() {
   // Undefined is "still decrypting", which is a different screen from "empty".
   if (rows === undefined) {
     return (
-      <Screen inset="footer" contentClassName="gap-header">
+      <Screen contentClassName="gap-header">
         <AssetsDecrypting title={t.vaultTitle!} subtitle={t.vaultDecrypting!} />
       </Screen>
     )
@@ -140,7 +140,7 @@ export function AssetsScreen() {
 
   if (total === 0) {
     return (
-      <Screen inset="footer" contentClassName="gap-header">
+      <Screen contentClassName="gap-header">
         {/* The empty vault keeps a full-width button: it is the only action on
             an otherwise blank screen, and a round button in the corner of one
             reads as an afterthought rather than an invitation. */}

@@ -10,8 +10,8 @@ import { Pressable } from "react-native"
 import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
-import { DeleteHeirSheet } from "@/screens/heirs/edit/components/delete-heir-sheet"
 import { HeirFields } from "@/screens/heirs/components/heir-fields"
+import { DeleteHeirSheet } from "@/screens/heirs/edit/components/delete-heir-sheet"
 import { useHeirForm } from "@/screens/heirs/use-heir-form"
 
 /** The loaded half of ٥.٢b — mounts only once the heir's real values exist. */
