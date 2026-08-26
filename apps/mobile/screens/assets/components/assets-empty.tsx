@@ -45,9 +45,9 @@ export function AssetsEmpty({
 
       {/* 32% — present enough to teach the shape, quiet enough not to be
           mistaken for content that failed to load. */}
-      <View className="mb-auto opacity-[0.32]">
-        <GhostRow title="62%" meta="30%" divider />
-        <GhostRow title="48%" meta="22%" divider />
+      <View className="gap-row mb-auto opacity-[0.32]">
+        <GhostRow title="62%" meta="30%" />
+        <GhostRow title="48%" meta="22%" />
         <View className="opacity-50">
           <GhostRow title="55%" />
         </View>

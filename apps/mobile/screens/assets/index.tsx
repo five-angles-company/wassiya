@@ -30,9 +30,10 @@ import { useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { VaultRow } from "@workspace/ui-native/components/wassiya/vault-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
-import { Info, Plus, Search } from "lucide-react-native"
+import { Plus, Search } from "lucide-react-native"
 import { router } from "expo-router"
 import { Pressable, View } from "react-native"
 
@@ -74,7 +75,7 @@ export function AssetsScreen() {
 
   if (!unlocked) {
     return (
-      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" contentClassName="gap-header">
         <AssetsLocked
           status={t.lockedStatus!}
           count={num(vaultSize)}
@@ -98,7 +99,7 @@ export function AssetsScreen() {
   // Undefined is "still decrypting", which is a different screen from "empty".
   if (rows === undefined) {
     return (
-      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" contentClassName="gap-header">
         <AssetsDecrypting title={t.vaultTitle!} subtitle={t.vaultDecrypting!} />
       </Screen>
     )
@@ -106,7 +107,7 @@ export function AssetsScreen() {
 
   if (total === 0) {
     return (
-      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" contentClassName="gap-header">
         {/* The empty vault keeps a full-width button: it is the only action on
             an otherwise blank screen, and a round button in the corner of one
             reads as an afterthought rather than an invitation. */}
@@ -128,8 +129,7 @@ export function AssetsScreen() {
   return (
     <Screen
       inset="footer"
-      bleed
-      contentClassName="px-[22px] pt-5"
+      contentClassName="gap-header"
       /*
         A round button in the corner rather than a full-width slab. Adding is
         the screen's primary action at any scroll position, so it stays pinned —
@@ -140,9 +140,7 @@ export function AssetsScreen() {
         area, so it needs no absolute positioning of its own.
       */
       footer={
-        // `Screen` drops its own gutter under `bleed`, so the footer supplies
-        // one — without it the button sits flush against the screen edge.
-        <View className="items-end px-[22px]">
+        <View className="items-end">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t.addAsset}
@@ -154,20 +152,20 @@ export function AssetsScreen() {
         </View>
       }
     >
-      <View className="mb-[26px] flex-row items-start gap-3">
-        <View className="flex-1">
-          <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
-            {t.vaultTitle}
-          </Text>
-          <Text className="text-[13px] opacity-55">
+      {/* Home's header block: a quiet line over a 19px name, one 40px circle
+          at the far end. */}
+      <View className="flex-row items-center gap-3">
+        <View className="min-w-0 flex-1">
+          <Text variant="metaSm">
             {t.vaultCount!.replace("{n}", num(total)).replace("{m}", num(routed))}
           </Text>
+          <Text variant="pageTitle">{t.vaultTitle}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t.searchPlaceholder}
           onPress={() => setSearching((was) => !was)}
-          className="bg-card size-10 shrink-0 items-center justify-center rounded-full active:opacity-70"
+          className="bg-card active:bg-sand-300 size-10 shrink-0 items-center justify-center rounded-full"
         >
           <Icon as={Search} size={18} strokeWidth={2.75} className="text-foreground" />
         </Pressable>
@@ -179,40 +177,50 @@ export function AssetsScreen() {
           onChangeText={setSearch}
           placeholder={t.searchPlaceholder!}
           clearLabel={t.clearFilters!}
-          className="mb-[22px]"
         />
       ) : null}
 
-      {/* The one alarm. Terracotta, one line, gone at zero. */}
+      {/* The same banner Home uses for its own alarm. One per screen, and gone
+          at zero rather than turning olive — "everything is fine" is not news. */}
       {unrouted > 0 && !searching ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push("/plan/routing")}
-          className="bg-terracotta-100 mb-[22px] flex-row items-center gap-[11px] rounded-[22px] px-4 py-3.5 active:opacity-80"
-        >
-          <Icon as={Info} size={17} strokeWidth={2.75} className="text-terracotta-900 shrink-0" />
-          <Text className="text-terracotta-900 min-w-0 flex-1 text-[12.5px] leading-[1.45]">
-            {t.unroutedAlert!.replace("{n}", num(unrouted))}
-          </Text>
-          <Text className="text-terracotta-900 font-body-bold shrink-0 text-[12.5px]">
-            {t.unroutedAction}
-          </Text>
-        </Pressable>
+        <AlertBanner
+          variant="notice"
+          description={t.unroutedAlert!.replace("{n}", num(unrouted))}
+          actions={
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/plan/routing")}
+              hitSlop={8}
+            >
+              <Text variant="action" className="text-terracotta-800 font-body-bold">
+                {t.unroutedAction}
+              </Text>
+            </Pressable>
+          }
+        />
       ) : null}
 
-      <View className="mb-auto">
-        {rows.map((row, i) => (
+      {/* `gap-row` — Home's tile spacing. Cards separate themselves, so there
+          are no hairlines between them. */}
+      <View className="gap-row mb-auto">
+        {rows.map((row) => (
           <VaultRow
             key={row.id}
             icon={ASSET_TYPE_ICON[row.type]}
             title={row.title}
-            recipients={row.recipients.join("، ")}
+            // The shared bucket is not a name, so it never reaches
+            // `recipients` — without this the card's second line is blank and
+            // the row is a different height from every other one.
+            recipients={
+              row.allHeirs
+                ? [routing.allHeirs!, ...row.recipients].join("، ")
+                : row.recipients.join("، ")
+            }
             unroutedLabel={
               row.recipientCount === 0 ? t.recipientsZero : undefined
             }
             faces={row.recipients}
             allHeirsLabel={row.allHeirs ? t.allHeirsShort : undefined}
-            divider={i < rows.length - 1}
             onPress={() =>
               router.push({
                 pathname: "/assets/[id]",

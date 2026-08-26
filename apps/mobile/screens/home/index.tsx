@@ -96,8 +96,12 @@ export function HomeScreen() {
   // skipped here rather than named twice on one screen.
   const gap = score.items.find((item) => !item.done && item.id !== "checkin")
 
+  // `inset="page"`, not `"tab"`. This app's tab bar is laid out in normal flow
+  // rather than overlaying the screen, so `tab`'s 112px of clearance was never
+  // clearance — it was dead space at the end of every scroll. The vault ends
+  // the same distance above the bar.
   return (
-    <Screen inset="tab" contentClassName="gap-header">
+    <Screen inset="page" contentClassName="gap-header">
       <View className="flex-row items-center gap-3">
         <InitialDisc name={me?.name ?? ""} />
         <View className="min-w-0 flex-1">

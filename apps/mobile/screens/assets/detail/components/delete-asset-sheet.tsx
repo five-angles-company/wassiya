@@ -55,9 +55,22 @@ export function DeleteAssetSheet({
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
+  /**
+   * Only dismiss something that was actually presented.
+   *
+   * Reacting to `open === false` unconditionally fires a dismiss on every
+   * mount — one per asset screen opened — and TrueSheet warns each time. The
+   * ref remembers whether this sheet has ever been up, so the first render is
+   * silent.
+   */
+  const presented = useRef(false)
   useEffect(() => {
-    if (open) void sheet.current?.present()
-    else void sheet.current?.dismiss()
+    if (open) {
+      presented.current = true
+      void sheet.current?.present()
+      return
+    }
+    if (presented.current) void sheet.current?.dismiss()
   }, [open])
 
   async function destroy() {

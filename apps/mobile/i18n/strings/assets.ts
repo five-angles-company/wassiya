@@ -17,7 +17,10 @@ export const ASSETS = {
   vaultTitle: { ar: "خزنتك", en: "Your vault" },
   // The one subtitle, always in the same slot — the decrypting state puts its
   // progress here too, so the header never changes height.
-  vaultCount: { ar: "{n} أصلاً · {m} لها مستلم", en: "{n} items · {m} reach someone" },
+  // An Arabic comma, not the "·" used elsewhere: here the separator lands
+  // directly against an Arabic-Indic numeral and reads as a zero — "٦ · ٦"
+  // renders as "٦٠". The dot is fine everywhere it sits between words.
+  vaultCount: { ar: "{n} أصلاً، {m} لها مستلم", en: "{n} items · {m} reach someone" },
   // No count here, and no `{n}`: the whole list decrypts in one pass, so there
   // is no moment where some rows are open and the rest are not — and while the
   // query is still in flight the total is unknown too. A placeholder that never
