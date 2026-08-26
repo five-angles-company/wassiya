@@ -1,5 +1,4 @@
 import { useConvexAuth } from "convex/react"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Redirect, Tabs } from "expo-router"
 import {
   Home,
@@ -8,6 +7,7 @@ import {
   Wallet,
 } from "lucide-react-native"
 
+import { TabBarIcon } from "@/components/tab-bar-icon"
 import { useVaultAutoLock } from "@/hooks/use-vault-autolock"
 import { useStrings } from "@/i18n/use-strings"
 
@@ -59,20 +59,28 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        // Tints the label only — the glyph is `TabBarIcon`'s business.
         tabBarActiveTintColor: "#c67139",
         tabBarInactiveTintColor: "#82796a",
-        // Declared, not inherited. The bar was white only because React
-        // Navigation's DefaultTheme is — a theme this app never opted into,
-        // which would change the bar's colour if it were ever swapped.
+        tabBarLabelStyle: { fontSize: 11.5 },
+        // Declared, not inherited. The bar was **white** only because React
+        // Navigation's DefaultTheme is — a theme this app never opted into —
+        // and it was the one pure-white surface in a product built entirely
+        // from sand and card.
         //
-        // The bar carries this white down through the gesture-bar inset on its
+        // `sand-100` replaces it rather than `background`: the bar should still
+        // read as *raised* above the page, which is the one thing the white was
+        // doing right. A hair lighter than the ground lifts it; matching the
+        // ground would let the list appear to run off the bottom of the screen.
+        //
+        // The bar carries this colour down through the gesture-bar inset on its
         // own; `SafeAreaShell` deliberately stops reserving that space inside
         // `(tabs)` so the sand ground cannot show beneath it.
         tabBarStyle: {
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f9f4ed",
           // The app's own `--color-border`, as a literal because this is a
-          // style object rather than a Uniwind class. White against the sand
-          // ground needs the seam; without it the bar floats.
+          // style object rather than a Uniwind class. The seam is what keeps
+          // two close sand tones from bleeding into one another.
           borderTopColor: "rgba(32, 30, 29, 0.16)",
         },
       }}
@@ -81,28 +89,36 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: t.home,
-          tabBarIcon: ({ color }) => <Icon as={Home} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon icon={Home} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="assets"
         options={{
           title: t.assets,
-          tabBarIcon: ({ color }) => <Icon as={Wallet} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon icon={Wallet} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="heirs"
         options={{
           title: t.heirs,
-          tabBarIcon: ({ color }) => <Icon as={Users} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon icon={Users} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
           title: t.settings,
-          tabBarIcon: ({ color }) => <Icon as={Settings} color={color} />,
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon icon={Settings} focused={focused} />
+          ),
         }}
       />
     </Tabs>
