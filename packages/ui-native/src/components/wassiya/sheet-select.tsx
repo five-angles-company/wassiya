@@ -4,6 +4,7 @@ import { Text } from '@workspace/ui-native/components/ui/text';
 import { Sheet } from '@workspace/ui-native/components/wassiya/sheet';
 import { cn } from '@workspace/ui-native/lib/utils';
 import { Check, ChevronDown } from 'lucide-react-native';
+import type * as React from 'react';
 import { useRef } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
@@ -19,10 +20,30 @@ export type SheetSelectProps = {
   value: string | null;
   options: SheetSelectOption[];
   onChange: (value: string) => void;
-  /** One quiet line under the field. */
+  /** One quiet line under the field. Not drawn when `trigger` replaces it. */
   hint?: string;
   /** Shown in the field when nothing is chosen yet. */
   placeholder?: string;
+  /**
+   * Replaces the built-in field, so something other than a bordered box can
+   * open the same sheet — ٩.١'s language row hands back a `SettingsRow`.
+   *
+   * Given the opener and the current selection rather than a boolean, because
+   * a trigger almost always wants to *show* what is chosen: the row renders
+   * "العربية" in its value slot from exactly the option this sheet would tick.
+   */
+  trigger?: (
+    open: () => void,
+    selected: SheetSelectOption | null
+  ) => React.ReactNode;
+  /**
+   * A quiet line **inside** the sheet, under the options.
+   *
+   * Where a caveat about the choice belongs once the field is gone: you read it
+   * while choosing rather than after, and a row's one-line `detail` slot would
+   * truncate a real sentence.
+   */
+  note?: string;
   className?: string;
 };
 
@@ -45,12 +66,15 @@ export type SheetSelectProps = {
  *
  * ## Sizing
  *
- * `'auto'` plus `scrollable`. Option lists here are short — a dozen countries,
- * six asset types — so the sheet hugs its content on a normal handset and reads
- * as a menu rather than a panel. The scroller exists for the small-screen case
- * where `'auto'` clamps to the container and the last option would otherwise be
- * unreachable. It is deliberately not a fractional detent: that is what
- * produces a half-height sheet with the options stranded at the top.
+ * `'auto'`, and `scrollable` **only past six options**. A scroller inside a
+ * TrueSheet stops it hugging its content and inflates it to most of the screen,
+ * so a two-option list — ٩.١'s language row — arrived as a full panel holding
+ * two rows and a paragraph of air. Past six the scroller earns that cost,
+ * because `'auto'` clamps to the container on a small handset and the last
+ * option would otherwise be unreachable.
+ *
+ * Deliberately not a fractional detent either way: that is what produces a
+ * half-height sheet with the options stranded at the top.
  */
 export function SheetSelect({
   label,
@@ -59,6 +83,8 @@ export function SheetSelect({
   onChange,
   hint,
   placeholder = '—',
+  trigger,
+  note,
   className,
 }: SheetSelectProps) {
   const sheet = useRef<TrueSheet>(null);
@@ -71,6 +97,20 @@ export function SheetSelect({
     await sheet.current?.dismiss();
   };
 
+  const open = () => void sheet.current?.present();
+
+  /** Past this, a scroller is worth what it costs in sheet height. */
+  const scrollable = options.length > 6;
+
+  if (trigger !== undefined) {
+    return (
+      <>
+        {trigger(open, selected)}
+        {renderSheet()}
+      </>
+    );
+  }
+
   return (
     <View className={cn('gap-2', className)}>
       <Text variant="meta" className="text-muted-foreground">
@@ -81,7 +121,7 @@ export function SheetSelect({
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityValue={{ text: selected?.label }}
-        onPress={() => void sheet.current?.present()}
+        onPress={open}
         className="rounded-box border-border bg-card h-12.5 flex-row items-center justify-between border px-4 active:bg-sand-300">
         <Text className="text-body">{selected === null ? placeholder : selected.label}</Text>
         {/* Chevron-down is vertical, so it needs no RTL mirroring. */}
@@ -94,8 +134,18 @@ export function SheetSelect({
         </Text>
       ) : null}
 
-      <Sheet ref={sheet} title={label} scrollable contentClassName="pb-6">
-        <ScrollView>
+      {renderSheet()}
+    </View>
+  );
+
+  function renderSheet() {
+    return (
+      <Sheet
+        ref={sheet}
+        title={label}
+        scrollable={scrollable}
+        contentClassName="pb-6">
+        <Body>
           {options.map((option) => (
             <Pressable
               key={option.value}
@@ -109,8 +159,18 @@ export function SheetSelect({
               ) : null}
             </Pressable>
           ))}
-        </ScrollView>
+          {note !== undefined ? (
+            <Text variant="metaSm" className="text-muted-foreground mt-3 px-3 leading-[1.6]">
+              {note}
+            </Text>
+          ) : null}
+        </Body>
       </Sheet>
-    </View>
-  );
+    );
+
+    // A plain View lets the sheet hug; a ScrollView never does.
+    function Body({ children }: { children: React.ReactNode }) {
+      return scrollable ? <ScrollView>{children}</ScrollView> : <View>{children}</View>;
+    }
+  }
 }

@@ -181,7 +181,7 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `primary-cta` | `label`, `disabledLabel`, `icon`, `iconSize`, `disabled`, `busy` | live · surface-toned when disabled, **never a faded primary** | every bottom action, 56px |
 | `screen-top` / `screen-top-action` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing text ("إلغاء") | the top of every vault screen |
 | `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every sheet the board draws |
-| `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder` | selected · unselected | 1.3 / 2.1 country field; any single-choice field |
+| `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder`, `trigger`, `note` | selected · unselected; boxed field by default, or any `trigger` you hand it | 1.3 / 2.1 country field; ٩.١ language row. Scrolls only past 6 options — a scroller stops the sheet hugging |
 | `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |
 
 ### Rules these components follow

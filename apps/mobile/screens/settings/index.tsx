@@ -20,14 +20,14 @@ import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
+import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { FileText, Fingerprint, LogOut, ScrollText, ShieldCheck, Smartphone, UserRound, Wallet } from "lucide-react-native"
+import { FileText, Fingerprint, Languages, LogOut, ScrollText, ShieldCheck, Smartphone, UserRound, Wallet } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 
 export function SettingsScreen() {
@@ -78,28 +78,35 @@ export function SettingsScreen() {
           divider
           onPress={() => router.push("/settings/profile")}
         />
-        <View className="rounded-card bg-card gap-3 p-4">
-          <View className="flex-row items-center gap-3">
-            <Text variant="rowTitle" className="flex-1">
-              {t.rowLanguage}
-            </Text>
-          </View>
-          <OptionChips
-            options={[
-              { value: "ar", label: t.languageArabic },
-              { value: "en", label: t.languageEnglish },
-            ]}
-            value={locale}
-            onChange={(value) => {
-              // BCP 47, matching what `resolveLocale` parses — it reads only
-              // the language subtag, so the region is cosmetic here.
-              void saveProfile({ locale: value === "en" ? "en-US" : "ar-SA" })
-            }}
-          />
-          <Text variant="metaSm" className="text-muted-foreground leading-[1.6]">
-            {t.languageNote}
-          </Text>
-        </View>
+        {/* A row like every other row here, opening the same sheet the country
+            picker uses. It was a card of chips nested inside the Group's own
+            card — two surfaces of the same colour, and the only setting on this
+            screen you changed in place rather than by opening something. The
+            caveat about direction moved into the sheet, where you read it while
+            choosing instead of after. */}
+        <SheetSelect
+          label={t.rowLanguage}
+          value={locale}
+          options={[
+            { value: "ar", label: t.languageArabic },
+            { value: "en", label: t.languageEnglish },
+          ]}
+          onChange={(value) => {
+            // BCP 47, matching what `resolveLocale` parses — it reads only the
+            // language subtag, so the region is cosmetic here.
+            void saveProfile({ locale: value === "en" ? "en-US" : "ar-SA" })
+          }}
+          note={t.languageNote}
+          trigger={(open, selected) => (
+            <SettingsRow
+              icon={Languages}
+              label={t.rowLanguage}
+              value={selected?.label}
+              chevron
+              onPress={open}
+            />
+          )}
+        />
       </Group>
 
       <Group label={t.groupSecurity}>
