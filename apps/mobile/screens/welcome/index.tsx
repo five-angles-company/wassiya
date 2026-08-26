@@ -1,7 +1,7 @@
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { router } from "expo-router"
-import { Landmark, ShieldCheck, Users, Wallet } from "lucide-react-native"
+
 import { useRef, useState } from "react"
 import {
   Pressable,
@@ -92,22 +92,16 @@ export function WelcomeScreen() {
       >
         <WelcomeSlide
           width={width}
-          icon={Wallet}
-          tone="olive"
           title={t.vaultTitle}
           body={t.vaultBody}
         />
         <WelcomeSlide
           width={width}
-          icon={ShieldCheck}
-          tone="terracotta"
           title={t.zeroKnowledgeTitle}
           body={t.zeroKnowledgeBody}
         />
         <WelcomeSlide
           width={width}
-          icon={Landmark}
-          tone="olive"
           title={t.releaseTitle}
           body={t.releaseBody}
         >
@@ -127,8 +121,6 @@ export function WelcomeScreen() {
         </WelcomeSlide>
         <WelcomeSlide
           width={width}
-          icon={Users}
-          tone="olive"
           title={t.nothingToMemoriseTitle}
           body={t.nothingToMemoriseBody}
         />

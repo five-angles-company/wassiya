@@ -58,7 +58,6 @@ export const KYC = {
 } satisfies LabelSet<string>
 
 export const KYC_PENDING = {
-  ring: { ar: "جارٍ التحقق", en: "Checking" },
   title: {
     ar: "مستنداتك قيد المراجعة",
     en: "Your documents are being reviewed",

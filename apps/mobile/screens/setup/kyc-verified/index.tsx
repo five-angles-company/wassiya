@@ -1,11 +1,10 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import { Redirect, router } from "expo-router"
-import { Check } from "lucide-react-native"
+
 import { ActivityIndicator, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -52,12 +51,8 @@ export function KycVerifiedScreen() {
         complete
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-11"
+        className="mb-header"
       />
-
-      <View className="mb-7 size-37.5 items-center justify-center self-center rounded-full bg-olive-200">
-        <Icon as={Check} className="size-16.5 text-olive-800" />
-      </View>
 
       <Text variant="screenTitle" className="mb-2.5 text-center text-[30px]">
         {t.title}

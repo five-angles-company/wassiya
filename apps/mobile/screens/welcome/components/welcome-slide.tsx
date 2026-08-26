@@ -1,14 +1,8 @@
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { cn } from "@workspace/ui-native/lib/utils"
-import type { LucideIcon } from "lucide-react-native"
 import type * as React from "react"
 import { View } from "react-native"
 
 export type WelcomeSlideProps = {
-  icon: LucideIcon
-  /** Sage for the safety voice, terracotta for the trust claim. */
-  tone: "olive" | "terracotta"
   title: string
   body: string
   /** The four release gates on slide ٣. */
@@ -16,22 +10,19 @@ export type WelcomeSlideProps = {
   width: number
 }
 
-const TONE_BG = {
-  olive: "bg-olive-100",
-  terracotta: "bg-terracotta-200",
-} as const
-
-const TONE_FG = {
-  olive: "text-olive-700",
-  terracotta: "text-terracotta-800",
-} as const
-
 /**
- * One carousel panel: a soft circular illustration slot, a heading and a body.
+ * One carousel panel: a heading, a body, and whatever the slide adds.
  *
- * The blob is an illustration *slot* — the board calls for commissioned art at
- * 250×250 here, and the Lucide glyph is a stand-in that keeps the composition
- * honest until that lands.
+ * ## There is no illustration
+ *
+ * There was: a 250px tinted circle holding an 86px Lucide glyph, standing in
+ * for commissioned art the board reserves that space for. The owner asked for
+ * it gone — onboarding was the only place in the product with art of a kind
+ * nothing else uses, and the glyph was a placeholder doing a real screen's job.
+ *
+ * **If commissioned illustration ever lands, this is the decision to revisit**;
+ * the board still calls for 250×250 here. Until then the title carries the
+ * slide, which is the same thing every other screen does.
  *
  * `width` is passed rather than measured because the parent is a paged
  * `ScrollView`: each page has to be exactly the viewport wide or the paging
@@ -39,8 +30,6 @@ const TONE_FG = {
  * scroll container.
  */
 export function WelcomeSlide({
-  icon,
-  tone,
   title,
   body,
   children,
@@ -48,16 +37,7 @@ export function WelcomeSlide({
 }: WelcomeSlideProps) {
   return (
     <View style={{ width }} className="px-gutter">
-      <View
-        className={cn(
-          "mx-auto mt-5.5 mb-7.5 size-62.5 items-center justify-center rounded-full",
-          TONE_BG[tone]
-        )}
-      >
-        <Icon as={icon} className={cn("size-21.5", TONE_FG[tone])} />
-      </View>
-
-      <Text variant="screenTitle" className="mb-3 text-[29px] leading-tight">
+      <Text variant="screenTitle" className="mt-8 mb-3 text-[29px] leading-tight">
         {title}
       </Text>
       <Text className="text-[15.5px] leading-[1.7] text-muted-foreground">

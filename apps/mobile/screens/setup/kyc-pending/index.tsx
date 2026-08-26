@@ -53,7 +53,7 @@ export function KycPendingScreen() {
         step={SETUP_STEP_INDEX.kyc}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-10"
+        className="mb-header"
       />
 
       {rejected ? (
@@ -65,12 +65,6 @@ export function KycPendingScreen() {
         />
       ) : (
         <>
-          <View className="border-sand-300 mb-7.5 size-44 items-center justify-center self-center rounded-full border-[10px]">
-            <Text className="font-heading-extrabold text-[15px] text-muted-foreground">
-              {t.ring}
-            </Text>
-          </View>
-
           <Text
             variant="screenTitle"
             className="mb-2.5 text-center text-[27px]"

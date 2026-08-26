@@ -1,13 +1,12 @@
 import { useAction, useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as Linking from "expo-linking"
 import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
-import { IdCard } from "lucide-react-native"
+
 import { useState } from "react"
 import { View } from "react-native"
 
@@ -80,10 +79,6 @@ export function KycScreen() {
         separator={common.stepSeparator}
         className="mb-header"
       />
-
-      <View className="bg-terracotta-200 mb-5.5 size-26 items-center justify-center rounded-full">
-        <Icon as={IdCard} className="text-terracotta-800 size-11" />
-      </View>
 
       <Text variant="screenTitle" className="mb-2.5 text-[30px]">
         {t.title}

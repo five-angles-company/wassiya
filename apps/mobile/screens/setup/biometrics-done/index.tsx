@@ -2,7 +2,8 @@ import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { router } from "expo-router"
-import { Check, Info, KeyRound } from "lucide-react-native"
+import { Check, Info } from "lucide-react-native"
+
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -33,16 +34,8 @@ export function BiometricsDoneScreen() {
         complete
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-12"
+        className="mb-header"
       />
-
-      <View className="mb-8 size-52.5 items-center justify-center self-center rounded-full bg-olive-100">
-        <View className="size-38 items-center justify-center rounded-full bg-olive-200">
-          <View className="size-24 items-center justify-center rounded-full bg-secondary">
-            <Icon as={KeyRound} className="size-11 text-background" />
-          </View>
-        </View>
-      </View>
 
       <Text variant="screenTitle" className="mb-3 text-center text-[31px]">
         {t.title}

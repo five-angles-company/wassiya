@@ -1,12 +1,11 @@
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as LocalAuthentication from "expo-local-authentication"
 import { router } from "expo-router"
-import { Fingerprint } from "lucide-react-native"
+
 import { useCallback, useEffect, useState } from "react"
 import { ActivityIndicator, Linking, Platform, View } from "react-native"
 
@@ -146,10 +145,6 @@ export function BiometricsScreen() {
         separator={common.stepSeparator}
         className="mb-header"
       />
-
-      <View className="bg-terracotta-200 mb-5 size-26 items-center justify-center rounded-full">
-        <Icon as={Fingerprint} className="text-terracotta-800 size-11.5" />
-      </View>
 
       {availability === "unenrolled" ? (
         <>

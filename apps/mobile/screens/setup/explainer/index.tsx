@@ -1,9 +1,9 @@
 import { Button } from "@workspace/ui-native/components/ui/button"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { KeyCard } from "@workspace/ui-native/components/wassiya/key-card"
 import { router } from "expo-router"
-import { Fingerprint, KeyRound, Printer, Shield } from "lucide-react-native"
+import { Fingerprint, Printer, Shield } from "lucide-react-native"
+
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -35,10 +35,6 @@ export function ExplainerScreen() {
         separator={common.stepSeparator}
         className="mb-header"
       />
-
-      <View className="mb-6.5 size-52.5 items-center justify-center self-center rounded-full bg-olive-100">
-        <Icon as={KeyRound} className="size-20 text-olive-700" />
-      </View>
 
       <Text variant="screenTitle" className="mb-2.5 text-[28px]">
         {t.title}
