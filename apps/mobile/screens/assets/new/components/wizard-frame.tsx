@@ -62,8 +62,10 @@ export function WizardFrame({
     <Screen keyboard bleed contentClassName="px-[22px] pt-5">
       <ScreenTop
         backLabel={common.back}
+        // Falls back to the list, not to the picker: the picker is a sheet
+        // over the list now, so there is no route to return to.
         onBack={() =>
-          router.canGoBack() ? router.back() : router.replace("/assets/new")
+          router.canGoBack() ? router.back() : router.replace("/assets")
         }
         trailing={
           <Text className="shrink-0 text-[12px] opacity-50">

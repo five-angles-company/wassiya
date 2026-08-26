@@ -18,7 +18,11 @@ export const ASSETS = {
   // The one subtitle, always in the same slot — the decrypting state puts its
   // progress here too, so the header never changes height.
   vaultCount: { ar: "{n} أصلاً · {m} لها مستلم", en: "{n} items · {m} reach someone" },
-  vaultDecrypting: { ar: "{n} أصلاً · يفكّ التشفير", en: "{n} items · opening" },
+  // No count here, and no `{n}`: the whole list decrypts in one pass, so there
+  // is no moment where some rows are open and the rest are not — and while the
+  // query is still in flight the total is unknown too. A placeholder that never
+  // gets substituted is how "{n}" ends up on screen.
+  vaultDecrypting: { ar: "تُفتح على جهازك", en: "Opening on your device" },
   // The screen's only alarm. It vanishes at zero rather than turning green:
   // "everything is fine" is not news, and a permanent bar is not an alert.
   unroutedAlert: {

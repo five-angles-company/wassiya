@@ -26,10 +26,10 @@
  * Individual unrouted rows say so in their own recipient slot, so the gap reads
  * both in summary and in place.
  */
-import { useState } from "react"
+import { useRef, useState } from "react"
+import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { VaultRow } from "@workspace/ui-native/components/wassiya/vault-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Info, Plus, Search } from "lucide-react-native"
@@ -39,8 +39,9 @@ import { Pressable, View } from "react-native"
 import { Screen } from "@/components/screen"
 import { useVaultGate } from "@/hooks/use-vault-gate"
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ICON } from "@/lib/asset-types"
+import { ASSET_TYPE_ICON, ASSET_TYPE_ROUTE, type AssetType } from "@/lib/asset-types"
 import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
+import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
@@ -61,9 +62,19 @@ export function AssetsScreen() {
 
   const num = (n: number) => fmtNum(n, locale)
 
+  const addSheet = useRef<TrueSheet>(null)
+  const openAdd = () => void addSheet.current?.present()
+
+  async function chooseType(type: AssetType) {
+    // Dismissed first: pushing a route out from under a presented sheet leaves
+    // it hanging over the wizard on Android.
+    await addSheet.current?.dismiss()
+    router.push(ASSET_TYPE_ROUTE[type])
+  }
+
   if (!unlocked) {
     return (
-      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
         <AssetsLocked
           status={t.lockedStatus!}
           count={num(vaultSize)}
@@ -87,7 +98,7 @@ export function AssetsScreen() {
   // Undefined is "still decrypting", which is a different screen from "empty".
   if (rows === undefined) {
     return (
-      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
         <AssetsDecrypting title={t.vaultTitle!} subtitle={t.vaultDecrypting!} />
       </Screen>
     )
@@ -95,14 +106,18 @@ export function AssetsScreen() {
 
   if (total === 0) {
     return (
-      <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+      <Screen inset="footer" bleed contentClassName="px-[22px] pt-5">
+        {/* The empty vault keeps a full-width button: it is the only action on
+            an otherwise blank screen, and a round button in the corner of one
+            reads as an afterthought rather than an invitation. */}
         <AssetsEmpty
           title={t.vaultTitle!}
           subtitle={t.emptySubtitle!}
           lead={t.emptyLead!}
           addLabel={t.addAsset!}
-          onAdd={() => router.push("/assets/new")}
+          onAdd={openAdd}
         />
+        <AssetTypeSheet ref={addSheet} onSelect={(type) => void chooseType(type)} />
       </Screen>
     )
   }
@@ -111,7 +126,32 @@ export function AssetsScreen() {
   const unrouted = rows.length - routed
 
   return (
-    <Screen inset="tab" bleed contentClassName="px-[22px] pt-5">
+    <Screen
+      inset="footer"
+      bleed
+      contentClassName="px-[22px] pt-5"
+      /*
+        A round button in the corner rather than a full-width slab. Adding is
+        the screen's primary action at any scroll position, so it stays pinned —
+        but a bar across the whole width competes with the list it sits under,
+        permanently, for a tap most sessions never make.
+
+        It rides `Screen`'s footer slot, which is already outside the scroll
+        area, so it needs no absolute positioning of its own.
+      */
+      footer={
+        <View className="items-end">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t.addAsset}
+            onPress={openAdd}
+            className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
+          >
+            <Icon as={Plus} size={26} strokeWidth={2.75} className="text-background" />
+          </Pressable>
+        </View>
+      }
+    >
       <View className="mb-[26px] flex-row items-start gap-3">
         <View className="flex-1">
           <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
@@ -181,12 +221,7 @@ export function AssetsScreen() {
         ))}
       </View>
 
-      <PrimaryCta
-        label={t.addAsset!}
-        icon={Plus}
-        onPress={() => router.push("/assets/new")}
-        className="mt-5"
-      />
+      <AssetTypeSheet ref={addSheet} onSelect={(type) => void chooseType(type)} />
     </Screen>
   )
 }
