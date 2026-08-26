@@ -316,6 +316,23 @@ export const ASSET_DETAIL = {
   // The collapsed summary on the recovery-codes row. A count, not the codes.
   codesCount: { ar: "{n} رموز", en: "{n} codes" },
   choosePlaceholder: { ar: "اختر", en: "Choose" },
+  copyIban: { ar: "انسخ الآيبان", en: "Copy IBAN" },
+  revealShort: { ar: "إظهار", en: "Reveal" },
+  // A replacement is staged until Save, and the row says so rather than
+  // pretending the swap already happened.
+  pendingReplace: { ar: "بانتظار الحفظ", en: "not saved yet" },
+  removePhoto: { ar: "أزل الصورة", en: "Remove photo" },
+  // ٤.٣ does not collect these yet; the asset screen does, because an heir who
+  // finds the device and knows its PIN never has to type twelve words.
+  fieldDevicePassword: { ar: "كلمة مرور الجهاز", en: "Device password" },
+  fieldDeviceLocation: { ar: "مكان الجهاز", en: "Where the device is" },
+  deviceLocationPlaceholder: {
+    ar: "الخزنة الحديدية في غرفة المكتب — المفتاح في الدرج الأيمن",
+    en: "The steel safe in the study — key in the right-hand drawer",
+  },
+  // While the number is short this counts rather than complains. Telling
+  // someone their IBAN is invalid at eight of twenty-four digits is nagging.
+  ibanCounting: { ar: "{n} من {total}", en: "{n} of {total}" },
   // For a value the vault genuinely does not hold — a wallet saved before ٤.٣
   // recorded its network. Distinct from "اختر", which asks; this states.
   notRecorded: { ar: "غير مسجّل", en: "Not recorded" },

@@ -24,15 +24,16 @@ import { useMemo, useState } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { Button } from "@workspace/ui-native/components/ui/button"
+
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
-import { RecipientPickerRow } from "@workspace/ui-native/components/wassiya/recipient-picker-row"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { RecipientRow } from "@workspace/ui-native/components/wassiya/recipient-row"
+import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import { router, useLocalSearchParams } from "expo-router"
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
-import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 type Selection = {
@@ -53,7 +54,8 @@ export function AssetRecipientsScreen() {
    */
   const { id, step } = useLocalSearchParams<{ id: string; step?: string }>()
   const assetId = id as Id<"assets">
-  const { t, locale } = useStrings("will/routing")
+  const { t } = useStrings("will/routing")
+  const { t: common } = useStrings("common")
 
   const heirs = useQuery(api.heirs.list)
   const current = useQuery(api.routing.forAsset, { assetId })
@@ -133,65 +135,64 @@ export function AssetRecipientsScreen() {
     }
   }
 
+  const people = allHeirs ? [] : (heirs ?? [])
+
   return (
-    <Screen
-      inset="footer"
-      footer={
-        <Button onPress={() => void save()} disabled={saving || !ready}>
-          <Text>{saving ? t.saving : t.saveRecipients}</Text>
-        </Button>
-      }
-    >
-      <ScreenHeader
-        title={t.recipientsTitle}
-        back="/assets"
-        step={step === "2" ? { index: 2, total: 2 } : undefined}
+    <Screen bleed contentClassName="px-[22px] pt-5">
+      <ScreenTop
+        backLabel={common.back}
+        onBack={() => (router.canGoBack() ? router.back() : router.replace("/assets"))}
+        className="mb-6"
       />
 
+      <Text className="font-heading-extrabold text-foreground mb-[5px] text-[28px] leading-[1.25]">
+        {t.recipientsTitle}
+      </Text>
+      <Text className="mb-[26px] text-[13px] opacity-50">
+        {step === "2" ? t.stepTwo : t.recipientsSubtitle}
+      </Text>
+
       {heirs !== undefined && heirs.length === 0 ? (
-        <AlertBanner variant="security" description={t.noHeirs} />
+        <AlertBanner variant="security" description={t.noHeirs} className="mb-5" />
       ) : null}
 
-      <View className="gap-row">
-        {/* The joint bucket first. Selecting it supersedes the individual
-            picks rather than adding to them — "all heirs" and "these three
-            heirs" are two different edges, and storing both would produce a
-            duplicate envelope for anyone in the list. */}
-        <RecipientPickerRow
-          kind="allHeirs"
+      <View className="mb-5">
+        {/* The joint bucket sits in the same list rather than in a section of
+            its own, and picking it clears the individual ticks — "all heirs"
+            and "these three heirs" are two different edges, and storing both
+            would produce a duplicate envelope for anyone in the list. */}
+        <RecipientRow
+          group
           name={t.allHeirs}
+          detail={t.allHeirsDetail}
           selected={allHeirs}
           onToggle={() => edit({ allHeirs: !allHeirs })}
-          locale={locale}
+          divider
         />
 
-        {!allHeirs
-          ? (heirs ?? []).map((heir) => (
-              <RecipientPickerRow
-                key={heir.id}
-                kind="heir"
-                name={heir.name}
-                detail={heir.relation}
-                selected={selected.has(heir.id)}
-                onToggle={() => toggle(heir.id)}
-                locale={locale}
-              />
-            ))
-          : null}
+        {people.map((heir) => (
+          <RecipientRow
+            key={heir.id}
+            name={heir.name}
+            detail={heir.relation}
+            selected={selected.has(heir.id)}
+            onToggle={() => toggle(heir.id)}
+            divider
+          />
+        ))}
 
-        <RecipientPickerRow
-          kind="executor"
+        <RecipientRow
+          group
           name={t.executor}
           detail={t.executorNote}
           selected={executor}
           onToggle={() => edit({ executor: !executor })}
-          locale={locale}
         />
       </View>
 
-      <Text
-        variant="footnote" className="mt-4"
-      >
+      {/* Body text, not a tinted notice: this is a fact about the product, not
+          a warning about what you just did. */}
+      <Text className="mb-auto text-[12px] leading-[1.65] opacity-55">
         {t.wholeAssetNote}
       </Text>
 
@@ -206,6 +207,14 @@ export function AssetRecipientsScreen() {
           {t.saveFailed}
         </Text>
       ) : null}
+
+      <PrimaryCta
+        label={t.saveRecipients!}
+        onPress={() => void save()}
+        disabled={!ready}
+        busy={saving}
+        className="mt-5"
+      />
     </Screen>
   )
 }

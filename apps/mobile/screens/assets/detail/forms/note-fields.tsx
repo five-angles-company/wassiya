@@ -1,6 +1,9 @@
-import { ChoiceRow } from "@workspace/ui-native/components/wassiya/choice-row"
-import { EditableRow } from "@workspace/ui-native/components/wassiya/editable-row"
+import { Text } from "@workspace/ui-native/components/ui/text"
+import { ChoiceField } from "@workspace/ui-native/components/wassiya/choice-field"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { fmtNum } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
+import { TextInput, View } from "react-native"
 
 import {
   kindLabel,
@@ -11,24 +14,22 @@ import {
 } from "@/screens/assets/detail/forms/note"
 
 /**
- * ٤.٨'s fields, as rows.
+ * ٤.٨ — the one screen in the vault with **no field labels at all**.
  *
- * ## The body is open, and it is not masked
+ * A title in Cairo 800, a rule, and prose. It should feel like paper, because
+ * this is the one asset a family will *read* rather than use — a letter, not a
+ * record. Labels over a letter would turn it back into a form.
  *
- * A note is prose the owner wrote to be read. Collapsing it behind a word count
- * would make the screen hide the only thing on it, and putting an eye in front
- * of it would make re-reading your own letter a challenge to pass. Masking is
- * for credentials — a password, a phrase, a recovery code — where the value is
- * transcribed rather than read and a shoulder over yours is the threat.
+ * The body runs at 15.5px on 2.05 line-height, which is looser than anything
+ * else in the app. That is deliberate: everywhere else the reader is scanning
+ * for a value, and here they are reading a sentence someone wrote to them.
  *
- * The whole screen is still under the screenshot guard, and the body is still
- * encrypted at rest under the asset's own DEK.
+ * The word count sits quietly at the end and is never a limit. Nobody writing
+ * their last instructions should be counted down.
  *
- * ## The placeholder follows the kind
- *
- * Same three kinds and same three prompts the wizard uses. "Where the safe key
- * is" and "what I want done with my mother's things" are different pieces of
- * writing, and the prompt is what tells an owner which one this note is.
+ * The **kind** keeps a labelled row, because it is metadata about the letter
+ * rather than part of it, and it changes the placeholder — which is the only
+ * guidance this screen offers about what to write.
  */
 export type NoteFieldsProps = {
   value: NoteForm
@@ -44,38 +45,49 @@ const BODY_PLACEHOLDER: Record<NoteKind, string> = {
   wish: "bodyWish",
 }
 
-export function NoteFields({ value, onChange, note }: NoteFieldsProps) {
+export function NoteFields({ value, onChange, note, locale }: NoteFieldsProps) {
   const words = wordCount(value.body)
 
   return (
     <>
-      <ChoiceRow
-        label={note.title!}
-        value={value.kind}
-        onChange={(kind) => onChange({ kind: kind as NoteKind })}
-        options={NOTE_KINDS.map((kind) => ({
-          value: kind,
-          label: kindLabel(kind, note),
-        }))}
-        divider
-      />
-      <EditableRow
-        label={note.titleLabel!}
+      {/* The title is the letter's own heading, so it is set like one. */}
+      <TextInput
         value={value.title}
         onChangeText={(title) => onChange({ title })}
         placeholder={note.titlePlaceholder}
-        divider
+        placeholderTextColor="#82796a"
+        className="font-heading-extrabold text-foreground p-0 text-[22px] leading-[1.3]"
       />
-      <EditableRow
-        label={note.words!.replace("{n}", String(words))}
+
+      <View className="bg-border mb-4 mt-3.5 h-px" />
+
+      <TextInput
         value={value.body}
         onChangeText={(body) => onChange({ body })}
         placeholder={note[BODY_PLACEHOLDER[value.kind]]}
-        expand
-        defaultOpen
-        editorClassName="min-h-52 leading-[1.9]"
-        summary={words > 0 ? value.body : "—"}
+        placeholderTextColor="#82796a"
+        multiline
+        textAlignVertical="top"
+        className="text-foreground min-h-52 p-0 text-[15.5px] leading-[2.05]"
       />
+
+      <Text className="mb-[22px] mt-4 text-[11.5px] opacity-45">
+        {note.words!.replace("{n}", fmtNum(words, locale))}
+      </Text>
+
+      <View className="bg-border h-px" />
+
+      <FieldRow label={note.title!}>
+        <ChoiceField
+          label={note.title!}
+          value={value.kind}
+          onChange={(kind) => onChange({ kind: kind as NoteKind })}
+          options={NOTE_KINDS.map((kind) => ({
+            value: kind,
+            label: kindLabel(kind, note),
+          }))}
+        />
+      </FieldRow>
     </>
   )
 }

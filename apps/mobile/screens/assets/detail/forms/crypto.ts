@@ -42,6 +42,17 @@ export type CryptoForm = {
   kind: string
   /** The phrase branch. */
   phrase: string
+  /**
+   * A hardware wallet's PIN, and where the device physically is.
+   *
+   * The board's asset screen carries both, and it is right to: a seed phrase
+   * recovers a wallet, but an heir who finds the Ledger in a drawer and knows
+   * its PIN never has to type twelve words at all. ٤.٣ does not collect them
+   * yet, so they are absent on everything saved so far — which the parser
+   * handles, because absent and empty are the same thing here.
+   */
+  devicePassword: string
+  deviceLocation: string
   /** The exchange branch. */
   account: string
   password: string
@@ -54,6 +65,8 @@ export function parseCrypto({ secret, title }: EditSource): CryptoForm | null {
     network: "",
     kind: "",
     phrase: "",
+    devicePassword: "",
+    deviceLocation: "",
     account: "",
     password: "",
     twoFactor: "",
@@ -84,6 +97,8 @@ export function parseCrypto({ secret, title }: EditSource): CryptoForm | null {
     network: str("network"),
     kind: str("kind"),
     phrase: str("phrase"),
+    devicePassword: str("devicePassword"),
+    deviceLocation: str("deviceLocation"),
     account: str("account"),
     password: str("password"),
     twoFactor: str("twoFactor"),
@@ -131,13 +146,21 @@ export function toCryptoPayload(
   const words = check.words
   const phrase = words.join(" ")
 
-  const known = form.network.length > 0 && form.kind.length > 0
+  // Anything worth recording beyond the words themselves forces the JSON
+  // shape. A bare phrase can only ever be a phrase, so a device PIN or a
+  // location has nowhere to live until the payload upgrades.
+  const extras =
+    form.devicePassword.length > 0 || form.deviceLocation.length > 0
+  const named = form.network.length > 0 && form.kind.length > 0
+  const known = named || extras
   const unchanged = phrase === checkMnemonic(sourcePhrase(source)).words.join(" ")
 
   return {
     label: {
       title,
-      subtitle: known
+      // Only a *named* network may appear in the subtitle. Upgrading the
+      // payload because someone recorded a PIN must not invent a network.
+      subtitle: named
         ? `${labels.secretLabel} · ${form.network} · ${formatCount(words.length)} ${wordUnit}`
         : unchanged
           ? // Nothing better to say than what was already there. Rebuilding it
@@ -152,7 +175,13 @@ export function toCryptoPayload(
     // `{"phrase": …}` with both fields blank would change the stored format
     // while carrying no more information than the bare phrase it replaced.
     secret: known
-      ? JSON.stringify({ kind: form.kind, network: form.network, phrase })
+      ? JSON.stringify({
+          kind: form.kind,
+          network: form.network,
+          phrase,
+          devicePassword: form.devicePassword,
+          deviceLocation: form.deviceLocation.trim(),
+        })
       : phrase,
     meta: { itemCount: words.length },
   }

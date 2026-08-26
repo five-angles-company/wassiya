@@ -158,7 +158,13 @@ export const ROUTING = {
   },
 
   // ٥.٣b
-  recipientsTitle: { ar: "من يستلم الوصول؟", en: "Who receives access?" },
+  // The subtitle slot carries the asset's name when reached from ٤.٩, and the
+  // step count when a wizard hands off here. Same slot, so the header never
+  // changes height between the two ways in.
+  stepTwo: { ar: "الخطوة ٢ من ٢", en: "Step 2 of 2" },
+  recipientsSubtitle: { ar: "اختر من يستلم هذا الأصل", en: "Choose who receives this asset" },
+  allHeirsDetail: { ar: "مجتمعين", en: "Jointly" },
+  recipientsTitle: { ar: "من يستلمها؟", en: "Who receives it?" },
   executorNote: {
     ar: "يستلم التعليمات فقط، دون المفاتيح",
     en: "Receives the instructions only, without the keys",

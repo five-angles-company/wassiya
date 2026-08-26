@@ -1,30 +1,48 @@
-import { ChoiceRow } from "@workspace/ui-native/components/wassiya/choice-row"
-import { EditableRow } from "@workspace/ui-native/components/wassiya/editable-row"
+import { useState } from "react"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
+import { Text } from "@workspace/ui-native/components/ui/text"
+import { ChoiceField } from "@workspace/ui-native/components/wassiya/choice-field"
+import { FieldCell } from "@workspace/ui-native/components/wassiya/field-cell"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { FieldValue } from "@workspace/ui-native/components/wassiya/field-value"
 import { fmtNum } from "@workspace/ui-native/lib/format"
+import { monoFont } from "@workspace/ui-native/lib/fonts"
 import type { Locale } from "@workspace/ui-native/lib/labels"
+import { cn } from "@workspace/ui-native/lib/utils"
+import * as Clipboard from "expo-clipboard"
+import { Check, Copy } from "lucide-react-native"
+import { Pressable, View } from "react-native"
 
 import { COUNTRIES } from "@/lib/countries"
-import { checkIban, groupIban, type IbanCheck } from "@/lib/iban"
+import { checkIban, groupIban, normalizeIban, type IbanCheck } from "@/lib/iban"
 import type { BankForm } from "@/screens/assets/detail/forms/bank"
 
 /**
- * ٤.٤'s fields, as rows.
+ * ٤.٤'s fields, as the board draws them on ١٥.
  *
- * ## Nothing here is masked
+ * ## Nothing here is masked, and the IBAN can be copied
  *
- * A bank account has no password. An IBAN is printed on statements and given
- * out to receive money — masking it would make the one field an heir has to
- * transcribe the hardest one to read, and buy nothing, because the tail already
- * appears unmasked in the vault list. It is `mono` instead, which is the
- * protection that actually matters: it gets copied character by character, and
- * a reshaped digit is how a family loses an account.
+ * A bank account has no password. The IBAN is printed on statements and handed
+ * out to receive money, so masking it would make the one value an heir has to
+ * transcribe the hardest one to read — and buy nothing, since its tail already
+ * shows unmasked in the vault list.
  *
- * ## The IBAN validates as it is typed
+ * It gets a **copy** affordance instead, because it is the one value an owner
+ * reads aloud down the phone to a bank. Mono, LTR, in four-character groups:
+ * the form it has to be transcribed in.
  *
- * Same `checkIban` the wizard uses — country prefix, then per-market length,
- * then ISO 7064 mod-97. An owner correcting a digit sees the error clear on the
- * keystroke that fixes it, and `canSave` is gated on the same verdict, so an
- * IBAN that cannot be a real one cannot be saved over one that was.
+ * ## Three short values share one row
+ *
+ * Type, currency and branch are two words each. Three full-width rows for six
+ * words is what makes a form feel like paperwork. The currency is derived from
+ * the country and reads at 55%, so nobody taps it expecting a keyboard.
+ *
+ * ## Short is a counter, not an error
+ *
+ * While the number is still being typed the line counts characters; only once
+ * it is long enough does it become a verdict. Telling someone their IBAN is
+ * invalid when they have typed eight of twenty-four digits is not validation,
+ * it is nagging.
  */
 export type BankFieldsProps = {
   value: BankForm
@@ -36,6 +54,8 @@ export type BankFieldsProps = {
   locale: Locale
 }
 
+type Key = "iban" | "bank" | "branch" | "instructions"
+
 export function BankFields({
   value,
   onChange,
@@ -43,106 +63,167 @@ export function BankFields({
   bank,
   locale,
 }: BankFieldsProps) {
+  const [focused, setFocused] = useState<Key | null>(null)
+  const [copied, setCopied] = useState(false)
+
   const check = checkIban(value.iban, value.country)
   const country = COUNTRIES.find((c) => c.code === value.country) ?? null
 
+  const state = (key: Key) => ({
+    active: focused === key,
+    dimmed: focused !== null && focused !== key,
+  })
+  const bind = (key: Key) => ({
+    onFocus: () => setFocused(key),
+    onBlur: () => setFocused((current) => (current === key ? null : current)),
+  })
+
+  async function copy() {
+    await Clipboard.setStringAsync(normalizeIban(value.iban))
+    setCopied(true)
+  }
+
   return (
     <>
-      <ChoiceRow
-        label={bank.countryLabel!}
-        value={value.country}
-        onChange={(country) => onChange({ country })}
-        options={COUNTRIES.map((c) => ({
-          value: c.code,
-          label: c.name[locale],
-        }))}
-        divider
-      />
-      <EditableRow
-        label={labels.fieldBank!}
-        value={value.bank}
-        onChangeText={(bank) => onChange({ bank })}
-        divider
-      />
-      {/* Displayed grouped, stored normalised — see `toBankPayload`. The raw
-          keystrokes stay in state so the cursor does not jump on regrouping. */}
-      <EditableRow
+      <FieldRow label={bank.bankLabel!} divider {...state("bank")}>
+        <FieldValue
+          value={value.bank}
+          onChangeText={(next) => onChange({ bank: next })}
+          {...bind("bank")}
+        />
+      </FieldRow>
+
+      <FieldRow
         label={labels.fieldIban!}
-        value={groupIban(value.iban)}
-        onChangeText={(iban) => onChange({ iban })}
-        autoCapitalize="characters"
-        autoCorrect={false}
-        mono
-        error={ibanError(check, bank, locale, country?.name[locale])}
         divider
-      />
-      <ChoiceRow
-        label={labels.fieldAccountType!}
-        value={value.accountType}
-        onChange={(accountType) => onChange({ accountType })}
-        options={[
-          { value: "current", label: bank.accountCurrent! },
-          { value: "savings", label: bank.accountSavings! },
-        ]}
-        divider
-      />
-      {/* Derived from the country, so it is shown and not asked for. An owner
-          cannot be made responsible for keeping the two consistent. */}
-      <EditableRow
-        label={labels.fieldCurrency!}
-        value={country?.currency ?? ""}
-        onChangeText={() => undefined}
-        readOnly
-        mono
-        divider
-      />
-      <EditableRow
-        label={labels.fieldBranch!}
-        value={value.branch}
-        onChangeText={(branch) => onChange({ branch })}
-        placeholder={bank.branchPlaceholder}
-        divider
-      />
-      <EditableRow
+        trailing={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={labels.copyIban!}
+            onPress={() => void copy()}
+            hitSlop={10}
+            className="shrink-0"
+          >
+            <Icon
+              as={copied ? Check : Copy}
+              size={18}
+              strokeWidth={2.75}
+              className={copied ? "text-olive-700" : "text-foreground opacity-45"}
+            />
+          </Pressable>
+        }
+        {...state("iban")}
+      >
+        <FieldValue
+          value={groupIban(value.iban)}
+          onChangeText={(next) => {
+            setCopied(false)
+            onChange({ iban: next })
+          }}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          ltr
+          className={cn(monoFont, "text-[15px] tracking-[0.75px]")}
+          {...bind("iban")}
+        />
+      </FieldRow>
+
+      {/* The quiet olive verdict, or a count while it is still too short. */}
+      <Text
+        className={cn(
+          "mb-1 text-[11.5px] leading-[1.6]",
+          check.status === "valid" ? "text-olive-700" : "text-terracotta-800"
+        )}
+      >
+        {ibanLine(check, value.iban, bank, labels, locale, country?.name[locale])}
+      </Text>
+
+      <View className="bg-border h-px" />
+
+      <View className="flex-row gap-[18px] py-[13px]">
+        <FieldCell
+          label={labels.fieldAccountType!}
+          value={
+            value.accountType === "savings"
+              ? bank.accountSavings!
+              : bank.accountCurrent!
+          }
+        />
+        <FieldCell
+          label={labels.fieldCurrency!}
+          value={country?.currency ?? ""}
+          dim
+          ltr
+        />
+        <FieldCell label={labels.fieldBranch!} value={value.branch} />
+      </View>
+
+      <View className="bg-border h-px" />
+
+      <FieldRow label={bank.countryLabel!} divider>
+        <ChoiceField
+          label={bank.countryLabel!}
+          value={value.country}
+          onChange={(next) => onChange({ country: next })}
+          options={COUNTRIES.map((c) => ({ value: c.code, label: c.name[locale] }))}
+        />
+      </FieldRow>
+
+      <FieldRow
         label={labels.fieldInstructions!}
-        value={value.instructions}
-        onChangeText={(instructions) => onChange({ instructions })}
-        placeholder={bank.instructionsPlaceholder}
-        expand
-        summary={value.instructions.length > 0 ? value.instructions : "—"}
-      />
+        {...state("instructions")}
+      >
+        <FieldValue
+          prose
+          value={value.instructions}
+          onChangeText={(next) => onChange({ instructions: next })}
+          placeholder={bank.instructionsPlaceholder}
+          {...bind("instructions")}
+        />
+      </FieldRow>
     </>
   )
 }
 
 /**
- * The wizard's own formatter, kept identical.
+ * The line under the IBAN. A count while it is short, a verdict once it is not.
  *
- * `unknownCountry` groups with the silent cases deliberately: no length on
- * record is not the owner's problem, the checksum still passed, and complaining
- * would block a legitimate account in an unlisted market.
+ * `unknownCountry` says nothing at all: no length on record is not the owner's
+ * problem, the checksum still passed, and complaining would block a legitimate
+ * account in an unlisted market.
  */
-function ibanError(
+function ibanLine(
   check: IbanCheck,
+  raw: string,
   t: Record<string, string>,
+  labels: Record<string, string>,
   locale: Locale,
   countryName: string | undefined
-): string | undefined {
+): string {
   switch (check.status) {
     case "valid":
+      return t.ibanValid!.replace(
+        "{n}",
+        fmtNum(normalizeIban(raw).length, locale)
+      )
     case "empty":
     case "unknownCountry":
-      return undefined
+      return ""
     case "wrongCountry":
       return t.ibanWrongCountry!
         .replace("{prefix}", check.prefix)
         .replace("{country}", countryName ?? "")
     case "badLength":
-      return t.ibanBadLength!
-        .replace("{country}", countryName ?? "")
-        .replace("{n}", fmtNum(check.expected, locale))
-        .replace("{have}", fmtNum(check.actual, locale))
+      // Short is a counter, not an error — until it is longer than it should be.
+      return check.actual < check.expected
+        ? labels.ibanCounting!
+            .replace("{n}", fmtNum(check.actual, locale))
+            .replace("{total}", fmtNum(check.expected, locale))
+        : t.ibanBadLength!
+            .replace("{country}", countryName ?? "")
+            .replace("{n}", fmtNum(check.expected, locale))
+            .replace("{have}", fmtNum(check.actual, locale))
     case "badChecksum":
-      return t.ibanBadChecksum
+      return t.ibanBadChecksum!
   }
 }

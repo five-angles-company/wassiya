@@ -5,13 +5,10 @@
  * asset opens into, and that decision has to happen before either child runs a
  * hook — which is the whole reason this file holds no state of its own.
  *
- * `digital` opens its **edit form** (`edit-screen.tsx`): tapping an asset opens
- * the thing that changes it, with no read-only page in between. The other five
- * types still open the read view (`read-screen.tsx`) until their forms land —
- * each needs work the digital account did not (IBAN validation, a legacy phrase
- * payload that stores neither its network nor its kind, a note draft store that
- * must not be prefilled with plaintext, two file pickers), and handing them a
- * form that cannot save them would be worse than the page they have.
+ * Every type opens its **edit form**: tapping an asset opens the thing that
+ * changes it, with no read-only page in between. The switch is exhaustive over
+ * `AssetType`, so adding a seventh type is a compile error here rather than a
+ * screen that silently falls through to someone else's fields.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
@@ -25,8 +22,9 @@ import { useStrings } from "@/i18n/use-strings"
 import { BankEditScreen } from "@/screens/assets/detail/edit/bank"
 import { CryptoEditScreen } from "@/screens/assets/detail/edit/crypto"
 import { DigitalEditScreen } from "@/screens/assets/detail/edit/digital"
+import { DocumentEditScreen } from "@/screens/assets/detail/edit/document"
 import { NoteEditScreen } from "@/screens/assets/detail/edit/note"
-import { AssetReadScreen } from "@/screens/assets/detail/read-screen"
+import { PhotosEditScreen } from "@/screens/assets/detail/edit/photos"
 
 export function AssetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -54,7 +52,9 @@ export function AssetDetailScreen() {
       return <CryptoEditScreen assetId={assetId} />
     case "note":
       return <NoteEditScreen assetId={assetId} />
-    default:
-      return <AssetReadScreen assetId={assetId} />
+    case "document":
+      return <DocumentEditScreen assetId={assetId} />
+    case "photos":
+      return <PhotosEditScreen assetId={assetId} />
   }
 }
