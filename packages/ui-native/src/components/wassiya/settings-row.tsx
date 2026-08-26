@@ -56,7 +56,11 @@ export function SettingsRow({
         onPress={onPress}
         accessibilityRole={onPress ? 'button' : undefined}
         className={cn(
-          'flex-row items-center gap-3 py-3.5',
+          // `px-4 py-3.5` — the same metric `stat-tile`, `vault-row` and
+          // `heir-card` use. This row had the vertical half only, so inside the
+          // card its callers wrap it in, the icon sat flush against one edge and
+          // the chevron against the other.
+          'flex-row items-center gap-3 px-4 py-3.5',
           onPress && 'active:opacity-70',
           quiet && 'opacity-80'
         )}>
@@ -87,7 +91,9 @@ export function SettingsRow({
           <Icon as={ChevronRight} flip className="size-4 shrink-0 opacity-40" />
         ) : null)}
       </Row>
-      {divider ? <View className="bg-border h-px" /> : null}
+      {/* Inset to the row's own padding rather than bleeding to the card's
+          edges, so the rule starts where the content starts. */}
+      {divider ? <View className="bg-border mx-4 h-px" /> : null}
     </View>
   );
 }
