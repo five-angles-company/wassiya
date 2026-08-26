@@ -140,7 +140,9 @@ export function AssetsScreen() {
         area, so it needs no absolute positioning of its own.
       */
       footer={
-        <View className="items-end">
+        // `Screen` drops its own gutter under `bleed`, so the footer supplies
+        // one — without it the button sits flush against the screen edge.
+        <View className="items-end px-[22px]">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t.addAsset}
