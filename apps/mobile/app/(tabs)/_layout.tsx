@@ -8,6 +8,7 @@ import {
 } from "lucide-react-native"
 
 import { TabBarIcon } from "@/components/tab-bar-icon"
+import { TabBarLabel } from "@/components/tab-bar-label"
 import { useVaultAutoLock } from "@/hooks/use-vault-autolock"
 import { useStrings } from "@/i18n/use-strings"
 
@@ -59,10 +60,10 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        // Tints the label only — the glyph is `TabBarIcon`'s business.
-        tabBarActiveTintColor: "#c67139",
-        tabBarInactiveTintColor: "#82796a",
-        tabBarLabelStyle: { fontSize: 11.5 },
+        // No tint colours and no label style: `TabBarIcon` and `TabBarLabel`
+        // render both halves themselves, so those would set values nothing
+        // reads. Colour and weight live with the components that draw them,
+        // where they can use the app's tokens instead of literals.
         // Declared, not inherited. The bar was **white** only because React
         // Navigation's DefaultTheme is — a theme this app never opted into —
         // and it was the one pure-white surface in a product built entirely
@@ -89,6 +90,9 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: t.home,
+          tabBarLabel: ({ focused }) => (
+            <TabBarLabel label={t.home} focused={focused} />
+          ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={Home} focused={focused} />
           ),
@@ -98,6 +102,9 @@ export default function TabsLayout() {
         name="assets"
         options={{
           title: t.assets,
+          tabBarLabel: ({ focused }) => (
+            <TabBarLabel label={t.assets} focused={focused} />
+          ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={Wallet} focused={focused} />
           ),
@@ -107,6 +114,9 @@ export default function TabsLayout() {
         name="heirs"
         options={{
           title: t.heirs,
+          tabBarLabel: ({ focused }) => (
+            <TabBarLabel label={t.heirs} focused={focused} />
+          ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={Users} focused={focused} />
           ),
@@ -116,6 +126,9 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: t.settings,
+          tabBarLabel: ({ focused }) => (
+            <TabBarLabel label={t.settings} focused={focused} />
+          ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={Settings} focused={focused} />
           ),
