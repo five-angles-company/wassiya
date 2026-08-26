@@ -198,6 +198,12 @@ export const NEW_DOCUMENT = {
   pages: { ar: "{n} صفحة", en: "{n} pages" },
   pickFile: { ar: "اختر ملفاً", en: "Choose a file" },
   fileLabel: { ar: "الملف", en: "The file" },
+  // Pages, because a deed is rarely one sheet and the order is baked into the
+  // PDF at save — after which nobody can look inside it again.
+  addPage: { ar: "أضف صفحة", en: "Add a page" },
+  removePage: { ar: "أزل الصفحة", en: "Remove page" },
+  movePageBack: { ar: "أخّر الصفحة", en: "Move page back" },
+  movePageForward: { ar: "قدّم الصفحة", en: "Move page forward" },
   replaceFile: { ar: "غيّر الملف", en: "Change file" },
   tooLarge: {
     ar: "الملف أكبر من {n} م.ب. اختر ملفاً أصغر.",
@@ -213,6 +219,14 @@ export const NEW_PHOTOS = {
   choose: { ar: "اختر الصور", en: "Choose photos" },
   chooseMore: { ar: "أضف المزيد", en: "Add more" },
   selected: { ar: "{n} مختارة", en: "{n} selected" },
+  removePhoto: { ar: "أزل الصورة", en: "Remove photo" },
+  retry: { ar: "أعد المحاولة", en: "Retry" },
+  uploadingNow: { ar: "جارٍ الرفع…", en: "Uploading…" },
+  // Which one, not how many: the rings already say how far along it got.
+  uploadFailedOne: {
+    ar: "تعذّر رفع صورة. المُعلَّمة بالأحمر — أعد المحاولة.",
+    en: "One photo did not upload. The marked one — try again.",
+  },
   encryptNote: {
     ar: "تُشفّر الصور والمصغّرات معاً على جهازك قبل رفعها · {size}",
     en: "Photos and thumbnails are encrypted together on your device before upload · {size}",
