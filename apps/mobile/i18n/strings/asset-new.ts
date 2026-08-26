@@ -84,6 +84,15 @@ export const NEW_CRYPTO = {
     en: "A BIP-39 phrase is 12, 15, 18, 21 or 24 words — you have {n}",
   },
   pasteEmpty: { ar: "الحافظة فارغة", en: "Nothing in the clipboard" },
+  paste: { ar: "لصق", en: "Paste" },
+  scanShort: { ar: "مسح رمز", en: "Scan" },
+  secretPlaceholder: {
+    ar: "اكتب أو الصق الكلمات، مفصولة بمسافات",
+    en: "Type or paste the words, separated by spaces",
+  },
+  // The olive verdict, split so the count can carry the locale's numerals.
+  validWords: { ar: "كلمة صحيحة", en: "valid words" },
+  checksumMatches: { ar: "رقم التدقيق مطابق", en: "checksum matches" },
 
   // QR — reading a phrase off a printed backup card.
   scanTitle: { ar: "امسح رمز النسخ الاحتياطي", en: "Scan your backup code" },
@@ -138,6 +147,9 @@ export const NEW_BANK = {
     ar: "آيبان صحيح ({n} خانة)",
     en: "Valid IBAN ({n} characters)",
   },
+  // Split, so the count can carry the locale's numerals on its own.
+  ibanChars: { ar: "خانة", en: "characters" },
+  ibanOk: { ar: "صحيح", en: "valid" },
   ibanBadLength: {
     ar: "آيبان {country} يتكوّن من {n} خانة — لديك {have}",
     en: "A {country} IBAN is {n} characters — you have {have}",
@@ -185,6 +197,7 @@ export const NEW_DOCUMENT = {
   typeOther: { ar: "أخرى", en: "Other" },
   pages: { ar: "{n} صفحة", en: "{n} pages" },
   pickFile: { ar: "اختر ملفاً", en: "Choose a file" },
+  fileLabel: { ar: "الملف", en: "The file" },
   replaceFile: { ar: "غيّر الملف", en: "Change file" },
   tooLarge: {
     ar: "الملف أكبر من {n} م.ب. اختر ملفاً أصغر.",
@@ -234,11 +247,26 @@ export const NEW_ACCOUNT = {
     ar: "ما الذي تريده من الوارث؟",
     en: "What should your heir do?",
   },
-  dispositionHandOver: {
-    ar: "سلّمه إلى وارث محدّد",
-    en: "Hand it to a named heir",
+  dispositionHandOver: { ar: "سلّمه إلى وارث", en: "Hand it over" },
+  dispositionDelete: { ar: "احذفه نهائياً", en: "Delete it permanently" },
+  // What choosing each one actually does. The board gives every option a line,
+  // because these are three different instructions to a grieving person.
+  dispositionHandOverNote: {
+    ar: "يستلم الدخول ويكمل هو",
+    en: "They get the login and carry on",
   },
-  dispositionDelete: { ar: "احذف الحساب نهائياً", en: "Delete the account" },
+  dispositionDeleteNote: {
+    ar: "التعليمات تصل الوصي",
+    en: "The instruction reaches your executor",
+  },
+  dispositionMemorialiseNote: {
+    ar: "للمنصات التي تدعم ذلك",
+    en: "Where the platform supports it",
+  },
+  chooseToContinue: {
+    ar: "اختر واحداً للمتابعة",
+    en: "Choose one to continue",
+  },
   dispositionMemorialise: {
     ar: "حوّله إلى حساب تذكاري",
     en: "Turn it into a memorial account",

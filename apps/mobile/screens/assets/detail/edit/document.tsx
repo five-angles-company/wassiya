@@ -48,9 +48,9 @@ export function DocumentEditScreen({ assetId }: { assetId: Id<"assets"> }) {
   const { t, locale } = useStrings("assets/detail")
   const { t: doc } = useStrings("assets/new/document")
 
-  const { load, save, saving, error } = useAssetEditor(assetId, {
-    payload: false,
-  })
+  // The payload is now a tiny `{kind}` blob, not the document — so it *is*
+  // fetched, and the 25 MB file behind it still never is.
+  const { load, save, saving, error } = useAssetEditor(assetId)
   const { form, patch, dirty, commit, reset } = useEditForm(
     load.status === "ready" ? load : null,
     parseDocument
@@ -154,10 +154,14 @@ export function DocumentEditScreen({ assetId }: { assetId: Id<"assets"> }) {
     const file = form.replacement
     const ok = await save({
       ...toDocumentPayload(form, formatSize),
-      // No replacement means no new blob — and `keep` is what stops the
-      // mutation seeing an empty `storageIds` and refusing the whole edit.
       ...(file === null
-        ? { keep: load.storageIds as Id<"_storage">[] }
+        ? {
+            // The kind blob is rewritten every save, so the file has to be put
+            // back *after* it — `keep` would place it first and invert the
+            // layout every other type relies on.
+            arrange: (uploaded) =>
+              [...uploaded, ...form.fileIds] as Id<"_storage">[],
+          }
         : {
             files: [
               { read: () => readFileBytes(file.uri), byteSize: file.size },
@@ -168,7 +172,10 @@ export function DocumentEditScreen({ assetId }: { assetId: Id<"assets"> }) {
       clearGenerated()
       patch({
         replacement: null,
-        current: { byteSize: file?.size ?? form.current.byteSize, mimeType: file?.mimeType ?? form.current.mimeType },
+        current: {
+          byteSize: file?.size ?? form.current.byteSize,
+          mimeType: file?.mimeType ?? form.current.mimeType,
+        },
       })
       commit()
     }

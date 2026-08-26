@@ -17,7 +17,6 @@ import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import { TextInput, View } from "react-native"
 
-import { Field } from "@/components/field"
 import { useDictation } from "@/hooks/use-dictation"
 import { useStrings } from "@/i18n/use-strings"
 import { NoteToolbar } from "@/screens/assets/new/note/components/note-toolbar"
@@ -93,38 +92,49 @@ export function NewNoteScreen() {
       <View className="gap-4">
         <OptionChips
           options={[
-            { value: "instructions", label: t.kindInstructions },
-            { value: "whereabouts", label: t.kindWhereabouts },
-            { value: "wish", label: t.kindWish },
+            { value: "instructions", label: t.kindInstructions! },
+            { value: "whereabouts", label: t.kindWhereabouts! },
+            { value: "wish", label: t.kindWish! },
           ]}
           value={kind}
           onChange={(value) => draft.update({ kind: value })}
+          className="mb-5"
         />
 
-        <Field
-          label={t.titleLabel}
-          placeholder={t.titlePlaceholder}
+        {/* No labels from here down. A title, a rule, and prose — this is the
+            one asset a family will *read* rather than use, and a labelled form
+            around a letter turns it back into paperwork. */}
+        <TextInput
           value={draft.title}
           onChangeText={(title) => draft.update({ title })}
-          hint={draft.savedAt === null ? undefined : savedAgo(draft.savedAt, t, locale)}
+          placeholder={t.titlePlaceholder}
+          placeholderTextColor={MUTED_FOREGROUND}
+          className="font-heading-extrabold text-foreground p-0 text-[22px] leading-[1.3]"
         />
 
-        {/* The page. `neutral-100` raised on the sand ground, generous leading,
-            and no visible field border — the board's "letter on paper" reading
-            comes from the surface, not from the toolbar. */}
-        <View className="rounded-card bg-neutral-100 gap-3 p-4">
-          <TextInput
-            value={body}
-            onChangeText={(next) => draft.update({ body: next })}
-            onSelectionChange={(event) =>
-              setSelection(event.nativeEvent.selection)
-            }
-            placeholder={PLACEHOLDER(t)[kind]}
-            placeholderTextColor={MUTED_FOREGROUND}
-            multiline
-            textAlignVertical="top"
-            className="min-h-52 text-[16px] leading-[1.9] text-foreground"
-          />
+        <View className="bg-border mb-4 mt-3.5 h-px" />
+
+        <TextInput
+          value={body}
+          onChangeText={(next) => draft.update({ body: next })}
+          onSelectionChange={(event) => setSelection(event.nativeEvent.selection)}
+          placeholder={PLACEHOLDER(t)[kind]}
+          placeholderTextColor={MUTED_FOREGROUND}
+          multiline
+          textAlignVertical="top"
+          className="text-foreground min-h-52 p-0 text-[15.5px] leading-[2.05]"
+        />
+
+        {/* The count sits beside the dictation control and is never a limit.
+            Nobody writing their last instructions should be counted down. */}
+        <View className="mb-auto mt-4 flex-row items-center justify-between gap-3">
+          <Text className="text-[11.5px] opacity-45">
+            {`${t.words!.replace("{n}", fmtNum(words, locale))}${
+              draft.savedAt === null
+                ? ""
+                : ` · ${savedAgo(draft.savedAt, t, locale)}`
+            }`}
+          </Text>
 
           <NoteToolbar
             value={body}
@@ -145,26 +155,14 @@ export function NewNoteScreen() {
             dictating={dictation.listening}
             labels={t}
           />
-
-          <View className="flex-row items-center justify-between">
-            <Text variant="metaSm" className="text-muted-foreground">
-              {t.words.replace("{n}", fmtNum(words, locale))}
-            </Text>
-            <Text variant="metaSm" className="text-muted-foreground">
-              {t.readOnRelease}
-            </Text>
-          </View>
         </View>
 
-        <Text variant="footnote">
-          {t.draftNote}
-        </Text>
-        <Text variant="footnote">
-          {chrome.encryptNote}
+        <Text className="mt-4 text-[11px] leading-[1.7] opacity-45">
+          {`${t.draftNote} · ${chrome.encryptNote}`}
         </Text>
 
         {error !== null ? (
-          <Text variant="meta" className="text-terracotta-800">
+          <Text variant="meta" className="text-terracotta-800 mt-3">
             {error}
           </Text>
         ) : null}

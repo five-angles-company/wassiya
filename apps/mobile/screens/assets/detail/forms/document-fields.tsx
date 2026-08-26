@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
 import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
 import { FieldValue } from "@workspace/ui-native/components/wassiya/field-value"
 import { FileText, ScanLine, Upload } from "lucide-react-native"
@@ -8,8 +9,17 @@ import { Pressable, View } from "react-native"
 
 import {
   describeType,
+  DOCUMENT_KINDS,
   type DocumentForm,
 } from "@/screens/assets/detail/forms/document"
+
+/** Chip labels, keyed flat so the strings table stays flat. */
+export const KIND_KEY: Record<string, string> = {
+  deed: "typeDeed",
+  marriage: "typeMarriage",
+  certificate: "typeCertificate",
+  other: "typeOther",
+}
 
 /**
  * ٤.٥'s fields.
@@ -78,6 +88,19 @@ export function DocumentFields({
       </FieldRow>
 
       <View className={focused ? "opacity-45" : undefined}>
+        <View className="py-[13px]">
+          <Text className="mb-2 text-[12px] opacity-50">{document.typeLabel}</Text>
+          <ChipRow
+            options={DOCUMENT_KINDS.map((k) => ({
+              value: k,
+              label: document[KIND_KEY[k]!]!,
+            }))}
+            value={value.kind.length > 0 ? value.kind : null}
+            onChange={(kind) => onChange({ kind })}
+          />
+        </View>
+        <View className="bg-border h-px" />
+
         <View className="py-3.5">
           <Text className="mb-[7px] text-[12px] opacity-50">
             {labels.filesRowLabel}

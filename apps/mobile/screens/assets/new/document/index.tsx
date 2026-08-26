@@ -16,8 +16,10 @@
  * leaving the screen.
  */
 import { useEffect, useRef, useState } from "react"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { FieldValue } from "@workspace/ui-native/components/wassiya/field-value"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import * as DocumentPicker from "expo-document-picker"
@@ -27,13 +29,12 @@ import DocumentScanner, {
   ScanDocumentResponseStatus,
 } from "react-native-document-scanner-plugin"
 import { FileText, ScanLine } from "lucide-react-native"
-import { View } from "react-native"
+import { Pressable, View } from "react-native"
 
-import { Field } from "@/components/field"
+
 import { useStrings } from "@/i18n/use-strings"
 import { fileSize, readFileBytes } from "@/lib/asset-upload"
 import { buildScannedPdf, discardScan } from "@/lib/scanned-pdf"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
 
@@ -158,6 +159,10 @@ export function NewDocumentScreen() {
         title: title.trim(),
         subtitle: `${describeType(file.mimeType)} · ${formatSize(file.size, locale)}`,
       },
+      // The kind, as a payload blob ahead of the file. ٤.٥ used to collect it
+      // into local state and drop it on the floor; storing it is what makes
+      // the chooser mean something on ٤.٩.
+      secret: JSON.stringify({ kind }),
       files: [{ read: () => readFileBytes(file.uri), byteSize: file.size }],
       meta: {
         itemCount: 1,
@@ -182,65 +187,83 @@ export function NewDocumentScreen() {
       submitting={submitting}
       onSubmit={() => void save()}
     >
-      <View className="gap-4">
-        <View className="gap-2">
-          <Button variant="outline" onPress={() => void pick()}>
-            <Icon as={FileText} className="text-foreground size-4.5" />
-            <Text>{file === null ? t.fromFiles : t.replaceFile}</Text>
-          </Button>
+      <View className="mb-auto">
+        <FieldRow label={t.titleLabel!} divider>
+          <FieldValue
+            value={title}
+            onChangeText={setTitle}
+            placeholder={t.titlePlaceholder}
+          />
+        </FieldRow>
 
-          <Button
-            variant="outline"
-            onPress={() => void scan()}
-            disabled={scanning}
-          >
-            <Icon as={ScanLine} className="text-foreground size-4.5" />
-            <Text>{scanning ? t.scanning : t.scan}</Text>
-          </Button>
+        <View className="py-[13px]">
+          <Text className="mb-2 text-[12px] opacity-50">{t.typeLabel}</Text>
+          <ChipRow
+            options={[
+              { value: "deed", label: t.typeDeed! },
+              { value: "marriage", label: t.typeMarriage! },
+              { value: "certificate", label: t.typeCertificate! },
+              { value: "other", label: t.typeOther! },
+            ]}
+            value={kind}
+            onChange={setKind}
+          />
+        </View>
+        <View className="bg-border h-px" />
+
+        <View className="mb-2.5 mt-[13px] flex-row items-baseline gap-[9px]">
+          <Text className="flex-1 text-[12px] opacity-50">{t.fileLabel}</Text>
+          {file !== null ? (
+            <Text className="text-[12px] opacity-50">
+              {pageCount > 0
+                ? `${t.pages!.replace("{n}", fmtNum(pageCount, locale))} · ${formatSize(file.size, locale)}`
+                : formatSize(file.size, locale)}
+            </Text>
+          ) : null}
         </View>
 
         {file !== null ? (
-          <View className="rounded-row bg-card flex-row items-center gap-3 px-4 py-3.5">
-            <Icon as={FileText} className="text-terracotta-700 size-4.5" />
-            <View className="min-w-0 flex-1">
-              <Text variant="rowTitle" numberOfLines={1}>
-                {file.name}
-              </Text>
-              <Text variant="metaSm">
-                {pageCount > 0
-                  ? `${t.pages.replace("{n}", fmtNum(pageCount, locale))} · ${formatSize(file.size, locale)}`
-                  : formatSize(file.size, locale)}
-              </Text>
+          <View className="bg-card mb-2.5 flex-row items-center gap-3 rounded-[24px] p-[15px]">
+            <View className="bg-background size-[42px] shrink-0 items-center justify-center rounded-[14px]">
+              <Icon as={FileText} size={20} strokeWidth={2.75} className="text-terracotta-800" />
             </View>
+            <Text numberOfLines={1} className="font-body-semibold flex-1 text-[15px]">
+              {file.name}
+            </Text>
           </View>
         ) : null}
 
+        {/* Scan leads: it is the harder path and the one people forget exists.
+            Both land in the same PDF, so nothing below this screen branches. */}
+        <View className="flex-row gap-[9px]">
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void scan()}
+            disabled={scanning}
+            className="bg-card h-[46px] flex-1 flex-row items-center justify-center gap-2 rounded-full active:opacity-80"
+          >
+            <Icon as={ScanLine} size={16} strokeWidth={2.75} className="text-foreground" />
+            <Text className="text-[13.5px]">{scanning ? t.scanning : t.scan}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void pick()}
+            className="bg-card h-[46px] flex-1 flex-row items-center justify-center gap-2 rounded-full active:opacity-80"
+          >
+            <Icon as={FileText} size={16} strokeWidth={2.75} className="text-foreground" />
+            <Text className="text-[13.5px]">
+              {file === null ? t.fromFiles : t.replaceFile}
+            </Text>
+          </Pressable>
+        </View>
+
         {notice !== null ? (
-          <Text variant="meta" className="text-terracotta-800">
+          <Text className="text-terracotta-800 mt-2.5 text-[11.5px] leading-[1.6]">
             {notice}
           </Text>
         ) : null}
 
-        <Field
-          label={t.titleLabel}
-          placeholder={t.titlePlaceholder}
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <OptionChips
-          label={t.typeLabel}
-          options={[
-            { value: "deed", label: t.typeDeed },
-            { value: "marriage", label: t.typeMarriage },
-            { value: "certificate", label: t.typeCertificate },
-            { value: "other", label: t.typeOther },
-          ]}
-          value={kind}
-          onChange={setKind}
-        />
-
-        <Text variant="footnote">
+        <Text className="mt-[18px] text-[11px] leading-[1.7] opacity-45">
           {chrome.encryptNote}
         </Text>
 

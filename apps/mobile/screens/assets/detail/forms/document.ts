@@ -7,18 +7,19 @@
  * others read `EditSource.secret`, and the edit screen never downloads the
  * document to render its own form.
  *
- * ## `kind` is not here, and that is deliberate
+ * ## `kind` now has somewhere to live
  *
- * The wizard renders a deed/marriage/certificate/other chooser and **never
- * submits it** — `save()` builds `label`, `files` and `meta` with no `kind`
- * anywhere. Carrying that control onto the edit screen would reproduce a
- * decision the vault does not keep: the owner would set it, save, reopen, and
- * find it back at its default. A row that cannot remember what it was told does
- * not belong on a screen whose whole job is to remember.
+ * ٤.٥ rendered a deed/marriage/certificate/other chooser and **never submitted
+ * it** — the value went into local state and died there. The board draws those
+ * chips, so rather than dropping the control or dropping the input, documents
+ * gained a small payload blob holding `{kind}`, stored ahead of the file the
+ * way every other type stores its secret.
  *
- * Storing it properly would mean giving this type a secret blob, which changes
- * the `storageIds` layout for every document already saved. That is a migration
- * with its own plan, not a field to slip into an edit form.
+ * That makes `storageIds` `[kind, file]` on anything saved from now on, and
+ * plain `[file]` on everything saved before. Both are read here: one blob means
+ * a legacy row whose kind was never recorded, and the chips say so rather than
+ * asserting "deed" — the same rule the crypto phrase follows, for the same
+ * reason.
  */
 import type { EditPayload, EditSource } from "@/screens/assets/detail/forms/source"
 
@@ -30,22 +31,50 @@ export type PickedFile = {
   mimeType: string
 }
 
+export const DOCUMENT_KINDS = ["deed", "marriage", "certificate", "other"]
+
 export type DocumentForm = {
   title: string
+  /** `""` on a row saved before ٤.٥ recorded it — never defaulted to "deed". */
+  kind: string
   /** `null` keeps the stored file untouched. */
   replacement: PickedFile | null
   /** What the row currently holds, for the row that shows it. */
   current: { byteSize: number; mimeType: string }
+  /** The file blob, which survives every edit that does not replace it. */
+  fileIds: string[]
 }
 
-export function parseDocument({ title, meta }: EditSource): DocumentForm {
+export function parseDocument({
+  secret,
+  title,
+  meta,
+  storageIds,
+}: EditSource): DocumentForm {
+  // One blob is a legacy row: the file, and no kind was ever written.
+  const hasPayload = storageIds.length > 1
+  let kind = ""
+  if (hasPayload) {
+    try {
+      const parsed: unknown = JSON.parse(secret)
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        const value = (parsed as Record<string, unknown>).kind
+        if (typeof value === "string") kind = value
+      }
+    } catch {
+      /* a rotated format; the chips stay unset rather than guessing */
+    }
+  }
+
   return {
     title,
+    kind,
     replacement: null,
     current: {
       byteSize: meta.byteSize ?? 0,
       mimeType: meta.mimeType ?? "application/octet-stream",
     },
+    fileIds: hasPayload ? storageIds.slice(1) : storageIds,
   }
 }
 
@@ -62,6 +91,9 @@ export function toDocumentPayload(
       title: form.title.trim(),
       subtitle: `${describeType(mimeType)} · ${formatSize(byteSize)}`,
     },
+    // Written on every save, which is also what migrates a legacy row onto the
+    // two-blob layout the moment its owner next touches it.
+    secret: JSON.stringify({ kind: form.kind }),
     meta: { itemCount: 1, byteSize, mimeType },
   }
 }

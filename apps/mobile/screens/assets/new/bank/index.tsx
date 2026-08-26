@@ -1,44 +1,72 @@
 /**
  * ٤.٤ — a bank account.
  *
- * One parameterised form, never a per-country screen: the selected country
- * drives the IBAN length and nothing else changes. The mod-97 checksum is
- * verified locally before saving, for the same reason 4.3 verifies BIP-39 — an
- * heir who finds a wrong IBAN cannot ask what it should have been.
+ * ## Country first, because it parameterises everything under it
  *
- * The IBAN is the only field here rendered LTR-isolated. It is a machine
- * string that gets read out and typed into a bank's form, and Arabic-Indic
- * shaping on it has caused real mis-transcription.
+ * IBAN length and mask, the currency, and which checksum rules apply. It is not
+ * a preference tucked at the bottom; it is the thing that decides whether the
+ * number below it is valid at all. The currency is **derived and never typed**:
+ * an owner cannot be made responsible for keeping a country and its currency
+ * consistent by hand.
+ *
+ * ## Short is a counter, not an error
+ *
+ * While the number is still being written the line counts characters; only once
+ * it is long enough does it become a verdict, and only then in terracotta.
+ * Telling someone their IBAN is invalid at eight of twenty-four digits is not
+ * validation, it is nagging.
+ *
+ * ## Three short values share one row
+ *
+ * Type, currency and branch are two words each. Three full-width rows for six
+ * words is what makes a form feel like paperwork, and the branch stays visibly
+ * optional instead of hiding behind an "advanced" disclosure.
  */
 import { useState } from "react"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
+import { ChoiceField } from "@workspace/ui-native/components/wassiya/choice-field"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { FieldValue } from "@workspace/ui-native/components/wassiya/field-value"
 import { fmtNum } from "@workspace/ui-native/lib/format"
+import { monoFont } from "@workspace/ui-native/lib/fonts"
+import { cn } from "@workspace/ui-native/lib/utils"
+import { Check } from "lucide-react-native"
 import { router } from "expo-router"
 import { View } from "react-native"
 
-import { Field } from "@/components/field"
 import { useStrings } from "@/i18n/use-strings"
-import { COUNTRIES, findCountry } from "@/lib/countries"
+import { COUNTRIES, DEFAULT_COUNTRY, findCountry } from "@/lib/countries"
 import { checkIban, groupIban, normalizeIban } from "@/lib/iban"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { useAssetSubmit } from "@/screens/assets/new/use-asset-submit"
 
 export function NewBankScreen() {
   const { t, locale } = useStrings("assets/new/bank")
-  const { t: chrome } = useStrings("assets/new")
+  const { t: detail } = useStrings("assets/detail")
   const { submit, submitting, error } = useAssetSubmit()
 
-  const [country, setCountry] = useState("SA")
+  const [country, setCountry] = useState(DEFAULT_COUNTRY)
   const [bank, setBank] = useState("")
   const [iban, setIban] = useState("")
   const [accountType, setAccountType] = useState("current")
   const [branch, setBranch] = useState("")
   const [instructions, setInstructions] = useState("")
+  const [focused, setFocused] = useState<string | null>(null)
 
   const check = checkIban(iban, country)
-  const selectedCountry = findCountry(country)
+  const selected = findCountry(country)
+  const num = (n: number) => fmtNum(n, locale)
+
+  const bind = (key: string) => ({
+    onFocus: () => setFocused(key),
+    onBlur: () => setFocused((current) => (current === key ? null : current)),
+  })
+  const state = (key: string) => ({
+    active: focused === key,
+    dimmed: focused !== null && focused !== key,
+  })
 
   async function save() {
     if (check.status !== "valid") return
@@ -47,7 +75,7 @@ export function NewBankScreen() {
       type: "bank",
       label: {
         title: bank.trim(),
-        // The masked tail is what 4.1 shows — enough to recognise the account,
+        // The masked tail is what ٤.١ shows — enough to recognise the account,
         // not enough to be the account.
         subtitle: `${clean.slice(0, 4)} •••• ${clean.slice(-4)}`,
       },
@@ -56,16 +84,18 @@ export function NewBankScreen() {
         iban: clean,
         country,
         accountType,
-        currency: selectedCountry?.currency ?? "",
+        currency: selected?.currency ?? "",
         branch: branch.trim(),
         instructions: instructions.trim(),
       }),
       meta: {},
     })
-    if (saved) router.replace({
-      pathname: "/assets/[id]/recipients",
-      params: { id: saved, step: "2" },
-    })
+    if (saved) {
+      router.replace({
+        pathname: "/assets/[id]/recipients",
+        params: { id: saved, step: "2" },
+      })
+    }
   }
 
   return (
@@ -75,111 +105,141 @@ export function NewBankScreen() {
       submitting={submitting}
       onSubmit={() => void save()}
     >
-      <View className="gap-4">
-        <SheetSelect
-          label={t.countryLabel}
-          value={country}
-          onChange={setCountry}
-          options={COUNTRIES.map((c) => ({
-            value: c.code,
-            label: c.name[locale],
-          }))}
-        />
+      <View className="mb-auto">
+        <FieldRow label={t.countryLabel!} divider>
+          <ChoiceField
+            label={t.countryLabel!}
+            value={country}
+            onChange={setCountry}
+            options={COUNTRIES.map((c) => ({
+              value: c.code,
+              label: c.name[locale],
+            }))}
+          />
+        </FieldRow>
 
-        {/* Free text rather than a picker: the board asks for a per-country
-            bank lookup "with free-text fallback", and a list that silently
-            omits someone's bank is worse than no list at all. The lookup is
-            the part still missing, not the ability to type. */}
-        <Field
-          label={t.bankLabel}
-          placeholder={t.bankPlaceholder}
-          value={bank}
-          onChangeText={setBank}
-        />
+        <FieldRow label={t.bankLabel!} divider {...state("bank")}>
+          <FieldValue
+            value={bank}
+            onChangeText={setBank}
+            placeholder={t.bankPlaceholder}
+            {...bind("bank")}
+          />
+        </FieldRow>
 
-        <Field
-          label={t.ibanLabel}
-          value={groupIban(iban)}
-          onChangeText={setIban}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          // Latin digits, left-to-right, in an otherwise mirrored screen.
-          className="text-left"
-          hint={
-            check.status === "valid"
-              ? t.ibanValid.replace(
-                  "{n}",
-                  fmtNum(normalizeIban(iban).length, locale)
-                )
-              : undefined
-          }
-          error={ibanError(check, t, locale, selectedCountry?.name[locale])}
-        />
+        <FieldRow label={t.ibanLabel!} {...state("iban")}>
+          <FieldValue
+            value={groupIban(iban)}
+            onChangeText={setIban}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            ltr
+            className={cn(monoFont, "text-[15px] tracking-[0.75px]")}
+            {...bind("iban")}
+          />
+        </FieldRow>
 
-        <OptionChips
-          label={t.accountTypeLabel}
-          options={[
-            { value: "current", label: t.accountCurrent },
-            { value: "savings", label: t.accountSavings },
-          ]}
-          value={accountType}
-          onChange={setAccountType}
-        />
-
-        <Field
-          label={t.branchLabel}
-          placeholder={t.branchPlaceholder}
-          value={branch}
-          onChangeText={setBranch}
-        />
-
-        <Field
-          label={t.instructionsLabel}
-          placeholder={t.instructionsPlaceholder}
-          value={instructions}
-          onChangeText={setInstructions}
-          multiline
-          className="h-auto min-h-24 py-3"
-        />
-
-        <Text variant="footnote">
-          {chrome.encryptNote}
-        </Text>
-
-        {error !== null ? (
-          <Text variant="meta" className="text-terracotta-800">
-            {error}
+        {/* The quiet olive verdict, or a count while it is still short. */}
+        <View className="mb-3 flex-row items-center gap-2">
+          {check.status === "valid" ? (
+            <Icon
+              as={Check}
+              size={14}
+              strokeWidth={2.75}
+              className="text-olive-700 shrink-0"
+            />
+          ) : null}
+          <Text
+            className={cn(
+              "flex-1 text-[12px] leading-[1.6]",
+              check.status === "valid" ? "text-olive-700" : "text-terracotta-800"
+            )}
+          >
+            {ibanLine()}
           </Text>
-        ) : null}
+        </View>
+
+        <View className="bg-border h-px" />
+
+        <View className="flex-row gap-[18px] py-[13px]">
+          <View className="min-w-0 flex-1">
+            <Text className="mb-1.5 text-[12px] opacity-50">
+              {t.accountTypeLabel}
+            </Text>
+            <ChipRow
+              options={[
+                { value: "current", label: t.accountCurrent! },
+                { value: "savings", label: t.accountSavings! },
+              ]}
+              value={accountType}
+              onChange={setAccountType}
+            />
+          </View>
+          <View className="w-16 shrink-0">
+            <Text className="mb-1.5 text-[12px] opacity-50">
+              {t.currencyLabel}
+            </Text>
+            <Text
+              className="font-body-semibold text-foreground text-[16px] opacity-55"
+              style={{ writingDirection: "ltr" }}
+            >
+              {selected?.currency ?? ""}
+            </Text>
+          </View>
+        </View>
+
+        <View className="bg-border h-px" />
+
+        <FieldRow label={t.branchLabel!} divider {...state("branch")}>
+          <FieldValue
+            value={branch}
+            onChangeText={setBranch}
+            placeholder={t.branchPlaceholder}
+            {...bind("branch")}
+          />
+        </FieldRow>
+
+        <FieldRow label={t.instructionsLabel!} {...state("instructions")}>
+          <FieldValue
+            prose
+            value={instructions}
+            onChangeText={setInstructions}
+            placeholder={t.instructionsPlaceholder}
+            {...bind("instructions")}
+          />
+        </FieldRow>
       </View>
+
+      {error !== null ? (
+        <Text variant="meta" className="text-terracotta-800 mt-3">
+          {error}
+        </Text>
+      ) : null}
     </WizardFrame>
   )
-}
 
-function ibanError(
-  check: ReturnType<typeof checkIban>,
-  t: Record<string, string>,
-  locale: "ar" | "en",
-  countryName: string | undefined
-): string | undefined {
-  // `unknownCountry` groups with the silent cases deliberately: no length on
-  // record is not the user's problem, the checksum still passed, and
-  // complaining would block a legitimate account in an unlisted market.
-  switch (check.status) {
-    case "valid":
-    case "empty":
-    case "unknownCountry":
-      return undefined
-    case "wrongCountry":
-      return t.ibanWrongCountry!
-        .replace("{prefix}", check.prefix)
-        .replace("{country}", countryName ?? "")
-    case "badLength":
-      return t.ibanBadLength!
-        .replace("{country}", countryName ?? "")
-        .replace("{n}", fmtNum(check.expected, locale))
-        .replace("{have}", fmtNum(check.actual, locale))
-    case "badChecksum":
-      return t.ibanBadChecksum
+  function ibanLine(): string {
+    switch (check.status) {
+      case "valid":
+        return `${num(normalizeIban(iban).length)} ${t.ibanChars} · ${t.ibanOk}`
+      case "empty":
+      case "unknownCountry":
+        return ""
+      case "wrongCountry":
+        return t.ibanWrongCountry!
+          .replace("{prefix}", check.prefix)
+          .replace("{country}", selected?.name[locale] ?? "")
+      case "badLength":
+        return check.actual < check.expected
+          ? detail.ibanCounting!
+              .replace("{n}", num(check.actual))
+              .replace("{total}", num(check.expected))
+          : t.ibanBadLength!
+              .replace("{country}", selected?.name[locale] ?? "")
+              .replace("{n}", num(check.expected))
+              .replace("{have}", num(check.actual))
+      case "badChecksum":
+        return t.ibanBadChecksum!
+    }
   }
 }

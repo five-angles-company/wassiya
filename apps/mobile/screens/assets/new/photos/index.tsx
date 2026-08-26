@@ -25,16 +25,17 @@
  * `useCreateAsset` on why uploads precede the row).
  */
 import { useState } from "react"
-import { Button } from "@workspace/ui-native/components/ui/button"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
+import { FieldValue } from "@workspace/ui-native/components/wassiya/field-value"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import * as ImagePicker from "expo-image-picker"
 import { router } from "expo-router"
-import { Images } from "lucide-react-native"
-import { Image, View } from "react-native"
+import { Plus } from "lucide-react-native"
+import { Image, Pressable, View } from "react-native"
 
-import { Field } from "@/components/field"
+
 import { useStrings } from "@/i18n/use-strings"
 import { discardLocalFile, readFileBytes } from "@/lib/asset-upload"
 import { makeThumbnail } from "@/lib/thumbnail"
@@ -143,65 +144,69 @@ export function NewPhotosScreen() {
       submitting={submitting || preparing}
       onSubmit={() => void save()}
     >
-      <View className="gap-4">
-        <Field
-          label={t.albumLabel}
-          placeholder={t.albumPlaceholder}
-          value={album}
-          onChangeText={setAlbum}
-        />
+      <View className="mb-auto">
+        <FieldRow label={t.albumLabel!} divider>
+          <FieldValue
+            value={album}
+            onChangeText={setAlbum}
+            placeholder={t.albumPlaceholder}
+          />
+        </FieldRow>
 
-        <Button
-          variant="outline"
-          onPress={() => void pick()}
-          disabled={photos.length >= MAX_PHOTOS}
-        >
-          <Icon as={Images} className="text-foreground size-4.5" />
-          <Text>{photos.length === 0 ? t.choose : t.chooseMore}</Text>
-        </Button>
-
-        {photos.length === 0 ? (
-          <Text variant="metaSm" className="text-muted-foreground text-center">
-            {t.none}
+        {/* The count sits in the label line, "٦ من ٢٠" — a ceiling stated
+            once, rather than an error raised at the twenty-first tap. */}
+        <View className="mb-2.5 mt-[13px] flex-row items-baseline gap-[9px]">
+          <Text className="flex-1 text-[12px] opacity-50">{t.title}</Text>
+          <Text className="text-[12px] opacity-50">
+            {`${fmtNum(photos.length, locale)} ${chrome.stepSeparator} ${fmtNum(MAX_PHOTOS, locale)}`}
           </Text>
-        ) : (
-          <View className="gap-2">
-            <View className="flex-row flex-wrap gap-2">
-              {photos.map((photo) => (
-                <Image
-                  key={photo.uri}
-                  source={{ uri: photo.uri }}
-                  className="rounded-box size-18"
-                  // Local previews of what the user just picked. These are the
-                  // originals, not the encrypted copies — 4.9 will need real
-                  // decryption to render its grid.
-                  accessibilityIgnoresInvertColors
-                />
-              ))}
-            </View>
-            <Text variant="metaSm" className="text-muted-foreground">
-              {`${t.selected.replace("{n}", fmtNum(photos.length, locale))} · ${t.encryptNote.replace("{size}", formatSize(totalBytes, locale))}`}
-            </Text>
-            {preparing ? (
-              <Text variant="metaSm" className="text-muted-foreground">
-                {t.preparing}
-              </Text>
-            ) : submitting ? (
-              <Text variant="metaSm" className="text-muted-foreground">
-                {t.uploading
-                  .replace("{done}", fmtNum(done, locale))
-                  .replace("{total}", fmtNum(photos.length, locale))}
-              </Text>
-            ) : null}
-          </View>
-        )}
+        </View>
 
-        <Text variant="footnote">
+        <View className="flex-row flex-wrap gap-[9px]">
+          {photos.map((photo) => (
+            <Image
+              key={photo.uri}
+              source={{ uri: photo.uri }}
+              className="size-[72px] rounded-[16px]"
+              // Local previews of what was just picked — the originals, not the
+              // encrypted copies. ٤.٩ decrypts the stored thumbnails instead.
+              accessibilityIgnoresInvertColors
+            />
+          ))}
+
+          {photos.length < MAX_PHOTOS ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={photos.length === 0 ? t.choose : t.chooseMore}
+              onPress={() => void pick()}
+              className="bg-terracotta-100 size-[72px] items-center justify-center rounded-[16px] active:opacity-80"
+            >
+              <Icon as={Plus} size={20} strokeWidth={2.75} className="text-terracotta-900" />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {photos.length > 0 ? (
+          <Text className="mt-3 text-[11.5px] leading-[1.6] opacity-50">
+            {preparing
+              ? t.preparing
+              : submitting
+                ? t.uploading!
+                    .replace("{done}", fmtNum(done, locale))
+                    .replace("{total}", fmtNum(photos.length, locale))
+                : t.encryptNote!.replace(
+                    "{size}",
+                    formatSize(totalBytes, locale)
+                  )}
+          </Text>
+        ) : null}
+
+        <Text className="mt-[18px] text-[11px] leading-[1.7] opacity-45">
           {chrome.encryptNote}
         </Text>
 
         {error !== null ? (
-          <Text variant="meta" className="text-terracotta-800">
+          <Text variant="meta" className="text-terracotta-800 mt-3">
             {error}
           </Text>
         ) : null}
