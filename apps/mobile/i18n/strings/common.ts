@@ -27,19 +27,18 @@ export const COMMON = {
   },
 } satisfies LabelSet<string>
 
-// Five tabs, in the board's own order — 4.1's screenshot shows the bar this
-// app shipped four of. `will` is the section ٥ tab: the board labels it
-// الوصيّة (the will) even though the list inside it is الورثة (the heirs), so
-// the route, the key and the label all say "will" and the screen inside keeps
-// its own name.
 export const TABS = {
   // Named for the question each answers, not for the domain noun. "الأصول"
   // (assets) is what the app stores; "الخزنة" (the vault) is what the owner
-  // thinks they have. "خطتي" replaces "الوصيّة" because the tab holds people —
-  // heirs, routing, the guardian — not a legal document.
+  // thinks they have.
+  //
+  // الوصيّة → خطتي → الورثة. The tab was named for a legal document it never
+  // held, then for a plan broad enough to absorb anything; it now names the one
+  // thing it actually manages. Routing and the guardian left with the rename —
+  // both are reachable from Home.
   home: { ar: "الرئيسية", en: "Home" },
   assets: { ar: "الخزنة", en: "Vault" },
-  plan: { ar: "خطتي", en: "My plan" },
+  heirs: { ar: "الورثة", en: "Heirs" },
   settings: { ar: "حسابي", en: "Account" },
   placeholderTitle: { ar: "قريباً", en: "Coming next" },
   placeholderBody: {

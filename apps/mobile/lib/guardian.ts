@@ -8,11 +8,15 @@
  * missing reports a recovery path that does not exist — the worst kind of wrong,
  * because the owner believes they are safe.
  *
- * This lives in its own file because two screens need the answer and
- * `use-protection-score.ts` says why that matters: *"If the two computed it
- * separately they would eventually disagree about how safe the vault is, which
- * is the one thing a security summary may never do."* A shared predicate is how
- * that stays true once the plan tab needs it as well.
+ * This lives in its own file because the answer must never be computed twice.
+ * `use-protection-score.ts` says why: *"If the two computed it separately they
+ * would eventually disagree about how safe the vault is, which is the one thing
+ * a security summary may never do."*
+ *
+ * Only the protection score asks right now — the الورثة tab dropped its guardian
+ * row when it narrowed to heirs. The predicate stays here rather than folding
+ * back into that hook: the next caller must inherit this definition, not write
+ * a second one that counts an accepted invite as protection.
  */
 
 /** `undefined` while either query is still loading. */

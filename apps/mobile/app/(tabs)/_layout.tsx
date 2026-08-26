@@ -25,9 +25,13 @@ import { useStrings } from "@/i18n/use-strings"
  * (`/protection/checkin`, `/protection/claim`, `/protection/guardian`) are
  * pushed destinations reached from the tab that owns them.
  *
- * الوصيّة became خطتي and its route became `plan`, because the file was named
- * `will.tsx` and rendered `HeirsScreen` — a tab named for a concept it did not
- * contain. The tab owns *people*: heirs, routing, and the guardian you name.
+ * الوصيّة → خطتي → الورثة, and the route followed each time. `will.tsx`
+ * rendered `HeirsScreen`, so the tab was named for a document it never held;
+ * `plan` was broad enough to absorb anything, and did — routing and the
+ * guardian both accreted onto it. The tab now owns **people you name to
+ * receive**, and nothing else. Routing is asset division and lives at
+ * `/plan/routing`, reached from Home and the vault; the guardian verifies
+ * rather than inherits, and is reached from Home.
  *
  * A note for anyone comparing this to the design board: the board's 4.1
  * screenshot draws five tabs. The owner directed a ground-up redesign that
@@ -87,9 +91,9 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="plan"
+        name="heirs"
         options={{
-          title: t.plan,
+          title: t.heirs,
           tabBarIcon: ({ color }) => <Icon as={Users} color={color} />,
         }}
       />

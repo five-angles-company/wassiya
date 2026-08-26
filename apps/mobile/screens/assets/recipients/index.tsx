@@ -35,6 +35,7 @@ import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
+import { relationLabel } from "@/screens/heirs/relations"
 
 type Selection = {
   selected: Set<string>
@@ -56,6 +57,8 @@ export function AssetRecipientsScreen() {
   const assetId = id as Id<"assets">
   const { t } = useStrings("will/routing")
   const { t: common } = useStrings("common")
+  // Only for the eight relation labels the heir records store as English keys.
+  const { t: heirFields } = useStrings("heirs/new")
 
   const heirs = useQuery(api.heirs.list)
   const current = useQuery(api.routing.forAsset, { assetId })
@@ -174,7 +177,8 @@ export function AssetRecipientsScreen() {
           <RecipientRow
             key={heir.id}
             name={heir.name}
-            detail={heir.relation}
+            // Stored as an English key — see `screens/heirs/relations.ts`.
+            detail={relationLabel(heir.relation, heirFields)}
             selected={selected.has(heir.id)}
             onToggle={() => toggle(heir.id)}
             divider

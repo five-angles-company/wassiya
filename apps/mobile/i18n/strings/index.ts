@@ -40,6 +40,7 @@ import {
 import {
   HEIRS,
   HEIR_NEW,
+  HEIR_EDIT,
   HEIR_PREVIEW,
   ROUTING,
 } from "@/i18n/strings/will"
@@ -93,6 +94,7 @@ export const SCREEN_STRINGS = {
 
   heirs: HEIRS,
   "heirs/new": HEIR_NEW,
+  "heirs/edit": HEIR_EDIT,
   "will/routing": ROUTING,
   "heirs/preview": HEIR_PREVIEW,
 

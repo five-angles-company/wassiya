@@ -98,7 +98,7 @@ export function HeirCard({
     <Card
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      className={cn('bg-card gap-3 rounded-card p-4', className)}>
+      className={cn('bg-card rounded-card gap-3 px-4 py-3.5', className)}>
       <View className="flex-row items-center gap-3">
         <InitialDisc name={name} tone={tone ?? avatarTone(name)} size="lg" />
         <View className="min-w-0 flex-1 gap-0.5">

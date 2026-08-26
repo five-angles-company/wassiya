@@ -14,44 +14,18 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 /** ٥.١ — the heirs list. */
 export const HEIRS = {
-  // The guardian sits on this tab because a guardian is a person you name in
-  // your plan — an heir *receives*, a guardian *verifies*. It previously lived
-  // under Account > Security, which is how "who is in my plan" ended up
-  // answered in two different tabs.
-  guardianLabel: { ar: "الوصي", en: "Guardian" },
-  guardianRow: { ar: "من يؤكّد وفاتك", en: "Who confirms your death" },
-  guardianOn: { ar: "مفعّل", en: "Active" },
-  guardianOff: { ar: "غير مفعّل", en: "Not set" },
-  // The tab is خطتي and the screen holds more than heirs — the guardian sits
-  // here too — so the title names the plan rather than one list inside it.
-  title: { ar: "خطتي", en: "My plan" },
+  // The tab is الورثة now, and the screen holds exactly that: the people, and
+  // nothing about which asset goes where. The coverage strip, the unrouted
+  // warning and the routing CTA moved out at the owner's direction — routing is
+  // asset division, and it stays reachable from Home's التوجيه tile and the
+  // vault's own alert. The guardian left for the same reason: a guardian
+  // *verifies*, it does not inherit, and Home already carries a الوصي tile.
+  title: { ar: "الورثة", en: "Heirs" },
   countZero: { ar: "لا ورثة بعد", en: "No heirs yet" },
   countOne: { ar: "وارث واحد", en: "1 heir" },
   countTwo: { ar: "وارثان", en: "2 heirs" },
   countFew: { ar: "{n} ورثة", en: "{n} heirs" },
   countMany: { ar: "{n} وارثاً", en: "{n} heirs" },
-
-  // The distribution strip: how much of the vault actually reaches someone.
-  coverage: {
-    ar: "{routed} من {total} أصلاً لها مستلم",
-    en: "{routed} of {total} assets have a recipient",
-  },
-  coverageLabel: { ar: "التوزيع", en: "Coverage" },
-  unroutedWarning: {
-    ar: "{n} أصلاً بلا مستلم — منها {example}",
-    en: "{n} assets have no recipient — including {example}",
-  },
-  // The same warning without naming an asset. Titles are ciphertext, so a
-  // locked vault can still say *how many* are unrouted — it just cannot say
-  // which. Counting is what makes the gap actionable; the name is a courtesy.
-  unroutedWarningLocked: {
-    ar: "{n} أصلاً بلا مستلم",
-    en: "{n} assets have no recipient",
-  },
-  allRouted: {
-    ar: "كل أصولك لها مستلم",
-    en: "Every asset has a recipient",
-  },
 
   // Three statuses only, per the board. Silent is neutral by design — it is a
   // deliberate choice, not a pending action.
@@ -61,6 +35,9 @@ export const HEIRS = {
   statusDeclined: { ar: "رفضت الدعوة", en: "Declined" },
 
   receives: { ar: "تستلم {n} أصلاً", en: "Receives {n} assets" },
+  // Still here, and still terracotta. This is not asset division — it is the
+  // one fact about an *heir* that can be silently wrong, and it is the mirror
+  // of "بلا مستلم" on an asset.
   receivesNothing: {
     ar: "لا تستلم شيئاً بعد — وجّه لها أصلاً",
     en: "Receives nothing yet — route an asset to them",
@@ -73,7 +50,6 @@ export const HEIRS = {
     ar: "الوارث هو من يستلم ما تركته. أضف واحداً لتبدأ توجيه أصولك.",
     en: "An heir is who receives what you leave. Add one to start routing your assets.",
   },
-  routingLink: { ar: "من يستلم ماذا؟", en: "Who receives what?" },
 } satisfies LabelSet<string>
 
 /** ٥.٢ — adding one. */
@@ -190,6 +166,10 @@ export const ROUTING = {
 /** ٥.٤ — the heir preview. */
 export const HEIR_PREVIEW = {
   title: { ar: "معاينة الوارث", en: "Preview as heir" },
+  // The pencil in the header. It edits whichever heir the switcher has
+  // selected, so it has to name them — "تعديل" alone would be a lie the moment
+  // someone switches to a different heir and does not notice.
+  editHeir: { ar: "تعديل {name}", en: "Edit {name}" },
   // The board's own framing: this is a promise about the ceiling, not a teaser.
   disclaimer: {
     ar: "هذا كل ما سيراه {name} بعد الإفراج — لا أكثر.",
@@ -203,4 +183,49 @@ export const HEIR_PREVIEW = {
   viaAllHeirs: { ar: "عبر «كل الورثة»", en: "via “all heirs”" },
   whole: { ar: "كاملة", en: "Whole" },
   messageAttached: { ar: "رسالة مرفقة", en: "Message attached" },
+} satisfies LabelSet<string>
+
+/**
+ * ٥.٢b — editing one, and deleting one.
+ *
+ * Deliberately thin: every field label comes from {@link HEIR_NEW}, because the
+ * edit form *is* the add form with values in it. Only what is genuinely new to
+ * editing lives here — the title, the two links out, and the delete sheet.
+ */
+export const HEIR_EDIT = {
+  title: { ar: "تعديل وارث", en: "Edit heir" },
+  /** Deleted from another device while this list was open. */
+  notFound: { ar: "لم نعد نجد هذا الوارث.", en: "This heir no longer exists." },
+  save: { ar: "حفظ التعديل", en: "Save changes" },
+  saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
+  failed: {
+    ar: "تعذّر حفظ التعديل. حاول مرة أخرى.",
+    en: "Could not save. Try again.",
+  },
+
+  deleteHeir: { ar: "حذف الوارث", en: "Delete heir" },
+  deleteTitle: { ar: "حذف {name}؟", en: "Delete {name}?" },
+  /**
+   * The consequence, stated before the confirmation.
+   *
+   * `heirs.remove` cascades: it drops their routing rows and their release
+   * bundle. So deleting an heir who receives assets leaves those assets with
+   * no recipient — which is the single thing this sheet exists to say out loud.
+   */
+  deleteRouted: {
+    ar: "{name} تستلم {n} أصلاً. بحذفها تصبح هذه الأصول بلا مستلم، وتُلغى حصّتها من مفاتيح الإفراج.",
+    en: "{name} receives {n} assets. Deleting them leaves those assets with no recipient and destroys their share of the release keys.",
+  },
+  deleteNothing: {
+    ar: "لا تستلم {name} شيئاً حالياً، فلن يتغيّر توجيه أي أصل.",
+    en: "{name} receives nothing right now, so no asset's routing changes.",
+  },
+  deleteFinal: { ar: "لا يمكن التراجع عن هذا.", en: "This cannot be undone." },
+  deletePermanently: { ar: "احذفها نهائياً", en: "Delete permanently" },
+  deleting: { ar: "جارٍ الحذف…", en: "Deleting…" },
+  keepIt: { ar: "إبقاؤها", en: "Keep them" },
+  deleteFailed: {
+    ar: "تعذّر الحذف. حاول مرة أخرى.",
+    en: "Could not delete. Try again.",
+  },
 } satisfies LabelSet<string>

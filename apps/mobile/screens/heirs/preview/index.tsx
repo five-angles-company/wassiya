@@ -22,12 +22,13 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { openLabel } from "@workspace/crypto/label"
 import { unwrap } from "@workspace/crypto/wrap"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
-import { useLocalSearchParams } from "expo-router"
-import { Inbox } from "lucide-react-native"
+import { router, useLocalSearchParams } from "expo-router"
+import { Inbox, Pencil } from "lucide-react-native"
 import { Pressable, ScrollView, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
@@ -54,9 +55,30 @@ export function HeirPreviewScreen() {
       contentContainerClassName="px-gutter grow pb-10 pt-4"
     >
       <BackButton label={common.back} />
-      <Text variant="screenTitle" className="mt-4">
-        {t.title}
-      </Text>
+
+      {/* ٤.١'s header shape: the name takes the row, one 40px circle at the far
+          end. The pencil is here rather than on ٥.١'s cards at the owner's
+          direction — a per-row pencil puts a second target on every card for
+          the rarer errand.
+
+          It edits `heirId`, not the route's `id`: the switcher below can move
+          this screen to a different heir, and a pencil that still pointed at
+          the one you arrived on would silently edit the wrong person. */}
+      <View className="mt-4 flex-row items-center gap-3">
+        <Text variant="screenTitle" className="min-w-0 flex-1">
+          {t.title}
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t.editHeir.replace("{name}", name)}
+          onPress={() =>
+            router.push({ pathname: "/heirs/[id]/edit", params: { id: heirId } })
+          }
+          className="bg-card active:bg-sand-300 size-10 shrink-0 items-center justify-center rounded-full"
+        >
+          <Icon as={Pencil} size={18} strokeWidth={2.75} className="text-foreground" />
+        </Pressable>
+      </View>
 
       {/* The switcher. Comparing heirs side by side is how an owner notices
           that one of them receives nothing. */}
