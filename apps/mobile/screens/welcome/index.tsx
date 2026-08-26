@@ -13,9 +13,10 @@ import {
 } from "react-native"
 import { I18nManager } from "react-native"
 
+import { Screen } from "@/components/screen"
+import { useStrings } from "@/i18n/use-strings"
 import { SlideDots } from "@/screens/welcome/components/slide-dots"
 import { WelcomeSlide } from "@/screens/welcome/components/welcome-slide"
-import { useStrings } from "@/i18n/use-strings"
 import { usePreferences } from "@/stores/preferences"
 
 const SLIDE_COUNT = 4
@@ -63,7 +64,10 @@ export function WelcomeScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background pt-4.5 pb-6">
+    /* `bleed`, because the pager runs edge to edge and each slide applies its
+       own gutter; `flow`, because this is onboarding step zero and shares its
+       metrics with every step after it. */
+    <Screen scroll={false} bleed inset="flow">
       <View className="px-gutter h-9.5 flex-row justify-end">
         {isLast ? null : (
           <Pressable
@@ -158,6 +162,6 @@ export function WelcomeScreen() {
           </Button>
         )}
       </View>
-    </View>
+    </Screen>
   )
 }

@@ -10,6 +10,12 @@
  * secret material sitting in app storage; a live render behind a scrim is the
  * same tree that was already on screen, drawn dimmer.
  *
+ * It is one of only two screens not built on `Screen`, and deliberately so:
+ * `Screen` is a page shell — a root View, a scroll area, a gutter — and this is
+ * an `absolute inset-0 z-50` sheet drawn *over* a mounted page. Putting it on
+ * the shell would give it a second background and a second gutter, and would
+ * make the thing it exists to cover part of its own layout.
+ *
  * This screen therefore renders **as an overlay over whatever was already
  * mounted** rather than as a route that replaces it — which is why it is a
  * component the tabs layout draws on top, not a `/lock` page. Navigating to a

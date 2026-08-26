@@ -31,8 +31,9 @@ import {
   Smartphone,
   Wallet,
 } from "lucide-react-native"
-import { Alert, ScrollView, View } from "react-native"
+import { Alert, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
@@ -64,10 +65,7 @@ export function SettingsScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-6"
-    >
+    <Screen>
       <Text variant="screenTitle" className="mb-header">
         {t.title}
       </Text>
@@ -166,7 +164,7 @@ export function SettingsScreen() {
         label={t.signOut}
         onPress={confirmSignOut}
       />
-    </ScrollView>
+    </Screen>
   )
 }
 

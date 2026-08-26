@@ -141,7 +141,7 @@ export function AssetRecipientsScreen() {
   const people = allHeirs ? [] : (heirs ?? [])
 
   return (
-    <Screen bleed contentClassName="px-[22px] pt-5">
+    <Screen>
       <ScreenTop
         backLabel={common.back}
         onBack={() => (router.canGoBack() ? router.back() : router.replace("/assets"))}

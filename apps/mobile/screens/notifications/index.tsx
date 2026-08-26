@@ -34,8 +34,9 @@ import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import { BellOff, KeyRound, ShieldCheck, Users } from "lucide-react-native"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 /**
@@ -84,10 +85,7 @@ export function NotificationsScreen() {
   }
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-6"
-    >
+    <Screen>
       <View className="mb-header flex-row items-center justify-between">
         <Text variant="screenTitle">{t.title}</Text>
         {history.some((row) => row.readAt === undefined) ? (
@@ -145,7 +143,7 @@ export function NotificationsScreen() {
           <Text>{t.history}</Text>
         </Button>
       ) : null}
-    </ScrollView>
+    </Screen>
   )
 }
 

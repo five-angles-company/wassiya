@@ -27,9 +27,10 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPE_ICON, ASSET_TYPES, type AssetType } from "@/lib/asset-types"
 import { useVault } from "@/stores/vault"
@@ -62,8 +63,19 @@ export function RoutingScreen() {
   const unrouted = rows?.filter((row) => row.recipients.length === 0) ?? []
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="px-gutter grow pb-28 pt-4">
+    <Screen
+      inset="footer"
+      /* The bar was an absolutely-positioned View with pb-28 reserved above it
+         by hand. That is what `footer` is for: it sits after the scroll area
+         in normal flow, so the list ends above it instead of guessing a gap. */
+      /* No "save": every edit is committed on ٥.٣b, so a save button on the
+         overview would imply a draft that does not exist. */
+      footer={
+        <Button variant="outline" onPress={() => router.back()}>
+          <Text>{common.back}</Text>
+        </Button>
+      }
+    >
         <BackButton label={common.back} />
         <Text variant="screenTitle" className="mt-4">
           {t.title}
@@ -141,16 +153,7 @@ export function RoutingScreen() {
         <Text variant="footnote" className="mt-6">
           {t.pendingBundles}
         </Text>
-      </ScrollView>
-
-      {/* No "save" here: every edit is committed on 5.3b, so a save button on
-          the overview would imply a draft that does not exist. */}
-      <View className="px-gutter absolute bottom-0 start-0 end-0 pb-5">
-        <Button variant="outline" onPress={() => router.back()}>
-          <Text>{common.back}</Text>
-        </Button>
-      </View>
-    </View>
+    </Screen>
   )
 }
 

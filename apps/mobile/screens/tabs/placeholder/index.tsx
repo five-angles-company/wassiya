@@ -1,8 +1,8 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { Sprout } from "lucide-react-native"
-import { View } from "react-native"
 
+import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 
 export type TabPlaceholderProps = {
@@ -20,7 +20,7 @@ export function TabPlaceholder({ title }: TabPlaceholderProps) {
   const { t } = useStrings("tabs")
 
   return (
-    <View className="px-gutter flex-1 bg-background pt-6">
+    <Screen scroll={false}>
       <Text variant="screenTitle" className="mb-header">
         {title}
       </Text>
@@ -29,6 +29,6 @@ export function TabPlaceholder({ title }: TabPlaceholderProps) {
         title={t.placeholderTitle}
         subtitle={t.placeholderBody}
       />
-    </View>
+    </Screen>
   )
 }

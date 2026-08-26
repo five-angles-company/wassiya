@@ -1,3 +1,13 @@
+/**
+ * The pre-auth splash — the one frame before anything is known about the user.
+ *
+ * The other of the two screens not on `Screen`. It is a brand frame, not a
+ * page: no back, no title, no scroll, and a 32px inset that is wider than the
+ * app's 20px gutter on purpose, because a centred mark wants more air than a
+ * list does. Migrating it would trade that for a consistency nobody can see —
+ * it is on screen for well under a second and shares no furniture with any
+ * other screen.
+ */
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { Redirect } from "expo-router"

@@ -44,6 +44,7 @@ import { router } from "expo-router"
 import { ScrollView, View } from "react-native"
 
 import { Field } from "@/components/field"
+import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
@@ -120,10 +121,7 @@ export function RecoveryScreen() {
 
   if (phase === "done") {
     return (
-      <ScrollView
-        className="flex-1 bg-background"
-        contentContainerClassName="px-gutter grow pb-10 pt-8"
-      >
+      <Screen>
         <Text variant="screenTitle">{t.doneTitle}</Text>
         <Text className="mt-3 text-[15px] leading-[1.75] text-muted-foreground">
           {t.doneBody}
@@ -137,7 +135,7 @@ export function RecoveryScreen() {
             <Text>{t.later}</Text>
           </Button>
         </View>
-      </ScrollView>
+      </Screen>
     )
   }
 

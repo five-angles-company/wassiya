@@ -59,7 +59,7 @@ export function WizardFrame({
   const { t: common } = useStrings("common")
 
   return (
-    <Screen keyboard bleed contentClassName="px-[22px] pt-5">
+    <Screen keyboard>
       <ScreenTop
         backLabel={common.back}
         // Falls back to the list, not to the picker: the picker is a sheet
