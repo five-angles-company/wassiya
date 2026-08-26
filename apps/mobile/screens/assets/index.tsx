@@ -138,6 +138,7 @@ export function AssetsScreen() {
     return (
       <Screen contentClassName="gap-header">
         <AssetsLocked
+          title={t.vaultTitle!}
           status={t.lockedStatus!}
           count={num(vaultSize)}
           countUnit={t.lockedCountUnit!}
