@@ -26,6 +26,49 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
  * not a text field; the identity name comes from the ID document Didit read,
  * and it exists precisely so that nothing the owner types can move it.
  */
+/**
+ * ٩.١c — changing the email.
+ *
+ * The email is this app's **login identity**: sign-in is
+ * `signIn.emailCode.sendCode({ emailAddress })`, so this screen changes how the
+ * owner gets into their vault. That is why the warning is on the first step,
+ * before the address is typed, rather than in a footnote at the end.
+ */
+export const EMAIL_CHANGE = {
+  title: { ar: "تغيير البريد", en: "Change email" },
+  currentLabel: { ar: "البريد الحالي", en: "Current email" },
+  newLabel: { ar: "البريد الجديد", en: "New email" },
+  newPlaceholder: { ar: "you@example.com", en: "you@example.com" },
+  // Two facts, both consequences rather than instructions: this is the login,
+  // and the old address stops working. The second is the one people do not
+  // expect, so it is stated and not implied.
+  notice: {
+    ar: "بهذا البريد تدخل إلى خزنتك. بعد التأكيد لن تتمكن من الدخول بالبريد القديم.",
+    en: "This is the email you sign in with. Once confirmed, the old address will no longer get you in.",
+  },
+  invalid: { ar: "أدخل بريداً صحيحاً.", en: "Enter a valid email." },
+  same: { ar: "هذا بريدك الحالي.", en: "That is already your email." },
+  taken: {
+    ar: "هذا البريد مستخدم في حساب آخر.",
+    en: "That email is already used by another account.",
+  },
+  sendCode: { ar: "أرسل الرمز", en: "Send the code" },
+  sending: { ar: "جارٍ الإرسال…", en: "Sending…" },
+
+  codeTitle: { ar: "أكّد البريد الجديد", en: "Confirm the new email" },
+  codeSubtitle: {
+    ar: "أرسلنا رمزاً إلى {email}.",
+    en: "We sent a code to {email}.",
+  },
+  wrongCode: { ar: "رمز غير صحيح.", en: "That code is not right." },
+  // The address is created on Clerk before the code is sent, so abandoning the
+  // flow would leave an unverified address on the account — and a second
+  // attempt at the same address would then fail as a duplicate. Cancelling
+  // removes it.
+  cancel: { ar: "إلغاء", en: "Cancel" },
+  failed: { ar: "تعذّر التغيير. حاول مرة أخرى.", en: "Could not change it. Try again." },
+} satisfies LabelSet<string>
+
 export const PROFILE = {
   title: { ar: "الملف الشخصي", en: "Profile" },
   nameLabel: { ar: "الاسم الكامل", en: "Full name" },

@@ -35,6 +35,7 @@ import {
   DEVICES,
   LEGAL,
   PLAN,
+  EMAIL_CHANGE,
   PROFILE,
   SETTINGS,
 } from "@/i18n/strings/settings"
@@ -60,6 +61,7 @@ export const SCREEN_STRINGS = {
   home: HOME,
   settings: SETTINGS,
   "settings/profile": PROFILE,
+  "settings/email": EMAIL_CHANGE,
   "settings/lock": AUTO_LOCK,
   "settings/audit": AUDIT,
   "settings/plan": PLAN,

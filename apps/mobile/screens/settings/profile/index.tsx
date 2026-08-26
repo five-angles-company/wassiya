@@ -3,12 +3,12 @@
  *
  * ## What an owner is actually allowed to change
  *
- * Two things: their **name** and their **country**. Everything else on this
- * screen is shown and not editable, and each for its own reason.
+ * Two things are edited **here**: their **name** and their **country**.
  *
- * The **email** is Clerk's. Moving it is a verification flow — a code to the
- * new address, a fallback if it never arrives — not a text field, and pretending
- * otherwise with a disabled-looking input would be worse than saying so.
+ * The **email** is edited too, but on ٩.١c rather than in this form. It is
+ * Clerk's, it is the identity sign-in uses, and moving it is five calls and a
+ * code to the new address — so this screen shows it and pushes, which is the
+ * honest shape for something that cannot be a Save button.
  *
  * The **identity name** is whatever Didit read off the document. It exists so
  * that nothing the owner types can move it: `claims.ts` shows a reviewer the
@@ -41,12 +41,14 @@ import { useState } from "react"
 import { useUser } from "@clerk/expo"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
+import { ChevronRight } from "lucide-react-native"
 import { View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
@@ -176,10 +178,18 @@ export function ProfileScreen() {
         />
       ) : null}
 
-      {/* Shown, never editable — see this file's header for why each one is
-          here at all rather than simply omitted. */}
+      {/* The email pushes into its own flow; the identity rows are read-only
+          by design — see this file's header. */}
       <View className="mb-auto">
-        <FieldRow label={t.emailLabel!} hint={t.emailReadOnly} divider>
+        {/* Pushes into ٩.١c rather than editing here: changing it is five
+            Clerk calls and a code to the new address, not a save. */}
+        <FieldRow
+          label={t.emailLabel!}
+          divider
+          onPress={() => router.push("/settings/email")}
+          trailing={
+            <Icon as={ChevronRight} flip className="size-4 shrink-0 opacity-40" />
+          }>
           <Text variant="rowTitle">{me?.email ?? ""}</Text>
         </FieldRow>
         <FieldRow
