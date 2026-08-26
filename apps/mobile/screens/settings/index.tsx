@@ -66,9 +66,14 @@ export function SettingsScreen() {
 
   return (
     <Screen>
-      <Text variant="screenTitle" className="mb-header">
-        {t.title}
-      </Text>
+      {/* The tab-root header: a quiet line over a 19px name, as on ٣.١, ٤.١
+          and ٥.١. The email is the one fact this screen can state that no
+          other screen does — and "which account am I signed into?" is the
+          question the tab exists to answer. */}
+      <View className="mb-header min-w-0">
+        {me?.email ? <Text variant="metaSm">{me.email}</Text> : null}
+        <Text variant="pageTitle">{t.title}</Text>
+      </View>
 
       <Group label={t.groupAccount}>
         <View className="rounded-card bg-card gap-3 p-4">

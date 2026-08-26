@@ -18,7 +18,10 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 /** ٩.١ — the index. */
 export const SETTINGS = {
-  title: { ar: "الإعدادات", en: "Settings" },
+  // Matches the tab's own label. الرئيسية, الخزنة and الورثة each open with the
+  // word the bar uses; this one opened with "الإعدادات" and was the only tab
+  // whose screen disagreed with the button that got you there.
+  title: { ar: "حسابي", en: "Account" },
 
   groupAccount: { ar: "الحساب", en: "Account" },
   groupSecurity: { ar: "الأمان", en: "Security" },
