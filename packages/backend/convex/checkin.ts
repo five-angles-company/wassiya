@@ -16,6 +16,7 @@ import {
   type MutationCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { sendEscalation } from "./email"
 import { requireUser } from "./model/access"
 import { DAY_MS } from "./model/claimFlow"
 
@@ -212,6 +213,17 @@ export const sweep = internalMutation({
             daysOverdue: Math.floor((now - config.nextDueAt) / DAY_MS),
           },
         })
+
+        // The in-app notification above is for an owner who opens the app; the
+        // email is for the one who has stopped, which is the case this whole
+        // ladder exists for. Enqueued inside the same transaction that advanced
+        // the row, so "escalated" and "the owner was told" cannot disagree.
+        // Every state but `idle`, which means *not* escalated — a row can only
+        // reach it by going backwards, and there is nothing to tell an owner
+        // about a ladder they are no longer on.
+        if (next !== "idle") {
+          await sendEscalation(ctx, config.userId, next)
+        }
         await writeAudit(ctx, {
           userId: config.userId,
           event: "checkin.escalated",

@@ -14,6 +14,7 @@ import type * as checkin from "../checkin.js";
 import type * as claims from "../claims.js";
 import type * as crons from "../crons.js";
 import type * as devices from "../devices.js";
+import type * as email from "../email.js";
 import type * as guardians from "../guardians.js";
 import type * as heirs from "../heirs.js";
 import type * as http from "../http.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   claims: typeof claims;
   crons: typeof crons;
   devices: typeof devices;
+  email: typeof email;
   guardians: typeof guardians;
   heirs: typeof heirs;
   http: typeof http;
@@ -78,4 +80,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
+};
