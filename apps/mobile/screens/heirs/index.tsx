@@ -120,15 +120,8 @@ export function HeirsScreen() {
             key={heir.id}
             name={heir.name}
             relation={`${relationLabel(heir.relation, fields)} · ${fmtPhoneMasked(heir.phone)}`}
-            inviteState={inviteState(heir.mode, heir.inviteStatus)}
             locale={locale}
-            labels={{
-              silent: t.statusSilent,
-              accepted: t.statusAccepted,
-              pending: t.statusPending,
-              declined: t.statusDeclined,
-              receivesNothing: t.receivesNothing,
-            }}
+            labels={{ receivesNothing: t.receivesNothing }}
             receivesSummary={
               heir.routedAssetCount === 0
                 ? undefined
@@ -147,19 +140,4 @@ export function HeirsScreen() {
       </View>
     </Screen>
   )
-}
-
-/**
- * Mode and invite status collapse into the card's three-plus-one states.
- *
- * A silent heir has no invite to be pending, so mode wins outright — without
- * that, every silent heir would render as `pending` forever on the strength of
- * an `inviteStatus: "none"` that will never change.
- */
-function inviteState(
-  mode: "silent" | "notified",
-  inviteStatus: "none" | "invited" | "accepted"
-): "silent" | "accepted" | "pending" {
-  if (mode === "silent") return "silent"
-  return inviteStatus === "accepted" ? "accepted" : "pending"
 }

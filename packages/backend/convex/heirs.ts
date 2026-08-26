@@ -4,17 +4,15 @@
 // share arithmetic anywhere in this deployment, by design: الأنصبة يحدّدها
 // القانون، لا التطبيق.
 //
-// A "silent" heir learns nothing until release. A "notified" heir knows they
-// are named and still sees no content. Neither distinction lives in the crypto:
-// both get the same sealed bundle, and mode only governs notifications.
+// Every heir is silent: they learn nothing until release. There was a
+// "notified" mode and it is gone — see the schema for why. The distinction
+// never lived in the crypto anyway; every heir gets the same sealed bundle.
 import { v } from "convex/values"
 
 import type { Id } from "./_generated/dataModel"
 import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
-
-const modeValidator = v.union(v.literal("silent"), v.literal("notified"))
 
 export const list = query({
   args: {},
@@ -35,8 +33,7 @@ export const list = query({
       name: row.name,
       relation: row.relation,
       phone: row.phone,
-      mode: row.mode,
-      inviteStatus: row.inviteStatus,
+
       messageKind: row.messageMeta?.kind ?? null,
       /**
        * Assets routed to this heir: the ones naming them, plus every asset
@@ -89,7 +86,6 @@ export const add = mutation({
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
-    mode: modeValidator,
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
@@ -98,13 +94,14 @@ export const add = mutation({
       name: args.name,
       relation: args.relation,
       phone: args.phone,
-      mode: args.mode,
+      // Not an argument: there is nothing else it could be.
+      mode: "silent",
       inviteStatus: "none",
     })
     await writeAudit(ctx, {
       userId: user._id,
       event: "heir.added",
-      meta: { heirId, mode: args.mode },
+      meta: { heirId },
     })
     return heirId
   },
@@ -116,7 +113,6 @@ export const update = mutation({
     name: v.optional(v.string()),
     relation: v.optional(v.string()),
     phone: v.optional(v.string()),
-    mode: v.optional(modeValidator),
   },
   handler: async (ctx, { heirId, ...fields }) => {
     const user = await requireUser(ctx)

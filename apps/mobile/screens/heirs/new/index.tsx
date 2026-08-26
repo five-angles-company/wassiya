@@ -5,11 +5,8 @@
  * rules are {@link useHeirForm}, both shared with the edit screen. What is left
  * is the one thing add does that edit does not — call `heirs.add` and leave.
  *
- * **Silent is the default**, and that default is set here rather than inside
- * the shared hook, because it is a statement about *new* heirs only: notifying
- * someone that they are in your will is a social act with consequences in a
- * family, and the app must not perform it on the owner's behalf by
- * pre-selecting it. An edit opens on whatever the owner already chose.
+ * There is no mode to pick: every heir is silent. `heirs.add` writes it and
+ * does not accept it as an argument, because there is nothing else it could be.
  */
 import { useState } from "react"
 import { useMutation } from "convex/react"
@@ -24,7 +21,7 @@ import { useHeirForm } from "@/screens/heirs/use-heir-form"
 export function NewHeirScreen() {
   const { t } = useStrings("heirs/new")
   const add = useMutation(api.heirs.add)
-  const form = useHeirForm({ name: "", relation: "", phone: "", mode: "silent" })
+  const form = useHeirForm({ name: "", relation: "", phone: "" })
 
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)

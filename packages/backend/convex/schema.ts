@@ -197,14 +197,20 @@ export default defineSchema({
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
-    // "silent" heirs learn nothing until release; "notified" ones know they are
-    // named and see no content either way.
-    mode: v.union(v.literal("silent"), v.literal("notified")),
-    inviteStatus: v.union(
-      v.literal("none"),
-      v.literal("invited"),
-      v.literal("accepted")
-    ),
+    /**
+     * Every heir is silent: they learn nothing until release.
+     *
+     * There was a "notified" mode — invited, still seeing no content — and it
+     * was removed as a product decision, not a cleanup. It never worked either:
+     * nothing in this deployment has ever sent an invite, so `inviteStatus` was
+     * only ever written as "none" and a notified heir sat at "pending" forever.
+     *
+     * Both stay as one-member unions rather than being dropped, because
+     * removing a field a live document still carries fails schema validation.
+     * Widening either back is one literal.
+     */
+    mode: v.literal("silent"),
+    inviteStatus: v.literal("none"),
     // When this heir's routing last changed. Compared against the matching
     // `releaseBundles.rebuiltAt` to find heirs still owed a rebuild — see
     // `routing.staleHeirs`. Written only by `routing.setRecipients`.

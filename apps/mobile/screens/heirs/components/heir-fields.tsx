@@ -1,4 +1,5 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtCode } from "@workspace/ui-native/lib/format"
 import { View } from "react-native"
 
@@ -6,7 +7,6 @@ import { Field } from "@/components/field"
 import type { useStrings } from "@/i18n/use-strings"
 import { dialCode } from "@/lib/phone"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
-import { ModeChoice } from "@/screens/heirs/new/components/mode-choice"
 import { RELATIONS } from "@/screens/heirs/relations"
 import type { HeirForm } from "@/screens/heirs/use-heir-form"
 
@@ -23,10 +23,10 @@ import type { HeirForm } from "@/screens/heirs/use-heir-form"
  *    shares are the law's business.
  * 2. **The contact is validated hard.** It is the channel the release chain
  *    uses; a wrong digit surfaces when nobody can ask the owner to fix it.
- * 3. **Silent is the default** on a new heir. Notifying someone that they are
- *    in your will is a social act with consequences in a family, and the app
- *    must not perform it on the owner's behalf by pre-selecting it. On an edit
- *    the stored value wins — this component never re-applies the default.
+ * 3. **Every heir is silent**, and that is a statement now rather than a
+ *    choice. Notifying someone that they are in your will is a social act with
+ *    consequences in a family; the product no longer offers to perform it, so
+ *    the note says what will happen instead of asking.
  */
 export type HeirFieldsProps = {
   form: HeirForm
@@ -87,7 +87,10 @@ export function HeirFields({ form, t, error }: HeirFieldsProps) {
         }
       />
 
-      <ModeChoice value={form.mode} onChange={form.setMode} labels={t} />
+      {/* Not a choice any more. Every heir is silent, so the screen states the
+          promise where the picker used to ask for it — at the moment someone is
+          deciding to name a person. */}
+      <AlertBanner variant="info" description={t.silentNotice!} />
 
       {error !== undefined ? (
         <Text variant="meta" className="text-terracotta-800">

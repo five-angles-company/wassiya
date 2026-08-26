@@ -152,7 +152,7 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `asset-row` | `icon`, `title`, `meta`, `recipientStatus`, `recipientLabel`, `onPress` | routed · unrouted (amber) · pressable | 4.1 assets list, 5.3 routing |
 | `asset-row-skeleton` | `count` | loading | 4.1 while rows decrypt |
 | `asset-type-grid` / `asset-type-tile` | `options[]`; tile takes `icon`, `title`, `description`, `tone` | rows of two, equal height; tone defaults to sand and callers keep it | ٤.٢ category picker — 2×3 inside the add sheet, on `stat-tile` metrics |
-| `heir-card` | `name`, `relation`, `inviteState`, `receivesSummary`, `tone`, `onPress` | `silent` · `accepted` · `pending` · `declined`; plus the terracotta "receives nothing" warning | ٥.١ الورثة — one target: the whole card opens ٥.٤ |
+| `heir-card` | `name`, `relation`, `receivesSummary`, `tone`, `onPress` | routed · the terracotta "receives nothing" warning | ٥.١ الورثة. No status pill: every heir is silent, so it said one word on every row |
 | `timeline-steps` / `timeline-step` | `steps[{state,title,meta,daysRemaining}]` | `done` · `current` · `future`; countdown node | 7.4 claim waiting period, check-in escalation |
 | `checklist-card` | `title`, `items[{label,done}]` | counter derived from items; "last step" at 1 remaining | the persistent onboarding widget |
 | `alert-banner` | `variant`, `title`, `description`, `icon`, `actions` | `security` (terracotta + warning) · `notice` (terracotta + info) · `info` (sand) · `success` (olive); paired inline actions | 3.3 notifications, 5.3 default-rule notice, 9.4 lapse notice |

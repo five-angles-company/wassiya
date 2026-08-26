@@ -27,13 +27,6 @@ export const HEIRS = {
   countFew: { ar: "{n} ورثة", en: "{n} heirs" },
   countMany: { ar: "{n} وارثاً", en: "{n} heirs" },
 
-  // Three statuses only, per the board. Silent is neutral by design — it is a
-  // deliberate choice, not a pending action.
-  statusSilent: { ar: "صامتة", en: "Silent" },
-  statusAccepted: { ar: "قبلت الدعوة", en: "Accepted" },
-  statusPending: { ar: "معلّقة", en: "Pending" },
-  statusDeclined: { ar: "رفضت الدعوة", en: "Declined" },
-
   receives: { ar: "تستلم {n} أصلاً", en: "Receives {n} assets" },
   // Still here, and still terracotta. This is not asset division — it is the
   // one fact about an *heir* that can be silently wrong, and it is the mirror
@@ -66,6 +59,13 @@ export const HEIR_NEW = {
     ar: "تُسجَّل في الوثيقة وتقترح التوجيه — ولا تُحسب بها أنصبة.",
     en: "Recorded on the will and used to suggest routing — never to calculate a share.",
   },
+  // What the silent/notified picker used to say, minus the choice. Every heir
+  // is silent, so this states the consequence at the moment someone is deciding
+  // to name a person.
+  silentNotice: {
+    ar: "لن يعرف وارثك شيئاً حتى الإفراج — لا إشعار ولا دعوة، ولا يرى أي محتوى.",
+    en: "Your heir learns nothing until release — no notice, no invitation, and no content.",
+  },
   relDaughter: { ar: "بنت", en: "Daughter" },
   relSon: { ar: "ابن", en: "Son" },
   relHusband: { ar: "زوج", en: "Husband" },
@@ -86,18 +86,6 @@ export const HEIR_NEW = {
   phoneDuplicate: {
     ar: "لديك وارث بهذا الرقم بالفعل.",
     en: "You already have an heir with this number.",
-  },
-
-  modeLabel: { ar: "هل تخبره الآن؟", en: "Tell them now?" },
-  modeSilent: { ar: "وارث صامت", en: "Silent heir" },
-  modeSilentNote: {
-    ar: "لا يعرف شيئاً الآن. يُبلَّغ فقط بعد التحقق من الوفاة.",
-    en: "Knows nothing for now. Told only after death is verified.",
-  },
-  modeNotified: { ar: "وارث مُبلَّغ", en: "Notified heir" },
-  modeNotifiedNote: {
-    ar: "تصله دعوة الآن — يعرف أنه وارث، دون رؤية أي محتوى.",
-    en: "Gets an invite now — knows they are named, without seeing any content.",
   },
 
   submit: { ar: "أضف الوارث", en: "Add heir" },

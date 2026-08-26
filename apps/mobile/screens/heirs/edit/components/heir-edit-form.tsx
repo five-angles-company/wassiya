@@ -21,7 +21,6 @@ export type HeirEditFormProps = {
     name: string
     relation: string
     phone: string
-    mode: "silent" | "notified"
     routedAssetCount: number
   }
 }
