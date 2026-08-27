@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as admin from "../admin.js";
 import type * as assets from "../assets.js";
 import type * as audit from "../audit.js";
 import type * as checkin from "../checkin.js";
@@ -25,6 +26,7 @@ import type * as model_claimFlow from "../model/claimFlow.js";
 import type * as notifications from "../notifications.js";
 import type * as release from "../release.js";
 import type * as routing from "../routing.js";
+import type * as seed from "../seed.js";
 import type * as users from "../users.js";
 
 import type {
@@ -34,6 +36,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   assets: typeof assets;
   audit: typeof audit;
   checkin: typeof checkin;
@@ -51,6 +54,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   release: typeof release;
   routing: typeof routing;
+  seed: typeof seed;
   users: typeof users;
 }>;
 

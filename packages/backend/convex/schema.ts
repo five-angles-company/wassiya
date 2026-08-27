@@ -70,7 +70,15 @@ export default defineSchema({
     .index("by_diditSessionId", ["diditSessionId"])
     // How a death claim names the deceased. See `claims.submit`, which answers
     // uniformly whether or not the lookup hits, so this is not an oracle.
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    // The admin console's identity breakdown and activation funnel. `admin.ts`
+    // predicted this one: counting verification states without it means reading
+    // the whole table, which is the shape this backend avoids everywhere else.
+    // Rows predating the seeding of `identityStatus` sit outside every range —
+    // `upsertFromClerk` has always seeded it on insert, so that set is empty,
+    // but the funnel reports its total as the sum of the buckets rather than a
+    // separate table count so the two can never disagree.
+    .index("by_identityStatus", ["identityStatus"]),
 
   // Device inventory for the settings screen and for revocation. The enclave
   // wrap of MK never leaves the device, so there is no ciphertext column here —
@@ -121,7 +129,12 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_inviteToken", ["inviteToken"])
-    .index("by_guardianUserId_and_status", ["guardianUserId", "status"]),
+    .index("by_guardianUserId_and_status", ["guardianUserId", "status"])
+    // "How many guardianships are actually live?", for the console.
+    // `by_guardianUserId_and_status` cannot answer it: that index is keyed on
+    // the **guardian's** own user id, so it finds the vaults one person guards,
+    // never the population of accepted guardianships.
+    .index("by_status", ["status"]),
 
   assets: defineTable({
     userId: v.id("users"),
@@ -298,6 +311,12 @@ export default defineSchema({
     guardianConfirmedAt: v.optional(v.number()),
   })
     .index("by_subjectUserId", ["subjectUserId"])
+    // What a guardian is being asked about, per vault they guard. Without it
+    // `guardians.pendingApprovals` reads a fixed window of a subject's claims
+    // and filters by status in memory — so a subject with more claims than the
+    // window could hide a real one from its guardian, silently and with no
+    // error. Every barred re-attempt inserts a row, so that window fills.
+    .index("by_subjectUserId_and_status", ["subjectUserId", "status"])
     .index("by_subjectUserId_and_claimantContact", [
       "subjectUserId",
       "claimantContact",

@@ -1,0 +1,865 @@
+// The admin console's read side.
+//
+// Everything here is `requireAdmin`-gated and every number is a **bounded**
+// count. That is deliberate, and it is the same trade `notifications.unreadCount`
+// makes: a dashboard tile that says "100+" is worth exactly as much as one that
+// says 4,312, and the second one costs a full table read every time an operator
+// leaves the page open. Convex counts by reading documents, so an unbounded
+// `.collect()` here would be the most expensive query in the deployment and the
+// least useful.
+//
+// Nothing here returns a `v.bytes()` column, and no shape below can carry one.
+// Some queries do *read* tables that hold ciphertext — `keyring` cannot be
+// counted without loading its rows — but every return value is built from named
+// scalar fields, never from a spread document, so a future edit cannot widen one
+// into a leak. That is the same discipline `release.ts` states for `serverShare`.
+//
+// A consequence worth knowing when reasoning about cost: reading `keyring` or
+// `assets` in bulk spends the transaction's **byte** budget, not just its
+// document budget, because those rows carry ciphertext whether or not anyone
+// wants it. The caps below are sized for that.
+import { v } from "convex/values"
+
+import { query } from "./_generated/server"
+
+import { MAX_IDENTITY_ATTEMPTS } from "./identity"
+import { nameMatchBlockedReason } from "./model/claimFlow"
+import { requireAdmin } from "./model/access"
+
+/** One day, for bucketing a trend. Matches `model/claimFlow.ts`'s `DAY_MS`. */
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * How high a tile counts before it gives up and says "more".
+ *
+ * 100 rather than 10 because these are workload numbers an operator plans a day
+ * around, not a badge — "31 claims awaiting review" and "100+ awaiting review"
+ * are different mornings, while "9+" would flatten both.
+ */
+const COUNT_CAP = 100
+
+/** Every value `claims.status` can hold, in lifecycle order. */
+const CLAIM_STATUSES = [
+  "submitted",
+  "guardian_review",
+  "awaiting_veto",
+  "released",
+  "vetoed",
+  "locked",
+] as const
+
+/** Every value `checkinConfig.escalationState` can hold, in ladder order. */
+const ESCALATION_STATES = [
+  "idle",
+  "day0",
+  "day7",
+  "day14",
+  "countdown",
+] as const
+
+/**
+ * How far a funnel stage counts. Much higher than `COUNT_CAP`, because a funnel
+ * that plateaus at 100 draws a straight line and reports a conversion problem
+ * that is really a display cap. Still bounded: past this the honest fix is a
+ * denormalized per-owner stats row, not a bigger number here.
+ */
+const SCAN_CAP = 5000
+
+type Tally = {
+  /** Capped at the cap that produced it. */
+  count: number
+  /** True when there were more rows than the cap, so the UI renders "100+". */
+  more: boolean
+}
+
+/** Read one row past the cap, so "is there more?" costs one document, not a scan. */
+function tallyWith(rows: readonly unknown[], cap: number): Tally {
+  return { count: Math.min(rows.length, cap), more: rows.length > cap }
+}
+
+function tally(rows: readonly unknown[]): Tally {
+  return tallyWith(rows, COUNT_CAP)
+}
+
+/** A set of owner ids, counted the same way — the cap travels with the number. */
+function setTally(ids: ReadonlySet<string>, hitCap: boolean): Tally {
+  return { count: ids.size, more: hitCap }
+}
+
+/**
+ * The console's landing query: how much work is waiting, and where.
+ *
+ * Both roll-ups ride indexes that already exist —  `claims.by_status` and
+ * `checkinConfig.by_escalationState_and_nextDueAt`. The second one has, until
+ * now, been used only by `checkin.sweep`; this is the read half of the thing it
+ * was built for, and it is why "how many owners are on the escalation ladder"
+ * is answerable without a filter scan.
+ *
+ * Kept deliberately narrow. This is the query the console opens with, so it is
+ * the one that must stay cheap: two index families, no table scan, no ciphertext
+ * read. The identity breakdown and the activation funnel used to be listed here
+ * as impossible — `users` had no index on `identityStatus`, and this file said
+ * so — but that index now exists and they live in `activation` below, on their
+ * own subscription, so a heavier roll-up can never slow this one down.
+ */
+export const overview = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx)
+
+    const claims: Record<(typeof CLAIM_STATUSES)[number], Tally> = {
+      submitted: { count: 0, more: false },
+      guardian_review: { count: 0, more: false },
+      awaiting_veto: { count: 0, more: false },
+      released: { count: 0, more: false },
+      vetoed: { count: 0, more: false },
+      locked: { count: 0, more: false },
+    }
+    for (const status of CLAIM_STATUSES) {
+      const rows = await ctx.db
+        .query("claims")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .take(COUNT_CAP + 1)
+      claims[status] = tally(rows)
+    }
+
+    const checkin: Record<(typeof ESCALATION_STATES)[number], Tally> = {
+      idle: { count: 0, more: false },
+      day0: { count: 0, more: false },
+      day7: { count: 0, more: false },
+      day14: { count: 0, more: false },
+      countdown: { count: 0, more: false },
+    }
+    for (const state of ESCALATION_STATES) {
+      const rows = await ctx.db
+        .query("checkinConfig")
+        .withIndex("by_escalationState_and_nextDueAt", (q) =>
+          q.eq("escalationState", state)
+        )
+        .take(COUNT_CAP + 1)
+      checkin[state] = tally(rows)
+    }
+
+    // The next automatic release. `advance` is the one transition in this
+    // product that happens with no human in the loop, so the console should be
+    // able to say when the next one lands rather than discovering it after.
+    //
+    // The index is `["status", "vetoDeadline"]`, so an ascending read inside the
+    // `awaiting_veto` range yields the earliest deadline first. A handful is
+    // taken rather than one row because Convex sorts `undefined` ahead of every
+    // number, and a claim in this state with no deadline would otherwise mask
+    // the real answer. `guardianConfirm` always sets one, so this is a guard
+    // against a future edit, not against today's data.
+    const soonest = await ctx.db
+      .query("claims")
+      .withIndex("by_status_and_vetoDeadline", (q) =>
+        q.eq("status", "awaiting_veto")
+      )
+      .take(8)
+    const nextReleaseAt =
+      soonest.find((row) => row.vetoDeadline !== undefined)?.vetoDeadline ?? null
+
+    return { claims, checkin, nextReleaseAt, countCap: COUNT_CAP }
+  },
+})
+
+/** Every value `users.identityStatus` can hold, in funnel order. */
+const IDENTITY_STATUSES = [
+  "unverified",
+  "pending",
+  "verified",
+  "rejected",
+] as const
+
+/**
+ * The activation funnel, and the identity breakdown that gates it.
+ *
+ * ## Why the funnel stops at the check-in and never mentions assets
+ *
+ * `apps/mobile/lib/setup-flow.ts` defines the setup ceremony as ending at the
+ * recovery kit, so adding an asset is *usage*, not activation. That happens to
+ * agree with the cheapest possible query: `assets` is the one table where a
+ * global pass reads two `v.bytes()` columns per row, which makes bytes rather
+ * than document count the binding limit. Asset numbers live in `storage` below.
+ *
+ * ## Why the stages scan child tables rather than `users`
+ *
+ * Each child table holds at most one row per owner who *reached* that stage, so
+ * it is always smaller than `users` — scanning down the funnel is the cheap
+ * direction. `keyring` is read once and answers three questions (vault created,
+ * sheet printed, guardian share sealed), which is why it is not read again.
+ *
+ * ## The one thing this cannot see
+ *
+ * The app's own 4-step meter includes **biometrics**, which lives only in the
+ * device keystore and has no server column at all. This is a server-visible
+ * funnel, not the app's meter, and the console says so rather than quietly
+ * reporting six of seven steps as if they were the whole ceremony.
+ */
+export const activation = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx)
+
+    const identity: Record<(typeof IDENTITY_STATUSES)[number], Tally> = {
+      unverified: { count: 0, more: false },
+      pending: { count: 0, more: false },
+      verified: { count: 0, more: false },
+      rejected: { count: 0, more: false },
+    }
+    // Owners who have burned every retry and can only be helped by a person.
+    // Counted inside the `rejected` pass rather than by a scan of its own,
+    // because an attempt is only ever spent on a decline and a decline is what
+    // sets this status — so the rows are already in hand.
+    //
+    // These two numbers are NOT the same thing and the console must not conflate
+    // them. `identity.ts` is explicit: an expired or abandoned session lands as
+    // `rejected` but spends no attempt, because "counting sessions would spend
+    // one every time a user opened the hosted flow and backed out". A large
+    // rejected bucket sitting at zero attempts is the expected shape.
+    let attemptsExhausted = 0
+    for (const status of IDENTITY_STATUSES) {
+      const raw = await ctx.db
+        .query("users")
+        .withIndex("by_identityStatus", (q) => q.eq("identityStatus", status))
+        .take(SCAN_CAP + 1)
+      // Staff are not customers. Reviewers have `users` rows like anyone else,
+      // so counting them would inflate the funnel's first bar by the size of the
+      // team and drift further with every person hired — a growth chart that
+      // rises when you make a hire is worse than no chart. `risk` skips them for
+      // the same reason.
+      const rows = raw.filter((row) => row.role !== "admin")
+      identity[status] = tallyWith(rows, SCAN_CAP)
+      if (status === "rejected") {
+        attemptsExhausted = rows
+          .slice(0, SCAN_CAP)
+          .filter((row) => (row.identityAttempts ?? 0) >= MAX_IDENTITY_ATTEMPTS)
+          .length
+      }
+    }
+
+    // One pass over `keyring`: three stages come out of it. A row here *is* a
+    // vault, so no de-duplication is needed — `keyring.save` upserts one per
+    // owner.
+    const keyrings = await ctx.db.query("keyring").take(SCAN_CAP + 1)
+    const keyringCapped = keyrings.length > SCAN_CAP
+    const vaults = keyrings.slice(0, SCAN_CAP)
+    const sealedFor = new Set(
+      vaults
+        .filter((row) => row.guardianShareSealed !== undefined)
+        .map((row) => row.userId as string)
+    )
+    const printed = vaults.filter((row) => row.paperPrintedAt !== undefined)
+
+    // Owners with at least one heir. `heirs` carries no ciphertext column, so
+    // this is the cheapest scan in the file.
+    const heirRows = await ctx.db.query("heirs").take(SCAN_CAP + 1)
+    const heirOwners = new Set(
+      heirRows.slice(0, SCAN_CAP).map((row) => row.userId as string)
+    )
+
+    // A guardian counts only when the invitation was accepted **and** the
+    // owner's device has sealed a share to them. `apps/mobile/lib/guardian.ts`
+    // exists so that answer is never computed twice, and its reasoning applies
+    // exactly here: "an accepted invitation with no sealed share is a guardian
+    // who cannot help recover anything."
+    const accepted = await ctx.db
+      .query("guardians")
+      .withIndex("by_status", (q) => q.eq("status", "accepted"))
+      .take(SCAN_CAP + 1)
+    const guardianCapped = accepted.length > SCAN_CAP
+    const guardianLive = new Set(
+      accepted
+        .slice(0, SCAN_CAP)
+        .map((row) => row.userId as string)
+        .filter((userId) => sealedFor.has(userId))
+    )
+
+    // Five indexed ranges rather than a scan — the index this table was built
+    // around. One row per owner, so the counts add up without de-duplication.
+    let checkinCount = 0
+    let checkinCapped = false
+    for (const state of ESCALATION_STATES) {
+      const rows = await ctx.db
+        .query("checkinConfig")
+        .withIndex("by_escalationState_and_nextDueAt", (q) =>
+          q.eq("escalationState", state)
+        )
+        .take(SCAN_CAP + 1)
+      checkinCount += Math.min(rows.length, SCAN_CAP)
+      checkinCapped = checkinCapped || rows.length > SCAN_CAP
+    }
+
+    // The total is the sum of the identity buckets rather than a separate count
+    // of `users`, so the funnel's first bar and its second can never disagree.
+    // A row with no `identityStatus` at all would sit outside every bucket —
+    // `upsertFromClerk` has always seeded it on insert, so that set is empty.
+    const signedUp = IDENTITY_STATUSES.reduce(
+      (sum, status) => sum + identity[status].count,
+      0
+    )
+    const signedUpMore = IDENTITY_STATUSES.some(
+      (status) => identity[status].more
+    )
+
+    return {
+      identity,
+      attemptsExhausted,
+      maxIdentityAttempts: MAX_IDENTITY_ATTEMPTS,
+      /** In funnel order. The client renders these as bars, top to bottom. */
+      stages: [
+        { key: "signedUp", count: signedUp, more: signedUpMore },
+        { key: "identityVerified", ...identity.verified },
+        { key: "vaultCreated", count: vaults.length, more: keyringCapped },
+        { key: "sheetPrinted", count: printed.length, more: keyringCapped },
+        {
+          key: "heirNamed",
+          ...setTally(heirOwners, heirRows.length > SCAN_CAP),
+        },
+        {
+          key: "guardianLive",
+          ...setTally(guardianLive, guardianCapped || keyringCapped),
+        },
+        { key: "checkinConfigured", count: checkinCount, more: checkinCapped },
+      ],
+      scanCap: SCAN_CAP,
+    }
+  },
+})
+
+/**
+ * Sign-ups in a window, bucketed by UTC day.
+ *
+ * `from` and `to` are **arguments**, never `Date.now()`. The guidelines are
+ * explicit — "Do not read the wall clock inside a query… pass the current time
+ * in as an argument" — and three other files in this deployment already obey
+ * it. A query is not rerun because time passed, so a window derived from the
+ * server's clock would freeze at whatever it was when the query last ran.
+ *
+ * Rides `by_creation_time`, the index Convex maintains on every table, so only
+ * the rows inside the window are read.
+ */
+export const signups = query({
+  args: { from: v.number(), to: v.number() },
+  handler: async (ctx, { from, to }) => {
+    await requireAdmin(ctx)
+
+    const raw = await ctx.db
+      .query("users")
+      .withIndex("by_creation_time", (q) =>
+        q.gte("_creationTime", from).lt("_creationTime", to)
+      )
+      .take(SCAN_CAP + 1)
+    // Staff excluded, same as the funnel: a sign-up trend that ticks up when a
+    // reviewer is added is measuring the wrong thing.
+    const rows = raw.filter((row) => row.role !== "admin")
+
+    // Bucketed in UTC rather than a local zone: the console is read from more
+    // than one country, and a chart whose bars shift by a day depending on the
+    // reader is worse than one that states its zone.
+    const byDay = new Map<number, number>()
+    for (const row of rows.slice(0, SCAN_CAP)) {
+      const day = Math.floor(row._creationTime / DAY_MS) * DAY_MS
+      byDay.set(day, (byDay.get(day) ?? 0) + 1)
+    }
+
+    return {
+      days: [...byDay.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([day, count]) => ({ day, count })),
+      total: Math.min(rows.length, SCAN_CAP),
+      more: rows.length > SCAN_CAP,
+    }
+  },
+})
+
+/**
+ * The seven protection items, in the order that **is** their ranking.
+ *
+ * Lifted verbatim from `apps/mobile/hooks/use-protection-score.ts`, whose header
+ * states the reason two surfaces must never compute this separately: "If the two
+ * computed it separately they would eventually disagree about how safe the vault
+ * is, which is the one thing a security summary may never do." The app shows an
+ * owner their own gaps; this shows an operator everyone's. They have to be the
+ * same seven, in the same order, or the console will tell someone they are fine
+ * while their phone tells them they are not.
+ */
+const PROTECTION_ITEMS = [
+  "identity",
+  "key",
+  "guardian",
+  "sheet",
+  "heirs",
+  "routing",
+  "checkin",
+] as const
+
+/** How many owners one pass of the risk table evaluates. */
+const RISK_LIMIT_DEFAULT = 150
+const RISK_LIMIT_MAX = 400
+
+/**
+ * Owners ranked by how much of their protection is missing.
+ *
+ * There is no equivalent of this anywhere in the product. Every signal it uses
+ * is per-owner and owner-visible in the app; what does not exist is anyone
+ * looking *across* owners, so a vault that would deliver nothing fails silently
+ * until a death claim discovers it.
+ *
+ * ## Cost is bounded by index ranges, not documents
+ *
+ * Seven ranges per owner against a 4,096-range transaction limit, so the real
+ * ceiling is ~580 owners and `RISK_LIMIT_MAX` sits well under it.
+ *
+ * Note the shape here is deliberately not `routing.staleHeirs`'. That one issues
+ * one `.unique()` per heir, which is right for a single owner looking at their
+ * own vault and would be N x M here. Reading the owner's bundles once and
+ * comparing in memory answers the identical question — `bundle === null ||
+ * bundle.rebuiltAt < changedAt` — at one range per owner instead of one per heir.
+ */
+export const risk = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx)
+
+    const limit = Math.min(args.limit ?? RISK_LIMIT_DEFAULT, RISK_LIMIT_MAX)
+    const owners = await ctx.db.query("users").take(limit + 1)
+    const more = owners.length > limit
+
+    const rows = []
+    for (const owner of owners.slice(0, limit)) {
+      // Admins are staff, not customers. Scoring the operator's own account as
+      // an at-risk vault would put a permanent false row at the top of the one
+      // table whose whole value is that every row means something.
+      if (owner.role === "admin") continue
+
+      const keyring = await ctx.db
+        .query("keyring")
+        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
+        .unique()
+
+      const guardians = await ctx.db
+        .query("guardians")
+        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
+        .take(20)
+
+      const heirs = await ctx.db
+        .query("heirs")
+        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
+        .take(100)
+
+      const checkin = await ctx.db
+        .query("checkinConfig")
+        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
+        .unique()
+
+      const bundles = await ctx.db
+        .query("releaseBundles")
+        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
+        .take(100)
+      const rebuiltFor = new Map<string, number>(
+        bundles.map((bundle) => [bundle.heirId as string, bundle.rebuiltAt])
+      )
+
+      // "Has this owner routed anything at all?" Two indexed probes rather than
+      // a per-asset walk. `allHeirs` is a bucket every heir receives, so an
+      // owner with only that entry still has live routing.
+      let routed = false
+      for (const kind of ["heir", "allHeirs"] as const) {
+        const hit = await ctx.db
+          .query("assetRecipients")
+          .withIndex("by_userId_and_recipientKind", (q) =>
+            q.eq("userId", owner._id).eq("recipientKind", kind)
+          )
+          .take(1)
+        if (hit.length > 0) {
+          routed = true
+          break
+        }
+      }
+
+      // The heir-side question, which is the one that matters at release: how
+      // many of this owner's heirs would receive nothing today. Same test as
+      // `routing.staleHeirs`, including its `?? 0` for an heir never routed.
+      const heirsAtRisk = heirs.filter((heir) => {
+        const rebuiltAt = rebuiltFor.get(heir._id as string)
+        return (
+          rebuiltAt === undefined || rebuiltAt < (heir.routingChangedAt ?? 0)
+        )
+      }).length
+
+      const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
+        identity: owner.identityStatus === "verified",
+        key: keyring !== null,
+        // Accepted AND sealed. `apps/mobile/lib/guardian.ts`: "an accepted
+        // invitation with no sealed share is a guardian who cannot help recover
+        // anything."
+        guardian:
+          guardians.some((row) => row.status === "accepted") &&
+          keyring?.guardianShareSealed !== undefined,
+        sheet: keyring?.paperPrintedAt !== undefined,
+        heirs: heirs.length > 0,
+        routing: routed,
+        checkin: checkin !== null,
+      }
+
+      const missing = PROTECTION_ITEMS.filter((item) => !done[item])
+      if (missing.length === 0 && heirsAtRisk === 0) continue
+
+      rows.push({
+        userId: owner._id,
+        name: owner.name,
+        email: owner.email,
+        missing,
+        /** The highest-ranked gap — the app's one-amber rule, same order. */
+        worstGap: missing[0] ?? null,
+        heirsAtRisk,
+        heirCount: heirs.length,
+        earned: PROTECTION_ITEMS.length - missing.length,
+        total: PROTECTION_ITEMS.length,
+      })
+    }
+
+    // Worst first: fewest items earned, then most heirs who would get nothing.
+    rows.sort((a, b) => a.earned - b.earned || b.heirsAtRisk - a.heirsAtRisk)
+
+    return { rows, more, limit, itemCount: PROTECTION_ITEMS.length }
+  },
+})
+
+/** How many asset rows the storage breakdown reads. Bytes-bound, so the lowest. */
+const STORAGE_SCAN_CAP = 2000
+
+/** Every value `assets.type` can hold. */
+const ASSET_TYPES = [
+  "crypto",
+  "bank",
+  "document",
+  "photos",
+  "digital",
+  "note",
+] as const
+
+type TypeUsage = { count: number; bytes: number }
+
+/**
+ * Storage: what is stored, by whom, and in what shape.
+ *
+ * ## Three caveats this query cannot fix, and the console must not hide
+ *
+ * `subscription.storageBytesUsed` is a hand-maintained counter — `assets.ts`
+ * says so: "A denormalised counter, because Convex has no count operator and
+ * summing every asset would not scale." It is a known undercount: credential
+ * types leave `meta.byteSize` unset and "have never been counted at all", and
+ * `bumpStorageUsed` clamps at zero, so drift only ever runs one way. The
+ * per-type breakdown below is computed from the rows instead, which is what the
+ * app's own storage meter does and for the same reason — a bar and its legend
+ * telling different stories is worse than either alone.
+ *
+ * ## There is no revenue here because there is no revenue recorded
+ *
+ * Nothing in this deployment writes `subscription.renewsAt`; `plan` is only ever
+ * the literal "free", set as a side effect of the storage counter. There is no
+ * billing component, no payment webhook, and no plan catalogue. Reporting what
+ * is actually stored, and saying plainly that billing is unwired, is the honest
+ * answer — an empty revenue chart would read as "no customers are paying"
+ * rather than "nobody has been asked to".
+ */
+export const storage = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx)
+
+    const limit = Math.min(args.limit ?? 10, 50)
+
+    const all = await ctx.db.query("users").take(SCAN_CAP + 1)
+    const capped = all.length > SCAN_CAP
+    // Staff excluded here too, so "owners on the free plan" is a count of
+    // customers and not of everyone with a login.
+    const counted = all.slice(0, SCAN_CAP).filter((row) => row.role !== "admin")
+
+    let totalBytes = 0
+    const plans = new Map<string, number>()
+    const consumers: {
+      userId: string
+      name: string | null
+      bytes: number
+    }[] = []
+    for (const owner of counted) {
+      const bytes = owner.subscription?.storageBytesUsed ?? 0
+      totalBytes += bytes
+      const plan = owner.subscription?.plan ?? "none"
+      plans.set(plan, (plans.get(plan) ?? 0) + 1)
+      if (bytes > 0) {
+        consumers.push({ userId: owner._id, name: owner.name, bytes })
+      }
+    }
+    consumers.sort((a, b) => b.bytes - a.bytes)
+
+    // The one bulk read of a ciphertext-bearing table in this file, and the
+    // reason its cap is the tightest here: every row carries `labelSealed` and
+    // `dekWrappedByMk` whether or not this query wants them.
+    const assets = await ctx.db.query("assets").take(STORAGE_SCAN_CAP + 1)
+    const assetsCapped = assets.length > STORAGE_SCAN_CAP
+    const byType: Record<(typeof ASSET_TYPES)[number], TypeUsage> = {
+      crypto: { count: 0, bytes: 0 },
+      bank: { count: 0, bytes: 0 },
+      document: { count: 0, bytes: 0 },
+      photos: { count: 0, bytes: 0 },
+      digital: { count: 0, bytes: 0 },
+      note: { count: 0, bytes: 0 },
+    }
+    let unrouted = 0
+    for (const asset of assets.slice(0, STORAGE_SCAN_CAP)) {
+      byType[asset.type].count += 1
+      byType[asset.type].bytes += asset.meta.byteSize ?? 0
+      if (asset.recipientRule !== "explicit") unrouted += 1
+    }
+
+    return {
+      totalBytes,
+      ownersCounted: counted.length,
+      more: capped,
+      topConsumers: consumers.slice(0, limit),
+      plans: [...plans.entries()].map(([plan, count]) => ({ plan, count })),
+      byType,
+      assetCount: Math.min(assets.length, STORAGE_SCAN_CAP),
+      assetsCapped,
+      unrouted,
+      /** True while no plan anywhere carries a renewal date — i.e. always, today. */
+      billingUnwired: counted.every(
+        (owner) => owner.subscription?.renewsAt === undefined
+      ),
+    }
+  },
+})
+
+/** Claim statuses, as an argument validator the console can pass through. */
+const claimStatusValidator = v.union(
+  v.literal("submitted"),
+  v.literal("guardian_review"),
+  v.literal("awaiting_veto"),
+  v.literal("released"),
+  v.literal("vetoed"),
+  v.literal("locked")
+)
+
+/** How many claims one status page returns. */
+const CLAIMS_PAGE = 100
+
+/**
+ * Claims in one status — the query that makes a claim findable after review.
+ *
+ * `claims.pendingReview` is `submitted`-only, and that single fact is what made
+ * the review flow unusable: the moment an admin acted, the claim left the only
+ * admin-callable query that returns a claim id, and no other one exists. An
+ * admin could not re-open the claim they had just touched, let alone repair a
+ * mistake on it. This is the same indexed read, parameterised.
+ *
+ * Deliberately no counts: the console's status chips read `overview`, which
+ * already tallies all six from the same index.
+ */
+export const claimsByStatus = query({
+  args: { status: claimStatusValidator },
+  handler: async (ctx, { status }) => {
+    await requireAdmin(ctx)
+
+    const rows = await ctx.db
+      .query("claims")
+      .withIndex("by_status", (q) => q.eq("status", status))
+      .take(CLAIMS_PAGE + 1)
+
+    const page = rows.slice(0, CLAIMS_PAGE)
+    return {
+      rows: await Promise.all(
+        page.map(async (row) => {
+          const subject = await ctx.db.get("users", row.subjectUserId)
+          return {
+            id: row._id,
+            status: row.status,
+            claimantName: row.claimantName,
+            claimantContact: row.claimantContact,
+            // The stored snapshot. `claimDetail` returns the live value; this
+            // is the list, and re-reading a user per row to correct a badge
+            // would cost one index range per claim for no decision.
+            claimantIdentityStatus: row.claimantIdentityStatus,
+            certificateName: row.certificateName ?? null,
+            subjectName: subject?.name ?? null,
+            subjectVerifiedName: subject?.identityVerifiedName ?? null,
+            nameMatch: row.nameMatch ?? null,
+            heirLinked: row.heirId !== undefined,
+            vetoDeadline: row.vetoDeadline ?? null,
+            submittedAt: row._creationTime,
+          }
+        })
+      ),
+      more: rows.length > CLAIMS_PAGE,
+      pageSize: CLAIMS_PAGE,
+    }
+  },
+})
+
+/** Audit rows scanned looking for one claim's history. */
+const HISTORY_SCAN = 400
+
+/**
+ * Everything a reviewer needs to rule on one claim, and nothing they do not.
+ *
+ * ## The comparison this exists to support
+ *
+ * The whole judgement is the certificate's name against the owner's
+ * Didit-verified legal name. `adminSetNameMatch` says why a person makes it:
+ * *"Never a string comparison in code: transliteration, honorifics and name
+ * order make that unsafe in Arabic and in every other script this ships to."*
+ * So both names come back, and the console puts them side by side.
+ *
+ * ## The identity status here is LIVE, and that is not a detail
+ *
+ * `claims.claimantIdentityStatus` is a snapshot written at submit and refreshed
+ * only as a side effect of `adminSetNameMatch`. That mutation decides on the
+ * live `users.identityStatus`. Returning the stored column would mean the
+ * console disabled its button on one value while the server ruled on another —
+ * precisely the disagreement `nameMatchBlockedReason` exists to prevent. Both
+ * are returned so a stale snapshot is visible rather than silently wrong.
+ *
+ * ## Heirs are another owner's data, so they are projected
+ *
+ * Nothing else in this console reads an owner's heir list. `heirs` carries
+ * plaintext `name`, `relation` and `phone`; only the first two and a routed
+ * count come back, never the phone and never a spread document. Same discipline
+ * `release.ts` states for itself: every read projects named fields, so a future
+ * edit cannot widen one into a leak.
+ *
+ * ## Prior claims are included because the lockout does not catch them
+ *
+ * A veto sets `lockedUntil`, but `submit` only finds prior claims through
+ * `by_subjectUserId_and_claimantContact` — and `claimantContact` is a
+ * caller-supplied string. A vetoed claimant who re-files with a different email
+ * matches nothing and lands here as a fresh `submitted` claim with no sign of
+ * the veto. Listing this claimant's other claims against this subject is what
+ * lets a reviewer see what the backend missed.
+ */
+export const claimDetail = query({
+  args: { claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    await requireAdmin(ctx)
+
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) return null
+
+    const subject = await ctx.db.get("users", claim.subjectUserId)
+    const claimant =
+      claim.claimantUserId === undefined
+        ? null
+        : await ctx.db.get("users", claim.claimantUserId)
+    const liveIdentityStatus = claimant?.identityStatus ?? "unverified"
+
+    const heirRows = await ctx.db
+      .query("heirs")
+      .withIndex("by_userId", (q) => q.eq("userId", claim.subjectUserId))
+      .take(100)
+
+    // Assets routed to each heir, folding in the "all heirs" bucket — the same
+    // arithmetic `heirs.list` does for the owner, so the console and the app
+    // cannot report a different number for the same heir.
+    const direct = new Map<string, number>()
+    const named = await ctx.db
+      .query("assetRecipients")
+      .withIndex("by_userId_and_recipientKind", (q) =>
+        q.eq("userId", claim.subjectUserId).eq("recipientKind", "heir")
+      )
+      .take(2000)
+    for (const row of named) {
+      if (row.recipientHeirId === undefined) continue
+      const key = row.recipientHeirId as string
+      direct.set(key, (direct.get(key) ?? 0) + 1)
+    }
+    const shared = await ctx.db
+      .query("assetRecipients")
+      .withIndex("by_userId_and_recipientKind", (q) =>
+        q.eq("userId", claim.subjectUserId).eq("recipientKind", "allHeirs")
+      )
+      .take(2000)
+
+    // Other claims this person has filed against this vault. Matched on the
+    // claimant's account where there is one, because that is the identity the
+    // contact string fails to pin down.
+    const siblings = await ctx.db
+      .query("claims")
+      .withIndex("by_subjectUserId", (q) =>
+        q.eq("subjectUserId", claim.subjectUserId)
+      )
+      .take(50)
+    const priorClaims = siblings
+      .filter(
+        (row) =>
+          row._id !== claim._id &&
+          (claim.claimantUserId !== undefined
+            ? row.claimantUserId === claim.claimantUserId
+            : row.claimantContact === claim.claimantContact)
+      )
+      .map((row) => ({
+        id: row._id,
+        status: row.status,
+        submittedAt: row._creationTime,
+        lockedUntil: row.lockedUntil ?? null,
+      }))
+
+    // This claim's history. Audit rows live under the *subject's* id with the
+    // claim id inside `meta`, and `meta` is a `v.record` — unindexable — so the
+    // only way to reconstruct one claim's trail is to read the subject's recent
+    // rows and filter. Bounded, and scoped to one owner, so it stays cheap.
+    const auditRows = await ctx.db
+      .query("auditLog")
+      .withIndex("by_userId_and_at", (q) => q.eq("userId", claim.subjectUserId))
+      .order("desc")
+      .take(HISTORY_SCAN)
+    const history = auditRows
+      .filter((row) => row.meta.claimId === (claim._id as string))
+      .map((row) => ({ event: row.event, at: row.at }))
+
+    return {
+      claim: {
+        id: claim._id,
+        status: claim.status,
+        claimantName: claim.claimantName,
+        claimantContact: claim.claimantContact,
+        certificateName: claim.certificateName ?? null,
+        certificateUrl:
+          claim.certificateStorageId === undefined
+            ? null
+            : await ctx.storage.getUrl(claim.certificateStorageId),
+        nameMatch: claim.nameMatch ?? null,
+        heirId: claim.heirId ?? null,
+        vetoDeadline: claim.vetoDeadline ?? null,
+        lockedUntil: claim.lockedUntil ?? null,
+        guardianConfirmedAt: claim.guardianConfirmedAt ?? null,
+        submittedAt: claim._creationTime,
+      },
+      /** What Didit says right now — the value the mutation will rule on. */
+      liveIdentityStatus,
+      /** What was recorded at submit. Shown so a stale badge is visible. */
+      storedIdentityStatus: claim.claimantIdentityStatus,
+      subject: {
+        name: subject?.name ?? null,
+        email: subject?.email ?? null,
+        verifiedName: subject?.identityVerifiedName ?? null,
+      },
+      heirs: heirRows.map((heir) => ({
+        id: heir._id,
+        name: heir.name,
+        relation: heir.relation,
+        routedAssetCount: (direct.get(heir._id as string) ?? 0) + shared.length,
+      })),
+      priorClaims,
+      history,
+      /** Why each verdict is unavailable, or `null`. The button reads this. */
+      blocked: {
+        approve: nameMatchBlockedReason(claim, true, liveIdentityStatus),
+        reject: nameMatchBlockedReason(claim, false, liveIdentityStatus),
+      },
+      /** Stated on the page: approving parks the claim, it does not complete it. */
+      guardianStepUnbuilt: true,
+    }
+  },
+})
