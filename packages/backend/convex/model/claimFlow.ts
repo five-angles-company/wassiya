@@ -77,3 +77,54 @@ export function nameMatchOutcome(
     ? "guardian_review"
     : "locked"
 }
+
+/** Why a verdict cannot be given yet. `null` means it can. */
+export type NameMatchBlock =
+  | "past-review"
+  | "no-heir"
+  | "identity-not-verified"
+
+/**
+ * Whether an admin may record this verdict on this claim right now.
+ *
+ * `nameMatchOutcome` above says where a verdict *sends* a claim; this says
+ * whether it may be given at all. The two belong together because the second
+ * exists entirely to stop the first producing an outcome nobody intended.
+ *
+ * ## Both blocks apply only to approval, and that asymmetry is the point
+ *
+ * A rejection is *meant* to end in `locked`. Refusing to reject a claim because
+ * its claimant is unverified would be refusing the very thing the reviewer is
+ * there to do. Only `nameMatch === true` needs protecting, because approval is
+ * the one case where what the admin intends and what the code produces come
+ * apart:
+ *
+ *  - **`identity-not-verified`** — `nameMatchOutcome(true, anything-but-verified)`
+ *    returns `locked`. An admin looking at a genuine match, while Didit happens
+ *    still to be `pending`, destroys the claim by approving it. Nothing moves a
+ *    claim out of `locked`; the remedy is for the claimant to file again.
+ *  - **`no-heir`** — approving with no `heirId` sends the claim to
+ *    `guardian_review`, where `guardianConfirm` throws "not linked to an heir
+ *    record yet". `adminLinkHeir` can still repair it, so it is recoverable —
+ *    but only by an admin who can still *find* the claim, and until
+ *    `admin.claimsByStatus` existed no admin query could.
+ *
+ * ## `claimantIdentityStatus` must be the LIVE value
+ *
+ * Pass `users.identityStatus` read now — never `claims.claimantIdentityStatus`,
+ * which is a snapshot taken at submit and refreshed only as a side effect of
+ * `adminSetNameMatch` itself. `adminSetNameMatch` decides on the live value, so
+ * a UI that disabled its button on the stored one would disagree with the server
+ * in exactly the case this function exists to prevent.
+ */
+export function nameMatchBlockedReason(
+  claim: Doc<"claims">,
+  nameMatch: boolean,
+  claimantIdentityStatus: Doc<"users">["identityStatus"]
+): NameMatchBlock | null {
+  if (claim.status !== "submitted") return "past-review"
+  if (!nameMatch) return null
+  if (claim.heirId === undefined) return "no-heir"
+  if (claimantIdentityStatus !== "verified") return "identity-not-verified"
+  return null
+}

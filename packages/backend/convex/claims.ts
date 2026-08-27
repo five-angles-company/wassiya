@@ -32,9 +32,11 @@ import {
   VETO_LOCKOUT_DAYS,
   VETO_WINDOW_DAYS,
   isLockedOut,
+  nameMatchBlockedReason,
   nameMatchOutcome,
   vetoWindowElapsed,
 } from "./model/claimFlow"
+import { sendGuardianClaimNotice } from "./email"
 import { getCurrentUserOrThrow } from "./users"
 
 const ADVANCE_BATCH = 50
@@ -291,10 +293,6 @@ export const adminSetNameMatch = mutation({
     if (claim === null) {
       throw new Error("Not found")
     }
-    if (claim.status !== "submitted") {
-      throw new Error("This claim is past review")
-    }
-
     // Re-read the claimant's live verification status rather than trusting the
     // copy taken at submit time — Didit may have landed since.
     const claimant =
@@ -302,6 +300,30 @@ export const adminSetNameMatch = mutation({
         ? null
         : await ctx.db.get("users", claim.claimantUserId)
     const claimantIdentityStatus = claimant?.identityStatus ?? "unverified"
+
+    // Two ways an approval silently destroys a legitimate claim, refused here
+    // rather than absorbed. `nameMatchBlockedReason` is the same predicate the
+    // console disables its button on, so the two cannot disagree — see its
+    // header for why each case exists and why neither applies to a rejection.
+    const blocked = nameMatchBlockedReason(
+      claim,
+      nameMatch,
+      claimantIdentityStatus
+    )
+    if (blocked === "past-review") {
+      throw new Error("This claim is past review")
+    }
+    if (blocked === "no-heir") {
+      throw new Error(
+        "Link an heir before approving: the guardian cannot confirm a claim with no heir record."
+      )
+    }
+    if (blocked === "identity-not-verified") {
+      throw new Error(
+        "The claimant is not identity-verified, so approving would lock this claim permanently. Wait for verification."
+      )
+    }
+
     const status = nameMatchOutcome(nameMatch, claimantIdentityStatus)
 
     await ctx.db.patch("claims", claimId, {
@@ -314,6 +336,37 @@ export const adminSetNameMatch = mutation({
       event: "claim.name_match_set",
       meta: { claimId, nameMatch, status, adminUserId: admin._id },
     })
+
+    // Tell the guardian, because until now this transition told nobody.
+    //
+    // Every other transition in this file notifies someone — `submit` the
+    // owner, `veto` the claimant, `guardianConfirm` the owner, `advance` the
+    // claimant. This one wrote an audit line and stopped, which meant a claim
+    // could land in `guardian_review` and sit there until a guardian happened
+    // to open the app and look. Both channels, for the same reason the check-in
+    // ladder uses both: the in-app row is for a guardian who opens the app, and
+    // the email is for the one who does not.
+    //
+    // Only on approval. A rejection ends the claim, and there is nothing to ask
+    // a guardian about a claim that is already closed.
+    if (status === "guardian_review") {
+      const guardians = await ctx.db
+        .query("guardians")
+        .withIndex("by_userId", (q) => q.eq("userId", claim.subjectUserId))
+        .take(20)
+      for (const guardian of guardians) {
+        // Accepted **and** linked to an account. An invited guardian has no
+        // `guardianUserId` to notify, and a revoked one is no longer anyone's
+        // guardian — `guardianConfirm` would refuse them either way.
+        if (guardian.status !== "accepted") continue
+        if (guardian.guardianUserId === undefined) continue
+        await notify(ctx, guardian.guardianUserId, "claim.guardian_review", {
+          claimId,
+        })
+        await sendGuardianClaimNotice(ctx, guardian.guardianUserId)
+      }
+    }
+
     return { status }
   },
 })
