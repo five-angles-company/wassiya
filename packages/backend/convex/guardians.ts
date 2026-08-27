@@ -162,33 +162,69 @@ export const guardianFor = query({
 })
 
 /**
- * What is waiting on this guardian: claims in `guardian_review` for anyone they
- * guard. Read-only — confirming is `claims.guardianConfirm`.
+ * Everything a guardian is being asked to do, across every vault they guard.
+ *
+ * ## Two duties, one list
+ *
+ * A guardian is asked for something twice in a claim's life, and both are dead
+ * ends without them:
+ *
+ *  - **`confirm`** — the claim is in `guardian_review`. `claims.guardianConfirm`
+ *    starts the 30-day veto window. Nothing else can move a claim out of that
+ *    state, so a claim with no guardian acting sits there forever.
+ *  - **`handover`** — the claim is `released`. The heir holds only
+ *    `S_server_h`; `K_h = S_server_h ⊕ S_guardian_h`, so until the guardian
+ *    hands over their half through `release.guardianShareForClaim`, the heir's
+ *    box is unopenable. `apps/web`'s heir box already asks for that half.
+ *
+ * They are one query because they are one screen: a guardian opens the app
+ * because they were told something needs them, not knowing which of the two it
+ * is.
+ *
+ * ## The status is in the index now
+ *
+ * This used to read a fixed window of each subject's claims and filter by
+ * status in memory, which meant a subject with more claims than the window
+ * could hide a real duty from their guardian — no error, just an empty list.
+ * Every barred re-attempt inserts a row, so that window fills in exactly the
+ * adversarial case. Two indexed ranges per guarded vault instead.
  */
+const GUARDIAN_DUTY: Record<string, "confirm" | "handover"> = {
+  guardian_review: "confirm",
+  released: "handover",
+}
+
 export const pendingApprovals = query({
   args: {},
   handler: async (ctx) => {
     const rows = await acceptedGuardianships(ctx)
     const pending = []
     for (const row of rows) {
-      const claims = await ctx.db
-        .query("claims")
-        .withIndex("by_subjectUserId", (q) => q.eq("subjectUserId", row.userId))
-        .take(20)
-      for (const claim of claims) {
-        if (claim.status !== "guardian_review") {
-          continue
+      const subject = await ctx.db.get("users", row.userId)
+      for (const status of ["guardian_review", "released"] as const) {
+        const claims = await ctx.db
+          .query("claims")
+          .withIndex("by_subjectUserId_and_status", (q) =>
+            q.eq("subjectUserId", row.userId).eq("status", status)
+          )
+          .take(20)
+        for (const claim of claims) {
+          pending.push({
+            claimId: claim._id,
+            guardianId: row._id,
+            duty: GUARDIAN_DUTY[status]!,
+            subjectUserId: row.userId,
+            subjectName: subject?.name ?? null,
+            claimantName: claim.claimantName,
+            certificateName: claim.certificateName ?? null,
+            nameMatch: claim.nameMatch ?? null,
+            // A `guardian_review` claim with no heir linked cannot be confirmed
+            // — `guardianConfirm` throws on it. Surfaced so the screen can say
+            // so rather than offer a button that fails.
+            heirLinked: claim.heirId !== undefined,
+            submittedAt: claim._creationTime,
+          })
         }
-        const subject = await ctx.db.get("users", row.userId)
-        pending.push({
-          claimId: claim._id,
-          subjectUserId: row.userId,
-          subjectName: subject?.name ?? null,
-          claimantName: claim.claimantName,
-          certificateName: claim.certificateName ?? null,
-          nameMatch: claim.nameMatch ?? null,
-          submittedAt: claim._creationTime,
-        })
       }
     }
     return pending

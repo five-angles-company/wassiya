@@ -89,6 +89,71 @@ const COPY = {
 } as const
 
 /**
+ * The notice a guardian gets when a death claim reaches them.
+ *
+ * Deliberately says almost nothing. It names no claimant, no deceased and no
+ * vault: an email is the least controlled surface this product touches, and a
+ * guardian's inbox is not a place to disclose that a particular person has died
+ * or that a particular person filed about it. It says only that something is
+ * waiting and that the app is where it lives — which is all the recipient needs
+ * to take the next step, and all an interceptor learns.
+ */
+const GUARDIAN_CLAIM_COPY = {
+  ar: {
+    subject: "طلب ينتظر تأكيدك",
+    body: "هناك طلب على خزنة أنت وصيٌّ عليها ينتظر تأكيدك. افتح وصيّة لمراجعته — لا يمكن تأكيده من البريد.",
+  },
+  en: {
+    subject: "Something is waiting for your confirmation",
+    body: "A claim on a vault you guard is waiting for you. Open Wassiya to review it — it cannot be confirmed from email.",
+  },
+} as const
+
+type Copy = { subject: string; body: string }
+
+/**
+ * Deliver one notice, in the recipient's language.
+ *
+ * `resolveLocale`'s rule: the language subtag decides, the region is cosmetic.
+ * Anything that is not English falls to Arabic, the default.
+ *
+ * Silently does nothing when the recipient has no email on record — every
+ * account here is created from an email, so that is a broken row rather than a
+ * case to design for, and a notice must never fail the transaction that
+ * triggered it.
+ */
+async function send(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  copy: { ar: Copy; en: Copy },
+  what: string
+): Promise<void> {
+  const from = process.env.RESEND_FROM
+  if (from === undefined) {
+    // Loud in the logs, harmless to the caller: the state change itself already
+    // landed, and a missing sender is a deployment problem to fix, not a reason
+    // to stall a claim or an escalation ladder.
+    console.error(`RESEND_FROM is not set — ${what} email not sent`)
+    return
+  }
+
+  const user = await ctx.db.get("users", userId)
+  if (user?.email == null) {
+    console.error(`recipient has no email on record — ${what} email not sent`)
+    return
+  }
+
+  const text = copy[user.locale?.startsWith("en") === true ? "en" : "ar"]
+
+  await resend.sendEmail(ctx, {
+    from,
+    to: user.email,
+    subject: text.subject,
+    text: text.body,
+  })
+}
+
+/**
  * Send one escalation notice.
  *
  * A plain helper, like `writeAudit` — not a registered mutation. The component
@@ -96,39 +161,27 @@ const COPY = {
  * the same step that advanced the row and "the state changed" and "the owner
  * was told" are one fact rather than two that can disagree. A registered
  * mutation could not be reached from another mutation anyway.
- *
- * Silently does nothing when the owner has no email on record — every account
- * here is created from an email, so that is a broken row rather than a case to
- * design for, and an escalation must never fail because a notice could not go.
  */
 export async function sendEscalation(
   ctx: MutationCtx,
   userId: Id<"users">,
   state: keyof typeof COPY
 ): Promise<void> {
-  const from = process.env.RESEND_FROM
-  if (from === undefined) {
-    // Loud in the logs, harmless to the sweep: the escalation itself already
-    // landed, and a missing sender is a deployment problem to fix, not a
-    // reason to stall the ladder.
-    console.error("RESEND_FROM is not set — escalation email not sent")
-    return
-  }
+  await send(ctx, userId, COPY[state], "escalation")
+}
 
-  const user = await ctx.db.get("users", userId)
-  if (user?.email == null) {
-    console.error("owner has no email on record — escalation email not sent")
-    return
-  }
-
-  // `resolveLocale`'s rule: the language subtag decides, the region is
-  // cosmetic. Anything that is not English falls to Arabic, the default.
-  const copy = COPY[state][user.locale?.startsWith("en") === true ? "en" : "ar"]
-
-  await resend.sendEmail(ctx, {
-    from,
-    to: user.email,
-    subject: copy.subject,
-    text: copy.body,
-  })
+/**
+ * Tell a guardian a claim is waiting on them.
+ *
+ * Sent from `claims.adminSetNameMatch`, in the same transaction that moves the
+ * claim into `guardian_review`. Until this existed, that transition notified
+ * **nobody**: it wrote an audit line and stopped, so a guardian could only learn
+ * a claim was waiting by opening the app speculatively. Every other transition
+ * in `claims.ts` notifies someone; this one was the gap.
+ */
+export async function sendGuardianClaimNotice(
+  ctx: MutationCtx,
+  guardianUserId: Id<"users">
+): Promise<void> {
+  await send(ctx, guardianUserId, GUARDIAN_CLAIM_COPY, "guardian claim notice")
 }

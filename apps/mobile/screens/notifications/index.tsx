@@ -46,7 +46,14 @@ import { useStrings } from "@/i18n/use-strings"
  * should have to be *chosen* into the attention band, because the band's value
  * is entirely in how rarely it is used.
  */
-const NEEDS_ACTION = new Set(["recovery.attempted", "checkin.due"])
+// A guardian confirmation joins the attention band because, unlike the owner
+// claim events below it, there is no full-screen interrupt for it — this row is
+// the only way a guardian learns a claim is waiting.
+const NEEDS_ACTION = new Set([
+  "recovery.attempted",
+  "checkin.due",
+  "claim.guardian_review",
+])
 
 export function NotificationsScreen() {
   const { t, locale } = useStrings("notifications")
@@ -167,6 +174,8 @@ function titleFor(
       return t.claimSubmitted!
     case "claim.blocked_by_lockout":
       return t.claimBlocked!
+    case "claim.guardian_review":
+      return t.claimGuardianReview!
     case "claim.vetoed":
       return t.claimVetoed!
     case "release.bundles_rebuilt":
@@ -185,6 +194,7 @@ function titleFor(
 function bodyFor(kind: string, t: Record<string, string>): string {
   if (kind === "recovery.attempted") return t.recoveryAttemptBody!
   if (kind === "checkin.due") return t.checkinDueBody!
+  if (kind === "claim.guardian_review") return t.claimGuardianReviewBody!
   return t.generic!
 }
 
@@ -204,6 +214,20 @@ function actionsFor(kind: string, t: Record<string, string>): React.ReactNode {
     return (
       <Button size="sm" onPress={() => router.push("/protection/guardian")}>
         <Text>{t.wasntMe}</Text>
+      </Button>
+    )
+  }
+  if (kind === "claim.guardian_review") {
+    // Navigates, never confirms. Confirming a death is biometric-gated and
+    // happens on its own screen — the same rule the owner's veto follows, and
+    // for the mirrored reason: a button on a list row would let whoever is
+    // holding the phone advance a claim toward releasing someone's vault.
+    return (
+      <Button
+        size="sm"
+        onPress={() => router.push("/protection/guardian/claim")}
+      >
+        <Text>{t.openGuardianClaim}</Text>
       </Button>
     )
   }

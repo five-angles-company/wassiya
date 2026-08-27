@@ -49,6 +49,7 @@ import {
 import {
   CHECKIN,
   CLAIM_VETO,
+  GUARDIAN_CLAIM,
   GUARDIAN,
   GUARDIAN_ACCEPT,
   PROTECTION,
@@ -107,6 +108,7 @@ export const SCREEN_STRINGS = {
   "protection/guardian/accept": GUARDIAN_ACCEPT,
   "protection/checkin": CHECKIN,
   "protection/claim": CLAIM_VETO,
+  "protection/guardian/claim": GUARDIAN_CLAIM,
 
   recovery: RECOVERY,
   "recovery/approve": GUARDIAN_APPROVE,

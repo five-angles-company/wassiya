@@ -269,3 +269,111 @@ export const CLAIM_VETO = {
   },
   none: { ar: "لا توجد طلبات على حسابك.", en: "No claims against your account." },
 } satisfies LabelSet<string>
+
+/**
+ * ٧ — the guardian's side of a death claim.
+ *
+ * A guardian is asked for something twice, and both are dead ends without them:
+ * confirming the claim, which starts the owner's 30-day objection window, and —
+ * after release — handing the heir the half of the key only they can open.
+ *
+ * ## The tone here is not the veto screen's
+ *
+ * `CLAIM_VETO` speaks to someone who is alive and being asked to prove it, so it
+ * is reassuring and slightly urgent. This speaks to someone who has probably
+ * just been told a friend has died and is being asked to act on it. It is
+ * plainer, slower, and it never implies the guardian is deciding whether the
+ * death happened — they are confirming what they already know from outside the
+ * app. Nothing here should read as an accusation of the claimant or as pressure
+ * on the guardian.
+ *
+ * ## What it refuses to say
+ *
+ * There is no "reject" here, because the backend has none: a guardian who does
+ * nothing lets the claim sit in `guardian_review` indefinitely, and that is the
+ * correct behaviour — doubt should stall a claim, not kill it. Saying "decline"
+ * would promise an action that does not exist.
+ */
+export const GUARDIAN_CLAIM = {
+  title: { ar: "طلبات تنتظرك كوصي", en: "Claims waiting on you" },
+  intro: {
+    ar: "أنت وصيٌّ على خزائن. حين يصل طلب وراثة على إحداها ويجتاز المراجعة، يُطلب منك تأكيده — وأنت آخر إنسان يراه قبل أن تبدأ مهلة الاعتراض.",
+    en: "You guard vaults for other people. When an inheritance claim on one of them passes review, you are asked to confirm it — the last person to see it before the objection window starts.",
+  },
+  empty: { ar: "لا شيء ينتظرك الآن", en: "Nothing is waiting on you" },
+
+  relation: { ar: "أنت وصيّه — {relation}", en: "You are their guardian — {relation}" },
+  claimant: { ar: "تقدّم بالطلب: {name}", en: "Filed by {name}" },
+  certificate: { ar: "شهادة الوفاة: {name}", en: "Certificate: {name}" },
+  certificateNone: { ar: "لم تصل شهادة", en: "No certificate" },
+
+  // ── Confirming ───────────────────────────────────────────────────────────
+  confirmTitle: { ar: "تأكيد الوفاة", en: "Confirm the death" },
+  confirmBody: {
+    ar: "بتأكيدك تبدأ مهلة اعتراض مدتها ٣٠ يوماً. خلالها يستطيع صاحب الخزنة إيقاف الطلب بنفسه — فإن كان حيّاً، سيوقفه. لا يُفرج عن شيء قبل انتهاء المهلة.",
+    en: "Confirming starts a 30-day objection window. During it the vault's owner can stop the claim themselves — so if they are alive, they will. Nothing is released before it ends.",
+  },
+  confirm: { ar: "أؤكّد أنّه توفّي", en: "I confirm they have died" },
+  confirming: { ar: "جارٍ التأكيد…", en: "Confirming…" },
+  confirmPrompt: {
+    ar: "أثبت هويتك لتأكيد الطلب",
+    en: "Confirm it's you to confirm this claim",
+  },
+  confirmed: {
+    ar: "أُكِّد الطلب. بدأت مهلة الاعتراض، وأُبلغ صاحب الخزنة.",
+    en: "Confirmed. The objection window has started and the owner has been told.",
+  },
+
+  // Doing nothing is a legitimate choice, and the screen says so rather than
+  // leaving a guardian to guess whether silence has consequences.
+  unsureTitle: { ar: "إن لم تكن متأكّداً", en: "If you are not sure" },
+  unsureBody: {
+    ar: "لا تؤكّد. لا يمضي الطلب دون تأكيدك، ولا يترتّب على انتظارك شيء — تحقّق أولاً بالطريقة التي تراها.",
+    en: "Do not confirm. The claim does not proceed without you, and waiting costs nothing — check first, however you see fit.",
+  },
+
+  notLinked: {
+    ar: "لم يُربط هذا الطلب بوريث بعد. لا يمكن تأكيده قبل ذلك — سيتولّاه فريق المراجعة.",
+    en: "This claim is not linked to an heir yet, so it cannot be confirmed. The review team handles that.",
+  },
+
+  biometricFailed: {
+    ar: "لم يتم التحقق. التأكيد يحتاج بصمتك — وهذا ما يمنع شخصاً آخر من التأكيد نيابةً عنك.",
+    en: "Not verified. Confirming needs your biometrics — which is what stops someone else confirming for you.",
+  },
+  failed: {
+    ar: "تعذّر تأكيد الطلب. لم يتغيّر شيء — حاول مرة أخرى.",
+    en: "Could not confirm the claim. Nothing changed — try again.",
+  },
+
+  // ── Handing over the share, after release ────────────────────────────────
+  handoverTitle: { ar: "سلّم نصيبك للوارث", en: "Hand your share to the heir" },
+  handoverBody: {
+    ar: "انتهت المهلة وأُفرج عن الطلب. لا يستطيع الوارث فتح ما خُصّص له إلا بنصفَي المفتاح: نصف لديه، والنصف الآخر لا يفتحه إلا جهازك.",
+    en: "The window ended and the claim released. The heir cannot open what was left to them without both halves of the key: they hold one, and only your device can open the other.",
+  },
+  handover: { ar: "افتح نصيبي", en: "Open my share" },
+  handoverPrompt: {
+    ar: "أثبت هويتك لفتح نصيبك",
+    en: "Confirm it's you to open your share",
+  },
+  shareTitle: { ar: "نصيبك", en: "Your share" },
+  // Before the share appears, never after — the same rule the recovery ceremony
+  // states, and for the same reason: a warning read under the value it guards
+  // is worth nothing.
+  verifyFirst: {
+    ar: "تأكّد أنّك تسلّمه لمن تعرف أنّه الوارث. من يملك هذا النصيب مع نصيب الوارث يفتح ما خُصّص له.",
+    en: "Make sure you are handing this to someone you know to be the heir. Whoever holds this half together with theirs opens what was left to them.",
+  },
+  shareBody: {
+    ar: "أعطِه للوارث بالطريقة التي تثق بها. لا يمرّ هذا النصيب عبر خوادمنا مفتوحاً، ولا نستطيع إرساله نيابةً عنك.",
+    en: "Give it to the heir however you trust. This half never passes through our servers in the open, and we cannot send it for you.",
+  },
+  copy: { ar: "انسخ", en: "Copy" },
+  copied: { ar: "نُسخ", en: "Copied" },
+  done: { ar: "تم", en: "Done" },
+  keyLost: {
+    ar: "لم يعد هذا الجهاز يملك مفتاح الوصاية. إن تغيّرت بصمتك أو أُعيد ضبط الجهاز، فالمفتاح ذهب معه.",
+    en: "This device no longer holds the guardian key. If your biometrics changed or the device was reset, the key went with it.",
+  },
+} satisfies LabelSet<string>

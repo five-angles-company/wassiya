@@ -146,6 +146,7 @@ export const NOTIFICATIONS = {
     ar: "تأكيد واحد بالبصمة",
     en: "One confirmation with your fingerprint",
   },
+  openGuardianClaim: { ar: "افتح الطلب", en: "Open the claim" },
   openCheckin: { ar: "افتح التأكيد", en: "Open check-in" },
 
   guardianAccepted: { ar: "قبِل {name} دعوة الوصاية", en: "{name} accepted the guardian invitation" },
@@ -155,6 +156,18 @@ export const NOTIFICATIONS = {
     en: "An inheritance claim attempt was blocked",
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },
+  // Addressed to a **guardian**, not to an owner — the only notification in
+  // this list that is. It says "someone you guard", never whose vault or who
+  // filed: a notification row is readable from a lock screen, and neither fact
+  // belongs there.
+  claimGuardianReview: {
+    ar: "طلب ينتظر تأكيدك كوصي",
+    en: "A claim is waiting on you as guardian",
+  },
+  claimGuardianReviewBody: {
+    ar: "خزنة أنت وصيٌّ عليها. راجع الطلب وأكّده إن كنت تعلم بالوفاة.",
+    en: "A vault you guard. Review the claim and confirm it if you know of the death.",
+  },
   bundlesRebuilt: { ar: "حُدّثت مفاتيح التسليم", en: "Delivery keys were updated" },
   generic: { ar: "تحديث في خزنتك", en: "An update in your vault" },
 } satisfies LabelSet<string>
