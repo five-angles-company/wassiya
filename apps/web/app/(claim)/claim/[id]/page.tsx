@@ -8,7 +8,7 @@ import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimTimeline } from "@/components/claim/claim-timeline"
 import { CLAIM, CLAIM_STATUS } from "@/lib/claim-copy"
 import { shortRef } from "@/lib/claim-ref"
-import { fmtArabicDate, fmtArabicNumber } from "@/lib/format-ar"
+import { fmtArabicDate, fmtArabicNumber } from "@workspace/ui/lib/format-ar"
 
 /**
  * ٧.٤ — `/claim/:id`. The most-visited page in the funnel.

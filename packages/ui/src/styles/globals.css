@@ -240,3 +240,151 @@
   unicode-bidi: isolate;
   display: inline-block;
 }
+
+/* ---------------------------------------------------------------------------
+   The admin console's theme.
+
+   Same Organic semantics as `.wassiya`, plus the two things the claim funnel
+   never needed: the eight `--sidebar-*` tokens, and a dark ramp.
+
+   ## Why this is a separate class and not a widened `.wassiya`
+
+   Folding these in would mean writing a `.dark .wassiya` rule, and that rule
+   would flip `apps/web`'s claim funnel to dark for every visitor whose OS is in
+   dark mode. That funnel is deliberately light-only, and it is the one surface
+   in this product reached in the worst week of someone's life — not the place
+   to ship an untested colour scheme as a side effect. So the console gets its
+   own class and the funnel is left exactly as it was.
+
+   ## Why the dark selector is written twice
+
+   `next-themes` puts `.dark` on `<html>`, and this class also goes on `<html>`.
+   A descendant selector (`.dark .wassiya-admin`) needs an *ancestor* and would
+   silently never match when both classes sit on the same element. The compound
+   form matches that case; the descendant form is kept so the class still works
+   if it is ever moved to `<body>`.
+
+   ## Fonts are deliberately absent
+
+   `.wassiya` sets `font-family: var(--font-body-wassiya)`, which resolves
+   through `--font-plex-arabic`. The console names its faces `--font-arabic` and
+   `--font-cairo` and swaps them per locale on `<html>`, so inheriting that rule
+   here would resolve to nothing. Typography is the layout's job; this block is
+   colour only.
+   --------------------------------------------------------------------------- */
+.wassiya-admin {
+  --background: #f5ead8;
+  --foreground: #201e1d;
+  --card: #ebddc5;
+  --card-foreground: #201e1d;
+  --popover: #ebddc5;
+  --popover-foreground: #201e1d;
+  --primary: #c67139;
+  --primary-foreground: #fff2eb;
+  --secondary: #7a8a5e;
+  --secondary-foreground: #f0fae1;
+  --muted: #eee7db;
+  --muted-foreground: #82796a;
+  --accent: #ffe1d0;
+  --accent-foreground: #8c491a;
+  /* No red anywhere, same rule as the app: `destructive` is a deep terracotta. */
+  --destructive: #8c491a;
+  --border: color-mix(in srgb, #201e1d 16%, transparent);
+  --input: color-mix(in srgb, #201e1d 16%, transparent);
+  --ring: #c67139;
+
+  /* The sidebar sits on the surface tone, one step up from the page ground, so
+     the inset panel reads as a card rather than a painted gutter. */
+  --sidebar: #ebddc5;
+  --sidebar-foreground: #201e1d;
+  --sidebar-primary: #c67139;
+  --sidebar-primary-foreground: #fff2eb;
+  --sidebar-accent: #dcd3c4;
+  --sidebar-accent-foreground: #201e1d;
+  --sidebar-border: color-mix(in srgb, #201e1d 16%, transparent);
+  --sidebar-ring: #c67139;
+
+  /* Charts — a SEQUENTIAL terracotta ramp, not a categorical set.
+     ------------------------------------------------------------------------
+     This is the one place the Organic palette cannot do what a chart library
+     assumes. Run the categorical checks on it and it fails hard: sand sits at
+     chroma 0.027, so it *is* grey; and terracotta against olive measures ΔE 12.1
+     under normal vision and 5.2 under deuteranopia — a red-green colourblind
+     reader cannot tell the product's two signal colours apart. That is not a
+     flaw to design around, it is what a calm two-hue palette with a neutral
+     ground means.
+
+     So no chart in this console encodes a category by colour. Every one is
+     single-series or a ranked single-hue ramp, and identity is carried by
+     labels and order. That also happens to be what the board asks for: "one
+     accent per screen", and "status is carried by faces and one line of olive
+     or terracotta text — no badges, no bars, no scores."
+
+     Stepped from terracotta-600 down so every slot clears 3:1 against the sand
+     card; the lighter steps of the ramp are invisible on it. `--chart-5` is
+     olive and exists only for the rare second series that is *also* directly
+     labelled — never as colour alone. */
+  --chart-1: #b2622d;
+  --chart-2: #8c491a;
+  --chart-3: #643312;
+  --chart-4: #402310;
+  --chart-5: #56633f;
+
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.wassiya-admin.dark,
+.dark .wassiya-admin {
+  /* Warm the whole dark end rather than reaching for neutral greys: the ground
+     is the palette's own near-black and the surfaces are sand-900, so a dark
+     console still reads as the same product rather than a generic dashboard. */
+  --background: #201e1d;
+  --foreground: #f9f4ed;
+  --card: #2e2b25;
+  --card-foreground: #f9f4ed;
+  --popover: #2e2b25;
+  --popover-foreground: #f9f4ed;
+
+  /* Terracotta-500 rather than the light theme's 600: the darker fill goes
+     muddy against a near-black ground. The label flips to the near-black for
+     contrast — cream on mid-terracotta lands around 3:1, which is under the
+     4.5:1 a button label should clear. */
+  --primary: #d67f48;
+  --primary-foreground: #201e1d;
+
+  /* Olive still means "done"; darkened so cream text sits on it comfortably. */
+  --secondary: #56633f;
+  --secondary-foreground: #f0fae1;
+
+  --muted: #2e2b25;
+  --muted-foreground: #a19786;
+  --accent: #402310;
+  --accent-foreground: #ffc6a5;
+  /* Drawn as an outline, so this is the colour of text and border, not a fill —
+     it has to be light enough to read against the ground. */
+  --destructive: #f6a06b;
+  --border: color-mix(in srgb, #f9f4ed 16%, transparent);
+  --input: color-mix(in srgb, #f9f4ed 16%, transparent);
+  --ring: #d67f48;
+
+  --sidebar: #2e2b25;
+  --sidebar-foreground: #f9f4ed;
+  --sidebar-primary: #d67f48;
+  --sidebar-primary-foreground: #201e1d;
+  --sidebar-accent: #474238;
+  --sidebar-accent-foreground: #f9f4ed;
+  --sidebar-border: color-mix(in srgb, #f9f4ed 14%, transparent);
+  --sidebar-ring: #d67f48;
+
+  /* The same sequential ramp, re-stepped for a near-black ground rather than
+     flipped: the mid terracottas that clear 3:1 on sand disappear here, so the
+     ramp runs light-to-dark from the other end. Validated at >= 3:1 against
+     #2e2b25. `--chart-5` is olive, and carries the same "only with a label"
+     rule as its light counterpart. */
+  --chart-1: #f6a06b;
+  --chart-2: #d67f48;
+  --chart-3: #b2622d;
+  --chart-4: #ffc6a5;
+  --chart-5: #aebf92;
+}

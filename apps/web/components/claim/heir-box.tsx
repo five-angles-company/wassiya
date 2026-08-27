@@ -11,7 +11,7 @@ import { heirKey, openReleaseBundle } from "@workspace/crypto/heir"
 import { ClaimBrand } from "@/components/claim/claim-brand"
 import { Field } from "@/components/claim/field"
 import { HEIR_BOX } from "@/lib/claim-copy"
-import { fmtArabicDate, fmtArabicNumber } from "@/lib/format-ar"
+import { fmtArabicDate, fmtArabicNumber } from "@workspace/ui/lib/format-ar"
 
 type BoxState =
   | { status: "locked" }

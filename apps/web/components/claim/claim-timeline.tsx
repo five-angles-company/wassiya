@@ -1,5 +1,5 @@
 import { CLAIM_STATUS } from "@/lib/claim-copy"
-import { fmtArabicDate } from "@/lib/format-ar"
+import { fmtArabicDate } from "@workspace/ui/lib/format-ar"
 
 export type ClaimTimelineProps = {
   identityVerified: boolean
