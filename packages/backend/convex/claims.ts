@@ -39,6 +39,27 @@ import {
 import { sendGuardianClaimNotice } from "./email"
 import { getCurrentUserOrThrow } from "./users"
 
+/**
+ * Whether a guardian has anywhere to go when told a claim is waiting.
+ *
+ * **They do not.** Guardians act in the web app, which has not shipped:
+ * `guardianConfirm`, `guardians.accept` and `guardians.pendingApprovals` have
+ * no caller in any app. So approval used to send a real person a real email —
+ * *"open the Wassiya website to review it"* — pointing at a route that does not
+ * exist, about a death they may not yet have heard of, with nothing they could
+ * do on arrival. Silence is the better of those two.
+ *
+ * It also made the console lie. The review screen tells the reviewer in words
+ * that approving sends no notification (`guardianGapBody` in
+ * `apps/admin/features/claims/strings/claims.ts`), while this sent one. The
+ * screen was right about what should happen; this is the code catching up.
+ *
+ * Flip to `true` in the same commit that ships the guardian's route. The
+ * notification and the mail are written and correct — they are waiting only on
+ * somewhere to point.
+ */
+const GUARDIAN_CAN_ACT = false
+
 const ADVANCE_BATCH = 50
 
 /**
@@ -354,7 +375,7 @@ export const adminSetNameMatch = mutation({
     //
     // Only on approval. A rejection ends the claim, and there is nothing to ask
     // a guardian about a claim that is already closed.
-    if (status === "guardian_review") {
+    if (status === "guardian_review" && GUARDIAN_CAN_ACT) {
       const guardians = await ctx.db
         .query("guardians")
         .withIndex("by_userId", (q) => q.eq("userId", claim.subjectUserId))
