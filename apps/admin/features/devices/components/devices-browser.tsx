@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -127,8 +127,9 @@ function deviceColumns(
  * dangerous button in this product, since revoking every device on an account
  * leaves the printed sheet as the only way back in.
  *
- * No search box: `devices` has no search index, and one that filtered the page
- * in front of you would look like it searched the set.
+ * Search matches the **owner**, not the device. A device is called "iPhone 15"
+ * and identifies nobody, so the useful key is the person — the term resolves
+ * against `users.search_owner` and narrows this stream by `userId`.
  */
 export function DevicesBrowser() {
   const locale = useLocale()
@@ -136,6 +137,8 @@ export function DevicesBrowser() {
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
   const [platforms, setPlatforms] = useState<Platform[]>([])
+  const [searchInput, setSearchInput] = useState("")
+  const [search, setSearch] = useState("")
   const [revoked, setRevoked] = useState<boolean | undefined>(undefined)
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
   const [pageSize, setPageSize] = useState(25)
@@ -144,10 +147,20 @@ export function DevicesBrowser() {
   const cursor = cursors[cursors.length - 1] ?? null
   const resetPaging = useCallback(() => setCursors([null]), [])
 
+  useEffect(() => {
+    if (searchInput === search) return
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim())
+      resetPaging()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput, search, resetPaging])
+
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.devicesPage, {
       platforms,
       revoked,
+      search,
       sort: sorting[0]?.desc === false ? "oldest" : "newest",
       paginationOpts: { numItems: pageSize, cursor },
     })
@@ -156,6 +169,7 @@ export function DevicesBrowser() {
     useQuery(api.admin.devicesTally, {
       platforms,
       revoked,
+      search,
       sort: "newest",
     })
   )
@@ -195,7 +209,7 @@ export function DevicesBrowser() {
       data={page.page}
       busy={loading}
       fill
-      searchable={false}
+      searchPlaceholder={labels.searchPlaceholder}
       labels={tableLabels}
       locale={locale}
       columnLabels={columnLabels}
@@ -249,8 +263,8 @@ export function DevicesBrowser() {
         </>
       }
       server={{
-        search: "",
-        onSearchChange: () => undefined,
+        search: searchInput,
+        onSearchChange: setSearchInput,
         sorting,
         onSortingChange: (next) => {
           setSorting(next.length === 0 ? DEFAULT_SORTING : next)

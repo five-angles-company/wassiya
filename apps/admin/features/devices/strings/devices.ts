@@ -23,6 +23,14 @@ export const DEVICES = {
     en: "No devices match this filter.",
   },
 
+  // Names the owner, because that is what it matches. A device is called
+  // "iPhone 15" and an heir's row is on their owner's page — the person is the
+  // only useful key here, and a generic "Search…" would imply otherwise.
+  searchPlaceholder: {
+    ar: "ابحث باسم المالك أو بريده…",
+    en: "Search by owner name or email…",
+  },
+
   openMenu: { ar: "افتح القائمة", en: "Open menu" },
   actionOpenOwner: { ar: "افتح حساب المالك", en: "Open the owner's account" },
 } as const satisfies Dictionary

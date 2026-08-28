@@ -22,7 +22,7 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 
 import { query, type QueryCtx } from "./_generated/server"
-import type { Doc } from "./_generated/dataModel"
+import type { Doc, Id } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
@@ -1353,9 +1353,46 @@ export const ownerDetail = query({
 // stops being true, the fix is an index, not a smaller page.
 // ---------------------------------------------------------------------------
 
+/** How many owners one search term may resolve to before it is truncated. */
+const OWNER_MATCH_CAP = 100
+
+/**
+ * Resolve a search term to the owners it matches.
+ *
+ * `heirs` and `devices` have nothing worth searching of their own — a device is
+ * called "iPhone 15" and identifies nobody — and denormalising the owner onto
+ * their rows would go stale the moment somebody's name changed. What an
+ * operator actually has is the *owner*: a name or an address from a support
+ * ticket, and a question about that person's heirs or devices.
+ *
+ * So the term is answered against `users.search_owner` and the result narrows
+ * the child query by `userId`. Two steps, both indexed, and no new column to
+ * keep in step.
+ *
+ * Returns `null` for "no term, no constraint" — distinct from `[]`, which means
+ * a term that matched nobody and must therefore return nothing. Collapsing the
+ * two would turn a failed search into a full table listing.
+ */
+async function ownerIdsMatching(
+  ctx: QueryCtx,
+  search: string
+): Promise<{ ids: Id<"users">[]; capped: boolean } | null> {
+  if (search.length === 0) return null
+  const owners = await ctx.db
+    .query("users")
+    .withSearchIndex("search_owner", (q) => q.search("searchText", search))
+    .take(OWNER_MATCH_CAP + 1)
+  return {
+    ids: owners.slice(0, OWNER_MATCH_CAP).map((row) => row._id),
+    capped: owners.length > OWNER_MATCH_CAP,
+  }
+}
+
 const heirFilterArgs = {
   /** `true` narrows to heirs who would receive nothing today. */
   unroutedOnly: v.boolean(),
+  /** Matched against the *owner*, not the heir — see `ownerIdsMatching`. */
+  search: v.string(),
   sort: v.union(v.literal("newest"), v.literal("oldest")),
 }
 
@@ -1375,12 +1412,24 @@ const heirFilterArgs = {
  */
 export const heirsPage = query({
   args: { paginationOpts: paginationOptsValidator, ...heirFilterArgs },
-  handler: async (ctx, { paginationOpts, sort, unroutedOnly }) => {
+  handler: async (ctx, { paginationOpts, sort, unroutedOnly, search }) => {
     await requireAdmin(ctx)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      // A term that matched no owner matches no heir. Returning the unfiltered
+      // stream here would read as "search found everything".
+      return { page: [], isDone: true, continueCursor: "" }
+    }
 
     const result = await ctx.db
       .query("heirs")
       .order(sort === "oldest" ? "asc" : "desc")
+      .filter((q) =>
+        ownerMatch === null
+          ? true
+          : q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
+      )
       .paginate(paginationOpts)
 
     const owners = new Map<string, Doc<"users"> | null>()
@@ -1461,6 +1510,8 @@ const deviceFilterArgs = {
   ),
   /** `true` shows only revoked rows, `false` only live ones. */
   revoked: v.optional(v.boolean()),
+  /** Matched against the *owner*, not the device — see `ownerIdsMatching`. */
+  search: v.string(),
   sort: v.union(v.literal("newest"), v.literal("oldest")),
 }
 
@@ -1470,12 +1521,21 @@ type DeviceFilters = {
   sort: "newest" | "oldest"
 }
 
-function devicesQuery(ctx: QueryCtx, filters: DeviceFilters) {
+function devicesQuery(
+  ctx: QueryCtx,
+  filters: DeviceFilters,
+  ownerIds: Id<"users">[] | null
+) {
   return ctx.db
     .query("devices")
     .order(filters.sort === "oldest" ? "asc" : "desc")
     .filter((q) => {
       const clauses = []
+      if (ownerIds !== null) {
+        clauses.push(
+          q.or(...ownerIds.map((id) => q.eq(q.field("userId"), id)))
+        )
+      }
       if (filters.platforms.length > 0) {
         clauses.push(
           q.or(
@@ -1507,9 +1567,19 @@ function devicesQuery(ctx: QueryCtx, filters: DeviceFilters) {
  */
 export const devicesPage = query({
   args: { paginationOpts: paginationOptsValidator, ...deviceFilterArgs },
-  handler: async (ctx, { paginationOpts, ...filters }) => {
+  handler: async (ctx, { paginationOpts, search, ...filters }) => {
     await requireAdmin(ctx)
-    const result = await devicesQuery(ctx, filters).paginate(paginationOpts)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { page: [], isDone: true, continueCursor: "" }
+    }
+
+    const result = await devicesQuery(
+      ctx,
+      filters,
+      ownerMatch?.ids ?? null
+    ).paginate(paginationOpts)
 
     const owners = new Map<string, Doc<"users"> | null>()
     for (const row of result.page) {
@@ -1542,9 +1612,17 @@ export const devicesPage = query({
 /** Bounded count for the device filters. See `claimsTally`. */
 export const devicesTally = query({
   args: deviceFilterArgs,
-  handler: async (ctx, filters) => {
+  handler: async (ctx, { search, ...filters }) => {
     await requireAdmin(ctx)
-    const rows = await devicesQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { count: 0, more: false }
+    }
+    const rows = await devicesQuery(
+      ctx,
+      filters,
+      ownerMatch?.ids ?? null
+    ).take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
       more: rows.length > CLAIMS_TALLY_CAP,

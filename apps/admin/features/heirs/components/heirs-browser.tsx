@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -125,8 +125,10 @@ function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
  * And the total counts every heir, not the filtered set, because producing the
  * filtered number would mean running those probes across the whole table.
  *
- * No search box: `heirs` has no search index, and a box that filtered only the
- * page in front of you would look like it searched the set.
+ * Search matches the **owner**, not the heir. `heirs` has nothing worth
+ * indexing of its own, and denormalising an owner onto every heir row would go
+ * stale the first time somebody changed their name — so the term resolves
+ * against `users.search_owner` and narrows this stream by `userId`.
  */
 export function HeirsBrowser() {
   const locale = useLocale()
@@ -134,6 +136,8 @@ export function HeirsBrowser() {
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
   const [unroutedOnly, setUnroutedOnly] = useState(false)
+  const [searchInput, setSearchInput] = useState("")
+  const [search, setSearch] = useState("")
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
   const [pageSize, setPageSize] = useState(25)
   const [cursors, setCursors] = useState<(string | null)[]>([null])
@@ -141,9 +145,21 @@ export function HeirsBrowser() {
   const cursor = cursors[cursors.length - 1] ?? null
   const resetPaging = useCallback(() => setCursors([null]), [])
 
+  // Debounced, like every other server-side search here: a keystroke would
+  // otherwise be a round trip and a fresh subscription.
+  useEffect(() => {
+    if (searchInput === search) return
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim())
+      resetPaging()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput, search, resetPaging])
+
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.heirsPage, {
       unroutedOnly,
+      search,
       sort: sorting[0]?.desc === false ? "oldest" : "newest",
       paginationOpts: { numItems: pageSize, cursor },
     })
@@ -175,7 +191,7 @@ export function HeirsBrowser() {
       data={page.page}
       busy={loading}
       fill
-      searchable={false}
+      searchPlaceholder={labels.searchPlaceholder}
       labels={tableLabels}
       locale={locale}
       columnLabels={columnLabels}
@@ -198,13 +214,15 @@ export function HeirsBrowser() {
         />
       }
       server={{
-        search: "",
-        onSearchChange: () => undefined,
+        search: searchInput,
+        onSearchChange: setSearchInput,
         sorting,
         onSortingChange: (next) => {
           setSorting(next.length === 0 ? DEFAULT_SORTING : next)
           resetPaging()
         },
+        // Owner matches are ranked by the search index, but the heirs stream
+        // itself is still ordered by creation — so the sort headers keep working.
         sortLocked: false,
         page: cursors.length,
         pageSize,
