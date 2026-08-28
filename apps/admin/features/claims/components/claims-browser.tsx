@@ -28,6 +28,7 @@ import {
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { fmtDate, fmtTally } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { useLastLoaded } from "@/lib/use-last-loaded"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
 /**
@@ -66,14 +67,22 @@ export function ClaimsBrowser() {
   const { filters, cursor, pageSize } = query
 
   const overview = useQuery(api.admin.overview)
-  const page = useQuery(api.admin.claimsPage, {
-    ...filters,
-    paginationOpts: { numItems: pageSize, cursor },
-  })
-  const tally = useQuery(api.admin.claimsTally, filters)
+  // Kept, not replaced: a filter change is a new subscription, so `useQuery`
+  // answers `undefined` for a moment. Rendering that directly used to unmount
+  // the whole table — see `useLastLoaded`.
+  const { data: page, loading } = useLastLoaded(
+    useQuery(api.admin.claimsPage, {
+      ...filters,
+      paginationOpts: { numItems: pageSize, cursor },
+    })
+  )
+  const { data: tally } = useLastLoaded(
+    useQuery(api.admin.claimsTally, filters)
+  )
 
   // A page that came back shorter than asked for still has `isDone` to say
   // whether another exists — so "can go forward" is that, never a row count.
+  // Read off the kept page, so stepping forward is not disabled mid-refresh.
   const canNext = page !== undefined && !page.isDone
 
   const columns = useMemo(
@@ -135,14 +144,16 @@ export function ClaimsBrowser() {
     />
   )
 
-  if (page === undefined && cursor === null) {
+  // Only the very first load, when there is genuinely nothing to show yet.
+  if (page === undefined) {
     return <Skeleton className="h-96 w-full rounded-xl" />
   }
 
   return (
     <DataTable<BrowsedClaim>
       columns={columns}
-      data={page?.page}
+      data={page.page}
+      busy={loading}
       labels={tableLabels}
       locale={locale}
       columnLabels={columnLabels}
@@ -166,9 +177,9 @@ export function ClaimsBrowser() {
         canPrev: query.canPrev,
         canNext,
         onPrev: query.prevPage,
-        onNext: () => query.nextPage(page?.continueCursor ?? null),
+        onNext: () => query.nextPage(page.continueCursor),
         total: tally,
-        loading: page === undefined,
+        loading,
       }}
       onRowClick={(row) => router.push(`/claims/${row.id}`)}
       bulk={{

@@ -79,6 +79,15 @@ type DataTableProps<TData extends RowData> = {
    */
   server?: ServerTable
   searchPlaceholder?: string
+  /**
+   * A newer page is in flight and these rows are the previous one.
+   *
+   * Dims them rather than replacing them with a spinner. The table stays
+   * mounted — which is the whole point, since unmounting it discards the
+   * operator's selection and column choices — and the dimming is what stops
+   * stale rows from being read as current ones.
+   */
+  busy?: boolean
   initialPageSize?: number
   /** Row click target, for tables whose rows open a detail screen. */
   onRowClick?: (row: TData) => void
@@ -126,6 +135,7 @@ export function DataTable<TData extends RowData>({
   capped,
   server,
   searchPlaceholder,
+  busy = false,
   initialPageSize = 10,
   onRowClick,
   compact = false,
@@ -191,7 +201,13 @@ export function DataTable<TData extends RowData>({
         />
       )}
 
-      <div className="overflow-x-auto">
+      <div
+        className={cn(
+          "overflow-x-auto transition-opacity",
+          busy && "pointer-events-none opacity-60"
+        )}
+        aria-busy={busy}
+      >
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

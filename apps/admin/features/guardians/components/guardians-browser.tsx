@@ -22,6 +22,7 @@ import {
 import { GUARDIANS } from "@/features/guardians/strings/guardians"
 import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { useLastLoaded } from "@/lib/use-last-loaded"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
 /**
@@ -54,11 +55,11 @@ export function GuardiansBrowser() {
   const [now] = useState(() => Date.now())
   const [states, setStates] = useState<GuardianState[]>([])
 
-  const result = useQuery(api.admin.guardiansList, {
-    states,
-    now,
-    sort: "newest",
-  })
+  // Same reason as the other two: changing the state filter is a new
+  // subscription, and rendering its `undefined` unmounted the table.
+  const { data: result, loading } = useLastLoaded(
+    useQuery(api.admin.guardiansList, { states, now, sort: "newest" })
+  )
 
   const columns = useMemo(() => guardianColumns(locale), [locale])
   const columnLabels = useMemo(() => guardianColumnLabels(locale), [locale])
@@ -105,6 +106,7 @@ export function GuardiansBrowser() {
         // the one place a client-side filter is *more* honest than a server
         // one: no cap to warn about, no window to fall outside of.
         searchPlaceholder={labels.searchPlaceholder}
+        busy={loading}
         initialPageSize={25}
         filters={
           <FacetedFilter

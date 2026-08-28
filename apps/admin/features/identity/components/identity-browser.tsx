@@ -18,6 +18,7 @@ import { useIdentityQueryState } from "@/features/identity/lib/use-identity-quer
 import { IDENTITY } from "@/features/identity/strings/identity"
 import { IDENTITY_STATUSES, identityLabel } from "@/lib/identity"
 import { t } from "@/lib/i18n/locale"
+import { useLastLoaded } from "@/lib/use-last-loaded"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
 /**
@@ -44,23 +45,31 @@ export function IdentityBrowser() {
   const query = useIdentityQueryState()
   const { filters, cursor, pageSize } = query
 
-  const page = useQuery(api.admin.identityPage, {
-    ...filters,
-    paginationOpts: { numItems: pageSize, cursor },
-  })
-  const tally = useQuery(api.admin.identityTally, filters)
+  // Kept across argument changes, so a filter toggle refreshes the table
+  // instead of unmounting it — see `useLastLoaded`.
+  const { data: page, loading } = useLastLoaded(
+    useQuery(api.admin.identityPage, {
+      ...filters,
+      paginationOpts: { numItems: pageSize, cursor },
+    })
+  )
+  const { data: tally } = useLastLoaded(
+    useQuery(api.admin.identityTally, filters)
+  )
 
   const columns = useMemo(() => identityColumns(locale), [locale])
   const columnLabels = useMemo(() => identityColumnLabels(locale), [locale])
 
-  if (page === undefined && cursor === null) {
+  // Only the very first load, when there is genuinely nothing to show yet.
+  if (page === undefined) {
     return <Skeleton className="h-96 w-full rounded-xl" />
   }
 
   return (
     <DataTable<IdentityRow>
       columns={columns}
-      data={page?.page}
+      data={page.page}
+      busy={loading}
       labels={tableLabels}
       locale={locale}
       columnLabels={columnLabels}
@@ -102,11 +111,11 @@ export function IdentityBrowser() {
         pageSize,
         onPageSizeChange: query.setPageSize,
         canPrev: query.canPrev,
-        canNext: page !== undefined && !page.isDone,
+        canNext: !page.isDone,
         onPrev: query.prevPage,
-        onNext: () => query.nextPage(page?.continueCursor ?? null),
+        onNext: () => query.nextPage(page.continueCursor),
         total: tally,
-        loading: page === undefined,
+        loading,
       }}
       bulk={{
         exportName: "identity",
