@@ -15,6 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import type { ReactNode } from "react"
 import type { RowData } from "@tanstack/react-table"
 import { ChevronDownIcon, InfoIcon, XIcon } from "lucide-react"
 
@@ -41,7 +42,11 @@ export type DataTableFacet = {
  * Present only when the query hit its cap, because that is the only time it
  * changes what the operator should believe about an empty search result.
  */
-export type CappedWindow = { cap: number }
+export type CappedWindow = {
+  cap: number
+  /** Which slice was truncated — "some of this is missing" is useless alone. */
+  detail?: string
+}
 
 type DataTableToolbarProps<TData extends RowData> = {
   table: DataTableInstance<TData>
@@ -49,6 +54,14 @@ type DataTableToolbarProps<TData extends RowData> = {
   columnLabels: Record<string, string>
   facets: DataTableFacet[]
   capped: CappedWindow | undefined
+  /**
+   * Filters the **caller** owns, rendered ahead of the column facets.
+   *
+   * For controls that change what gets fetched rather than what gets shown.
+   * They sit first because that is the order they apply in: the server decides
+   * which rows exist here, then the facets narrow what survived.
+   */
+  filters: ReactNode
 }
 
 /**
@@ -72,6 +85,7 @@ export function DataTableToolbar<TData extends RowData>({
   columnLabels,
   facets,
   capped,
+  filters,
 }: DataTableToolbarProps<TData>) {
   // `table.state`, not v8's `getState()`. The shell omits `useTable`'s selector,
   // so every registered slice is present here.
@@ -99,6 +113,8 @@ export function DataTableToolbar<TData extends RowData>({
           </Button>
         )}
       </div>
+
+      {filters}
 
       {facets.map((facet) => (
         <DataTableFacetedFilter
@@ -136,7 +152,8 @@ export function DataTableToolbar<TData extends RowData>({
             </Badge>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            {labels.cappedSearchHint.replace("{n}", String(capped.cap))}
+            {capped.detail ??
+              labels.cappedSearchHint.replace("{n}", String(capped.cap))}
           </TooltipContent>
         </Tooltip>
       )}

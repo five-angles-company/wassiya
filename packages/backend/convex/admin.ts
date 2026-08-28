@@ -21,6 +21,7 @@
 import { v } from "convex/values"
 
 import { query } from "./_generated/server"
+import type { Doc } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
@@ -644,8 +645,19 @@ const claimStatusValidator = v.union(
 /** How many claims one status page returns. */
 const CLAIMS_PAGE = 100
 
+/** Every status, for the empty-selection case. Lifecycle order. */
+const ALL_CLAIM_STATUSES = [
+  "submitted",
+  "guardian_review",
+  "awaiting_veto",
+  "released",
+  "vetoed",
+  "locked",
+] as const
+
 /**
- * Claims in one status — the query that makes a claim findable after review.
+ * Claims across a chosen set of statuses — the query that makes a claim
+ * findable after review.
  *
  * `claims.pendingReview` is `submitted`-only, and that single fact is what made
  * the review flow unusable: the moment an admin acted, the claim left the only
@@ -653,44 +665,83 @@ const CLAIMS_PAGE = 100
  * admin could not re-open the claim they had just touched, let alone repair a
  * mistake on it. This is the same indexed read, parameterised.
  *
- * Deliberately no counts: the console's status chips read `overview`, which
- * already tallies all six from the same index.
+ * ## Why a set rather than one status
+ *
+ * The console renders status as a multi-select filter beside its other two, and
+ * a filter that reloads the table with one value while its neighbours tick many
+ * is the odd one out for no reason a reviewer could guess. "Submitted **and**
+ * awaiting the guardian" is also a real question — it is the whole of what is
+ * still in flight.
+ *
+ * One indexed range per status, which is six at the very most against a 4,096
+ * range budget. **The cap is per status**, not per call: each range takes its
+ * own hundred, so selecting all six can return six hundred rows and each one
+ * can be independently truncated. `cappedStatuses` names the ones that were,
+ * because "some of this list is missing" is useless without saying which part.
+ *
+ * Subject lookups are deduplicated. Claims cluster on a handful of owners — a
+ * barred claimant re-attempting inserts a row every time — so the naive
+ * per-row `get` re-read the same user document repeatedly.
+ *
+ * Deliberately no totals: `overview` already tallies all six from this index,
+ * and the filter reads its counts from there.
  */
 export const claimsByStatus = query({
-  args: { status: claimStatusValidator },
-  handler: async (ctx, { status }) => {
+  args: { statuses: v.array(claimStatusValidator) },
+  handler: async (ctx, { statuses }) => {
     await requireAdmin(ctx)
 
-    const rows = await ctx.db
-      .query("claims")
-      .withIndex("by_status", (q) => q.eq("status", status))
-      .take(CLAIMS_PAGE + 1)
+    // Nothing ticked means no constraint, which is how the console's other
+    // filters read an empty selection too.
+    const wanted = statuses.length === 0 ? [...ALL_CLAIM_STATUSES] : statuses
+    // A repeated status would double every row it matched.
+    const unique = [...new Set(wanted)]
 
-    const page = rows.slice(0, CLAIMS_PAGE)
+    const cappedStatuses: string[] = []
+    const claims: Doc<"claims">[] = []
+    for (const status of unique) {
+      const rows = await ctx.db
+        .query("claims")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .take(CLAIMS_PAGE + 1)
+      if (rows.length > CLAIMS_PAGE) cappedStatuses.push(status)
+      claims.push(...rows.slice(0, CLAIMS_PAGE))
+    }
+
+    // Newest first across the merged set. Each range came back in its own
+    // order, so without this the table opens sorted by status accident.
+    claims.sort((a, b) => b._creationTime - a._creationTime)
+
+    const subjects = new Map<string, Doc<"users"> | null>()
+    for (const row of claims) {
+      const key = row.subjectUserId as string
+      if (!subjects.has(key)) {
+        subjects.set(key, await ctx.db.get("users", row.subjectUserId))
+      }
+    }
+
     return {
-      rows: await Promise.all(
-        page.map(async (row) => {
-          const subject = await ctx.db.get("users", row.subjectUserId)
-          return {
-            id: row._id,
-            status: row.status,
-            claimantName: row.claimantName,
-            claimantContact: row.claimantContact,
-            // The stored snapshot. `claimDetail` returns the live value; this
-            // is the list, and re-reading a user per row to correct a badge
-            // would cost one index range per claim for no decision.
-            claimantIdentityStatus: row.claimantIdentityStatus,
-            certificateName: row.certificateName ?? null,
-            subjectName: subject?.name ?? null,
-            subjectVerifiedName: subject?.identityVerifiedName ?? null,
-            nameMatch: row.nameMatch ?? null,
-            heirLinked: row.heirId !== undefined,
-            vetoDeadline: row.vetoDeadline ?? null,
-            submittedAt: row._creationTime,
-          }
-        })
-      ),
-      more: rows.length > CLAIMS_PAGE,
+      rows: claims.map((row) => {
+        const subject = subjects.get(row.subjectUserId as string) ?? null
+        return {
+          id: row._id,
+          status: row.status,
+          claimantName: row.claimantName,
+          claimantContact: row.claimantContact,
+          // The stored snapshot. `claimDetail` returns the live value; this
+          // is the list, and re-reading a user per row to correct a badge
+          // would cost one index range per claim for no decision.
+          claimantIdentityStatus: row.claimantIdentityStatus,
+          certificateName: row.certificateName ?? null,
+          subjectName: subject?.name ?? null,
+          subjectVerifiedName: subject?.identityVerifiedName ?? null,
+          nameMatch: row.nameMatch ?? null,
+          heirLinked: row.heirId !== undefined,
+          vetoDeadline: row.vetoDeadline ?? null,
+          submittedAt: row._creationTime,
+        }
+      }),
+      cappedStatuses,
       pageSize: CLAIMS_PAGE,
     }
   },

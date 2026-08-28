@@ -72,11 +72,15 @@ export function claimBrowserColumns(
       ),
     }),
 
-    // Faceted. The value is the raw status so the filter matches what the
-    // server stores; the label is what a person reads.
+    // Not faceted, deliberately. Status is chosen in the toolbar and applied by
+    // the *query* — see `claims-browser.tsx` — so a column filter here would
+    // only be able to narrow within the statuses already fetched, and would
+    // silently disagree with the control the operator actually used.
+    //
+    // The column stays because rows now span statuses: it is what tells a
+    // reviewer which slice a given row belongs to, and it carries into the CSV.
     helper.accessor("status", {
       id: "status",
-      filterFn: "arrIncludesSome",
       enableGlobalFilter: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={labels.colStatus} />

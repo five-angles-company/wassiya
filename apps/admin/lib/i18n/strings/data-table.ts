@@ -20,12 +20,18 @@ export const DATA_TABLE = {
   // and concludes no such claim exists — when it is simply past the cap. It
   // sits beside the search box rather than under the table for that reason.
   cappedSearch: {
-    ar: "البحث يشمل أول {n} سجلاً فقط",
-    en: "Search covers the first {n} loaded only",
+    ar: "القائمة مقتطعة",
+    en: "List truncated",
   },
   cappedSearchHint: {
-    ar: "الخادم يعيد {n} سجلاً كحد أقصى لكل حالة. ضيّق بالحالة للوصول إلى الباقي.",
-    en: "The server returns at most {n} rows per status. Narrow by status to reach the rest.",
+    ar: "الخادم يعيد {n} سجلاً كحد أقصى. البحث لا يتجاوز ما حُمّل.",
+    en: "The server returns at most {n} rows. Search does not reach past what was loaded.",
+  },
+  // Names the truncated slice. "Some of this is missing" is not actionable;
+  // "these two statuses are missing rows" tells an operator where to look.
+  cappedSearchDetail: {
+    ar: "بلغت هذه الحالات حد {n} سجلاً ولم تُحمَّل بالكامل: {statuses}. البحث لا يتجاوز ما حُمّل.",
+    en: "These statuses hit the {n}-row cap and are not fully loaded: {statuses}. Search does not reach past what was loaded.",
   },
 
   // -- Selection ------------------------------------------------------------

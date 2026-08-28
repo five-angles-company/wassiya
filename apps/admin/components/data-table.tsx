@@ -54,6 +54,8 @@ type DataTableProps<TData extends RowData> = {
    */
   getRowId?: (row: TData) => string
   facets?: DataTableFacet[]
+  /** Caller-owned filter controls — see the toolbar. */
+  filters?: ReactNode
   bulk?: BulkConfig<TData>
   /** Set when the server truncated the result — see the toolbar. */
   capped?: CappedWindow
@@ -99,6 +101,7 @@ export function DataTable<TData extends RowData>({
   empty,
   getRowId,
   facets = [],
+  filters,
   bulk,
   capped,
   initialPageSize = 10,
@@ -132,6 +135,7 @@ export function DataTable<TData extends RowData>({
           columnLabels={columnLabels}
           facets={facets}
           capped={capped}
+          filters={filters}
         />
       )}
 
