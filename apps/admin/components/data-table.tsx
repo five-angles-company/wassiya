@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { Card } from "@workspace/ui/components/card"
 import {
   Table,
   TableBody,
@@ -162,18 +163,20 @@ export function DataTable<TData extends RowData>({
     ((table.state.globalFilter as string) ?? "").length > 0 ||
     table.state.columnFilters.length > 0
 
-  return (
-    <div className="flex w-full flex-col gap-3">
+  const body = (
+    <>
       {!compact && (
-        <DataTableToolbar
-          table={table}
-          labels={labels}
-          columnLabels={columnLabels}
-          facets={facets}
-          capped={capped}
-          filters={filters}
-          server={server}
-        />
+        <div className="border-b p-3">
+          <DataTableToolbar
+            table={table}
+            labels={labels}
+            columnLabels={columnLabels}
+            facets={facets}
+            capped={capped}
+            filters={filters}
+            server={server}
+          />
+        </div>
       )}
 
       {!compact && bulk !== undefined && (
@@ -185,7 +188,7 @@ export function DataTable<TData extends RowData>({
         />
       )}
 
-      <div className={cn("overflow-x-auto", !compact && "rounded-xl border")}>
+      <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -239,13 +242,23 @@ export function DataTable<TData extends RowData>({
       </div>
 
       {!compact && (rows.length > 0 || server !== undefined) && (
-        <DataTablePagination
-          table={table}
-          labels={labels}
-          locale={locale}
-          server={server}
-        />
+        <div className="border-t px-3 py-2.5">
+          <DataTablePagination
+            table={table}
+            labels={labels}
+            locale={locale}
+            server={server}
+          />
+        </div>
       )}
-    </div>
+    </>
   )
+
+  // Compact renders flat, because it is already *inside* a `TableCard` on the
+  // dashboard and two borders around one table is one too many. On its own the
+  // table is the panel, so it draws the card itself: the toolbar and the pager
+  // get padded regions, and the rows run edge to edge between them.
+  if (compact) return <div className="flex w-full flex-col gap-3">{body}</div>
+
+  return <Card className="w-full gap-0 overflow-hidden py-0">{body}</Card>
 }

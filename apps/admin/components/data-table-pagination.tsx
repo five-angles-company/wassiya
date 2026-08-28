@@ -58,8 +58,8 @@ export function DataTablePagination<TData extends RowData>({
 
   if (server !== undefined) {
     return (
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <p className="text-sm tabular-nums text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground tabular-nums">
           {server.total === undefined
             ? ""
             : labels.rowCount.replace(
@@ -90,8 +90,11 @@ export function DataTablePagination<TData extends RowData>({
             </Select>
           </div>
 
-          <p className="text-sm tabular-nums whitespace-nowrap text-muted-foreground">
-            {labels.pageNumber.replace("{page}", fmtNumber(server.page, locale))}
+          <p className="text-sm whitespace-nowrap text-muted-foreground tabular-nums">
+            {labels.pageNumber.replace(
+              "{page}",
+              fmtNumber(server.page, locale)
+            )}
           </p>
 
           <div className="flex items-center gap-1">
@@ -120,8 +123,8 @@ export function DataTablePagination<TData extends RowData>({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-      <p className="text-sm tabular-nums text-muted-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-muted-foreground tabular-nums">
         {labels.rowCount.replace("{n}", fmtNumber(rowCount, locale))}
       </p>
 
@@ -147,7 +150,7 @@ export function DataTablePagination<TData extends RowData>({
           </Select>
         </div>
 
-        <p className="text-sm tabular-nums whitespace-nowrap text-muted-foreground">
+        <p className="text-sm whitespace-nowrap text-muted-foreground tabular-nums">
           {labels.pageOf
             .replace("{page}", fmtNumber(pageIndex + 1, locale))
             .replace("{total}", fmtNumber(Math.max(pageCount, 1), locale))}

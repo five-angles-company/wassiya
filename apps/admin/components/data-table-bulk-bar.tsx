@@ -57,7 +57,10 @@ export function DataTableBulkBar<TData extends RowData>({
   if (selected.length === 0) return null
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+    // No border or rounding of its own: it sits in a bordered band inside the
+    // table's card, and a second outline around it would read as a dialog
+    // floating over the rows rather than a strip belonging to them.
+    <div className="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-3 py-2">
       <span className="text-sm font-medium tabular-nums">
         {labels.selectedCount.replace(
           "{n}",
