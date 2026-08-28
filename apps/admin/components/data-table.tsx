@@ -88,6 +88,20 @@ type DataTableProps<TData extends RowData> = {
    * stale rows from being read as current ones.
    */
   busy?: boolean
+  /**
+   * Fill the height available and scroll the **rows**, not the page.
+   *
+   * Without it a hundred-row page grows the document, pushing the pager below
+   * the fold: an operator has to scroll to the bottom of the window to reach
+   * "next", and the toolbar they were filtering with is gone by the time they
+   * get there. With it the card is exactly as tall as the space it is given,
+   * the toolbar and pager stay put, and only the rows move.
+   *
+   * Requires a bounded ancestor. The console's shell provides one; a page that
+   * does not will see the card collapse to its content, which is the same as
+   * not passing it.
+   */
+  fill?: boolean
   initialPageSize?: number
   /** Row click target, for tables whose rows open a detail screen. */
   onRowClick?: (row: TData) => void
@@ -136,6 +150,7 @@ export function DataTable<TData extends RowData>({
   server,
   searchPlaceholder,
   busy = false,
+  fill = false,
   initialPageSize = 10,
   onRowClick,
   compact = false,
@@ -203,17 +218,26 @@ export function DataTable<TData extends RowData>({
 
       <div
         className={cn(
-          "overflow-x-auto transition-opacity",
+          "flex min-h-0 flex-col transition-opacity",
+          fill && "flex-1",
           busy && "pointer-events-none opacity-60"
         )}
         aria-busy={busy}
       >
-        <Table>
+        <Table containerClassName={cn(fill && "min-h-0 flex-1")}>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-start">
+                  <TableHead
+                    key={header.id}
+                    // Held while the rows move under it. Opaque, or the rows
+                    // scroll visibly through the column names.
+                    className={cn(
+                      "text-start",
+                      fill && "bg-card sticky top-0 z-10"
+                    )}
+                  >
                     {header.isPlaceholder ? null : (
                       <table.FlexRender header={header} />
                     )}
@@ -279,5 +303,18 @@ export function DataTable<TData extends RowData>({
   // get padded regions, and the rows run edge to edge between them.
   if (compact) return <div className="flex w-full flex-col gap-3">{body}</div>
 
-  return <Card className="w-full gap-0 overflow-hidden py-0">{body}</Card>
+  return (
+    <Card
+      className={cn(
+        "w-full gap-0 overflow-hidden py-0",
+        // `min-h-0` is the load-bearing half: a flex child defaults to
+        // `min-height: auto`, which refuses to shrink below its content, so
+        // without it the card grows to fit every row and scrolls the page —
+        // exactly the behaviour `fill` exists to stop.
+        fill && "flex min-h-0 flex-1 flex-col"
+      )}
+    >
+      {body}
+    </Card>
+  )
 }

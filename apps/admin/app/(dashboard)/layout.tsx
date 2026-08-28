@@ -43,11 +43,25 @@ export default async function DashboardLayout({
   return (
     <AdminGate>
       <TooltipProvider delayDuration={0}>
-        <SidebarProvider>
+        {/*
+          The shell is exactly one viewport tall, and the scrolling happens
+          inside it.
+
+          `SidebarProvider` ships `min-h-svh`, which lets a long page grow the
+          document — so a hundred-row table pushed its own pager below the fold
+          and took the toolbar with it. Pinning the height here instead means a
+          screen that wants to scroll its rows can, and one that wants to scroll
+          normally still does, in the region below.
+
+          `min-h-0` on each link of the chain is what makes that work: a flex
+          child defaults to `min-height: auto` and refuses to shrink below its
+          content, so without it every `flex-1` below is a lie.
+        */}
+        <SidebarProvider className="h-svh overflow-hidden">
           <AppSidebar />
-          <SidebarInset>
+          <SidebarInset className="min-h-0">
             <AppHeader />
-            <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-6">
               {children}
             </div>
             {/* Action feedback for the claim review. Mounted inside the shell

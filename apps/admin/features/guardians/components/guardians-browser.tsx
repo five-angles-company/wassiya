@@ -66,11 +66,13 @@ export function GuardiansBrowser() {
   const stateSelection = useMemo(() => new Set<string>(states), [states])
 
   if (result === undefined) {
-    return <Skeleton className="h-96 w-full rounded-xl" />
+    return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    // `min-h-0` so the banners keep their natural height and the table takes
+    // whatever is left, rather than the column growing to fit every row.
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {/* Why the table is full of expired invitations. Without this the screen
           reads as owners neglecting their guardians, when in fact there is no
           way to accept one yet. */}
@@ -101,6 +103,7 @@ export function GuardiansBrowser() {
         locale={locale}
         columnLabels={columnLabels}
         getRowId={(row) => row.id}
+        fill
         // Searches the whole set, not a page — this table is client-side over a
         // bounded scan, so every row it could match is already loaded. That is
         // the one place a client-side filter is *more* honest than a server

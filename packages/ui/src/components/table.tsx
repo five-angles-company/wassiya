@@ -4,11 +4,25 @@ import * as React from "react"
 
 import { cn } from "@workspace/ui/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/**
+ * `containerClassName` reaches the scrolling wrapper, not the `<table>`.
+ *
+ * It exists because that wrapper is the only element a sticky header can
+ * anchor to: `position: sticky` resolves against the nearest scrolling
+ * ancestor, and this div is already one — `overflow-x: auto` forces the other
+ * axis to compute as `auto` too. Constrain its height and the rows scroll
+ * inside it with the header held; constrain some outer element instead and the
+ * header scrolls away, because the div between them never scrolled.
+ */
+function Table({
+  className,
+  containerClassName,
+  ...props
+}: React.ComponentProps<"table"> & { containerClassName?: string }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className={cn("relative w-full overflow-x-auto", containerClassName)}
     >
       <table
         data-slot="table"

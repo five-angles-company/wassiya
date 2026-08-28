@@ -62,7 +62,7 @@ export function IdentityBrowser() {
 
   // Only the very first load, when there is genuinely nothing to show yet.
   if (page === undefined) {
-    return <Skeleton className="h-96 w-full rounded-xl" />
+    return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
   }
 
   return (
@@ -74,6 +74,7 @@ export function IdentityBrowser() {
       locale={locale}
       columnLabels={columnLabels}
       getRowId={(row) => row.id}
+      fill
       searchPlaceholder={labels.searchPlaceholder}
       filters={
         <>
