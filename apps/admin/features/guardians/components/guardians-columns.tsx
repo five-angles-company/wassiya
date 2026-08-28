@@ -36,7 +36,11 @@ export function guardianColumns(
   const labels = t(GUARDIANS, locale)
 
   return helper.columns([
-    helper.accessor("ownerName", {
+    // Accessor is name *and* email joined, because the global filter matches
+    // accessor values rather than rendered cells — and the email is the thing
+    // an operator has in front of them when they come looking. The cell still
+    // reads from `row.original`, so the joined string is never displayed.
+    helper.accessor((row) => [row.ownerName, row.ownerEmail].join(" "), {
       id: "owner",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={labels.colOwner} />
@@ -75,6 +79,9 @@ export function guardianColumns(
     helper.accessor("state", {
       id: "state",
       enableSorting: false,
+      // Filtered by its own facet, and the raw value ("live") is not what the
+      // badge says in Arabic — searching it would match on a word nobody sees.
+      enableGlobalFilter: false,
       header: () => labels.colState,
       cell: ({ row }) => (
         <Badge
@@ -90,6 +97,9 @@ export function guardianColumns(
     // guardian's expiry is a date that stopped mattering.
     helper.accessor("inviteExpiresAt", {
       id: "inviteExpiresAt",
+      // A timestamp is epoch milliseconds to the filter, so typing "17" would
+      // match every row in the table.
+      enableGlobalFilter: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={labels.colExpires} />
       ),
@@ -117,6 +127,7 @@ export function guardianColumns(
 
     helper.accessor("invitedAt", {
       id: "invitedAt",
+      enableGlobalFilter: false,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={labels.colInvited} />
       ),

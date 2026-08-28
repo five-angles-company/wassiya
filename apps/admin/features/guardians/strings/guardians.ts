@@ -20,6 +20,13 @@ export const GUARDIANS = {
   stateExpired: { ar: "انتهت الدعوة", en: "Invitation expired" },
   stateRevoked: { ar: "مُلغى", en: "Revoked" },
 
+  // Names what it matches, because it is not everything: the state badge and
+  // the dates are excluded, and both are filtered or sorted by their own control.
+  searchPlaceholder: {
+    ar: "ابحث باسم المالك أو الوصي…",
+    en: "Search owner or guardian…",
+  },
+
   nameNone: { ar: "بلا اسم", en: "No name" },
   expiredOn: { ar: "انتهت {date}", en: "Expired {date}" },
 

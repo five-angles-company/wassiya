@@ -57,14 +57,10 @@ type DataTableToolbarProps<TData extends RowData> = {
   capped: CappedWindow | undefined
   server: ServerTable | undefined
   /**
-   * Whether this table has anything to search.
-   *
-   * Not every list does. Guardians carry no searchable field, and a box that
-   * silently matches nothing is worse than no box — an operator types a name,
-   * gets an empty table, and concludes the record is missing.
+   * Overrides the generic placeholder where the search means something
+   * narrower — an exact-match lookup, or a subset of the columns. A box that
+   * quietly matches less than it appears to is reported as broken.
    */
-  searchable: boolean
-  /** Overrides the generic placeholder where the search means something narrower. */
   searchPlaceholder: string | undefined
   /**
    * Filters the **caller** owns, rendered ahead of the column facets.
@@ -99,7 +95,6 @@ export function DataTableToolbar<TData extends RowData>({
   capped,
   filters,
   server,
-  searchable,
   searchPlaceholder,
 }: DataTableToolbarProps<TData>) {
   // `table.state`, not v8's `getState()`. The shell omits `useTable`'s selector,
@@ -113,27 +108,25 @@ export function DataTableToolbar<TData extends RowData>({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {searchable && (
-        <div className="relative">
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={searchPlaceholder ?? labels.search}
-            className="w-56 pe-8"
-          />
-          {search.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label={labels.clearSearch}
-              className="absolute end-1 top-1/2 -translate-y-1/2"
-              onClick={() => setSearch("")}
-            >
-              <XIcon className="size-3.5" aria-hidden />
-            </Button>
-          )}
-        </div>
-      )}
+      <div className="relative">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={searchPlaceholder ?? labels.search}
+          className="w-56 pe-8"
+        />
+        {search.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={labels.clearSearch}
+            className="absolute end-1 top-1/2 -translate-y-1/2"
+            onClick={() => setSearch("")}
+          >
+            <XIcon className="size-3.5" aria-hidden />
+          </Button>
+        )}
+      </div>
 
       {filters}
 

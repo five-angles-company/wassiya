@@ -100,9 +100,11 @@ export function GuardiansBrowser() {
         locale={locale}
         columnLabels={columnLabels}
         getRowId={(row) => row.id}
-        // Guardians carry no searchable field. A box that matched nothing would
-        // be reported as broken; the owner's email is a column instead.
-        searchable={false}
+        // Searches the whole set, not a page — this table is client-side over a
+        // bounded scan, so every row it could match is already loaded. That is
+        // the one place a client-side filter is *more* honest than a server
+        // one: no cap to warn about, no window to fall outside of.
+        searchPlaceholder={labels.searchPlaceholder}
         initialPageSize={25}
         filters={
           <FacetedFilter
