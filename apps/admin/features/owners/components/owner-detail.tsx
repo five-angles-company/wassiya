@@ -5,18 +5,16 @@ import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
-import { ArrowRightIcon } from "lucide-react"
 
-import { IdentityBadge } from "@/components/identity-badge"
 import { useLocale } from "@/components/locale-provider"
 import {
   Fact,
   FactsEmpty,
   OwnerFacts,
 } from "@/features/owners/components/owner-facts"
+import { OwnerHeader } from "@/features/owners/components/owner-header"
 import { OwnerProtection } from "@/features/owners/components/owner-protection"
 import { OWNERS } from "@/features/owners/strings/owners"
 import { fmtBytes, fmtDate } from "@/lib/format"
@@ -56,29 +54,10 @@ export function OwnerDetail({ userId }: { userId: string }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/owners">
-            <ArrowRightIcon className="size-4 ltr:rotate-180" aria-hidden />
-            {labels.back}
-          </Link>
-        </Button>
-        <span className="font-heading text-lg font-bold">
-          {owner.name ?? labels.nameNone}
-        </span>
-        <span dir="ltr" className="text-sm text-muted-foreground">
-          {owner.email}
-        </span>
-      </div>
+      <OwnerHeader owner={owner} locale={locale} />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <OwnerFacts title={labels.sectionIdentity}>
-          <Fact
-            label={labels.colIdentity}
-            value={
-              <IdentityBadge status={owner.identityStatus} locale={locale} />
-            }
-          />
           <Fact
             label={labels.verifiedName}
             value={owner.identityVerifiedName ?? labels.none}
@@ -98,16 +77,20 @@ export function OwnerDetail({ userId }: { userId: string }) {
           <Fact label={labels.attempts} value={owner.identityAttempts} />
         </OwnerFacts>
 
+        {/* Plan, country and joined date are in the header now. What is left
+            here is the one subscription fact a header cannot carry. */}
         <OwnerFacts title={labels.colPlan}>
-          <Fact label={labels.colPlan} value={owner.plan ?? labels.planNone} />
           <Fact
             label={labels.colStorage}
             value={fmtBytes(owner.storageBytesUsed, locale)}
           />
-          <Fact label={labels.colCountry} value={owner.country ?? labels.none} />
           <Fact
-            label={labels.colJoined}
-            value={fmtDate(owner.joinedAt, locale)}
+            label={labels.nextDue}
+            value={
+              owner.renewsAt === null
+                ? labels.none
+                : fmtDate(owner.renewsAt, locale)
+            }
           />
         </OwnerFacts>
 

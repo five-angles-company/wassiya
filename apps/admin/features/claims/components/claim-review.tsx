@@ -65,7 +65,11 @@ export function ClaimReview({ claimId }: { claimId: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" asChild>
           <Link href="/claims">
-            <ArrowRightIcon className="rtl:rotate-180" />
+            {/* `ltr:`, not `rtl:`. Back is leftward in a left-to-right page and
+                rightward in a right-to-left one, so an arrow that already
+                points right needs turning in LTR and leaving alone in RTL.
+                Reversed, it pointed *forward* in both. */}
+            <ArrowRightIcon className="ltr:rotate-180" />
             {labels.back}
           </Link>
         </Button>
