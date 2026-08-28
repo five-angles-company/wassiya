@@ -322,8 +322,27 @@ export default defineSchema({
     vetoDeadline: v.optional(v.number()),
     lockedUntil: v.optional(v.number()),
     guardianConfirmedAt: v.optional(v.number()),
+    /**
+     * Claimant name, contact and certificate name in one string, for the
+     * console's search box.
+     *
+     * Denormalised because a Convex search index searches exactly **one**
+     * field, and an operator typing into a single box expects it to match any
+     * of the three — the contact is rendered directly under the name in the
+     * table, so searching it and getting nothing is the first thing they would
+     * try. Maintained by `setSearchText` in `claims.ts`; optional only so rows
+     * written before it existed still validate.
+     */
+    searchText: v.optional(v.string()),
   })
     .index("by_subjectUserId", ["subjectUserId"])
+    // Sorting the console's workspace by claimant. The only sort other than
+    // creation order that the table offers, because each one costs an index.
+    .index("by_claimantName", ["claimantName"])
+    // The console's search box. No `filterFields`: status is a multi-select
+    // there and a search filter field only supports equality on one value, so
+    // the statuses are applied with `.filter()` after the search instead.
+    .searchIndex("search_text", { searchField: "searchText" })
     // What a guardian is being asked about, per vault they guard. Without it
     // `guardians.pendingApprovals` reads a fixed window of a subject's claims
     // and filters by status in memory — so a subject with more claims than the

@@ -27,19 +27,19 @@ import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 
 /**
- * One row of the workspace, as `admin.claimsByStatus` returns it.
+ * One row of the workspace, as `admin.claimsPage` returns it.
  *
  * Deliberately **not** the same type as `PendingClaim` in `claims-columns.tsx`,
  * and not merged with it. The dashboard's queue reads `claims.pendingReview`,
  * which resolves a certificate URL and only ever returns `submitted`; this
- * query spans all six statuses and carries `heirLinked`, `nameMatch` and
+ * query spans every status and carries `heirLinked`, `nameMatch` and
  * `vetoDeadline` instead. Folding them into one type with optional fields
  * would make every cell defensive about facts that are always present in one
  * table and never present in the other.
  */
 export type BrowsedClaim = FunctionReturnType<
-  typeof api.admin.claimsByStatus
->["rows"][number]
+  typeof api.admin.claimsPage
+>["page"][number]
 
 const helper = createColumnHelper<DataTableFeatures, BrowsedClaim>()
 

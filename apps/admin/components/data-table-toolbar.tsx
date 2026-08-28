@@ -24,6 +24,7 @@ import {
   type FacetOption,
 } from "@/components/data-table-faceted-filter"
 import type { DataTableInstance } from "@/lib/data-table-features"
+import type { ServerTable } from "@/lib/data-table-server"
 import type { Resolved } from "@/lib/i18n/locale"
 import type { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
@@ -54,6 +55,7 @@ type DataTableToolbarProps<TData extends RowData> = {
   columnLabels: Record<string, string>
   facets: DataTableFacet[]
   capped: CappedWindow | undefined
+  server: ServerTable | undefined
   /**
    * Filters the **caller** owns, rendered ahead of the column facets.
    *
@@ -86,10 +88,15 @@ export function DataTableToolbar<TData extends RowData>({
   facets,
   capped,
   filters,
+  server,
 }: DataTableToolbarProps<TData>) {
   // `table.state`, not v8's `getState()`. The shell omits `useTable`'s selector,
   // so every registered slice is present here.
-  const search = (table.state.globalFilter as string) ?? ""
+  const search = server?.search ?? ((table.state.globalFilter as string) ?? "")
+  const setSearch = (value: string) => {
+    if (server !== undefined) server.onSearchChange(value)
+    else table.setGlobalFilter(value)
+  }
   const filtered = search.length > 0 || table.state.columnFilters.length > 0
 
   return (
@@ -97,7 +104,7 @@ export function DataTableToolbar<TData extends RowData>({
       <div className="relative">
         <Input
           value={search}
-          onChange={(event) => table.setGlobalFilter(event.target.value)}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder={labels.search}
           className="w-56 pe-8"
         />
@@ -107,7 +114,7 @@ export function DataTableToolbar<TData extends RowData>({
             size="icon-xs"
             aria-label={labels.clearSearch}
             className="absolute end-1 top-1/2 -translate-y-1/2"
-            onClick={() => table.setGlobalFilter("")}
+            onClick={() => setSearch("")}
           >
             <XIcon className="size-3.5" aria-hidden />
           </Button>
@@ -131,13 +138,26 @@ export function DataTableToolbar<TData extends RowData>({
           variant="ghost"
           size="sm"
           onClick={() => {
-            table.setGlobalFilter("")
+            setSearch("")
             table.resetColumnFilters()
           }}
         >
           {labels.resetFilters}
           <XIcon className="size-3.5" aria-hidden />
         </Button>
+      )}
+
+      {/* Why the sort headers went inert. A Convex search ranks its results
+          and that ordering cannot be replaced, so this is a property of the
+          search rather than a bug in the header. */}
+      {server?.sortLocked === true && (
+        <Badge
+          variant="outline"
+          className="gap-1 font-normal text-muted-foreground"
+        >
+          <InfoIcon className="size-3.5 shrink-0" aria-hidden />
+          {labels.sortedByRelevance}
+        </Badge>
       )}
 
       {capped !== undefined && (

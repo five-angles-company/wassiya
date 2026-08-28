@@ -18,9 +18,10 @@
 // `assets` in bulk spends the transaction's **byte** budget, not just its
 // document budget, because those rows carry ciphertext whether or not anyone
 // wants it. The caps below are sized for that.
+import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 
-import { query } from "./_generated/server"
+import { query, type QueryCtx } from "./_generated/server"
 import type { Doc } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
@@ -645,75 +646,133 @@ const claimStatusValidator = v.union(
 /** How many claims one status page returns. */
 const CLAIMS_PAGE = 100
 
-/** Every status, for the empty-selection case. Lifecycle order. */
-const ALL_CLAIM_STATUSES = [
-  "submitted",
-  "guardian_review",
-  "awaiting_veto",
-  "released",
-  "vetoed",
-  "locked",
-] as const
+/** Identity states, as an argument validator. Mirrors `identityStatus`. */
+const identityStatusValidator = v.union(
+  v.literal("unverified"),
+  v.literal("pending"),
+  v.literal("verified"),
+  v.literal("rejected")
+)
+
+/** How the workspace can order rows. Each non-default order costs an index. */
+const claimSortValidator = v.union(
+  v.literal("newest"),
+  v.literal("oldest"),
+  v.literal("nameAsc"),
+  v.literal("nameDesc")
+)
+
+/** The filters the console can apply, shared by the page and the tally. */
+const claimFilterArgs = {
+  statuses: v.array(claimStatusValidator),
+  identity: v.array(identityStatusValidator),
+  /** `undefined` means no opinion; `true`/`false` narrow to one side. */
+  heirLinked: v.optional(v.boolean()),
+  /** Trimmed by the caller. Empty means no search. */
+  search: v.string(),
+  sort: claimSortValidator,
+}
+
+type ClaimFilters = {
+  statuses: string[]
+  identity: string[]
+  heirLinked?: boolean | undefined
+  search: string
+  sort: "newest" | "oldest" | "nameAsc" | "nameDesc"
+}
 
 /**
- * Claims across a chosen set of statuses — the query that makes a claim
- * findable after review.
+ * Build the filtered, ordered claims query.
+ *
+ * Three shapes, chosen in this order, and the order is the point:
+ *
+ *  1. **A search term wins.** `withSearchIndex` returns an *ordered* query —
+ *     ranked by relevance — which cannot be re-ordered. So a search ignores the
+ *     sort, and the console greys the sort headers out and says why rather than
+ *     leaving them looking broken.
+ *  2. **Sorting by name** reads `by_claimantName`.
+ *  3. **Otherwise** creation order, ascending or descending.
+ *
+ * Everything that is not the driving index is applied with `.filter()`. That
+ * scans rather than seeks, which is the correct trade here: status is a
+ * multi-select and a Convex index range is a single equality, so an indexed
+ * status filter could only ever serve the one-status case. Pagination bounds
+ * the scan, and `claims` is a table that grows with deaths rather than with
+ * traffic.
+ */
+function claimsQuery(ctx: QueryCtx, filters: ClaimFilters) {
+  const base =
+    filters.search.length > 0
+      ? ctx.db
+          .query("claims")
+          .withSearchIndex("search_text", (q) =>
+            q.search("searchText", filters.search)
+          )
+      : filters.sort === "nameAsc" || filters.sort === "nameDesc"
+        ? ctx.db
+            .query("claims")
+            .withIndex("by_claimantName")
+            .order(filters.sort === "nameAsc" ? "asc" : "desc")
+        : ctx.db
+            .query("claims")
+            .order(filters.sort === "oldest" ? "asc" : "desc")
+
+  return base.filter((q) => {
+    const clauses = []
+    if (filters.statuses.length > 0) {
+      clauses.push(
+        q.or(
+          ...filters.statuses.map((status) => q.eq(q.field("status"), status))
+        )
+      )
+    }
+    if (filters.identity.length > 0) {
+      clauses.push(
+        q.or(
+          ...filters.identity.map((state) =>
+            q.eq(q.field("claimantIdentityStatus"), state)
+          )
+        )
+      )
+    }
+    if (filters.heirLinked === true) {
+      clauses.push(q.neq(q.field("heirId"), undefined))
+    }
+    if (filters.heirLinked === false) {
+      clauses.push(q.eq(q.field("heirId"), undefined))
+    }
+    // An empty filter must match everything, and `and()` of nothing is not
+    // guaranteed to. A literal `true` is.
+    if (clauses.length === 0) return true
+    return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+  })
+}
+
+/**
+ * One page of claims — the query that makes a claim findable after review.
  *
  * `claims.pendingReview` is `submitted`-only, and that single fact is what made
  * the review flow unusable: the moment an admin acted, the claim left the only
- * admin-callable query that returns a claim id, and no other one exists. An
- * admin could not re-open the claim they had just touched, let alone repair a
- * mistake on it. This is the same indexed read, parameterised.
+ * admin-callable query that returns a claim id. An admin could not re-open the
+ * claim they had just touched, let alone repair a mistake on it.
  *
- * ## Why a set rather than one status
+ * Search, filtering, ordering and paging all happen **here** rather than in the
+ * browser, so the console is not limited to a window the server chose. The
+ * consequence the UI has to carry is that cursor pagination has no total and no
+ * page count — `claimsTally` below supplies a bounded one.
  *
- * The console renders status as a multi-select filter beside its other two, and
- * a filter that reloads the table with one value while its neighbours tick many
- * is the odd one out for no reason a reviewer could guess. "Submitted **and**
- * awaiting the guardian" is also a real question — it is the whole of what is
- * still in flight.
- *
- * One indexed range per status, which is six at the very most against a 4,096
- * range budget. **The cap is per status**, not per call: each range takes its
- * own hundred, so selecting all six can return six hundred rows and each one
- * can be independently truncated. `cappedStatuses` names the ones that were,
- * because "some of this list is missing" is useless without saying which part.
- *
- * Subject lookups are deduplicated. Claims cluster on a handful of owners — a
- * barred claimant re-attempting inserts a row every time — so the naive
- * per-row `get` re-read the same user document repeatedly.
- *
- * Deliberately no totals: `overview` already tallies all six from this index,
- * and the filter reads its counts from there.
+ * Subject lookups are deduplicated: claims cluster on a handful of owners,
+ * because a barred claimant re-attempting inserts a row every time.
  */
-export const claimsByStatus = query({
-  args: { statuses: v.array(claimStatusValidator) },
-  handler: async (ctx, { statuses }) => {
+export const claimsPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...claimFilterArgs },
+  handler: async (ctx, { paginationOpts, ...filters }) => {
     await requireAdmin(ctx)
 
-    // Nothing ticked means no constraint, which is how the console's other
-    // filters read an empty selection too.
-    const wanted = statuses.length === 0 ? [...ALL_CLAIM_STATUSES] : statuses
-    // A repeated status would double every row it matched.
-    const unique = [...new Set(wanted)]
-
-    const cappedStatuses: string[] = []
-    const claims: Doc<"claims">[] = []
-    for (const status of unique) {
-      const rows = await ctx.db
-        .query("claims")
-        .withIndex("by_status", (q) => q.eq("status", status))
-        .take(CLAIMS_PAGE + 1)
-      if (rows.length > CLAIMS_PAGE) cappedStatuses.push(status)
-      claims.push(...rows.slice(0, CLAIMS_PAGE))
-    }
-
-    // Newest first across the merged set. Each range came back in its own
-    // order, so without this the table opens sorted by status accident.
-    claims.sort((a, b) => b._creationTime - a._creationTime)
+    const result = await claimsQuery(ctx, filters).paginate(paginationOpts)
 
     const subjects = new Map<string, Doc<"users"> | null>()
-    for (const row of claims) {
+    for (const row of result.page) {
       const key = row.subjectUserId as string
       if (!subjects.has(key)) {
         subjects.set(key, await ctx.db.get("users", row.subjectUserId))
@@ -721,16 +780,17 @@ export const claimsByStatus = query({
     }
 
     return {
-      rows: claims.map((row) => {
+      ...result,
+      page: result.page.map((row) => {
         const subject = subjects.get(row.subjectUserId as string) ?? null
         return {
           id: row._id,
           status: row.status,
           claimantName: row.claimantName,
           claimantContact: row.claimantContact,
-          // The stored snapshot. `claimDetail` returns the live value; this
-          // is the list, and re-reading a user per row to correct a badge
-          // would cost one index range per claim for no decision.
+          // The stored snapshot. `claimDetail` returns the live value; this is
+          // the list, and re-reading a user per row to correct a badge would
+          // cost one index range per claim for no decision.
           claimantIdentityStatus: row.claimantIdentityStatus,
           certificateName: row.certificateName ?? null,
           subjectName: subject?.name ?? null,
@@ -741,8 +801,34 @@ export const claimsByStatus = query({
           submittedAt: row._creationTime,
         }
       }),
-      cappedStatuses,
-      pageSize: CLAIMS_PAGE,
+    }
+  },
+})
+
+/** How far the workspace's row tally counts before saying "and more". */
+const CLAIMS_TALLY_CAP = 500
+
+/**
+ * A bounded count for the current filters.
+ *
+ * Convex has no count operator, and cursor pagination knows only whether
+ * another page exists — so without this the operator can never tell whether
+ * they are looking at twelve claims or twelve hundred. Capped rather than
+ * exact, and the console renders the cap as `500+`: an approximate answer is
+ * worth a great deal more than none, and an unbounded count on a table that
+ * only grows is the query that eventually takes the console down.
+ *
+ * Separate from `claimsPage` so paging does not recount. It re-runs when the
+ * filters change, which is exactly when the number can change.
+ */
+export const claimsTally = query({
+  args: claimFilterArgs,
+  handler: async (ctx, filters) => {
+    await requireAdmin(ctx)
+    const rows = await claimsQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
     }
   },
 })

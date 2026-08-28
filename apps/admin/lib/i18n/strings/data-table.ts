@@ -46,12 +46,20 @@ export const DATA_TABLE = {
   // -- Pagination -----------------------------------------------------------
   rowsPerPage: { ar: "لكل صفحة", en: "Rows per page" },
   pageOf: { ar: "صفحة {page} من {total}", en: "Page {page} of {total}" },
+  // No "of N". Cursor pagination knows only whether another page follows, so
+  // a page count would have to be invented.
+  pageNumber: { ar: "صفحة {page}", en: "Page {page}" },
   firstPage: { ar: "الصفحة الأولى", en: "First page" },
   previous: { ar: "السابق", en: "Previous" },
   next: { ar: "التالي", en: "Next" },
   lastPage: { ar: "الصفحة الأخيرة", en: "Last page" },
   rowCount: { ar: "{n} سجلاً", en: "{n} rows" },
 
+  // Shown while a search is live, in place of working sort headers.
+  sortedByRelevance: {
+    ar: "مرتّبة حسب مطابقة البحث",
+    en: "Ranked by search match",
+  },
   sortAsc: { ar: "تصاعدي", en: "Ascending" },
   sortDesc: { ar: "تنازلي", en: "Descending" },
   noResults: { ar: "لا نتائج مطابقة", en: "No matching results" },

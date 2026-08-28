@@ -110,6 +110,11 @@ export const submit = mutation({
       certificateName: args.certificateName,
       status: barred ? "locked" : "submitted",
       lockedUntil: barred ? lockout.lockedUntil : undefined,
+      searchText: searchTextFor({
+        claimantName: args.claimantName,
+        claimantContact: args.claimantContact,
+        certificateName: args.certificateName,
+      }),
     })
 
     const event = barred ? "claim.blocked_by_lockout" : "claim.submitted"
@@ -471,6 +476,28 @@ async function assertUnderRateLimit(
   }
 }
 
+/**
+ * The one string the console's search index searches.
+ *
+ * A Convex search index has exactly one `searchField`, so the three things an
+ * operator might type — a claimant's name, the email or phone they filed with,
+ * and the name on the death certificate — are joined into one column. Every
+ * writer of any of the three must call this; there is no trigger to catch a
+ * caller who forgets, and a stale value fails silently as "no results".
+ *
+ * Not security-sensitive and not new disclosure: all three fields are already
+ * readable by the same admin queries that read this one.
+ */
+export function searchTextFor(parts: {
+  claimantName: string
+  claimantContact: string
+  certificateName?: string | undefined
+}): string {
+  return [parts.claimantName, parts.claimantContact, parts.certificateName]
+    .filter((part): part is string => part !== undefined && part.length > 0)
+    .join(" ")
+}
+
 async function notify(
   ctx: MutationCtx,
   userId: Id<"users">,
@@ -596,6 +623,14 @@ export const attachCertificate = mutation({
     await ctx.db.patch("claims", args.claimId, {
       certificateStorageId: args.certificateStorageId,
       certificateName: args.certificateName.trim(),
+      // Rebuilt, not appended to: the certificate name is arriving now, and a
+      // stale `searchText` would leave the console unable to find a claim by
+      // the very document it is being reviewed against.
+      searchText: searchTextFor({
+        claimantName: claim.claimantName,
+        claimantContact: claim.claimantContact,
+        certificateName: args.certificateName.trim(),
+      }),
     })
     await writeAudit(ctx, {
       userId: claim.subjectUserId,

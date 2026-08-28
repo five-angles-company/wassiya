@@ -1,13 +1,13 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@workspace/backend/api"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
 import { InboxIcon } from "lucide-react"
 
-import { DataTable, type DataTableFacet } from "@/components/data-table"
+import { DataTable } from "@/components/data-table"
 import { FacetedFilter } from "@/components/data-table-faceted-filter"
 import { useLocale } from "@/components/locale-provider"
 import {
@@ -15,6 +15,7 @@ import {
   claimBrowserColumns,
   type BrowsedClaim,
 } from "@/features/claims/components/claims-browser-columns"
+import { useClaimQueryState } from "@/features/claims/lib/use-claim-query-state"
 import {
   IDENTITY_STATUSES,
   identityLabel,
@@ -29,23 +30,6 @@ import { fmtDate, fmtTally } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
-/** Selecting nothing means no constraint, which the query reads as all six. */
-const NO_STATUS_FILTER: ClaimStatus[] = []
-
-/**
- * What the workspace opens on.
- *
- * `submitted` rather than everything, which is what the chips defaulted to and
- * is still the console's actual job: it is the only status with a decision in
- * front of it. Opening on all six would bury four claims that need a reviewer
- * under months of terminal ones, and would fetch six index ranges to do it.
- *
- * Safe as a default because it is *visible* as one — the filter shows a count
- * badge and every loaded row says `submitted` in its status column, so nobody
- * mistakes a filtered view for the whole table.
- */
-const DEFAULT_STATUSES: ClaimStatus[] = ["submitted"]
-
 /**
  * The claims workspace: every status, not just the reviewable one.
  *
@@ -55,19 +39,17 @@ const DEFAULT_STATUSES: ClaimStatus[] = ["submitted"]
  * a claim id, with no way back to it. This browser exists so acting on a claim
  * does not lose it.
  *
- * ## Status is a filter like the others, applied a layer lower
+ * ## Everything narrows on the server
  *
- * It used to be a row of chips above the table — a second filtering idiom
- * sitting above the real one, and single-select where its neighbours were
- * multi. It is now the first control in the toolbar and reads identically to
- * them, but it still drives the **query argument** rather than a column filter,
- * because that is where it has to happen: faceting runs over rows already
- * loaded, so a status facet could only ever offer the statuses already fetched.
+ * Search, the three filters, the sort and the paging are all query arguments —
+ * so the workspace is not limited to a window the server picked in advance, and
+ * a search reaches every claim rather than the hundred that happened to load.
  *
- * The consequence to keep in mind is the cap. `claimsByStatus` takes 100 rows
- * **per status**, so ticking all six can load six hundred and truncate each
- * independently — which is why the query names the statuses it truncated rather
- * than answering a single `more` boolean.
+ * Two consequences the UI carries rather than hides. Cursor pagination has no
+ * total, so the pager says "page 3" and takes a **bounded** count from
+ * `claimsTally` — `500+` past the cap. And a Convex search ranks its results,
+ * an order that cannot be replaced, so while a term is live the sort headers go
+ * inert and the toolbar says why.
  */
 export function ClaimsBrowser() {
   const locale = useLocale()
@@ -80,47 +62,25 @@ export function ClaimsBrowser() {
   const labels = useMemo(() => t(CLAIMS, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [statuses, setStatuses] = useState<ClaimStatus[]>(DEFAULT_STATUSES)
+  const query = useClaimQueryState()
+  const { filters, cursor, pageSize } = query
 
   const overview = useQuery(api.admin.overview)
-  const page = useQuery(api.admin.claimsByStatus, { statuses })
+  const page = useQuery(api.admin.claimsPage, {
+    ...filters,
+    paginationOpts: { numItems: pageSize, cursor },
+  })
+  const tally = useQuery(api.admin.claimsTally, filters)
+
+  // A page that came back shorter than asked for still has `isDone` to say
+  // whether another exists — so "can go forward" is that, never a row count.
+  const canNext = page !== undefined && !page.isDone
 
   const columns = useMemo(
     () => claimBrowserColumns(locale, tableLabels),
     [locale, tableLabels]
   )
   const columnLabels = useMemo(() => claimBrowserColumnLabels(locale), [locale])
-
-  const facets = useMemo<DataTableFacet[]>(
-    () => [
-      {
-        columnId: "claimantIdentityStatus",
-        title: labels.colIdentity,
-        options: IDENTITY_STATUSES.map((value) => ({
-          value,
-          label: identityLabel(value, locale),
-        })),
-      },
-      {
-        columnId: "heirLinked",
-        title: labels.colHeir,
-        options: [
-          { value: "linked", label: labels.heirLinked },
-          { value: "unlinked", label: labels.heirNotLinked },
-        ],
-      },
-    ],
-    [labels, locale]
-  )
-
-  const toggleStatus = useCallback((value: string, checked: boolean) => {
-    setStatuses((current) => {
-      const next = new Set(current)
-      if (checked) next.add(value as ClaimStatus)
-      else next.delete(value as ClaimStatus)
-      return [...next]
-    })
-  }, [])
 
   const statusFilter = (
     <FacetedFilter
@@ -129,51 +89,87 @@ export function ClaimsBrowser() {
         value,
         label: claimStatusLabel(value, locale),
       }))}
-      selected={new Set<string>(statuses)}
-      onToggle={toggleStatus}
-      onClear={() => setStatuses(NO_STATUS_FILTER)}
-      // True totals from `overview`, not a count of what was loaded. An
-      // unticked status has fetched nothing, so a loaded-row count would read
-      // zero against every one of them and make the filter look empty.
+      selected={new Set<string>(filters.statuses)}
+      onToggle={query.toggleStatus}
+      onClear={query.clearStatuses}
+      // True totals from `overview`, not a count of what was loaded. These are
+      // unfiltered per-status tallies, which is what makes them useful for
+      // *choosing* a status rather than describing the current page.
       count={(value) => {
-        const tally = overview?.claims[value as ClaimStatus]
-        return tally === undefined ? undefined : fmtTally(tally, locale)
+        const row = overview?.claims[value as ClaimStatus]
+        return row === undefined ? undefined : fmtTally(row, locale)
       }}
       clearLabel={tableLabels.resetFilters}
     />
   )
 
-  if (page === undefined) {
+  const identityFilter = (
+    <FacetedFilter
+      title={labels.colIdentity}
+      options={IDENTITY_STATUSES.map((value) => ({
+        value,
+        label: identityLabel(value, locale),
+      }))}
+      selected={new Set<string>(filters.identity)}
+      onToggle={query.toggleIdentity}
+      onClear={query.clearIdentity}
+      // No counts: these would have to be a tally query per value, and the
+      // filter is useful without them.
+      count={() => undefined}
+      clearLabel={tableLabels.resetFilters}
+    />
+  )
+
+  const heirFilter = (
+    <FacetedFilter
+      title={labels.colHeir}
+      options={[
+        { value: "linked", label: labels.heirLinked },
+        { value: "unlinked", label: labels.heirNotLinked },
+      ]}
+      selected={query.heirSelection}
+      onToggle={query.toggleHeir}
+      onClear={query.clearHeir}
+      count={() => undefined}
+      clearLabel={tableLabels.resetFilters}
+    />
+  )
+
+  if (page === undefined && cursor === null) {
     return <Skeleton className="h-96 w-full rounded-xl" />
   }
-
-  const capped =
-    page.cappedStatuses.length > 0
-      ? {
-          cap: page.pageSize,
-          detail: tableLabels.cappedSearchDetail
-            .replace("{n}", String(page.pageSize))
-            .replace(
-              "{statuses}",
-              page.cappedStatuses
-                .map((status) => claimStatusLabel(status as ClaimStatus, locale))
-                .join(locale === "ar" ? "، " : ", ")
-            ),
-        }
-      : undefined
 
   return (
     <DataTable<BrowsedClaim>
       columns={columns}
-      data={page.rows}
+      data={page?.page}
       labels={tableLabels}
       locale={locale}
       columnLabels={columnLabels}
       getRowId={(row) => row.id}
-      filters={statusFilter}
-      facets={facets}
-      initialPageSize={25}
-      capped={capped}
+      filters={
+        <>
+          {statusFilter}
+          {identityFilter}
+          {heirFilter}
+        </>
+      }
+      server={{
+        search: query.searchInput,
+        onSearchChange: query.setSearch,
+        sorting: query.sorting,
+        onSortingChange: query.setSorting,
+        sortLocked: filters.search.length > 0,
+        page: query.pageNumber,
+        pageSize,
+        onPageSizeChange: query.setPageSize,
+        canPrev: query.canPrev,
+        canNext,
+        onPrev: query.prevPage,
+        onNext: () => query.nextPage(page?.continueCursor ?? null),
+        total: tally,
+        loading: page === undefined,
+      }}
       onRowClick={(row) => router.push(`/claims/${row.id}`)}
       bulk={{
         exportName: "claims",

@@ -10,7 +10,13 @@ import {
   TableRow,
 } from "@workspace/ui/components/table"
 import { cn } from "@workspace/ui/lib/utils"
-import { useTable, type ColumnDef, type RowData } from "@tanstack/react-table"
+import {
+  useTable,
+  type ColumnDef,
+  type RowData,
+  type SortingState,
+  type Updater,
+} from "@tanstack/react-table"
 
 import {
   DataTableBulkBar,
@@ -24,6 +30,7 @@ import {
   type DataTableLabels,
 } from "@/components/data-table-toolbar"
 import { features, type DataTableFeatures } from "@/lib/data-table-features"
+import type { ServerTable } from "@/lib/data-table-server"
 import type { Locale } from "@/lib/i18n/locale"
 
 export type { DataTableFacet, DataTableLabels, CappedWindow }
@@ -59,6 +66,17 @@ type DataTableProps<TData extends RowData> = {
   bulk?: BulkConfig<TData>
   /** Set when the server truncated the result — see the toolbar. */
   capped?: CappedWindow
+  /**
+   * Hand searching, sorting and paging to the caller's server queries.
+   *
+   * The client-side features stay registered — they are module scope and
+   * shared — but are made inert: the page size is set past any page the server
+   * will send so the client pager cannot slice it, sorting becomes controlled
+   * state, and the toolbar's search box writes to the caller instead of to the
+   * global filter. Leaving them live would mean filtering a filtered page and
+   * paging a page.
+   */
+  server?: ServerTable
   initialPageSize?: number
   /** Row click target, for tables whose rows open a detail screen. */
   onRowClick?: (row: TData) => void
@@ -104,6 +122,7 @@ export function DataTable<TData extends RowData>({
   filters,
   bulk,
   capped,
+  server,
   initialPageSize = 10,
   onRowClick,
   compact = false,
@@ -114,8 +133,25 @@ export function DataTable<TData extends RowData>({
     columns,
     getRowId,
     globalFilterFn: "includesString",
+    // While a search ranks the rows, the server's order is the only order
+    // there is — so the headers report themselves unsortable rather than
+    // offering a click that cannot be honoured.
+    enableSorting: server === undefined || !server.sortLocked,
+    ...(server === undefined
+      ? {}
+      : {
+          state: { sorting: server.sorting },
+          onSortingChange: (updater: Updater<SortingState>) =>
+            server.onSortingChange(
+              typeof updater === "function" ? updater(server.sorting) : updater
+            ),
+        }),
     initialState: {
-      pagination: { pageIndex: 0, pageSize: compact ? 100 : initialPageSize },
+      pagination: {
+        pageIndex: 0,
+        // Past anything the server will send, so the client pager is inert.
+        pageSize: server !== undefined ? 1000 : compact ? 100 : initialPageSize,
+      },
     },
   })
 
@@ -136,6 +172,7 @@ export function DataTable<TData extends RowData>({
           facets={facets}
           capped={capped}
           filters={filters}
+          server={server}
         />
       )}
 
@@ -201,8 +238,13 @@ export function DataTable<TData extends RowData>({
         </Table>
       </div>
 
-      {!compact && rows.length > 0 && (
-        <DataTablePagination table={table} labels={labels} locale={locale} />
+      {!compact && (rows.length > 0 || server !== undefined) && (
+        <DataTablePagination
+          table={table}
+          labels={labels}
+          locale={locale}
+          server={server}
+        />
       )}
     </div>
   )
