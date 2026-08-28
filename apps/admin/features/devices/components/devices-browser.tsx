@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   createColumnHelper,
@@ -12,7 +13,14 @@ import {
 } from "@tanstack/react-table"
 import type { FunctionReturnType } from "convex/server"
 import { useQuery } from "convex/react"
-import { SmartphoneIcon } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
+import { MoreHorizontalIcon, SmartphoneIcon } from "lucide-react"
 
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
@@ -101,6 +109,46 @@ function deviceColumns(
         ),
     }),
 
+    helper.display({
+      id: "actions",
+      enableHiding: false,
+      header: () => <span className="sr-only">{labels.colActionsSr}</span>,
+      // Navigation and clipboard only. There is deliberately no revoke:
+      // nothing anywhere reads `devices.revoked` — not a query, not a
+      // mutation, not the app — so the button would set a flag that stops
+      // nothing while looking like an intervention. Revocation needs to become
+      // a real control before the console offers to perform one.
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon-xs">
+              <span className="sr-only">{labels.openMenu}</span>
+              <MoreHorizontalIcon />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href={`/owners/${row.original.ownerId}`}>
+                  {labels.actionOpenOwner}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={row.original.ownerEmail === null}
+                onClick={() =>
+                  void navigator.clipboard.writeText(
+                    row.original.ownerEmail ?? ""
+                  )
+                }
+              >
+                {labels.actionCopyOwnerEmail}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    }),
+
     helper.accessor("registeredAt", {
       id: "registeredAt",
       header: ({ column }) => (
@@ -182,6 +230,7 @@ export function DevicesBrowser() {
       owner: labels.colOwner,
       lastUnlock: labels.colLastUnlock,
       registeredAt: labels.colRegistered,
+      actions: labels.colActionsSr,
     }),
     [labels]
   )

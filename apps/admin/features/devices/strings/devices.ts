@@ -33,4 +33,6 @@ export const DEVICES = {
 
   openMenu: { ar: "افتح القائمة", en: "Open menu" },
   actionOpenOwner: { ar: "افتح حساب المالك", en: "Open the owner's account" },
+  actionCopyOwnerEmail: { ar: "انسخ بريد المالك", en: "Copy owner's email" },
+  colActionsSr: { ar: "إجراءات", en: "Actions" },
 } as const satisfies Dictionary
