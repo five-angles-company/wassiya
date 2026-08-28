@@ -61,6 +61,13 @@ export const RECOVERY = {
     ar: "لا توجد خزنة على هذا الحساب بعد.",
     en: "There's no vault on this account yet.",
   },
+  // Says what to do rather than what went wrong, and does not pretend the code
+  // might still work. Honest about needing the other device, because that is
+  // the only thing that helps.
+  staleWrapper: {
+    ar: "وثيقتك صادرة بنسخة أقدم لم يعد هذا الإصدار يقرأها. افتح وصيّة على جهاز ما يزال يحمل مفتاح خزنتك — سيطلب منك طباعة وثيقة جديدة تعمل في كل مكان.",
+    en: "Your sheet was issued by an older version this build can no longer read. Open Wassiya on a device that still holds your vault key — it will ask you to print a new sheet, and that one works everywhere.",
+  },
 
   doneTitle: { ar: "عادت خزنتك", en: "Your vault is back" },
   doneBody: {

@@ -56,6 +56,9 @@ import { patchEnrolment, storeRecoveredMk } from "@/lib/secure-vault"
 
 type Phase = "input" | "working" | "done" | "failed" | "badCode"
 
+/** Kept in step with `RECOVERY_WRAPPER_VERSION` in `@workspace/crypto`. */
+const CURRENT_WRAPPER_VERSION = 2
+
 export function RecoveryScreen() {
   const { t } = useStrings("recovery")
   // The sheet code is on screen as plaintext while it is typed.
@@ -154,6 +157,19 @@ export function RecoveryScreen() {
           className="mt-header"
           variant="security"
           description={t.noKeyring}
+        />
+      ) : keyring !== undefined &&
+        keyring.wrapperVersion !== CURRENT_WRAPPER_VERSION ? (
+        /* The one case this screen cannot solve. The wrapper predates the
+           current construction, so no code will open it — and re-wrapping
+           needs MK, which by definition this device does not have. Offering
+           the field anyway would spend an owner's afternoon on a sheet that
+           was never going to work. Another device that still holds the key is
+           the only route, and it is prompted to re-wrap on launch. */
+        <AlertBanner
+          className="mt-header"
+          variant="security"
+          description={t.staleWrapper}
         />
       ) : (
         <>

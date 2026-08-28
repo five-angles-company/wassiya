@@ -26,6 +26,7 @@ export { open, seal, unwrap, wrap } from "./wrap"
 
 export {
   type RecoveryMaterial,
+  RECOVERY_WRAPPER_VERSION,
   recoverMk,
   recoveryAad,
   rotatePaperShare,

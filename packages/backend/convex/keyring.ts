@@ -19,6 +19,18 @@ import { sendRecoveryNotice } from "./email"
 import { assertIdentityVerified, requireUser } from "./model/access"
 
 /**
+ * Mirrors `RECOVERY_WRAPPER_VERSION` in `@workspace/crypto/recovery`, which is
+ * the source of truth — bump both together.
+ *
+ * Duplicated rather than imported on purpose. This deployment does not depend
+ * on `@workspace/crypto` and must not start: that package exists to run on
+ * devices, and a Convex function reaching into it is the shape of the mistake
+ * that ends with key material server-side. A version number is not worth
+ * opening that door.
+ */
+const RECOVERY_WRAPPER_VERSION = 2
+
+/**
  * First write and every rotation go through here. A rotation is a re-wrap, not
  * a re-key: MK is unchanged, so the vault stays readable while the old paper
  * sheet stops working the moment this returns.
@@ -67,6 +79,9 @@ export const save = mutation({
       userId: user._id,
       mkWrappedByRecovery: args.mkWrappedByRecovery,
       paperVersion: args.paperVersion,
+      // Stamped on every write, so a row that predates the AAD is identifiable
+      // by its absence. Not derivable from `paperVersion` — see the schema.
+      wrapperVersion: RECOVERY_WRAPPER_VERSION,
       // A new sheet has not been printed or used yet; clearing both is what
       // makes "printed?" and "already used?" honest after a rotation.
       paperPrintedAt: args.rotatingPaper ? undefined : existing?.paperPrintedAt,
@@ -107,6 +122,9 @@ export const get = query({
     return {
       mkWrappedByRecovery: keyring.mkWrappedByRecovery,
       paperVersion: keyring.paperVersion,
+      // `null` means a pre-AAD wrapper this code cannot open. The caller must
+      // check it before offering to recover, not after failing to.
+      wrapperVersion: keyring.wrapperVersion ?? null,
       paperPrintedAt: keyring.paperPrintedAt ?? null,
       paperUsedAt: keyring.paperUsedAt ?? null,
       rotatedAt: keyring.rotatedAt,

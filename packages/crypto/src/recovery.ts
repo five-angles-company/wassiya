@@ -52,8 +52,12 @@ export type RecoveryMaterial = {
  * `|` is the delimiter because it cannot occur in a Convex document id, so no
  * pair of (userId, paperVersion) can collide with another.
  */
+export const RECOVERY_WRAPPER_VERSION = 2
+
 export function recoveryAad(userId: string, paperVersion: number): Uint8Array {
-  return utf8ToBytes(`wassiya/recovery/v2|${userId}|${paperVersion}`)
+  return utf8ToBytes(
+    `wassiya/recovery/v${RECOVERY_WRAPPER_VERSION}|${userId}|${paperVersion}`
+  )
 }
 
 /** First-time setup: mint the paper share and wrap MK under it. */

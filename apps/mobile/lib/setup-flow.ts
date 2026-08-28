@@ -18,6 +18,7 @@
  * verified · no keyring · no MK                        explainer        nothing generated yet
  * verified · no keyring · MK                           recoveryKit      MK exists, wrapper never saved
  * verified · keyring · no MK                           recovery         new device, or key invalidated
+ * verified · keyring · MK · old wrapper                recoveryKit      re-wrap while MK is still here
  * verified · keyring · MK · not printed                recoveryKit      rotate and reprint
  * verified · keyring · MK · printed                    done             the vault is live
  *
@@ -47,8 +48,13 @@ export type IdentityEvidence =
 /** The subset of `keyring.get()` that decides routing. */
 export type KeyringEvidence = {
   paperVersion: number
+  /** `null` for a pre-AAD wrapper the current code cannot open. */
+  wrapperVersion: number | null
   paperPrintedAt: number | null
 } | null
+
+/** Kept in step with `RECOVERY_WRAPPER_VERSION` in `@workspace/crypto`. */
+const CURRENT_WRAPPER_VERSION = 2
 
 /** The subset of the keystore marker that decides routing. */
 export type DeviceEvidence = {
@@ -112,6 +118,17 @@ export function resolveSetupStep(evidence: SetupEvidence): SetupStep {
   if (evidence.keyring === null) {
     // MK exists but its wrapper was never persisted — the forbidden resting
     // state. Nothing was printed, so re-splitting invalidates nothing.
+    return "recoveryKit"
+  }
+
+  // A wrapper built by an older construction cannot be opened by this code, so
+  // the sheet in the owner's safe is already dead — it just has not been asked
+  // yet. Re-wrapping needs MK, which only a device that still holds it has, so
+  // this is the *only* window in which it is fixable and it outranks "printed".
+  // Left to `paperPrintedAt`, an owner who had printed would route to `done`
+  // and never be prompted, and would discover it on the one day they cannot
+  // recover from.
+  if (evidence.keyring.wrapperVersion !== CURRENT_WRAPPER_VERSION) {
     return "recoveryKit"
   }
 

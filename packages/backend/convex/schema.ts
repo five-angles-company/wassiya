@@ -106,6 +106,19 @@ export default defineSchema({
     userId: v.id("users"),
     mkWrappedByRecovery: v.bytes(),
     paperVersion: v.number(),
+    /**
+     * Which construction built `mkWrappedByRecovery`. **Absent means v1** — the
+     * old `S_paper ⊕ S_guardian` with no AAD, which the current code cannot
+     * open and must never try to.
+     *
+     * It cannot be inferred from `paperVersion`: a v1 wrapper can sit at paper
+     * version 3, because reprinting rotated the sheet without changing the
+     * construction. Without this field the break is silent — the owner's sheet
+     * simply stops working on the day they need it, which is the one day they
+     * cannot recover from. `setup-flow` reads it to force a re-wrap **while the
+     * device still holds MK**, which is the only window in which it is fixable.
+     */
+    wrapperVersion: v.optional(v.number()),
     paperPrintedAt: v.optional(v.number()),
     paperUsedAt: v.optional(v.number()),
     rotatedAt: v.number(),

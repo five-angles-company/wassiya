@@ -80,6 +80,7 @@ export function useSetupEvidence(): SetupEvidenceResult {
         ? null
         : {
             paperVersion: keyring.paperVersion,
+            wrapperVersion: keyring.wrapperVersion,
             paperPrintedAt: keyring.paperPrintedAt,
           },
     device: { hasMasterKey: enrolment !== null },
