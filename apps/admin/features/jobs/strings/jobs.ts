@@ -16,7 +16,23 @@ export const JOBS = {
   lastChange: { ar: "آخر تغيير", en: "Last change" },
   scanned: { ar: "فُحص {n}", en: "{n} scanned" },
   changed: { ar: "غُيّر {n}", en: "{n} changed" },
-  rescheduled: { ar: "دفعة ممتلئة — أُعيدت الجدولة", en: "Full batch — rescheduled" },
+  rescheduled: { ar: "دفعة ممتلئة", en: "Full batch" },
+  rescheduledFull: {
+    ar: "امتلأت الدفعة، فجُدولت دورة أخرى فوراً",
+    en: "The batch filled, so another pass was queued immediately",
+  },
+
+  // The health line. Both crons are hourly, so the age is only meaningful
+  // against that — the label says the schedule rather than assuming it is known.
+  hourly: { ar: "كل ساعة", en: "Hourly" },
+  ranAgo: { ar: "آخر دورة {ago}", en: "Last run {ago}" },
+  healthFresh: { ar: "تعمل", en: "Running" },
+  healthLate: { ar: "تأخّرت", en: "Late" },
+  healthStale: { ar: "متوقفة على الأرجح", en: "Likely stopped" },
+  healthLateHint: {
+    ar: "المهمة تعمل كل ساعة، وقد مضى أكثر من ذلك على آخر دورة مسجّلة.",
+    en: "This job runs hourly and more than that has passed since its last recorded pass.",
+  },
 
   never: { ar: "لم تُسجَّل أي دورة", en: "No run recorded" },
   neverHint: {

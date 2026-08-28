@@ -1,28 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import type { FunctionReturnType } from "convex/server"
 import { useQuery } from "convex/react"
 import { TimerIcon } from "lucide-react"
 
+import { DataTable } from "@/components/data-table"
 import { useLocale } from "@/components/locale-provider"
+import { TableCard } from "@/components/table-card"
 import { JOBS } from "@/features/jobs/strings/jobs"
-import { fmtDate, fmtNumber } from "@/lib/format"
+import type { DataTableFeatures } from "@/lib/data-table-features"
+import { fmtAgo, fmtDate, fmtNumber } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
+import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
 type Job = FunctionReturnType<typeof api.admin.jobRunsList>["jobs"][number]
+type Run = Job["runs"][number]
 
-const MINUTE_MS = 60 * 1000
-const HOUR_MS = 60 * MINUTE_MS
+const HOUR_MS = 60 * 60 * 1000
+
+const helper = createColumnHelper<DataTableFeatures, Run>()
 
 /** The cron names as `crons.ts` registers them, in the operator's language. */
 function jobLabel(name: string, locale: Locale): string {
@@ -33,20 +34,85 @@ function jobLabel(name: string, locale: Locale): string {
 }
 
 /**
- * How stale the last run is, and whether that is alarming.
+ * Whether the last run is recent enough for an hourly job.
  *
- * Both crons are hourly, so anything past two hours means one has been missed.
- * Rendered as a tone rather than a number alone, because "3 hours ago" only
- * means something if you already know the schedule.
+ * Both crons run every hour, so anything past two means one was missed and
+ * past six means several were. Reported as a verdict rather than a raw age:
+ * "3 hours ago" only means something to a reader who already knows the
+ * schedule, which is exactly the knowledge this screen exists to not require.
  */
-function staleness(ranAt: number, now: number): "fresh" | "late" | "stale" {
+function health(ranAt: number, now: number): "fresh" | "late" | "stale" {
   const age = now - ranAt
   if (age < 2 * HOUR_MS) return "fresh"
   if (age < 6 * HOUR_MS) return "late"
   return "stale"
 }
 
-function JobCard({
+function runColumns(
+  locale: Locale,
+  now: number
+): ColumnDef<DataTableFeatures, Run>[] {
+  const labels = t(JOBS, locale)
+
+  return helper.columns([
+    helper.accessor("ranAt", {
+      id: "ranAt",
+      enableSorting: false,
+      header: () => labels.colRanAt,
+      cell: ({ row }) => (
+        <span className="flex flex-col">
+          <span className="tabular-nums">
+            {fmtAgo(row.original.ranAt, now, locale)}
+          </span>
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {fmtDate(row.original.ranAt, locale)}
+          </span>
+        </span>
+      ),
+    }),
+    helper.accessor("scanned", {
+      id: "scanned",
+      enableSorting: false,
+      header: () => labels.colScanned,
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">
+          {fmtNumber(row.original.scanned, locale)}
+        </span>
+      ),
+    }),
+    // Emphasised only when non-zero. A column of zeroes is the healthy case
+    // for an hourly sweep, and it should read as calm rather than as failure.
+    helper.accessor("changed", {
+      id: "changed",
+      enableSorting: false,
+      header: () => labels.colChanged,
+      cell: ({ row }) => (
+        <span
+          className={
+            row.original.changed > 0
+              ? "font-medium tabular-nums"
+              : "tabular-nums text-muted-foreground"
+          }
+        >
+          {fmtNumber(row.original.changed, locale)}
+        </span>
+      ),
+    }),
+    helper.display({
+      id: "rescheduled",
+      enableHiding: false,
+      header: () => <span className="sr-only">{labels.rescheduled}</span>,
+      cell: ({ row }) =>
+        row.original.rescheduled ? (
+          <Badge variant="outline" className="whitespace-nowrap">
+            {labels.rescheduled}
+          </Badge>
+        ) : null,
+    }),
+  ])
+}
+
+function JobPanel({
   job,
   shown,
   now,
@@ -58,108 +124,59 @@ function JobCard({
   locale: Locale
 }) {
   const labels = t(JOBS, locale)
+  const tableLabels = t(DATA_TABLE, locale)
+  const columns = useMemo(() => runColumns(locale, now), [locale, now])
+
+  const state = job.lastRun === null ? null : health(job.lastRun.ranAt, now)
 
   return (
-    <Card className="gap-0 py-0">
-      <CardHeader className="flex-row items-center justify-between gap-3 border-b py-3">
-        <CardTitle className="font-heading text-sm">
-          {jobLabel(job.name, locale)}
-        </CardTitle>
-        {job.lastRun !== null && (
-          <Badge
-            variant={
-              staleness(job.lastRun.ranAt, now) === "fresh"
-                ? "secondary"
-                : "destructive"
-            }
-          >
-            {fmtDate(job.lastRun.ranAt, locale)}
-          </Badge>
-        )}
-      </CardHeader>
-
-      <CardContent className="flex flex-col px-0 py-0">
-        {job.lastRun === null ? (
-          // Not the same as "stopped", and saying so is the entire reason this
-          // table exists — a job renamed or added after recording began has no
-          // rows and is perfectly healthy.
-          <div className="flex flex-col gap-1 px-4 py-4">
-            <p className="text-sm font-medium">{labels.never}</p>
-            <p className="text-sm text-muted-foreground">{labels.neverHint}</p>
-          </div>
+    <TableCard
+      title={jobLabel(job.name, locale)}
+      hint={
+        job.lastRun === null
+          ? labels.neverHint
+          : labels.ranAgo.replace(
+              "{ago}",
+              fmtAgo(job.lastRun.ranAt, now, locale)
+            )
+      }
+      action={
+        state === null ? (
+          <Badge variant="outline">{labels.never}</Badge>
         ) : (
-          <>
-            <div className="flex items-baseline justify-between gap-4 border-b px-4 py-2.5">
-              <span className="text-xs text-muted-foreground">
-                {labels.lastRun}
-              </span>
-              <span className="text-sm tabular-nums">
-                {labels.scanned.replace(
-                  "{n}",
-                  fmtNumber(job.lastRun.scanned, locale)
-                )}
-                {" · "}
-                {labels.changed.replace(
-                  "{n}",
-                  fmtNumber(job.lastRun.changed, locale)
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between gap-4 border-b px-4 py-2.5">
-              <span className="text-xs text-muted-foreground">
-                {labels.lastChange}
-              </span>
-              <span className="text-end text-sm tabular-nums">
-                {job.lastChange !== null ? (
-                  fmtDate(job.lastChange.ranAt, locale)
-                ) : job.changeOutsideWindow ? (
-                  <span className="text-muted-foreground">
-                    {labels.noChangeHint.replace(
-                      "{n}",
-                      fmtNumber(shown, locale)
-                    )}
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">
-                    {labels.noChangeYet}
-                  </span>
-                )}
-              </span>
-            </div>
-
-            <div className="px-4 py-2.5">
-              <p className="mb-2 text-xs text-muted-foreground">
-                {labels.runsTitle}
-              </p>
-              <div className="flex flex-col gap-1">
-                {job.runs.map((run) => (
-                  <div
-                    key={run.id}
-                    className="flex items-baseline justify-between gap-3 text-xs"
-                  >
-                    <span className="tabular-nums text-muted-foreground">
-                      {fmtDate(run.ranAt, locale)}
-                    </span>
-                    <span className="tabular-nums">
-                      {fmtNumber(run.scanned, locale)} /{" "}
-                      <span
-                        className={
-                          run.changed > 0 ? "font-medium" : "text-muted-foreground"
-                        }
-                      >
-                        {fmtNumber(run.changed, locale)}
-                      </span>
-                      {run.rescheduled && " ↻"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
-    </Card>
+          <Badge variant={state === "fresh" ? "secondary" : "destructive"}>
+            {state === "fresh"
+              ? labels.healthFresh
+              : state === "late"
+                ? labels.healthLate
+                : labels.healthStale}
+          </Badge>
+        )
+      }
+      footnote={
+        job.lastChange !== null
+          ? `${labels.lastChange}: ${fmtAgo(job.lastChange.ranAt, now, locale)}`
+          : job.changeOutsideWindow
+            ? labels.noChangeHint.replace("{n}", fmtNumber(shown, locale))
+            : labels.noChangeYet
+      }
+    >
+      <DataTable<Run>
+        compact
+        columns={columns}
+        data={job.runs}
+        labels={tableLabels}
+        locale={locale}
+        columnLabels={{}}
+        getRowId={(row) => row.id}
+        empty={
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <TimerIcon className="size-6 text-muted-foreground" />
+            <p className="font-medium">{labels.never}</p>
+          </div>
+        }
+      />
+    </TableCard>
   )
 }
 
@@ -170,11 +187,20 @@ function JobCard({
  * an hourly sweep that correctly finds nothing due wrote nothing at all, and
  * "quiet" was indistinguishable from "dead". In a product whose dead-man's
  * switch failing means no estate is ever delivered, that is the wrong thing to
- * be unable to check.
+ * be unable to check. `jobRuns` separates them.
  *
- * `jobRuns` separates them, and this screen shows both halves per job: the most
- * recent run says the cron is alive, the most recent *change* says when it last
- * had work. Neither alone answers the question.
+ * ## What the redesign changed
+ *
+ * This was two bespoke cards whose run history was a stack of `8 / 1` with no
+ * headers — a pair of numbers nobody could read without being told which was
+ * which. Each job is now a `TableCard` with a real column-headed table, the
+ * same panel the dashboard uses, and the summary moved into the card's own
+ * slots: the health verdict as the action badge, the age as the hint, the last
+ * change as the footnote.
+ *
+ * The verdict is a word rather than a timestamp on purpose. "Ran at 20:38"
+ * requires the reader to know the schedule before it means anything; "Running"
+ * against an hourly job does not.
  */
 export function JobsBoard() {
   const locale = useLocale()
@@ -187,27 +213,18 @@ export function JobsBoard() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <p className="max-w-3xl text-sm text-muted-foreground">{labels.intro}</p>
 
-      {data.jobs.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-12 text-center">
-          <TimerIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{labels.never}</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {data.jobs.map((job) => (
-            <JobCard
-              key={job.name}
-              job={job}
-              shown={data.shown}
-              now={now}
-              locale={locale}
-            />
-          ))}
-        </div>
-      )}
+      {data.jobs.map((job) => (
+        <JobPanel
+          key={job.name}
+          job={job}
+          shown={data.shown}
+          now={now}
+          locale={locale}
+        />
+      ))}
     </div>
   )
 }

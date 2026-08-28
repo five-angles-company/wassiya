@@ -68,3 +68,28 @@ export function fmtBytes(bytes: number, locale: Locale): string {
         )
   return `${digits} ${UNITS[unit]}`
 }
+
+/**
+ * How long ago, in the coarsest unit that is still true.
+ *
+ * Dates answer *when*; an operations screen asks *how stale*. "Ran at 20:38" is
+ * a fact the reader has to do arithmetic on before it means anything, and the
+ * arithmetic needs the cron's schedule — "14 minutes ago" against an hourly job
+ * is legible on sight.
+ *
+ * Uses `Intl.RelativeTimeFormat`, so Arabic gets its own plural forms rather
+ * than a translated English template. Takes `now` rather than reading the clock,
+ * for the same reason the queries do: two renders must not disagree.
+ */
+export function fmtAgo(value: number, now: number, locale: Locale): string {
+  const seconds = Math.round((value - now) / 1000)
+  const abs = Math.abs(seconds)
+  const rtf = new Intl.RelativeTimeFormat(locale === "ar" ? "ar" : "en", {
+    numeric: "auto",
+  })
+
+  if (abs < 60) return rtf.format(seconds, "second")
+  if (abs < 3600) return rtf.format(Math.round(seconds / 60), "minute")
+  if (abs < 86400) return rtf.format(Math.round(seconds / 3600), "hour")
+  return rtf.format(Math.round(seconds / 86400), "day")
+}
