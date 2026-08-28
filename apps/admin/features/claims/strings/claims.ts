@@ -36,6 +36,11 @@ export const CLAIMS = {
   colCertificate: { ar: "شهادة الوفاة", en: "Certificate" },
   colOwner: { ar: "الاسم المُوثّق للمالك", en: "Owner's verified name" },
   colSubmitted: { ar: "تاريخ التقديم", en: "Submitted" },
+  colStatus: { ar: "الحالة", en: "Status" },
+  actionCopyContact: {
+    ar: "انسخ وسيلة التواصل",
+    en: "Copy contact",
+  },
   colActions: { ar: "إجراءات", en: "Actions" },
   colHeir: { ar: "الوريث", en: "Heir" },
 

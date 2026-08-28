@@ -16,6 +16,7 @@ import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { CLAIMS } from "@/features/claims/strings/claims"
+import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { fmtNumber } from "@/lib/format"
 
 /** How many rows a dashboard panel shows before it stops being a summary. */
@@ -37,6 +38,7 @@ export function ClaimsQueue() {
   const locale = useLocale()
   const labels = t(CLAIMS, locale)
   const common = t(COMMON, locale)
+  const table = t(DATA_TABLE, locale)
   const claims = useQuery(api.claims.pendingReview)
 
   const columns = useMemo(() => claimColumns(locale), [locale])
@@ -69,14 +71,9 @@ export function ClaimsQueue() {
         compact
         columns={columns}
         data={newest}
-        filterColumnId="claimantName"
-        labels={{
-          filterPlaceholder: labels.filterPlaceholder,
-          columns: labels.columns,
-          previous: labels.previous,
-          next: labels.next,
-          columnLabels,
-        }}
+        labels={table}
+        locale={locale}
+        columnLabels={columnLabels}
         empty={
           <div className="flex flex-col items-center justify-center gap-2 text-center">
             <InboxIcon className="size-6 text-muted-foreground" />

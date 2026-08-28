@@ -13,12 +13,9 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import type { FunctionReturnType } from "convex/server"
-import {
-  ArrowUpDownIcon,
-  ExternalLinkIcon,
-  MoreHorizontalIcon,
-} from "lucide-react"
+import { ExternalLinkIcon, MoreHorizontalIcon } from "lucide-react"
 
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { IdentityBadge } from "@/features/claims/components/identity-badge"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { CLAIMS } from "@/features/claims/strings/claims"
@@ -58,15 +55,7 @@ export function claimColumns(
       id: "claimantName",
       filterFn: "includesString",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ms-2"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {labels.colClaimant}
-          <ArrowUpDownIcon />
-        </Button>
+        <DataTableColumnHeader column={column} title={labels.colClaimant} />
       ),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.claimantName}</span>
@@ -130,15 +119,7 @@ export function claimColumns(
     helper.accessor("submittedAt", {
       id: "submittedAt",
       header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ms-2"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          {labels.colSubmitted}
-          <ArrowUpDownIcon />
-        </Button>
+        <DataTableColumnHeader column={column} title={labels.colSubmitted} />
       ),
       cell: ({ row }) => (
         <span className="whitespace-nowrap">
