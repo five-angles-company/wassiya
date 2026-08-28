@@ -1,0 +1,191 @@
+"use client"
+
+import { useState } from "react"
+import Link from "next/link"
+import { api } from "@workspace/backend/api"
+import type { Id } from "@workspace/backend/dataModel"
+import { Badge } from "@workspace/ui/components/badge"
+import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { useQuery } from "convex/react"
+import { ArrowRightIcon } from "lucide-react"
+
+import { IdentityBadge } from "@/components/identity-badge"
+import { useLocale } from "@/components/locale-provider"
+import {
+  Fact,
+  FactsEmpty,
+  OwnerFacts,
+} from "@/features/owners/components/owner-facts"
+import { OwnerProtection } from "@/features/owners/components/owner-protection"
+import { OWNERS } from "@/features/owners/strings/owners"
+import { fmtBytes, fmtDate } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
+
+/**
+ * One account, whole.
+ *
+ * The screen the Accounts group is really about: an operator handling "this
+ * person cannot recover their vault" needs identity, devices, the sheet's
+ * state and the check-in in one place, and until this existed the console
+ * could not show them any of it.
+ *
+ * **It reports; it does not act.** The one write anywhere near an owner is
+ * resetting identity attempts, and that lives on the identity queue where the
+ * blocked accounts are already gathered. Nothing here revokes a device or edits
+ * an heir — those are the owner's decisions, made on their own device, and a
+ * console that could make them for them would be a far larger security surface
+ * than a console that reads.
+ */
+export function OwnerDetail({ userId }: { userId: string }) {
+  const locale = useLocale()
+  const labels = t(OWNERS, locale)
+  // Once per mount. An invitation's expiry is measured in days, so a boundary
+  // that is stale by minutes is not an inaccuracy — and reading the clock in a
+  // render body would let two renders disagree about the same guardian.
+  const [now] = useState(() => Date.now())
+  const detail = useQuery(api.admin.ownerDetail, {
+    userId: userId as Id<"users">,
+  })
+
+  if (detail === undefined) {
+    return <Skeleton className="h-96 w-full rounded-xl" />
+  }
+
+  const { owner, devices, heirs, claims } = detail
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/owners">
+            <ArrowRightIcon className="size-4 ltr:rotate-180" aria-hidden />
+            {labels.back}
+          </Link>
+        </Button>
+        <span className="font-heading text-lg font-bold">
+          {owner.name ?? labels.nameNone}
+        </span>
+        <span dir="ltr" className="text-sm text-muted-foreground">
+          {owner.email}
+        </span>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        <OwnerFacts title={labels.sectionIdentity}>
+          <Fact
+            label={labels.colIdentity}
+            value={
+              <IdentityBadge status={owner.identityStatus} locale={locale} />
+            }
+          />
+          <Fact
+            label={labels.verifiedName}
+            value={owner.identityVerifiedName ?? labels.none}
+          />
+          <Fact
+            label={labels.docType}
+            value={owner.identityDocType ?? labels.none}
+          />
+          <Fact
+            label={labels.verifiedAt}
+            value={
+              owner.identityVerifiedAt === null
+                ? labels.none
+                : fmtDate(owner.identityVerifiedAt, locale)
+            }
+          />
+          <Fact label={labels.attempts} value={owner.identityAttempts} />
+        </OwnerFacts>
+
+        <OwnerFacts title={labels.colPlan}>
+          <Fact label={labels.colPlan} value={owner.plan ?? labels.planNone} />
+          <Fact
+            label={labels.colStorage}
+            value={fmtBytes(owner.storageBytesUsed, locale)}
+          />
+          <Fact label={labels.colCountry} value={owner.country ?? labels.none} />
+          <Fact
+            label={labels.colJoined}
+            value={fmtDate(owner.joinedAt, locale)}
+          />
+        </OwnerFacts>
+
+        <OwnerProtection detail={detail} locale={locale} now={now} />
+
+        <OwnerFacts title={labels.sectionHeirs}>
+          {heirs.length === 0 ? (
+            <FactsEmpty>{labels.heirsNone}</FactsEmpty>
+          ) : (
+            heirs.map((heir) => (
+              <Fact
+                key={heir.id}
+                label={heir.relation}
+                value={
+                  <span className="flex flex-col items-end">
+                    <span>{heir.name}</span>
+                    <span dir="ltr" className="text-xs text-muted-foreground">
+                      {heir.phone}
+                    </span>
+                  </span>
+                }
+              />
+            ))
+          )}
+        </OwnerFacts>
+
+        <OwnerFacts title={labels.sectionDevices}>
+          {devices.length === 0 ? (
+            <FactsEmpty>{labels.devicesNone}</FactsEmpty>
+          ) : (
+            devices.map((device) => (
+              <Fact
+                key={device.id}
+                label={device.platform}
+                value={
+                  <span className="flex items-center justify-end gap-2">
+                    {device.revoked && (
+                      <Badge variant="destructive">
+                        {labels.deviceRevoked}
+                      </Badge>
+                    )}
+                    <span className="flex flex-col items-end">
+                      <span>{device.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {device.lastUnlockAt === null
+                          ? labels.never
+                          : fmtDate(device.lastUnlockAt, locale)}
+                      </span>
+                    </span>
+                  </span>
+                }
+              />
+            ))
+          )}
+        </OwnerFacts>
+
+        <OwnerFacts title={labels.sectionClaims}>
+          {claims.length === 0 ? (
+            <FactsEmpty>{labels.claimsNone}</FactsEmpty>
+          ) : (
+            claims.map((claim) => (
+              <Fact
+                key={claim.id}
+                label={fmtDate(claim.submittedAt, locale)}
+                value={
+                  <Link
+                    href={`/claims/${claim.id}`}
+                    className="hover:underline"
+                  >
+                    {claim.claimantName}{" "}
+                    <Badge variant="outline">{claim.status}</Badge>
+                  </Link>
+                }
+              />
+            ))
+          )}
+        </OwnerFacts>
+      </div>
+    </div>
+  )
+}

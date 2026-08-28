@@ -41,10 +41,17 @@ export const currentUser = query({
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> },
   handler: async (ctx, { data }) => {
+    const name =
+      [data.first_name, data.last_name].filter(Boolean).join(" ") || null
+    const email = primaryEmail(data)
     const attributes = {
       externalId: data.id,
-      name: [data.first_name, data.last_name].filter(Boolean).join(" ") || null,
-      email: primaryEmail(data),
+      name,
+      email,
+      // The console searches one column, so it is composed where the two halves
+      // are written. This is the only writer of either — a stale value here
+      // fails silently, as an owner the console cannot find.
+      searchText: [name, email].filter(Boolean).join(" "),
     }
 
     const user = await userByExternalId(ctx, data.id)

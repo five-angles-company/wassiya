@@ -63,7 +63,20 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     key: "groupAccounts",
     items: [
-      { key: "owners", icon: UsersIcon, href: null },
+      { key: "owners", icon: UsersIcon, href: "/owners" },
+      /**
+       * These three are reached *through* an owner, not listed on their own.
+       *
+       * Heirs, devices and a subscription are per-account facts, and neither
+       * `heirs` nor `devices` carries an index that is not `by_userId` — a
+       * global list of every heir in the deployment would be a table scan
+       * answering a question nobody asks. The operator's question is always
+       * "this owner's heirs", and `/owners/[id]` answers it.
+       *
+       * Left as placeholders rather than deleted because each could still earn
+       * a screen on a *global* question: subscriptions renewing this month,
+       * devices registered this week. None of those is asked yet.
+       */
       { key: "heirs", icon: ScrollTextIcon, href: null },
       { key: "devices", icon: SmartphoneIcon, href: null },
       { key: "subscriptions", icon: CreditCardIcon, href: null },

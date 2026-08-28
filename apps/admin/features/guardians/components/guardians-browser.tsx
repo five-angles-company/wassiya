@@ -18,7 +18,7 @@ import {
   GUARDIAN_STATES,
   guardianStateLabel,
   type GuardianState,
-} from "@/features/guardians/lib/state"
+} from "@/lib/guardian-state"
 import { GUARDIANS } from "@/features/guardians/strings/guardians"
 import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"

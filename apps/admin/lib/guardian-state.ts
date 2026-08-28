@@ -1,5 +1,5 @@
-import { GUARDIANS } from "@/features/guardians/strings/guardians"
 import { t, type Locale } from "@/lib/i18n/locale"
+import { GUARDIAN_STATE_LABELS } from "@/lib/i18n/strings/guardian-state"
 
 /**
  * The five states a guardian appointment can be in, in lifecycle order.
@@ -22,7 +22,7 @@ export function guardianStateLabel(
   state: GuardianState,
   locale: Locale
 ): string {
-  const labels = t(GUARDIANS, locale)
+  const labels = t(GUARDIAN_STATE_LABELS, locale)
   const map: Record<GuardianState, string> = {
     live: labels.stateLive,
     accepted: labels.stateAccepted,

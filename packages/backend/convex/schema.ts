@@ -57,6 +57,9 @@ export default defineSchema({
     // out of band (dashboard / CLI), never by anything a client can call.
     role: v.optional(v.union(v.literal("owner"), v.literal("admin"))),
 
+    /** Name + email, for the console's owner search. See the index below. */
+    searchText: v.optional(v.string()),
+
     subscription: v.optional(
       v.object({
         plan: v.string(),
@@ -78,7 +81,18 @@ export default defineSchema({
     // `upsertFromClerk` has always seeded it on insert, so that set is empty,
     // but the funnel reports its total as the sum of the buckets rather than a
     // separate table count so the two can never disagree.
-    .index("by_identityStatus", ["identityStatus"]),
+    .index("by_identityStatus", ["identityStatus"])
+    /**
+     * Name and email in one column, for the console's owner lookup.
+     *
+     * Denormalised for the same reason `claims.searchText` is: a Convex search
+     * index searches exactly one field, and an operator with a support ticket
+     * has either a name or an address and should not have to know which box
+     * takes which. Written by `upsertFromClerk`, which is the only thing that
+     * writes either half — `saveProfile` touches country, locale and contacts
+     * and nothing else, so there is one place to keep in step rather than two.
+     */
+    .searchIndex("search_owner", { searchField: "searchText" }),
 
   // Device inventory for the settings screen and for revocation. The enclave
   // wrap of MK never leaves the device, so there is no ciphertext column here —

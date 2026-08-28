@@ -18,7 +18,7 @@ import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import {
   guardianStateLabel,
   guardianStateVariant,
-} from "@/features/guardians/lib/state"
+} from "@/lib/guardian-state"
 import { GUARDIANS } from "@/features/guardians/strings/guardians"
 import type { DataTableFeatures } from "@/lib/data-table-features"
 import { fmtDate } from "@/lib/format"

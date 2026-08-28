@@ -1130,6 +1130,219 @@ export const guardiansList = query({
   },
 })
 
+// ---------------------------------------------------------------------------
+// Owners — the Accounts group's keystone. Every other item in that group hangs
+// off a person, so this is the screen the rest are reached through.
+// ---------------------------------------------------------------------------
+
+const ownerFilterArgs = {
+  identity: v.array(identityStatusValidator),
+  /** Plan names as stored; empty means no constraint. */
+  plans: v.array(v.string()),
+  search: v.string(),
+  sort: v.union(v.literal("newest"), v.literal("oldest")),
+}
+
+type OwnerFilters = {
+  identity: string[]
+  plans: string[]
+  search: string
+  sort: "newest" | "oldest"
+}
+
+/**
+ * Build the filtered, ordered owners query.
+ *
+ * A search term drives `search_owner` and ranks the results, so it wins over
+ * the sort exactly as it does for claims. Otherwise creation order — `users`
+ * carries no other index worth an owner list, and "who signed up recently" is
+ * the order an operator scans in anyway.
+ *
+ * Staff are excluded throughout: a reviewer is not an owner, which is the line
+ * `risk` and `activation` already draw.
+ */
+function ownersQuery(ctx: QueryCtx, filters: OwnerFilters) {
+  const base =
+    filters.search.length > 0
+      ? ctx.db
+          .query("users")
+          .withSearchIndex("search_owner", (q) =>
+            q.search("searchText", filters.search)
+          )
+      : ctx.db
+          .query("users")
+          .order(filters.sort === "oldest" ? "asc" : "desc")
+
+  return base.filter((q) => {
+    const clauses = [q.neq(q.field("role"), "admin")]
+    if (filters.identity.length > 0) {
+      clauses.push(
+        q.or(
+          ...filters.identity.map((state) =>
+            q.eq(q.field("identityStatus"), state)
+          )
+        )
+      )
+    }
+    if (filters.plans.length > 0) {
+      clauses.push(
+        q.or(
+          ...filters.plans.map((plan) => q.eq(q.field("subscription.plan"), plan))
+        )
+      )
+    }
+    return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+  })
+}
+
+function ownerRow(user: Doc<"users">) {
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    country: user.country ?? null,
+    identityStatus: user.identityStatus ?? ("unverified" as const),
+    identityVerifiedName: user.identityVerifiedName ?? null,
+    plan: user.subscription?.plan ?? null,
+    storageBytesUsed: user.subscription?.storageBytesUsed ?? 0,
+    joinedAt: user._creationTime,
+  }
+}
+
+/** One page of owners. Mirrors `claimsPage`; see there for the cursor's limits. */
+export const ownersPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...ownerFilterArgs },
+  handler: async (ctx, { paginationOpts, ...filters }) => {
+    await requireAdmin(ctx)
+    const result = await ownersQuery(ctx, filters).paginate(paginationOpts)
+    return { ...result, page: result.page.map(ownerRow) }
+  },
+})
+
+/** Bounded count for the owner filters. See `claimsTally`. */
+export const ownersTally = query({
+  args: ownerFilterArgs,
+  handler: async (ctx, filters) => {
+    await requireAdmin(ctx)
+    const rows = await ownersQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
+/**
+ * Everything about one account, on one screen.
+ *
+ * This is what makes the Accounts group's other three entries reachable rather
+ * than three more tables. Heirs, devices and a subscription are all *per
+ * owner*, and neither `heirs` nor `devices` carries an index that is not
+ * `by_userId` — a global list of every heir in the deployment would be a table
+ * scan answering a question nobody asks. The operator's question is always
+ * "this owner's heirs".
+ *
+ * The same indexed probes `risk` runs across many owners, run once here.
+ *
+ * **Nothing returned is ciphertext or key material.** The keyring is reported
+ * as dates and a version, never as `mkWrappedByRecovery`; the guardians carry
+ * no `inviteToken`. Both are the same rule stated in `guardiansList`.
+ */
+export const ownerDetail = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    await requireAdmin(ctx)
+    const user = await ctx.db.get("users", userId)
+    if (user === null) {
+      throw new Error("Not found")
+    }
+
+    const devices = await ctx.db
+      .query("devices")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .take(50)
+    const heirs = await ctx.db
+      .query("heirs")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .take(50)
+    const guardians = await ctx.db
+      .query("guardians")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .take(20)
+    const keyring = await ctx.db
+      .query("keyring")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique()
+    const checkin = await ctx.db
+      .query("checkinConfig")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .unique()
+    const claims = await ctx.db
+      .query("claims")
+      .withIndex("by_subjectUserId", (q) => q.eq("subjectUserId", userId))
+      .take(20)
+
+    return {
+      owner: {
+        ...ownerRow(user),
+        locale: user.locale ?? null,
+        identityDocType: user.identityDocType ?? null,
+        identityVerifiedAt: user.identityVerifiedAt ?? null,
+        identityAttempts: user.identityAttempts ?? 0,
+        renewsAt: user.subscription?.renewsAt ?? null,
+      },
+      vault:
+        keyring === null
+          ? null
+          : {
+              paperVersion: keyring.paperVersion,
+              wrapperVersion: keyring.wrapperVersion ?? null,
+              paperPrintedAt: keyring.paperPrintedAt ?? null,
+              paperUsedAt: keyring.paperUsedAt ?? null,
+              rotatedAt: keyring.rotatedAt,
+            },
+      checkin:
+        checkin === null
+          ? null
+          : {
+              cadenceMonths: checkin.cadenceMonths,
+              graceDays: checkin.graceDays,
+              nextDueAt: checkin.nextDueAt,
+              lastConfirmedAt: checkin.lastConfirmedAt,
+              escalationState: checkin.escalationState,
+            },
+      devices: devices.map((row) => ({
+        id: row._id,
+        name: row.name,
+        platform: row.platform,
+        revoked: row.revoked,
+        lastUnlockAt: row.lastUnlockAt ?? null,
+        registeredAt: row._creationTime,
+      })),
+      heirs: heirs.map((row) => ({
+        id: row._id,
+        name: row.name,
+        relation: row.relation,
+        phone: row.phone,
+      })),
+      guardians: guardians.map((row) => ({
+        id: row._id,
+        name: row.name,
+        relation: row.relation,
+        status: row.status,
+        hasPublicKey: row.x25519PublicKey !== undefined,
+        inviteExpiresAt: row.inviteExpiresAt,
+      })),
+      claims: claims.map((row) => ({
+        id: row._id,
+        status: row.status,
+        claimantName: row.claimantName,
+        submittedAt: row._creationTime,
+      })),
+    }
+  },
+})
+
 /** Audit rows scanned looking for one claim's history. */
 const HISTORY_SCAN = 400
 
