@@ -15,7 +15,7 @@ import {
   ownerColumns,
   type OwnerRow,
 } from "@/features/owners/components/owners-columns"
-import { useOwnerQueryState } from "@/features/owners/lib/use-owner-query-state"
+import { useOwnerQueryState } from "@/lib/use-owner-query-state"
 import { OWNERS } from "@/features/owners/strings/owners"
 import { IDENTITY_STATUSES, identityLabel } from "@/lib/identity"
 import { fmtBytes, fmtDate } from "@/lib/format"

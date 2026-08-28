@@ -1,0 +1,234 @@
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import Link from "next/link"
+import { api } from "@workspace/backend/api"
+import { Badge } from "@workspace/ui/components/badge"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import {
+  createColumnHelper,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table"
+import type { FunctionReturnType } from "convex/server"
+import { useQuery } from "convex/react"
+import { ScrollTextIcon } from "lucide-react"
+
+import { DataTable } from "@/components/data-table"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
+import { FacetedFilter } from "@/components/data-table-faceted-filter"
+import { useLocale } from "@/components/locale-provider"
+import { HEIRS } from "@/features/heirs/strings/heirs"
+import type { DataTableFeatures } from "@/lib/data-table-features"
+import { fmtDate } from "@/lib/format"
+import { t, type Locale } from "@/lib/i18n/locale"
+import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
+import { useLastLoaded } from "@/lib/use-last-loaded"
+
+type HeirRow = FunctionReturnType<typeof api.admin.heirsPage>["page"][number]
+
+const DEFAULT_SORTING: SortingState = [{ id: "addedAt", desc: true }]
+
+const helper = createColumnHelper<DataTableFeatures, HeirRow>()
+
+function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
+  const labels = t(HEIRS, locale)
+
+  return helper.columns([
+    helper.accessor("name", {
+      id: "heir",
+      enableSorting: false,
+      header: () => labels.colHeir,
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          <span className="font-medium">{row.original.name}</span>
+          <span className="text-xs text-muted-foreground">
+            {row.original.relation} ·{" "}
+            <span dir="ltr" className="inline-block">
+              {row.original.phone}
+            </span>
+          </span>
+        </div>
+      ),
+    }),
+
+    helper.accessor("ownerName", {
+      id: "owner",
+      enableSorting: false,
+      header: () => labels.colOwner,
+      cell: ({ row }) => (
+        <Link
+          href={`/owners/${row.original.ownerId}`}
+          className="flex flex-col hover:underline"
+        >
+          <span>{row.original.ownerName}</span>
+          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+            {row.original.ownerEmail}
+          </span>
+        </Link>
+      ),
+    }),
+
+    // The column this screen exists for. An heir who receives nothing is the
+    // commonest silent failure in the product: the owner added them and
+    // believes they are provided for.
+    helper.accessor("receivesCount", {
+      id: "receives",
+      enableSorting: false,
+      header: () => labels.colReceives,
+      cell: ({ row }) => {
+        const { receivesCount, sharedCount } = row.original
+        if (receivesCount === 0) {
+          return <Badge variant="destructive">{labels.receivesNothing}</Badge>
+        }
+        return (
+          <span className="flex flex-col">
+            <span className="tabular-nums">
+              {labels.receives.replace("{n}", String(receivesCount))}
+            </span>
+            {sharedCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {labels.receivesShared.replace("{n}", String(sharedCount))}
+              </span>
+            )}
+          </span>
+        )
+      },
+    }),
+
+    helper.accessor("addedAt", {
+      id: "addedAt",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={labels.colAdded} />
+      ),
+      cell: ({ row }) => (
+        <span className="whitespace-nowrap tabular-nums">
+          {fmtDate(row.original.addedAt, locale)}
+        </span>
+      ),
+    }),
+  ])
+}
+
+/**
+ * Every heir, across every account.
+ *
+ * A global heir list earns a screen because of one column: what each would
+ * actually receive. The name and relation are already on the owner's own page;
+ * **which heirs would receive nothing** is a question no other screen asks, and
+ * it is the product's commonest silent failure.
+ *
+ * Two things this screen is honest about rather than hiding. The routing filter
+ * is applied *after* the count, because the count takes two indexed probes per
+ * row and cannot be an index range — so a filtered page can come back short,
+ * and `isDone` rather than a row count is what says whether another follows.
+ * And the total counts every heir, not the filtered set, because producing the
+ * filtered number would mean running those probes across the whole table.
+ *
+ * No search box: `heirs` has no search index, and a box that filtered only the
+ * page in front of you would look like it searched the set.
+ */
+export function HeirsBrowser() {
+  const locale = useLocale()
+  const labels = useMemo(() => t(HEIRS, locale), [locale])
+  const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
+
+  const [unroutedOnly, setUnroutedOnly] = useState(false)
+  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
+  const [pageSize, setPageSize] = useState(25)
+  const [cursors, setCursors] = useState<(string | null)[]>([null])
+
+  const cursor = cursors[cursors.length - 1] ?? null
+  const resetPaging = useCallback(() => setCursors([null]), [])
+
+  const { data: page, loading } = useLastLoaded(
+    useQuery(api.admin.heirsPage, {
+      unroutedOnly,
+      sort: sorting[0]?.desc === false ? "oldest" : "newest",
+      paginationOpts: { numItems: pageSize, cursor },
+    })
+  )
+  const { data: tally } = useLastLoaded(useQuery(api.admin.heirsTally, {}))
+
+  const columns = useMemo(() => heirColumns(locale), [locale])
+  const columnLabels = useMemo(
+    () => ({
+      heir: labels.colHeir,
+      owner: labels.colOwner,
+      receives: labels.colReceives,
+      addedAt: labels.colAdded,
+    }),
+    [labels]
+  )
+  const routingSelection = useMemo(
+    () => new Set<string>(unroutedOnly ? ["unrouted"] : []),
+    [unroutedOnly]
+  )
+
+  if (page === undefined) {
+    return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
+  }
+
+  return (
+    <DataTable<HeirRow>
+      columns={columns}
+      data={page.page}
+      busy={loading}
+      fill
+      searchable={false}
+      labels={tableLabels}
+      locale={locale}
+      columnLabels={columnLabels}
+      getRowId={(row) => row.id}
+      filters={
+        <FacetedFilter
+          title={labels.filterRouting}
+          options={[{ value: "unrouted", label: labels.unroutedOnly }]}
+          selected={routingSelection}
+          onToggle={(_value, checked) => {
+            setUnroutedOnly(checked)
+            resetPaging()
+          }}
+          onClear={() => {
+            setUnroutedOnly(false)
+            resetPaging()
+          }}
+          count={() => undefined}
+          clearLabel={tableLabels.resetFilters}
+        />
+      }
+      server={{
+        search: "",
+        onSearchChange: () => undefined,
+        sorting,
+        onSortingChange: (next) => {
+          setSorting(next.length === 0 ? DEFAULT_SORTING : next)
+          resetPaging()
+        },
+        sortLocked: false,
+        page: cursors.length,
+        pageSize,
+        onPageSizeChange: (size) => {
+          setPageSize(size)
+          resetPaging()
+        },
+        canPrev: cursors.length > 1,
+        canNext: !page.isDone,
+        onPrev: () =>
+          setCursors((current) =>
+            current.length > 1 ? current.slice(0, -1) : current
+          ),
+        onNext: () => setCursors((current) => [...current, page.continueCursor]),
+        total: tally,
+        loading,
+      }}
+      empty={
+        <div className="flex flex-col items-center justify-center gap-2 text-center">
+          <ScrollTextIcon className="size-6 text-muted-foreground" />
+          <p className="font-medium">{labels.empty}</p>
+          <p className="text-sm text-muted-foreground">{labels.emptyHint}</p>
+        </div>
+      }
+    />
+  )
+}

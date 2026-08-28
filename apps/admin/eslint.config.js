@@ -54,7 +54,16 @@ const SHARED = [
  * unreported until it was found by grep. A zone protects its `target`, so a
  * feature missing from this list is a feature nothing is watching.
  */
-const FEATURES = ["claims", "dashboard", "guardians", "identity", "owners"]
+const FEATURES = [
+  "claims",
+  "dashboard",
+  "devices",
+  "guardians",
+  "heirs",
+  "identity",
+  "owners",
+  "subscriptions",
+]
 
 /** @type {import("eslint").Linter.Config} */
 export default [

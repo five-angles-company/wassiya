@@ -78,6 +78,8 @@ type DataTableProps<TData extends RowData> = {
    * paging a page.
    */
   server?: ServerTable
+  /** Defaults to true; false for lists with nothing indexed to search. */
+  searchable?: boolean
   searchPlaceholder?: string
   /**
    * A newer page is in flight and these rows are the previous one.
@@ -148,6 +150,7 @@ export function DataTable<TData extends RowData>({
   bulk,
   capped,
   server,
+  searchable = true,
   searchPlaceholder,
   busy = false,
   fill = false,
@@ -202,6 +205,7 @@ export function DataTable<TData extends RowData>({
             capped={capped}
             filters={filters}
             server={server}
+            searchable={searchable}
             searchPlaceholder={searchPlaceholder}
           />
         </div>

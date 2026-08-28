@@ -1343,6 +1343,215 @@ export const ownerDetail = query({
   },
 })
 
+// ---------------------------------------------------------------------------
+// Heirs and devices, listed across every account.
+//
+// Both tables are indexed only `by_userId`, so neither list can seek — they
+// scan in creation order and filter. That is affordable because both are
+// bounded by *owners* rather than by traffic (a handful of heirs and one or two
+// devices per vault), and pagination bounds the scan either way. If either ever
+// stops being true, the fix is an index, not a smaller page.
+// ---------------------------------------------------------------------------
+
+const heirFilterArgs = {
+  /** `true` narrows to heirs who would receive nothing today. */
+  unroutedOnly: v.boolean(),
+  sort: v.union(v.literal("newest"), v.literal("oldest")),
+}
+
+/**
+ * Every heir, with what each would actually receive.
+ *
+ * The count is the point. A list of names and relations answers nothing an
+ * owner's own screen does not, but **"which heirs would receive nothing"** is a
+ * question no other screen in the console asks — and it is the commonest silent
+ * failure in the product, because an owner who added an heir believes they are
+ * provided for.
+ *
+ * Two probes per row, both indexed, and the second deduplicated per owner:
+ * assets routed to this heir *directly*, plus assets routed to every heir at
+ * once. Counting only the first would report a `0` against an heir who is in
+ * fact covered by the default rule — a wrong answer that looks like a finding.
+ */
+export const heirsPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...heirFilterArgs },
+  handler: async (ctx, { paginationOpts, sort, unroutedOnly }) => {
+    await requireAdmin(ctx)
+
+    const result = await ctx.db
+      .query("heirs")
+      .order(sort === "oldest" ? "asc" : "desc")
+      .paginate(paginationOpts)
+
+    const owners = new Map<string, Doc<"users"> | null>()
+    const sharedCounts = new Map<string, number>()
+
+    const rows = []
+    for (const heir of result.page) {
+      const ownerKey = heir.userId as string
+      if (!owners.has(ownerKey)) {
+        owners.set(ownerKey, await ctx.db.get("users", heir.userId))
+        const shared = await ctx.db
+          .query("assetRecipients")
+          .withIndex("by_userId_and_recipientKind", (q) =>
+            q.eq("userId", heir.userId).eq("recipientKind", "allHeirs")
+          )
+          .take(200)
+        sharedCounts.set(ownerKey, shared.length)
+      }
+
+      const direct = await ctx.db
+        .query("assetRecipients")
+        .withIndex("by_userId_and_recipientHeirId", (q) =>
+          q.eq("userId", heir.userId).eq("recipientHeirId", heir._id)
+        )
+        .take(200)
+
+      const owner = owners.get(ownerKey) ?? null
+      rows.push({
+        id: heir._id,
+        name: heir.name,
+        relation: heir.relation,
+        phone: heir.phone,
+        ownerId: heir.userId,
+        ownerName: owner?.name ?? null,
+        ownerEmail: owner?.email ?? null,
+        directCount: direct.length,
+        sharedCount: sharedCounts.get(ownerKey) ?? 0,
+        receivesCount: direct.length + (sharedCounts.get(ownerKey) ?? 0),
+        routingChangedAt: heir.routingChangedAt ?? null,
+        addedAt: heir._creationTime,
+      })
+    }
+
+    // Filtered after counting, because the count is what the filter is about
+    // and it cannot be expressed as an index range. A page may therefore come
+    // back shorter than asked for; `isDone` still says whether another follows.
+    return {
+      ...result,
+      page: unroutedOnly ? rows.filter((row) => row.receivesCount === 0) : rows,
+    }
+  },
+})
+
+/**
+ * Bounded count of heirs.
+ *
+ * Unlike the claims and owners tallies this one ignores `unroutedOnly`: that
+ * filter needs two indexed probes per row to evaluate, and running them across
+ * five hundred rows to produce a number would cost more than the page it
+ * describes. The console labels this as the total rather than the filtered
+ * count, so the number is not read as something it is not.
+ */
+export const heirsTally = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx)
+    const rows = await ctx.db.query("heirs").take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
+const deviceFilterArgs = {
+  platforms: v.array(
+    v.union(v.literal("ios"), v.literal("android"), v.literal("web"))
+  ),
+  /** `true` shows only revoked rows, `false` only live ones. */
+  revoked: v.optional(v.boolean()),
+  sort: v.union(v.literal("newest"), v.literal("oldest")),
+}
+
+type DeviceFilters = {
+  platforms: string[]
+  revoked?: boolean | undefined
+  sort: "newest" | "oldest"
+}
+
+function devicesQuery(ctx: QueryCtx, filters: DeviceFilters) {
+  return ctx.db
+    .query("devices")
+    .order(filters.sort === "oldest" ? "asc" : "desc")
+    .filter((q) => {
+      const clauses = []
+      if (filters.platforms.length > 0) {
+        clauses.push(
+          q.or(
+            ...filters.platforms.map((platform) =>
+              q.eq(q.field("platform"), platform)
+            )
+          )
+        )
+      }
+      if (filters.revoked !== undefined) {
+        clauses.push(q.eq(q.field("revoked"), filters.revoked))
+      }
+      if (clauses.length === 0) return true
+      return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+    })
+}
+
+/**
+ * Every enrolled device, across every account.
+ *
+ * A device is the *daily* way into a vault — it holds MK wrapped by a
+ * hardware key — so "which devices are enrolled and when did each last open
+ * one" is the closest the console gets to a live access log. It is also where a
+ * revoked row is visible as a decision somebody made rather than as an absence.
+ *
+ * Returns no `installId`. It identifies an install and is written to the
+ * device's keystore before `register` is called; the console has no use for it
+ * and every value here is one an operator might read aloud.
+ */
+export const devicesPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...deviceFilterArgs },
+  handler: async (ctx, { paginationOpts, ...filters }) => {
+    await requireAdmin(ctx)
+    const result = await devicesQuery(ctx, filters).paginate(paginationOpts)
+
+    const owners = new Map<string, Doc<"users"> | null>()
+    for (const row of result.page) {
+      const key = row.userId as string
+      if (!owners.has(key)) {
+        owners.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      ...result,
+      page: result.page.map((row) => {
+        const owner = owners.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          name: row.name,
+          platform: row.platform,
+          revoked: row.revoked,
+          lastUnlockAt: row.lastUnlockAt ?? null,
+          registeredAt: row._creationTime,
+          ownerId: row.userId,
+          ownerName: owner?.name ?? null,
+          ownerEmail: owner?.email ?? null,
+        }
+      }),
+    }
+  },
+})
+
+/** Bounded count for the device filters. See `claimsTally`. */
+export const devicesTally = query({
+  args: deviceFilterArgs,
+  handler: async (ctx, filters) => {
+    await requireAdmin(ctx)
+    const rows = await devicesQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
 /** Audit rows scanned looking for one claim's history. */
 const HISTORY_SCAN = 400
 

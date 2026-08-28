@@ -13,6 +13,11 @@ const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
 /**
  * Every argument the owners list sends, and its cursor bookkeeping.
  *
+ * Shared rather than feature-local: `/owners` and `/subscriptions` are the
+ * same query behind different columns, so they send the same arguments and one
+ * of them importing the other would be exactly the cross-feature reach this
+ * app forbids.
+ *
  * Third of its kind, and deliberately still not abstracted: the shared part is
  * a cursor stack and a debounce, and the filters differ entirely between the
  * three. A generic hook parameterised by every filter shape would be longer
