@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
@@ -12,25 +11,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import { useMutation, useQuery } from "convex/react"
+import { useQuery } from "convex/react"
 import {
   ArrowRightIcon,
   ExternalLinkIcon,
-  InfoIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { toast } from "sonner"
 
 import { useLocale } from "@/components/locale-provider"
-import { ConfirmAction } from "@/components/confirm-action"
+import { ClaimVerdict } from "@/features/claims/components/claim-verdict"
+import { ClaimHeirLink } from "@/features/claims/components/claim-heir-link"
+import { ClaimHistory } from "@/features/claims/components/claim-history"
 import { IdentityBadge } from "@/components/identity-badge"
 import {
   claimStatusLabel,
@@ -38,18 +30,7 @@ import {
 } from "@/features/claims/lib/status"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { t } from "@/lib/i18n/locale"
-import { fmtDate, fmtNumber } from "@/lib/format"
-
-/** The three refusal reasons, in the operator's language. */
-function blockedLabel(
-  reason: string | null,
-  labels: ReturnType<typeof t<typeof CLAIMS>>
-): string | undefined {
-  if (reason === "no-heir") return labels.blockedNoHeir
-  if (reason === "identity-not-verified") return labels.blockedIdentity
-  if (reason === "past-review") return labels.blockedPastReview
-  return undefined
-}
+import { fmtDate } from "@/lib/format"
 
 /**
  * The screen where an irreversible decision gets made.
@@ -69,10 +50,6 @@ export function ClaimReview({ claimId }: { claimId: string }) {
     claimId: claimId as Id<"claims">,
   })
 
-  const setNameMatch = useMutation(api.claims.adminSetNameMatch)
-  const linkHeir = useMutation(api.claims.adminLinkHeir)
-  const [chosenHeir, setChosenHeir] = useState<string>("")
-
   if (detail === undefined)
     return <Skeleton className="h-96 w-full rounded-xl" />
   if (detail === null) {
@@ -82,16 +59,6 @@ export function ClaimReview({ claimId }: { claimId: string }) {
   const { claim, subject, heirs, priorClaims, history, blocked } = detail
   const vetoedBefore = priorClaims.some((row) => row.status === "vetoed")
 
-  async function act(run: () => Promise<unknown>, success: string) {
-    try {
-      await run()
-      toast.success(success)
-    } catch (error) {
-      // The server's message is the useful one — it names which precondition
-      // failed — so it is shown rather than replaced with a generic apology.
-      toast.error(error instanceof Error ? error.message : labels.toastFailed)
-    }
-  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -194,73 +161,12 @@ export function ClaimReview({ claimId }: { claimId: string }) {
           </CardContent>
         </Card>
 
-        {/* The heir picker. */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading text-base">
-              {labels.heirTitle}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {heirs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{labels.heirNone}</p>
-            ) : (
-              <>
-                <Select
-                  value={chosenHeir || (claim.heirId ?? "")}
-                  onValueChange={setChosenHeir}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={labels.heirPlaceholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {heirs.map((heir) => (
-                      <SelectItem key={heir.id} value={heir.id}>
-                        {heir.name} · {heir.relation} ·{" "}
-                        {labels.heirAssets.replace(
-                          "{n}",
-                          fmtNumber(heir.routedAssetCount, locale)
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <ConfirmAction
-                  tone="neutral"
-                  title={labels.linkDialogTitle}
-                  body={labels.linkDialogBody}
-                  confirmLabel={labels.linkConfirm}
-                  cancelLabel={labels.cancel}
-                  onConfirm={() =>
-                    act(
-                      () =>
-                        linkHeir({
-                          claimId: claim.id,
-                          heirId: (chosenHeir || claim.heirId) as Id<"heirs">,
-                        }),
-                      labels.toastLinked
-                    )
-                  }
-                  trigger={
-                    <Button
-                      size="sm"
-                      className="self-start"
-                      disabled={
-                        (chosenHeir || claim.heirId) === null ||
-                        (chosenHeir || claim.heirId) === ""
-                      }
-                    >
-                      {labels.linkHeir}
-                    </Button>
-                  }
-                />
-                <p className="text-xs text-muted-foreground">
-                  {labels.heirHint}
-                </p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <ClaimHeirLink
+          claimId={claim.id}
+          linkedHeirId={claim.heirId}
+          heirs={heirs}
+          locale={locale}
+        />
       </div>
 
       {/* A prior veto the backend's contact-string lockout may have missed. */}
@@ -284,102 +190,9 @@ export function ClaimReview({ claimId }: { claimId: string }) {
         </Card>
       )}
 
-      {/* The verdict. */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-heading text-base">
-            {labels.verdictTitle}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2">
-            <ConfirmAction
-              tone="neutral"
-              title={labels.approveDialogTitle}
-              body={labels.approveDialogBody}
-              confirmLabel={labels.approveConfirm}
-              cancelLabel={labels.cancel}
-              onConfirm={() =>
-                act(
-                  () => setNameMatch({ claimId: claim.id, nameMatch: true }),
-                  labels.toastApproved
-                )
-              }
-              trigger={
-                <Button disabled={blocked.approve !== null}>
-                  {labels.approve}
-                </Button>
-              }
-            />
-            <ConfirmAction
-              tone="destructive"
-              title={labels.rejectDialogTitle}
-              body={labels.rejectDialogBody}
-              confirmLabel={labels.rejectConfirm}
-              cancelLabel={labels.cancel}
-              onConfirm={() =>
-                act(
-                  () => setNameMatch({ claimId: claim.id, nameMatch: false }),
-                  labels.toastRejected
-                )
-              }
-              trigger={
-                <Button
-                  variant="destructive"
-                  disabled={blocked.reject !== null}
-                >
-                  {labels.reject}
-                </Button>
-              }
-            />
-          </div>
+      <ClaimVerdict claimId={claim.id} blocked={blocked} locale={locale} />
 
-          {blockedLabel(blocked.approve, labels) !== undefined && (
-            <p className="text-sm text-muted-foreground">
-              {blockedLabel(blocked.approve, labels)}
-            </p>
-          )}
-
-          {/* The dead end, named on the screen rather than discovered later. */}
-          <div className="flex gap-2 border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-            <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              <span className="font-medium">{labels.guardianGapTitle}. </span>
-              {labels.guardianGapBody}
-            </span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* What has already happened. */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-heading text-base">
-            {labels.historyTitle}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {history.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {labels.historyEmpty}
-            </p>
-          ) : (
-            history.map((row, index) => (
-              <div
-                key={`${row.event}-${index}`}
-                className="flex items-baseline justify-between gap-3 text-sm"
-              >
-                <span dir="ltr" className="inline-block font-mono text-xs">
-                  {row.event}
-                </span>
-                <span className="shrink-0 text-muted-foreground">
-                  {fmtDate(row.at, locale)}
-                </span>
-              </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+      <ClaimHistory history={history} locale={locale} />
     </div>
   )
 }
