@@ -1,16 +1,25 @@
 /**
- * ٦.٢ — the guardian, owner side.
+ * ٦.٢ — the guardian, owner side. The **only** guardian screen left in this
+ * app, because it is the only one an owner performs.
  *
- * This screen closes the product's largest hole. Until a guardian holds
- * S_guardian, K_rec = S_paper ⊕ S_guardian can only be rebuilt on the phone
- * that generated it — so losing the phone loses the vault, and the recovery
- * sheet printed in section ٢ promises something the system cannot do.
+ * ## What a guardian is for now
  *
- * Three states, in order: no guardian, invited-and-waiting, accepted-but-not-
- * yet-sealed. The last one is the one that matters and is easy to miss —
- * accepting only publishes the guardian's *public* key. The share is sealed by
- * the owner, on the owner's device, behind the owner's biometric, and until
- * that happens recovery is still broken. So it is a prompt, not a status line.
+ * Not recovery. `K_rec = S_paper`: the printed sheet rebuilds the vault on its
+ * own, and an owner with no guardian recovers exactly as well as one with a
+ * guardian. What a guardian does is *delivery* — they hold half of every heir's
+ * `K_h`, and they are the person who files the death claim and supplies the
+ * certificate. An owner with heirs and no guardian is leaving a vault that
+ * releases a box nobody can open.
+ *
+ * ## Two states, and the second one is a wait the owner cannot end
+ *
+ * No guardian, and invited-and-waiting. The seal ceremony that used to sit here
+ * is gone with the share it sealed. What replaced it is a genuine wait:
+ * *accepting* an invitation happens in the web app, which has not shipped, so
+ * an owner who invites today will sit at "invited" for a while. The screen says
+ * so plainly rather than showing a step they could be forgiven for thinking
+ * they had failed to complete — and `use-protection-score` marks the item
+ * blocked so it never becomes the home screen's one amber row.
  *
  * The invite token deliberately travels **out of band**: the server issues it
  * once and never sees the channel it is sent over, which is what stops the
@@ -32,7 +41,6 @@ import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
-import { useGuardianSeal } from "@/screens/protection/guardian/use-guardian-seal"
 
 export function GuardianScreen() {
   const { t } = useStrings("protection/guardian")
@@ -40,7 +48,6 @@ export function GuardianScreen() {
   const guardians = useQuery(api.guardians.list)
   const invite = useMutation(api.guardians.invite)
   const revoke = useMutation(api.guardians.revoke)
-  const { state: sealState, seal } = useGuardianSeal(t.sealTitle)
 
   const [name, setName] = useState("")
   const [relation, setRelation] = useState("")
@@ -131,15 +138,18 @@ export function GuardianScreen() {
           <View className="rounded-card bg-card gap-2 p-4">
             <View className="flex-row items-center justify-between">
               <Text variant="rowTitle">{active.name}</Text>
+              {/* Accepted *and* holding a published key is the only state that
+                  can receive an heir's share. Accepted without one cannot, so
+                  it reads as waiting rather than done. */}
               <StatusPill
                 status={
-                  active.status === "accepted" ? "confirmed" : "waiting"
+                  active.status === "accepted" && active.hasPublicKey
+                    ? "confirmed"
+                    : "waiting"
                 }
               >
-                {active.status === "accepted"
-                  ? active.hasPublicKey
-                    ? t.statusAccepted
-                    : t.statusAccepted
+                {active.status === "accepted" && active.hasPublicKey
+                  ? t.statusAccepted
                   : t.statusInvited}
               </StatusPill>
             </View>
@@ -148,39 +158,13 @@ export function GuardianScreen() {
             </Text>
           </View>
 
-          {/* Accepted but unsealed — recovery is still broken here, and this
-              is the prompt that finishes it. */}
+          {/* The wait, named. It is not a step the owner has left undone —
+              accepting happens on the web, and there is nothing to tap here. */}
           {active.status === "accepted" && active.hasPublicKey ? (
-            sealState === "done" ? (
-              <AlertBanner variant="success" description={t.sealDone} />
-            ) : (
-              <View className="rounded-card bg-terracotta-100 gap-3 p-4">
-                <Text variant="rowTitle" className="text-terracotta-800">
-                  {t.sealTitle}
-                </Text>
-                <Text
-                  variant="metaSm"
-                  className="text-terracotta-800 leading-[1.7]"
-                >
-                  {t.sealBody.replace("{name}", active.name)}
-                </Text>
-                <Button
-                  size="sm"
-                  onPress={() =>
-                    void seal(active.id, active.publicKey ?? new ArrayBuffer(0))
-                  }
-                  disabled={sealState === "sealing"}
-                >
-                  <Text>{sealState === "sealing" ? t.sealing : t.seal}</Text>
-                </Button>
-                {sealState === "failed" || sealState === "keyLost" ? (
-                  <Text variant="metaSm" className="text-terracotta-800">
-                    {sealState === "keyLost" ? t.sealKeyLost : t.sealFailed}
-                  </Text>
-                ) : null}
-              </View>
-            )
-          ) : null}
+            <AlertBanner variant="success" description={t.acceptedBody} />
+          ) : (
+            <AlertBanner variant="info" description={t.awaitingAcceptance} />
+          )}
 
           <Button variant="destructive" onPress={() => confirmRevoke(active.id)}>
             <Text>{t.revoke}</Text>

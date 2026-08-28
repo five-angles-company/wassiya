@@ -1,10 +1,14 @@
 /**
- * The device leg of the 2-of-3, and the only module in this app that touches
- * key material at rest.
+ * The device leg, and the only module in this app that touches key material at
+ * rest.
  *
- * MK and S_guardian live in the OS keystore behind `requireAuthentication`,
- * which is what makes "your fingerprint unlocks the key sealed inside this
- * device" true rather than decorative. Two consequences shape everything here:
+ * MK lives in the OS keystore behind `requireAuthentication`, which is what
+ * makes "your fingerprint unlocks the key sealed inside this device" true
+ * rather than decorative. It is the only secret here now: the guardian's
+ * recovery share is gone with the 2-of-3 (K_rec is the printed sheet alone),
+ * and the guardian *role's* keypair left with the guardian screens, because
+ * guardians are web users and this is the owner's app. Two consequences shape
+ * everything that remains:
  *
  *  1. **Reading an authenticated item prompts.** So the splash screen cannot
  *     use MK's presence as its routing probe — it would greet every cold start
@@ -26,7 +30,6 @@
 import * as Crypto from "expo-crypto"
 import * as SecureStore from "expo-secure-store"
 import { bytesToHex, hexToBytes } from "@workspace/crypto/bytes"
-import { generateGuardianKeypair } from "@workspace/crypto/guardian"
 import { generateMk } from "@workspace/crypto/keys"
 
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
@@ -34,25 +37,23 @@ import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 /** MK: 32 random bytes, generated on this device, never sent anywhere. */
 const MK_KEY = "wassiya.mk.v1"
 
-/** S_guardian: held here until a guardian accepts and it can be sealed to them. */
-const GUARDIAN_SHARE_KEY = "wassiya.sguardian.v1"
-
 /**
- * The **guardian role's** X25519 secret key — a different thing entirely from
- * `GUARDIAN_SHARE_KEY` above, despite the similar name.
+ * Two slots used to live here and both are gone.
  *
- * `wassiya.sguardian.v1` is a share of *this user's own* recovery key, held
- * while they are an owner waiting for a guardian to accept.
- * `wassiya.guardiankey.v1` is the private half of the keypair this user
- * publishes when they act as **someone else's** guardian, and it is what opens
- * every share sealed to them.
+ * `wassiya.sguardian.v1` held S_guardian, this owner's half of the old K_rec.
+ * Recovery is the sheet alone now, so there is no such share to hold.
  *
- * One person can be both at once — an owner with a vault and a guardian for
- * their sibling — so the two never share a slot. Losing this key means every
- * share sealed to this guardian is unopenable, which is why it lives behind
- * the same biometric gate as MK rather than in plain storage.
+ * `wassiya.guardiankey.v1` held the X25519 secret this user published when
+ * acting as **someone else's** guardian. Guardians are web users; nothing in
+ * the owner's app reads it any more.
+ *
+ * `clearVault` still deletes the first, so an install that predates this change
+ * does not keep a share for a key that no longer exists. The guardian keypair is
+ * deliberately *not* deleted: it is the only copy of a secret that opens shares
+ * sealed to that person, and destroying it from an app that no longer uses it
+ * would be an irreversible act taken on their behalf.
  */
-const GUARDIAN_KEY = "wassiya.guardiankey.v1"
+const LEGACY_GUARDIAN_SHARE_KEY = "wassiya.sguardian.v1"
 
 /** The unauthenticated routing probe. Contains no secret. */
 const ENROLMENT_KEY = "wassiya.enrolment.v1"
@@ -99,11 +100,14 @@ export class VaultKeyLostError extends Error {
 export type VaultEnrolment = {
   /** The `devices` row this install registered as, once it has one. */
   deviceId: string | null
-  /** True once S_guardian has been written to the keystore. */
-  hasGuardianShare: boolean
-  /** True once this device holds a guardian keypair — see `GUARDIAN_KEY`. */
-  isGuardian?: boolean
-  /** `keyring.paperVersion` at the last successful save, for diagnostics. */
+  /**
+   * `keyring.paperVersion` at the last successful save.
+   *
+   * No longer only diagnostic: the recovery wrapper is sealed under an AAD that
+   * includes this number, so recovery on a *fresh* device reads it from the
+   * server rather than from here — this copy is the local record of what this
+   * install last wrote.
+   */
   paperVersion: number | null
   enrolledAt: number
 }
@@ -127,9 +131,6 @@ export async function patchEnrolment(
   const current = await readEnrolment()
   const next: VaultEnrolment = {
     deviceId: patch.deviceId ?? current?.deviceId ?? null,
-    hasGuardianShare:
-      patch.hasGuardianShare ?? current?.hasGuardianShare ?? false,
-    isGuardian: patch.isGuardian ?? current?.isGuardian ?? false,
     paperVersion: patch.paperVersion ?? current?.paperVersion ?? null,
     enrolledAt: current?.enrolledAt ?? Date.now(),
   }
@@ -189,34 +190,6 @@ export async function readMk(
 }
 
 /**
- * S_guardian stays here until a guardian accepts, at which point it is sealed
- * to their X25519 key and this copy is deleted. Written *before* `keyring.save`
- * so a crash between the two cannot leave a server-side keyring row that this
- * device is then unable to rotate.
- */
-export async function storeGuardianShare(
-  share: Uint8Array,
-  authenticationPrompt: string
-): Promise<void> {
-  await SecureStore.setItemAsync(
-    GUARDIAN_SHARE_KEY,
-    bytesToHex(share),
-    authenticated(authenticationPrompt)
-  )
-}
-
-export async function readGuardianShare(
-  authenticationPrompt: string
-): Promise<Uint8Array> {
-  const hex = await SecureStore.getItemAsync(
-    GUARDIAN_SHARE_KEY,
-    authenticated(authenticationPrompt)
-  )
-  if (hex === null) throw new VaultKeyLostError("The guardian share")
-  return hexToBytes(hex)
-}
-
-/**
  * Forget this device's copy of everything. Used when a read proves the
  * keystore has invalidated the key, so the app stops claiming an enrolment it
  * cannot honour. The install id survives — it identifies the handset, not the
@@ -224,60 +197,11 @@ export async function readGuardianShare(
  */
 export async function clearVault(): Promise<void> {
   await SecureStore.deleteItemAsync(MK_KEY, { keychainService: VAULT_SERVICE })
-  await SecureStore.deleteItemAsync(GUARDIAN_SHARE_KEY, {
+  // Still cleared, for installs that predate the single-share recovery model.
+  await SecureStore.deleteItemAsync(LEGACY_GUARDIAN_SHARE_KEY, {
     keychainService: VAULT_SERVICE,
   })
   await SecureStore.deleteItemAsync(ENROLMENT_KEY)
-}
-
-/**
- * Generate this device's guardian keypair and seal the secret half here.
- *
- * Called once, when the user accepts their first guardian invitation. The
- * public half is what they publish to `guardians.accept`; the secret half never
- * leaves this device, which is the entire reason a sealed share is safe for the
- * server to hold.
- *
- * Returns the public key so the caller can publish it without a second
- * biometric prompt.
- */
-export async function generateAndStoreGuardianKey(
-  authenticationPrompt: string
-): Promise<Uint8Array> {
-  ensureWebCrypto()
-  const { secretKey, publicKey } = generateGuardianKeypair()
-  await SecureStore.setItemAsync(
-    GUARDIAN_KEY,
-    bytesToHex(secretKey),
-    authenticated(authenticationPrompt)
-  )
-  secretKey.fill(0)
-  return publicKey
-}
-
-/**
- * This device's guardian secret key, behind the biometric prompt.
- *
- * Throws `VaultKeyLostError` when the keystore has invalidated it — for a
- * guardian that is not merely inconvenient: every share sealed to them becomes
- * unopenable, and the owners who chose them have to enrol a replacement. The
- * caller must surface it rather than retrying.
- */
-export async function readGuardianKey(
-  authenticationPrompt: string
-): Promise<Uint8Array> {
-  const hex = await SecureStore.getItemAsync(
-    GUARDIAN_KEY,
-    authenticated(authenticationPrompt)
-  )
-  if (hex === null) throw new VaultKeyLostError("The guardian key")
-  return hexToBytes(hex)
-}
-
-/** Whether this device has ever acted as a guardian. Unauthenticated probe. */
-export async function hasGuardianKey(): Promise<boolean> {
-  const enrolment = await readEnrolment()
-  return enrolment?.isGuardian === true
 }
 
 /**

@@ -46,14 +46,11 @@ import { useStrings } from "@/i18n/use-strings"
  * should have to be *chosen* into the attention band, because the band's value
  * is entirely in how rarely it is used.
  */
-// A guardian confirmation joins the attention band because, unlike the owner
-// claim events below it, there is no full-screen interrupt for it — this row is
-// the only way a guardian learns a claim is waiting.
-const NEEDS_ACTION = new Set([
-  "recovery.attempted",
-  "checkin.due",
-  "claim.guardian_review",
-])
+// `claim.guardian_review` used to sit here too. It is addressed to a *guardian*,
+// and guardians are web users — mobile is the owner's app — so it no longer
+// reaches this screen at all. It stays mapped in `titleFor` because history
+// rows written before the split are still readable.
+const NEEDS_ACTION = new Set(["recovery.attempted", "checkin.due"])
 
 export function NotificationsScreen() {
   const { t, locale } = useStrings("notifications")
@@ -194,7 +191,6 @@ function titleFor(
 function bodyFor(kind: string, t: Record<string, string>): string {
   if (kind === "recovery.attempted") return t.recoveryAttemptBody!
   if (kind === "checkin.due") return t.checkinDueBody!
-  if (kind === "claim.guardian_review") return t.claimGuardianReviewBody!
   return t.generic!
 }
 
@@ -207,27 +203,13 @@ function actionsFor(kind: string, t: Record<string, string>): React.ReactNode {
     )
   }
   if (kind === "recovery.attempted") {
-    // "Wasn't me" navigates rather than acting inline: a recovery attempt is
-    // answered by rotating the sheet and reviewing the guardian, not by a
-    // button on a list row. The Protection Centre used to hold both; the
-    // guardian is the actionable half and now lives on the plan tab.
+    // "Wasn't me" navigates rather than acting inline, and it now points at the
+    // sheet. The answer used to be "rotate the sheet and review your guardian";
+    // the guardian is no longer part of recovery, so reprinting is the whole of
+    // it — and it is the only thing that invalidates the sheet that was used.
     return (
-      <Button size="sm" onPress={() => router.push("/protection/guardian")}>
+      <Button size="sm" onPress={() => router.push("/setup/recovery-kit")}>
         <Text>{t.wasntMe}</Text>
-      </Button>
-    )
-  }
-  if (kind === "claim.guardian_review") {
-    // Navigates, never confirms. Confirming a death is biometric-gated and
-    // happens on its own screen — the same rule the owner's veto follows, and
-    // for the mirrored reason: a button on a list row would let whoever is
-    // holding the phone advance a claim toward releasing someone's vault.
-    return (
-      <Button
-        size="sm"
-        onPress={() => router.push("/protection/guardian/claim")}
-      >
-        <Text>{t.openGuardianClaim}</Text>
       </Button>
     )
   }

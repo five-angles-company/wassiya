@@ -28,7 +28,7 @@ import {
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
 import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
-import { GUARDIAN_APPROVE, RECOVERY } from "@/i18n/strings/recovery"
+import { RECOVERY } from "@/i18n/strings/recovery"
 import {
   AUDIT,
   AUTO_LOCK,
@@ -49,9 +49,7 @@ import {
 import {
   CHECKIN,
   CLAIM_VETO,
-  GUARDIAN_CLAIM,
   GUARDIAN,
-  GUARDIAN_ACCEPT,
   PROTECTION,
 } from "@/i18n/strings/protection"
 
@@ -104,14 +102,14 @@ export const SCREEN_STRINGS = {
   "heirs/preview": HEIR_PREVIEW,
 
   protection: PROTECTION,
+  // The owner's own screen. The guardian-side sets that used to sit beside it
+  // — accept, claim, and the recovery approval — left with those screens:
+  // guardians are web users, and mobile is the owner's app.
   "protection/guardian": GUARDIAN,
-  "protection/guardian/accept": GUARDIAN_ACCEPT,
   "protection/checkin": CHECKIN,
   "protection/claim": CLAIM_VETO,
-  "protection/guardian/claim": GUARDIAN_CLAIM,
 
   recovery: RECOVERY,
-  "recovery/approve": GUARDIAN_APPROVE,
 } as const
 
 export type ScreenName = keyof typeof SCREEN_STRINGS

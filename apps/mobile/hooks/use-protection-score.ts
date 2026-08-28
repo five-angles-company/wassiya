@@ -14,11 +14,11 @@
  * anticipates exactly this. Two have been added since that drawing, and both
  * are load-bearing rather than cosmetic:
  *
- *  - **الوصي.** Without a guardian, `K_rec = S_paper ⊕ S_guardian` can only be
- *    rebuilt on the device that made it, so the printed sheet — which is
- *    already counted here — does not actually recover anything. Counting the
- *    sheet and not the guardian would report a recovery path that does not
- *    exist.
+ *  - **الوصي.** Not for recovery any more — `K_rec = S_paper`, so the printed
+ *    sheet recovers the vault on its own. The guardian is what makes *delivery*
+ *    work: `K_h = S_server_h ⊕ S_guardian_h`, so a vault with heirs, routing
+ *    and no guardian releases a box nobody can open. Still load-bearing, but
+ *    it now ranks below the sheet rather than above it.
  *  - **التوجيه.** A vault with heirs but no routing delivers nothing to any of
  *    them. "Has heirs" and "reaches someone" are different facts.
  *
@@ -26,8 +26,17 @@
  *
  * `protection-score-list` allows exactly one `needed` item at a time; the rest
  * fall to `later`. A screen where six things are urgent ranks nothing. The
- * array order below **is** the ranking, and the guardian sits high for the
- * reason above.
+ * array order below **is** the ranking.
+ *
+ * ## An item the owner cannot close is never the amber one
+ *
+ * `blocked` marks an outstanding item that is waiting on somebody else. The
+ * guardian is the live case: the owner sends an invitation from this app, but
+ * *accepting* happens in the web app, which has not shipped. Promoting that to
+ * the single amber row would accuse the owner, every time they open the app, of
+ * a step they have no way to take — so a blocked item stays `later`, wears the
+ * waiting pill, and is skipped for `topGap`. It still counts against the score,
+ * because the vault really is incomplete.
  *
  * ## This hook never needs the vault unlocked
  *
@@ -42,7 +51,7 @@ import { api } from "@workspace/backend/api"
 import type { ProtectionItem } from "@workspace/ui-native/components/wassiya/protection-score-list"
 import type { Href } from "expo-router"
 
-import { isGuardianLive } from "@/lib/guardian"
+import { isGuardianLive, isGuardianPending } from "@/lib/guardian"
 
 export type ProtectionId =
   | "identity"
@@ -57,6 +66,8 @@ export type ProtectionEntry = ProtectionItem & {
   id: ProtectionId
   /** Where to go to close this gap, when there is somewhere to go. */
   href?: Href
+  /** Outstanding, but waiting on someone else — never the amber row. */
+  blocked?: boolean
 }
 
 export type ProtectionScoreResult = {
@@ -83,7 +94,8 @@ export function useProtectionScore(
   const items = useMemo((): ProtectionEntry[] => {
     // Shared with the plan tab — see `lib/guardian.ts` for why this predicate
     // may exist in exactly one place.
-    const guardianLive = isGuardianLive(guardians, keyring) === true
+    const guardianLive = isGuardianLive(guardians) === true
+    const guardianPending = isGuardianPending(guardians) === true
 
     return [
       {
@@ -93,17 +105,20 @@ export function useProtectionScore(
         href: "/setup/kyc",
       },
       { id: "key", label: labels.key, done: keyring !== null },
-      {
-        id: "guardian",
-        label: labels.guardian,
-        done: guardianLive,
-        href: "/protection/guardian",
-      },
+      // The sheet outranks the guardian now: it is the whole of recovery, while
+      // the guardian is delivery, which only matters after there are heirs.
       {
         id: "sheet",
         label: labels.sheet,
         done: keyring?.paperPrintedAt != null,
         href: "/setup/recovery-kit",
+      },
+      {
+        id: "guardian",
+        label: labels.guardian,
+        done: guardianLive,
+        blocked: guardianPending,
+        href: "/protection/guardian",
       },
       {
         id: "heirs",
@@ -132,7 +147,9 @@ export function useProtectionScore(
     let promoted = false
     return items.map((item) => {
       if (item.done) return item
-      if (!promoted) {
+      // A blocked item is outstanding but not actionable, so it can never be
+      // the one amber row — see the header.
+      if (!promoted && item.blocked !== true) {
         promoted = true
         return { ...item, priority: "needed" as const }
       }
@@ -145,7 +162,7 @@ export function useProtectionScore(
     ranked,
     earned: items.filter((item) => item.done).length,
     total: items.length,
-    topGap: items.find((item) => !item.done) ?? null,
+    topGap: items.find((item) => !item.done && item.blocked !== true) ?? null,
     loading:
       me === undefined ||
       keyring === undefined ||

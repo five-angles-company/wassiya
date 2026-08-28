@@ -23,18 +23,16 @@ pnpm --filter @workspace/crypto test
              ┌─────────────────────────────┼─────────────────────────────┐
              │                             │                             │
     ┌────────┴────────┐          ┌─────────┴─────────┐         ┌─────────┴─────────┐
-    │ DAILY UNLOCK    │          │ RECOVERY (2-of-2) │         │ PER-ASSET         │
+    │ DAILY UNLOCK    │          │ RECOVERY (1-of-1) │         │ PER-ASSET         │
     │                 │          │                   │         │                   │
     │ Enc(K_device,MK)│          │ Enc(K_rec, MK)    │         │ Enc(MK, DEKᵢ)     │
     │ K_device is a   │          │ K_rec = S_paper   │         │ DEKᵢ random per   │
-    │ hardware key    │          │       ⊕ S_guardian│         │ asset             │
-    │ gated by        │          │                   │         │                   │
-    │ biometrics      │          │ S_paper → printed │         │ Enc(DEKᵢ, content)│
-    │ (outside this   │          │   sheet only      │         │   chunked, 1 MiB  │
-    │  package)       │          │ S_guardian →      │         │                   │
-    └─────────────────┘          │   sealed to the   │         └─────────┬─────────┘
-                                 │   guardian's      │                   │
-                                 │   X25519 pubkey   │                   │
+    │ hardware key    │          │                   │         │ asset             │
+    │ gated by        │          │ S_paper → printed │         │                   │
+    │ biometrics      │          │   sheet only      │         │ Enc(DEKᵢ, content)│
+    │ (outside this   │          │                   │         │   chunked, 1 MiB  │
+    │  package)       │          │ AAD binds userId  │         │                   │
+    └─────────────────┘          │   + paperVersion  │         └─────────┬─────────┘
                                  └───────────────────┘                   │
                                                                          │
    HEIR RELEASE — heirs never see MK, only the DEKs routed to them ───────┘
@@ -45,7 +43,8 @@ pnpm --filter @workspace/crypto test
    │  S_server_h   held by the backend, released ONLY when a claim reaches     │
    │               "released" (verified heir + certificate name match +        │
    │               guardian confirmation + veto window elapsed)                │
-   │  S_guardian_h sealed to the guardian, same construction as recovery       │
+   │  S_guardian_h sealed to the guardian's X25519 pubkey. This is the ONLY    │
+   │               place a guardian holds key material — recovery has none.    │
    │                                                                          │
    │  Rebuilt by the owner's device on every routing change.                   │
    └──────────────────────────────────────────────────────────────────────────┘
@@ -145,9 +144,13 @@ this package.
 
 Rotation is re-wrapping, never re-keying MK — the assets stay readable.
 
-- New paper sheet → `rotatePaperShare(mk, sGuardian)`, bump `paperVersion`, save
-  the new `mkWrappedByRecovery`. The old sheet stops working immediately.
-- New guardian → `rotateGuardianShare(mk, sPaper)`, seal the new share to the
-  new guardian's key. The outgoing guardian's copy becomes worthless.
+- New paper sheet → `rotatePaperShare(mk, userId, nextPaperVersion)`, then save
+  the wrapper **and** that version together. The old sheet stops working the
+  moment the new wrapper lands — and not a moment before, which is why the
+  caller must show the new code and get it acknowledged *first*. Saving on the
+  way in turns a theft mitigation into a total-loss bug: the wrapper would then
+  stand under a code printed nowhere, with no guardian to fall back on.
+- New guardian → nothing to re-wrap for recovery; they hold no share of K_rec.
+  Re-seal each heir's `S_guardian_h` to the new guardian's key instead.
 - Routing change → `makeHeirShares()` + `buildReleaseBundle` for every affected
   heir, then `release.saveBundles`. Old bundles and old shares stop matching.

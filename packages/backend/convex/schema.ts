@@ -98,16 +98,16 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_and_installId", ["userId", "installId"]),
 
-  // One active row per user: the recovery leg of the 2-of-3. The server holds
-  // the wrapper and the guardian's sealed half, and never the paper share.
+  // One active row per user: the recovery leg, which is 1-of-1. The server
+  // holds the wrapper and never the paper share — and no longer holds a
+  // guardian half, because K_rec = S_paper alone. `paperVersion` is bound into
+  // the wrapper's AAD, so the two are written together or not at all.
   keyring: defineTable({
     userId: v.id("users"),
     mkWrappedByRecovery: v.bytes(),
     paperVersion: v.number(),
     paperPrintedAt: v.optional(v.number()),
     paperUsedAt: v.optional(v.number()),
-    guardianId: v.optional(v.id("guardians")),
-    guardianShareSealed: v.optional(v.bytes()),
     rotatedAt: v.number(),
   }).index("by_userId", ["userId"]),
 

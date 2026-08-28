@@ -23,7 +23,7 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { FileText, Fingerprint, Languages, LogOut, ScrollText, ShieldCheck, Smartphone, UserRound, Wallet } from "lucide-react-native"
+import { FileText, Fingerprint, Languages, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -35,9 +35,7 @@ export function SettingsScreen() {
   // Only for the row's label — the screen it opens owns the rest.
   const { t: p } = useStrings("settings/profile")
   const { t: autoLock } = useStrings("settings/lock")
-  const { t: approve } = useStrings("recovery/approve")
   const me = useQuery(api.users.me)
-  const guardianships = useQuery(api.guardians.guardianFor)
   const saveProfile = useMutation(api.users.saveProfile)
   const { signOut } = useClerk()
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
@@ -125,32 +123,19 @@ export function SettingsScreen() {
           divider
           onPress={() => router.push("/settings/devices")}
         />
+        {/*
+          The app's second persona used to have a row here — the guardian's
+          recovery ceremony. Both halves of the reason it existed are gone: a
+          guardian is no longer part of recovery, and a guardian is no longer a
+          user of *this* app. Mobile is the owner's app; everything a guardian
+          does happens on the web. So this is a deletion, not a move.
+        */}
         <SettingsRow
           icon={ScrollText}
           label={t.rowAudit}
           chevron
-          divider={guardianships !== undefined && guardianships.length > 0}
           onPress={() => router.push("/settings/audit")}
         />
-        {/*
-          The app's second persona, and the only place it can live.
-
-          A guardian you *name* is a person in your plan, so that row moved to
-          the plan tab. Being someone else's guardian is a role you hold as a
-          user of this app — it belongs here. It had no home at all until now,
-          which is why the approve screen once shipped unreachable.
-
-          `guardianFor` is server-derived from accepted invitations, so this is
-          not a door anyone can find by guessing.
-        */}
-        {guardianships !== undefined && guardianships.length > 0 ? (
-          <SettingsRow
-            icon={ShieldCheck}
-            label={approve.title}
-            chevron
-            onPress={() => router.push("/recovery/approve")}
-          />
-        ) : null}
       </Group>
 
       <Group label={t.groupPlan}>

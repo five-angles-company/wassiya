@@ -298,8 +298,8 @@ export const DEVICES = {
   revokeTitle: { ar: "إلغاء هذا الجهاز؟", en: "Remove this device?" },
   // The honest limit. Revoking does not reach into a lost phone.
   revokeBody: {
-    ar: "سيختفي من قائمتك ويُسجَّل ذلك. لا يمحو هذا مفتاح الخزنة من الجهاز نفسه — إن فقدته فعلاً، أعد إصدار وثيقة الاسترداد ونصيب الوصي.",
-    en: "It leaves your list and the change is logged. This does not erase the vault key from the device itself — if it is genuinely lost, reissue your recovery sheet and guardian share.",
+    ar: "سيختفي من قائمتك ويُسجَّل ذلك. لا يمحو هذا مفتاح الخزنة من الجهاز نفسه — إن فقدته فعلاً، أعد إصدار وثيقة الاسترداد.",
+    en: "It leaves your list and the change is logged. This does not erase the vault key from the device itself — if it is genuinely lost, reissue your recovery sheet.",
   },
   revokeConfirm: { ar: "ألغِ", en: "Remove" },
   cancel: { ar: "إلغاء", en: "Cancel" },

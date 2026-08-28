@@ -1,10 +1,18 @@
-// The guardian: the second holder in the 2-of-3, and the human check on a
-// death claim.
+// The guardian: the human check on a death claim, and the second holder of
+// every heir's release key.
 //
-// A guardian never holds MK. They hold one XOR share — of K_rec for recovery,
-// and of K_h for each heir — sealed to their own X25519 key, which only their
-// device can open. This deployment stores the sealed blobs and hands them back
-// to that one guardian; it can read none of them.
+// **They are no longer part of recovery.** K_rec is the printed sheet alone, so
+// a guardian holds one XOR share of K_h per heir and nothing of K_rec. Recovery
+// is 1-of-1; release stays 2-of-2. See `packages/crypto/src/recovery.ts` for
+// why storing the old guardian half server-side was the worse option.
+//
+// A guardian never holds MK. Their shares are sealed to their own X25519 key,
+// which only their device can open. This deployment stores the sealed blobs and
+// hands them back to that one guardian; it can read none of them.
+//
+// **Guardians live in the web app; mobile is the owner's app.** The owner-side
+// functions here (`list`, `invite`, `revoke`) are called from mobile; every
+// guardian-side one is called from web. See AGENTS.md.
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
@@ -34,12 +42,16 @@ export const list = query({
       hasPublicKey: row.x25519PublicKey !== undefined,
       /**
        * The guardian's published X25519 **public** key, which the owner's
-       * device needs in order to seal S_guardian to them.
+       * device needs in order to seal each heir's S_guardian_h to them.
        *
        * Safe to return: a public key is the half meant to be published, and
        * this deployment already stores it in the clear. What it cannot do is
        * open anything — the secret half never leaves the guardian's device, so
-       * a server holding this key still cannot reconstruct K_rec.
+       * a server holding this key still cannot reconstruct any K_h.
+       *
+       * It is also what "live" now means. A guardian used to count once their
+       * recovery share was sealed; that share is gone, so the published key is
+       * the thing that makes a guardian usable — see `isGuardianLive`.
        */
       publicKey: row.x25519PublicKey ?? null,
       inviteExpiresAt: row.inviteExpiresAt,
@@ -228,44 +240,6 @@ export const pendingApprovals = query({
       }
     }
     return pending
-  },
-})
-
-/**
- * The guardian's half of the recovery ceremony.
- *
- * Returns the sealed share **to its own guardian and to nobody else**. They
- * decrypt it locally with `openFromGuardian` and hand the plaintext to the
- * owner's new device out of band — the plaintext never traverses this
- * deployment, which is the whole point of sealing it in the first place.
- */
-export const approveRecovery = mutation({
-  args: { guardianId: v.id("guardians") },
-  handler: async (ctx, { guardianId }) => {
-    const guardianUser = await getCurrentUserOrThrow(ctx)
-    const row = await ctx.db.get("guardians", guardianId)
-    if (
-      row === null ||
-      row.status !== "accepted" ||
-      row.guardianUserId !== guardianUser._id
-    ) {
-      throw new Error("Not authorised")
-    }
-
-    const keyring = await ctx.db
-      .query("keyring")
-      .withIndex("by_userId", (q) => q.eq("userId", row.userId))
-      .unique()
-    if (keyring?.guardianShareSealed === undefined) {
-      throw new Error("Not found")
-    }
-
-    await writeAudit(ctx, {
-      userId: row.userId,
-      event: "guardian.recovery_approved",
-      meta: { guardianId },
-    })
-    return { guardianShareSealed: keyring.guardianShareSealed }
   },
 })
 

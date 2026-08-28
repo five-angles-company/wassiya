@@ -244,11 +244,7 @@ export const activation = query({
     const keyrings = await ctx.db.query("keyring").take(SCAN_CAP + 1)
     const keyringCapped = keyrings.length > SCAN_CAP
     const vaults = keyrings.slice(0, SCAN_CAP)
-    const sealedFor = new Set(
-      vaults
-        .filter((row) => row.guardianShareSealed !== undefined)
-        .map((row) => row.userId as string)
-    )
+
     const printed = vaults.filter((row) => row.paperPrintedAt !== undefined)
 
     // Owners with at least one heir. `heirs` carries no ciphertext column, so
@@ -258,11 +254,11 @@ export const activation = query({
       heirRows.slice(0, SCAN_CAP).map((row) => row.userId as string)
     )
 
-    // A guardian counts only when the invitation was accepted **and** the
-    // owner's device has sealed a share to them. `apps/mobile/lib/guardian.ts`
-    // exists so that answer is never computed twice, and its reasoning applies
-    // exactly here: "an accepted invitation with no sealed share is a guardian
-    // who cannot help recover anything."
+    // A guardian counts only when the invitation was accepted **and** they have
+    // published an X25519 key — the key is what an heir bundle gets sealed to,
+    // so an accepted guardian without one can help with nothing.
+    // `apps/mobile/lib/guardian.ts` exists so this answer is never computed
+    // twice; keep the two in step.
     const accepted = await ctx.db
       .query("guardians")
       .withIndex("by_status", (q) => q.eq("status", "accepted"))
@@ -271,8 +267,8 @@ export const activation = query({
     const guardianLive = new Set(
       accepted
         .slice(0, SCAN_CAP)
+        .filter((row) => row.x25519PublicKey !== undefined)
         .map((row) => row.userId as string)
-        .filter((userId) => sealedFor.has(userId))
     )
 
     // Five indexed ranges rather than a scan — the index this table was built
@@ -491,12 +487,13 @@ export const risk = query({
       const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
         identity: owner.identityStatus === "verified",
         key: keyring !== null,
-        // Accepted AND sealed. `apps/mobile/lib/guardian.ts`: "an accepted
-        // invitation with no sealed share is a guardian who cannot help recover
-        // anything."
-        guardian:
-          guardians.some((row) => row.status === "accepted") &&
-          keyring?.guardianShareSealed !== undefined,
+        // Accepted AND has published a key. The rule used to be "accepted and
+        // their recovery share is sealed"; that share no longer exists, so what
+        // makes a guardian usable is the X25519 key an heir bundle can be
+        // sealed to. Kept in step with `apps/mobile/lib/guardian.ts`.
+        guardian: guardians.some(
+          (row) => row.status === "accepted" && row.x25519PublicKey !== undefined
+        ),
         sheet: keyring?.paperPrintedAt !== undefined,
         heirs: heirs.length > 0,
         routing: routed,

@@ -27,7 +27,7 @@ export { open, seal, unwrap, wrap } from "./wrap"
 export {
   type RecoveryMaterial,
   recoverMk,
-  rotateGuardianShare,
+  recoveryAad,
   rotatePaperShare,
   splitRecovery,
 } from "./recovery"

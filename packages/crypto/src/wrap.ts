@@ -56,17 +56,35 @@ export function open(
  * Wrap one key under another (MK under a device/recovery KEK, a DEK under MK).
  * Identical to {@link seal}; the separate name marks the call sites where the
  * plaintext is key material, so the 32-byte length check applies to both sides.
+ *
+ * `aad` binds the wrapper to the context it was built for. It stays optional
+ * because a DEK under MK is already bound by living inside that one vault — but
+ * the recovery wrapper always passes one. That wrapper is now the *single*
+ * factor guarding a vault, so it must not be replayable against another account
+ * or against an older paper sheet. See `recoveryAad` in `recovery.ts`.
  */
-export function wrap(key: Uint8Array, kek: Uint8Array): Uint8Array {
+export function wrap(
+  key: Uint8Array,
+  kek: Uint8Array,
+  aad?: Uint8Array
+): Uint8Array {
   assertKey(key, "key")
   assertKey(kek, "kek")
-  return seal(kek, key)
+  return seal(kek, key, aad)
 }
 
-/** Reverse of {@link wrap}. Throws on a wrong KEK or a tampered wrapper. */
-export function unwrap(ciphertext: Uint8Array, kek: Uint8Array): Uint8Array {
+/**
+ * Reverse of {@link wrap}. Throws on a wrong KEK, a tampered wrapper, or an
+ * `aad` differing by so much as a byte from the one it was wrapped under — all
+ * three are the same failure here, deliberately.
+ */
+export function unwrap(
+  ciphertext: Uint8Array,
+  kek: Uint8Array,
+  aad?: Uint8Array
+): Uint8Array {
   assertKey(kek, "kek")
-  const key = open(ciphertext, kek)
+  const key = open(ciphertext, kek, aad)
   assertKey(key, "unwrapped key")
   return key
 }

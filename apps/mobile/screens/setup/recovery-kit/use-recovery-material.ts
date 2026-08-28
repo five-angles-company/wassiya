@@ -2,21 +2,29 @@
  * Produces the paper share for 2.4, and persists the only piece of it the
  * server is ever allowed to see.
  *
- * The ordering here is the security-critical part of this session:
+ * The ordering here is the security-critical part:
  *
- *  1. `S_guardian` is written to the device keystore **before** `keyring.save`.
- *     Reissuing a sheet needs it to re-derive the wrapper, so a crash that left
- *     a server-side keyring row without a local guardian share would produce a
- *     device that can never rotate — unrecoverable, not merely inconvenient.
- *  2. `S_paper` is **never persisted anywhere**. It lives in this hook's return
+ *  1. `S_paper` is **never persisted anywhere**. It lives in this hook's return
  *     value for the life of one screen and is dropped once the sheet is out.
  *     That is what makes "we keep no copy" literally true.
- *  3. Only `mkWrappedByRecovery` crosses the wire. It is MK under
- *     K_rec = S_paper ⊕ S_guardian, and the deployment holds neither operand.
+ *  2. Only `mkWrappedByRecovery` crosses the wire. It is MK under
+ *     K_rec = S_paper, and the deployment holds neither operand.
+ *  3. The wrapper is sealed under an AAD of the owner's id and the paper
+ *     version it is *about to become*, so the version has to be decided here,
+ *     before the ciphertext exists — which is why `save` is told the number
+ *     rather than choosing it. It refuses a version that does not follow from
+ *     the stored row, so the two can never drift apart.
  *
- * Re-entering after abandoning an unprinted sheet **rotates** rather than
- * reprints: `S_paper` is gone, so the honest move is a new paper version, which
- * is exactly what `rotatingPaper` is for. The abandoned code stops working.
+ * ## One path, where there used to be two
+ *
+ * Issuing and reissuing used to differ: a reissue had to read `S_guardian` out
+ * of the keystore to re-derive K_rec. With the guardian gone from recovery,
+ * both are the same act — mint a fresh share, wrap, save — and the only thing
+ * that varies is the version number.
+ *
+ * Re-entering after abandoning an unprinted sheet therefore still **rotates**
+ * rather than reprints: `S_paper` is gone, so the honest move is a new paper
+ * version. The abandoned code stops working the moment the new wrapper lands.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "convex/react"
@@ -26,13 +34,7 @@ import { rotatePaperShare, splitRecovery } from "@workspace/crypto/recovery"
 
 import { base64UrlEncode } from "@/lib/base64"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
-import {
-  patchEnrolment,
-  readGuardianShare,
-  readMk,
-  storeGuardianShare,
-  VaultKeyLostError,
-} from "@/lib/secure-vault"
+import { patchEnrolment, readMk, VaultKeyLostError } from "@/lib/secure-vault"
 
 /** Versioned QR prefix, so a scanner can tell a blob from a paper code. */
 const QR_PREFIX = "WSYB1:"
@@ -53,15 +55,23 @@ export type RecoveryMaterialState =
   | { status: "error"; reason: "keyLost" | "failed" }
 
 /**
- * @param keyringLoaded whether `keyring.get()` has answered yet. **Not
- *   optional.** `isReissue` is derived from that query, and it reads `false`
- *   while it is still in flight — so starting before it resolves would take
- *   the issue path on a device that needed the reissue one, silently replacing
- *   a guardian share that a sealed copy may already depend on.
+ * Everything the wrapper's AAD needs, or `null` while the queries behind it are
+ * still in flight.
+ *
+ * One object rather than two arguments, deliberately. The previous shape took a
+ * `keyringLoaded` flag beside a derived boolean, because "still loading" and
+ * "no keyring yet" both read as `false` and only one of them was true — a
+ * caller who forgot the flag would start on the wrong branch. Here there is no
+ * flag to forget: until every input has answered there is nothing to pass.
  */
+export type RecoveryContext = {
+  userId: string
+  /** `keyring.paperVersion`, or `null` when no keyring row exists yet. */
+  currentPaperVersion: number | null
+}
+
 export function useRecoveryMaterial(
-  keyringLoaded: boolean,
-  isReissue: boolean,
+  context: RecoveryContext | null,
   authPrompt: string
 ): { state: RecoveryMaterialState; wipe: () => void } {
   const save = useMutation(api.keyring.save)
@@ -72,57 +82,55 @@ export function useRecoveryMaterial(
   // twice would issue two paper versions and invalidate the first silently.
   const started = useRef(false)
 
-  const prepare = useCallback(async () => {
-    try {
-      // `splitRecovery` and `rotatePaperShare` both draw fresh randomness.
-      ensureWebCrypto()
-      const mk = await readMk(authPrompt)
+  const prepare = useCallback(
+    async (ctx: RecoveryContext) => {
+      try {
+        // Both mint functions draw fresh randomness.
+        ensureWebCrypto()
+        const mk = await readMk(authPrompt)
 
-      let sPaper: Uint8Array
-      let mkWrappedByRecovery: Uint8Array
+        // Always a rotation from the server's point of view, so the next
+        // version is this one plus one — or the first, when there is no row.
+        const paperVersion =
+          ctx.currentPaperVersion === null ? 1 : ctx.currentPaperVersion + 1
 
-      if (isReissue) {
-        const sGuardian = await readGuardianShare(authPrompt)
-        const rotated = rotatePaperShare(mk, sGuardian)
-        sPaper = rotated.sPaper
-        mkWrappedByRecovery = rotated.mkWrappedByRecovery
-      } else {
-        const material = splitRecovery(mk)
-        // Persist the guardian share first — see the ordering note above.
-        await storeGuardianShare(material.sGuardian, authPrompt)
-        sPaper = material.sPaper
-        mkWrappedByRecovery = material.mkWrappedByRecovery
-      }
+        const { sPaper, mkWrappedByRecovery } =
+          ctx.currentPaperVersion === null
+            ? splitRecovery(mk, ctx.userId, paperVersion)
+            : rotatePaperShare(mk, ctx.userId, paperVersion)
 
-      const { paperVersion } = await save({
-        mkWrappedByRecovery: toArrayBuffer(mkWrappedByRecovery),
-        rotatingPaper: true,
-      })
-      await patchEnrolment({ hasGuardianShare: true, paperVersion })
-
-      const code = encodePaperCode(sPaper, paperVersion)
-      setState({
-        status: "ready",
-        material: {
-          code,
-          groups: code.split("-"),
-          qrPayload: QR_PREFIX + base64UrlEncode(mkWrappedByRecovery),
+        await save({
+          mkWrappedByRecovery: toArrayBuffer(mkWrappedByRecovery),
           paperVersion,
-        },
-      })
-    } catch (error) {
-      setState({
-        status: "error",
-        reason: error instanceof VaultKeyLostError ? "keyLost" : "failed",
-      })
-    }
-  }, [authPrompt, isReissue, save])
+          rotatingPaper: true,
+        })
+        await patchEnrolment({ paperVersion })
+
+        const code = encodePaperCode(sPaper, paperVersion)
+        setState({
+          status: "ready",
+          material: {
+            code,
+            groups: code.split("-"),
+            qrPayload: QR_PREFIX + base64UrlEncode(mkWrappedByRecovery),
+            paperVersion,
+          },
+        })
+      } catch (error) {
+        setState({
+          status: "error",
+          reason: error instanceof VaultKeyLostError ? "keyLost" : "failed",
+        })
+      }
+    },
+    [authPrompt, save]
+  )
 
   useEffect(() => {
-    if (!keyringLoaded || started.current) return
+    if (context === null || started.current) return
     started.current = true
-    void prepare()
-  }, [keyringLoaded, prepare])
+    void prepare(context)
+  }, [context, prepare])
 
   const wipe = useCallback(() => setState({ status: "wiped" }), [])
 

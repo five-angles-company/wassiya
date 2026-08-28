@@ -4,8 +4,12 @@
  * Board copy, verbatim. Three constraints the board states in prose and this
  * file has to honour:
  *
- *  - **Never "one key".** 2.2 teaches a 2-of-3 model; any copy that implies a
- *    single key contradicts the product's security model, not just its tone.
+ *  - **Two keys, two jobs — and they are not interchangeable.** 2.2 used to
+ *    teach a 2-of-3 where any two keys opened the vault. That is no longer the
+ *    model: the device key opens it daily, the printed sheet opens it when the
+ *    device is gone, and the guardian is not a key to *your* vault at all —
+ *    they hold half of what each heir receives. Copy that implies "any two of
+ *    three" now contradicts the security model rather than merely its tone.
  *  - `kyc.blockingNotice` is the promise that no vault exists before identity
  *    passes. `keyring.save` enforces it server-side; this string is how the
  *    user learns it, and it must stay true.
@@ -15,13 +19,7 @@
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 export const KYC = {
-  // Shown only to someone who already holds a guardianship — see the comment
-  // at its use site for why this link is the difference between a working
-  // recovery and a permanently locked vault.
-  guardianHere: {
-    ar: "أنت هنا كوصي على خزنة شخص آخر؟",
-    en: "Here as a guardian for someone else's vault?",
-  },
+
   title: { ar: "لنتحقق من هويتك", en: "Let's verify your identity" },
   body: {
     ar: "التحقق يربط الخزنة باسمك الرسمي. هذا ما يضمن أن ورثتك — ولا أحد سواهم — يستلمون إرثك.",
@@ -114,25 +112,27 @@ export const KYC_VERIFIED = {
 } satisfies LabelSet<string>
 
 export const EXPLAINER = {
-  title: { ar: "ثلاثة مفاتيح لخزنتك", en: "Three keys to your vault" },
+  title: { ar: "مفتاحان لخزنتك", en: "Two keys to your vault" },
   body: {
-    ar: "خزنتك تُفتح بمفتاحين من ثلاثة. لا يفتحها أي مفتاح وحده — وهذه الثلاثة:",
-    en: "Your vault opens with two of three keys. None of them opens it alone — and these are the three:",
+    ar: "خزنتك تُفتح بأحد مفتاحين — وكلٌّ منهما لحالة مختلفة:",
+    en: "Your vault opens with either of two keys — each for a different day:",
   },
   deviceTitle: { ar: "هذا الجهاز", en: "This device" },
   deviceBody: {
-    ar: "بصمتك تفتح المفتاح المحفوظ داخله",
-    en: "Your fingerprint unlocks the key sealed inside it",
+    ar: "بصمتك تفتح المفتاح المحفوظ داخله — كل يوم",
+    en: "Your fingerprint unlocks the key sealed inside it — every day",
   },
   paperTitle: { ar: "ورقة مطبوعة", en: "A printed sheet" },
   paperBody: {
-    ar: "تحفظها مع وصيّتك الموثّقة — ننشئها بعد قليل",
-    en: "Kept with your notarised will — we make it in a moment",
+    ar: "تفتح خزنتك إذا فقدت جهازك. من يحملها يفتحها — فاحفظها كما تحفظ وصيّتك",
+    en: "Opens your vault if you lose your device. Whoever holds it can open it — keep it as you keep your will",
   },
-  guardianTitle: { ar: "وصيّك", en: "Your guardian" },
+  // Deliberately not called a third key: a guardian cannot open this vault at
+  // all. Naming them here is what stops "why did I appoint one?" later.
+  guardianTitle: { ar: "ووصيّك، لاحقاً", en: "And your guardian, later" },
   guardianBody: {
-    ar: "يحفظ نسخة مشفّرة، ولا يرى شيئاً من خزنتك",
-    en: "Holds an encrypted copy and sees nothing inside",
+    ar: "لا يفتح خزنتك أبداً — يحفظ نصف ما يستلمه ورثتك",
+    en: "Never opens your vault — they hold half of what your heirs receive",
   },
   cta: { ar: "فهمت، أكمل", en: "Got it, continue" },
 } satisfies LabelSet<string>
@@ -190,9 +190,11 @@ export const BIOMETRICS_DONE = {
 
 export const RECOVERY_KIT = {
   title: { ar: "اطبع وثيقة الاسترداد", en: "Print your recovery sheet" },
+  // The bearer warning, on the screen that hands the sheet over. It is the
+  // whole of recovery now — no second key, and nobody to ask.
   body: {
-    ar: "احفظها مع وصيّتك الموثّقة. هي أحد ثلاثة مفاتيح — ومعها مفتاح آخر تُفتح الخزنة على جهاز جديد.",
-    en: "Keep it with your notarised will. It is one of three keys — with any second key it opens the vault on a new phone.",
+    ar: "احفظها مع وصيّتك الموثّقة. هذه الوثيقة وحدها تفتح خزنتك على أي جهاز — ومن يحملها يفتحها.",
+    en: "Keep it with your notarised will. This sheet alone opens your vault on any device — and whoever holds it can open it.",
   },
   documentTitle: { ar: "وثيقة استرداد وصيّة", en: "وثيقة استرداد وصيّة" },
   documentSubtitle: {
@@ -214,9 +216,13 @@ export const RECOVERY_KIT = {
     ar: "تُعرض مرة واحدة فقط. لن نستطيع إظهارها لك مرة أخرى — ولا نحتفظ بنسخة.",
     en: "Shown once. We cannot show it again — and we keep no copy.",
   },
+  // Printed on the sheet itself, and it now carries the reason. "Do not
+  // photograph" without a consequence reads as tidiness; with one it reads as
+  // what it is. This page is the entire recovery path — there is no second
+  // share and no person to ask.
   handling: {
-    ar: "هذه الوثيقة لا تُصوَّر ولا تُرسل رقمياً.",
-    en: "Do not photograph or send this document digitally.",
+    ar: "من يحمل هذه الوثيقة يستطيع استعادة خزنتك. لا تُصوَّر ولا تُرسل رقمياً.",
+    en: "Whoever holds this sheet can recover your vault. Do not photograph it or send it digitally.",
   },
   keepWithWill: {
     ar: "احفظها مع وصيّتك الموثّقة عند كاتب العدل.",

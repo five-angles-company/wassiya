@@ -14,11 +14,25 @@ export type KitQrProps = {
  * The QR on the recovery sheet.
  *
  * It encodes the **wrapped key blob, not the recovery code**. That is a
- * deliberate split: the code carries S_paper for a human to retype, the QR
- * carries `Enc(K_rec, MK)` for a machine to read, and neither is any use
- * without the guardian's share. Together they make the sheet a complete
- * offline half of the 2-of-3 — putting the code in the QR as well would add
- * nothing but a second way to leak it.
+ * deliberate split: the code carries S_paper for a human to retype and the QR
+ * carries `Enc(K_rec, MK)` for a machine to read. Putting the code in the QR as
+ * well would add nothing but a second way to leak it.
+ *
+ * ## What stops this page being the whole vault
+ *
+ * It used to be "neither is any use without the guardian's share". That is no
+ * longer true — K_rec is S_paper alone — so the two halves printed here are
+ * now the complete recovery input, and it is worth being exact about what
+ * still stands between a photograph and an open vault.
+ *
+ * The wrapper is sealed under an AAD of the owner's **user id** and the paper
+ * version. The version is printed; the id is not, and it is not derivable from
+ * the name or the email on the page. So opening this offline is infeasible:
+ * the id comes from the account, and reaching the account means signing in as
+ * the owner. The sheet is a bearer token *within* that account, not outside it.
+ *
+ * That property is load-bearing rather than incidental. **Do not print the user
+ * id on this sheet**, and do not put it in the QR.
  *
  * The PNG is captured for the print document because `expo-print` renders in a
  * WebView that cannot reach this component tree; a data URI is the only way the

@@ -10,7 +10,7 @@ import {
   useScreenshotListener,
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { ActivityIndicator, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -44,17 +44,19 @@ export function RecoveryKitScreen() {
   const keyring = useQuery(api.keyring.get)
   const markPaperPrinted = useMutation(api.keyring.markPaperPrinted)
 
-  // A keyring row already existing means the previous sheet was abandoned
-  // unprinted, so this run reissues rather than issues. The loaded flag is
-  // passed separately because `undefined` (still loading) and `null` (no row)
-  // both read as "not a reissue" and only one of them is true.
-  const keyringLoaded = keyring !== undefined
-  const isReissue = keyring !== null && keyringLoaded
-  const { state, wipe } = useRecoveryMaterial(
-    keyringLoaded,
-    isReissue,
-    t.keyPrompt
+  // Nothing may start until both queries have answered: the owner's id and the
+  // current paper version are bound into the wrapper's AAD, and a wrapper built
+  // from a stale version fails to open in a way indistinguishable from a wrong
+  // sheet. `undefined` is "still loading"; `null` is "no keyring yet", which is
+  // a real answer and starts the first issue.
+  const recoveryContext = useMemo(
+    () =>
+      me == null || keyring === undefined
+        ? null
+        : { userId: me.id, currentPaperVersion: keyring?.paperVersion ?? null },
+    [me, keyring]
   )
+  const { state, wipe } = useRecoveryMaterial(recoveryContext, t.keyPrompt)
 
   const [qrDataUri, setQrDataUri] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)

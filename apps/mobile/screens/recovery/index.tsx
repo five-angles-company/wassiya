@@ -1,39 +1,42 @@
 /**
- * ٨.١ — استعادة الخزنة. The ceremony the whole 2-of-3 exists for.
+ * ٨.١ — استعادة الخزنة. One sheet, one person, no second party.
  *
- * This replaces the stub that has stood here since section ٢ shipped. Two
- * states route here and neither can be resolved by retrying setup: a phone the
- * owner has never enrolled, and one whose keystore invalidated MK because its
- * biometrics changed. `lib/setup-flow.ts` has always sent both here.
+ * Two states route here and neither can be resolved by retrying setup: a phone
+ * the owner has never enrolled, and one whose keystore invalidated MK because
+ * its biometrics changed. `lib/setup-flow.ts` has always sent both here.
  *
  * ## What actually happens
  *
- *   K_rec = S_paper ⊕ S_guardian        MK = unwrap(mkWrappedByRecovery, K_rec)
+ *   K_rec = S_paper          MK = unwrap(mkWrappedByRecovery, K_rec, aad)
  *
- * The paper share is typed in from the printed sheet. The guardian share is
- * handed over **by a person** — the guardian opens their own app, approves, and
- * sends it out of band. This deployment holds the wrapper and the *sealed*
- * guardian share and can open neither, which is exactly why recovery needs two
- * humans and not a support ticket.
+ * The paper share is typed in from the printed sheet, and that is the whole
+ * ceremony. It used to need a guardian's half handed over by a person; it no
+ * longer does, which is what makes this screen reachable at all for the many
+ * owners who never appointed one. See `packages/crypto/src/recovery.ts`.
  *
- * ## Three things done in order, and the order matters
+ * `aad` binds the wrapper to this account and this sheet generation, so a
+ * photographed sheet cannot be replayed against another vault or against a
+ * sheet that has since been reprinted. Both halves of it come from the server
+ * row, never from local state — a stale `paperVersion` would fail identically
+ * to a wrong sheet, and that is the one error message nobody could debug.
+ *
+ * ## The ordering, which is not interchangeable
  *
  *  1. **MK is sealed into the keystore before anything is marked used.** A
  *     crash between them leaves a working device and a sheet the server still
- *     believes is unused — harmless. The reverse would burn the sheet without
+ *     believes is unused — harmless. The reverse burns the sheet without
  *     recovering anything.
- *  2. **S_guardian is stored locally too.** `rotatePaperShare` needs it to
- *     reissue a sheet, so a device that recovered without it could never print
- *     a replacement — which matters immediately, because step 3 is telling the
- *     owner their old sheet is spent.
- *  3. **`markPaperUsed` last**, and the success screen pushes straight at
- *     reprinting. A recovered vault whose only sheet has been read aloud to a
- *     guardian is one bad day from being unrecoverable again.
+ *  2. **`markPaperUsed` last.** It is also what tells the owner: it writes the
+ *     in-app alert *and* sends the mail. With no guardian in the loop there is
+ *     no longer a second human who notices a recovery, so this message is the
+ *     only thing standing between a stolen sheet and a silent theft.
+ *  3. **The success screen pushes at reprinting, and says why.** The sheet is
+ *     now the entire recovery path and this one has been out in the world.
+ *     Marking it used does not invalidate it — only printing a new one does.
  */
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { hexToBytes } from "@workspace/crypto/bytes"
 import { decodePaperCode } from "@workspace/crypto/papercode"
 import { recoverMk } from "@workspace/crypto/recovery"
 import { Button } from "@workspace/ui-native/components/ui/button"
@@ -49,40 +52,34 @@ import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 import { SECRET_INPUT_PROPS } from "@/lib/secret-input-props"
-import {
-  patchEnrolment,
-  storeGuardianShare,
-  storeRecoveredMk,
-} from "@/lib/secure-vault"
+import { patchEnrolment, storeRecoveredMk } from "@/lib/secure-vault"
 
 type Phase = "input" | "working" | "done" | "failed" | "badCode"
 
 export function RecoveryScreen() {
   const { t } = useStrings("recovery")
-  // Both halves are on screen as plaintext while they are typed.
+  // The sheet code is on screen as plaintext while it is typed.
   useSecureScreen("recovery")
 
+  const me = useQuery(api.users.me)
   const keyring = useQuery(api.keyring.get)
   const markPaperUsed = useMutation(api.keyring.markPaperUsed)
   const { signOut } = useClerk()
 
   const [code, setCode] = useState("")
-  const [share, setShare] = useState("")
   const [phase, setPhase] = useState<Phase>("input")
 
   async function recover() {
-    if (keyring === null || keyring === undefined) return
+    if (keyring == null || me == null) return
     setPhase("working")
 
     let sPaper: Uint8Array | null = null
-    let sGuardian: Uint8Array | null = null
     let mk: Uint8Array | null = null
     try {
       ensureWebCrypto()
 
       // Decoded first and separately: a mistyped sheet is by far the commonest
-      // failure and deserves its own message rather than "those two halves
-      // didn't work".
+      // failure and deserves its own message rather than "that didn't work".
       try {
         sPaper = decodePaperCode(code).sPaper
       } catch {
@@ -90,22 +87,17 @@ export function RecoveryScreen() {
         return
       }
 
-      sGuardian = hexToBytes(share.trim().replace(/\s+/g, ""))
       mk = recoverMk(
         sPaper,
-        sGuardian,
-        new Uint8Array(keyring.mkWrappedByRecovery)
+        new Uint8Array(keyring.mkWrappedByRecovery),
+        me.id,
+        keyring.paperVersion
       )
 
       // 1 — the key, before anything is spent.
       await storeRecoveredMk(mk, t.storePrompt)
-      // 2 — so this device can reissue a sheet later.
-      await storeGuardianShare(sGuardian, t.storePrompt)
-      await patchEnrolment({
-        hasGuardianShare: true,
-        paperVersion: keyring.paperVersion,
-      })
-      // 3 — last.
+      await patchEnrolment({ paperVersion: keyring.paperVersion })
+      // 2 — last, and it is what raises the alarm.
       await markPaperUsed({})
 
       setPhase("done")
@@ -114,7 +106,6 @@ export function RecoveryScreen() {
     } finally {
       // Whatever happened, none of this may outlive the attempt.
       sPaper?.fill(0)
-      sGuardian?.fill(0)
       mk?.fill(0)
     }
   }
@@ -126,6 +117,14 @@ export function RecoveryScreen() {
         <Text className="mt-3 text-[15px] leading-[1.75] text-muted-foreground">
           {t.doneBody}
         </Text>
+        {/* Not a nag. The sheet just opened a vault, so it is a live key that
+            has been handled — and nothing invalidates it until a new one is
+            printed. */}
+        <AlertBanner
+          className="mt-4"
+          variant="security"
+          description={t.reprintUrgent}
+        />
         <View className="grow" />
         <View className="gap-2">
           <Button onPress={() => router.replace("/setup/recovery-kit")}>
@@ -149,11 +148,6 @@ export function RecoveryScreen() {
       <Text className="mt-3 text-[15px] leading-[1.75] text-muted-foreground">
         {t.intro}
       </Text>
-      <View className="rounded-card bg-olive-100 mt-4 p-4">
-        <Text variant="metaSm" className="text-olive-700 leading-[1.75]">
-          {t.bothNeeded}
-        </Text>
-      </View>
 
       {keyring === null ? (
         <AlertBanner
@@ -163,11 +157,9 @@ export function RecoveryScreen() {
         />
       ) : (
         <>
-          <Text variant="sectionLabel" className="mt-header mb-2">
-            {t.step1}
-          </Text>
           <Field
             {...SECRET_INPUT_PROPS}
+            className="mt-header h-auto min-h-24 py-3 text-left"
             label={t.codeLabel}
             hint={t.codeHint}
             value={code}
@@ -177,25 +169,7 @@ export function RecoveryScreen() {
             }}
             autoCapitalize="characters"
             multiline
-            className="h-auto min-h-24 py-3 text-left"
             error={phase === "badCode" ? t.codeInvalid : undefined}
-          />
-
-          <Text variant="sectionLabel" className="mt-header mb-2">
-            {t.step2}
-          </Text>
-          <Field
-            {...SECRET_INPUT_PROPS}
-            label={t.shareLabel}
-            hint={t.shareHint}
-            placeholder={t.sharePlaceholder}
-            value={share}
-            onChangeText={(value) => {
-              setShare(value)
-              if (phase !== "input") setPhase("input")
-            }}
-            multiline
-            className="h-auto min-h-20 py-3 text-left"
           />
 
           {phase === "failed" ? (
@@ -207,11 +181,7 @@ export function RecoveryScreen() {
           <Button
             className="mt-6"
             onPress={() => void recover()}
-            disabled={
-              phase === "working" ||
-              code.trim().length === 0 ||
-              share.trim().length === 0
-            }
+            disabled={phase === "working" || code.trim().length === 0}
           >
             <Text>{phase === "working" ? t.recovering : t.recover}</Text>
           </Button>

@@ -128,14 +128,35 @@ it serves — is in `packages/ui-native/README.md`.
 
 Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi-first; country is a parameter, never a branch.
 
-## Security model — 2-of-3 (LOCKED, no session may drift from this)
+## Security model — 1-of-1 recovery, 2-of-2 release (LOCKED, no session may drift from this)
+
+> **Amended 2026-08-28, deliberately.** This section previously read "2-of-3"
+> with `K_rec = S_paper XOR S_guardian`. The guardian was removed from recovery
+> and kept for release. Rejected on the way: storing S_guardian server-side —
+> raw XOR of two random 32-byte values with no KDF means a server holding one
+> half is cryptographically identical to wrapping under the sheet alone, with
+> extra liability. It also *repaired* the common case: `splitRecovery` minted
+> S_guardian at setup but it lived only in the owner's own keystore until a
+> guardian accepted, so a guardian-less vault could not be recovered at all.
+
 - MK = 256-bit random master key, generated on the owner's device, never leaves it unencrypted. The server stores only ciphertext.
 - Daily unlock: each enrolled device stores MK wrapped by a hardware-backed key gated by biometrics (client-side; not in this backend).
-- Recovery (no enrolled device): MK also wrapped by K_rec = S_paper XOR S_guardian. S_paper lives only on the printed sheet (grouped Base32 + checksum). S_guardian is sealed to the guardian's X25519 public key; the server stores only the sealed ciphertext.
+- Recovery (no enrolled device): MK also wrapped by **K_rec = S_paper**. S_paper lives only on the printed sheet (grouped Base32 + checksum). The wrapper is sealed under an AAD of `wassiya/recovery/v2 | userId | paperVersion`, and `paperVersion` is stored beside it — unwrapping recomputes the AAD from the **stored** version, wrapping uses the **new** one, and `keyring.save` refuses a version that does not follow, so the pair can never tear.
+- **The sheet is a bearer token.** Whoever holds it can recover the vault, and with no guardian in the loop there is no second human who notices. Four things contain that and none is optional: the AAD above (a stolen wrapper is not portable to another account or an older sheet); `markPaperUsed` writes a notification *and* an email to the owner; the sheet must be reprinted after use; the recovered device appears in `devices`. **The user id is deliberately not printed on the sheet** — without it the AAD cannot be built, so a photograph alone is not enough. Do not print it.
+- **Reprint ordering is load-bearing: mint → display → confirm → save.** Nothing invalidates the old sheet until the new wrapper is written. Rotating as a side effect of recovery turns a theft mitigation into a total-loss bug — the wrapper would stand under a code printed nowhere, with no guardian to fall back on.
 - Per-asset: random DEK (XChaCha20-Poly1305) wrapped by MK; content + thumbnails encrypted client-side before upload.
 - Heir release: heirs NEVER receive MK. On every routing change the owner's device rebuilds per-heir bundles: Enc(K_h, routed DEKs + message keys), K_h = S_server_h XOR S_guardian_h. S_server_h is withheld until a claim reaches "released" (identity-verified heir + certificate name match + guardian confirmation + veto window elapsed).
-- Rotation: new paper or guardian ⇒ regenerate the affected shares and re-wrap; old material becomes worthless.
+- Rotation: a new paper sheet ⇒ regenerate S_paper, bump `paperVersion`, re-wrap. A new guardian ⇒ nothing to re-wrap for recovery (they hold no share of K_rec); re-seal each heir's S_guardian_h instead.
+- **Guardians may be an heir or an outsider, and they are a set, not a singleton.** S_guardian_h is the same 32 bytes sealed *n* times, so any one of them can hand over — which also fixes the unreachable-guardian problem. Safe because the claim ceremony gates it; the same one-of-*n* on recovery would have been an *n*-fold weakening with nothing in front of it.
 - Rule for all code: no plaintext key material in Convex functions, logs, or errors. OTP/Clerk auth proves identity only — it never touches keys.
+
+## Actors and apps (LOCKED)
+- **Owner → mobile only.** MK, biometrics, the veto and the check-in need a hardware keystore and a fingerprint. Never move any of them to a browser.
+- **Guardian → web only. Heir → web only.** Never add a guardian or heir screen to `apps/mobile`; mobile is the owner's app. The guardian screens that once lived there (`guardian/accept`, `guardian/claim`, `recovery/approve`) were deleted, not moved — accepting on mobile would mint the guardian's X25519 secret into a keystore the web app can never reach.
+- **The guardian authors the death claim** and supplies the certificate. That is the resolution to "every heir is silent": heirs do not know the vault exists, so they cannot plausibly be the ones who file.
+  - **Not yet implemented, and not to be half-implemented.** Today `claims.submit` + `attachCertificate` are the *claimant's*, and `release.releasedBundleForHeir` asserts `claimantUserId === caller`. Make the guardian the filer without first separating a claim's **author** from its **recipient** and the heir can no longer open their own box. The inversion belongs with the web rework.
+  - **A self-signing check is NOT the guard.** Refusing a confirmation when the confirmer is the claimant would block every claim once the guardian *is* the claimant. What holds the heir-guardian case is the certificate, the staff name-match, the veto window, and the heir's own Didit verification. Do not add one.
+- Until the web rework ships, **no guardian can accept an invitation.** The owner still invites; `use-protection-score` marks the item `blocked` so it is never the one amber row. A score that accuses an owner of a step they cannot take is the failure mode to avoid.
 
 ## Product rules
 - Routing, not shares: assets go to recipients whole; no inheritance-share math anywhere (الأنصبة يحدّدها القانون، لا التطبيق).

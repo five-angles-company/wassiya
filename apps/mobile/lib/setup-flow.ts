@@ -18,7 +18,6 @@
  * verified · no keyring · no MK                        explainer        nothing generated yet
  * verified · no keyring · MK                           recoveryKit      MK exists, wrapper never saved
  * verified · keyring · no MK                           recovery         new device, or key invalidated
- * verified · keyring · MK · no S_guardian              recovery         cannot rotate; same as no MK
  * verified · keyring · MK · not printed                recoveryKit      rotate and reprint
  * verified · keyring · MK · printed                    done             the vault is live
  *
@@ -54,7 +53,6 @@ export type KeyringEvidence = {
 /** The subset of the keystore marker that decides routing. */
 export type DeviceEvidence = {
   hasMasterKey: boolean
-  hasGuardianShare: boolean
 }
 
 export type SetupEvidence = {
@@ -119,9 +117,12 @@ export function resolveSetupStep(evidence: SetupEvidence): SetupStep {
 
   if (evidence.keyring.paperPrintedAt !== null) return "done"
 
-  // An unprinted sheet has to be reissued, and reissuing needs S_guardian to
-  // re-derive the wrapper. Without it this device can no longer rotate.
-  return evidence.device.hasGuardianShare ? "recoveryKit" : "recovery"
+  // An unprinted sheet is reissued. Reissuing used to need `S_guardian` from
+  // the keystore to re-derive the wrapper, and a device without it was routed
+  // to recovery instead — a dead end for the many owners who never appointed a
+  // guardian. K_rec is the sheet alone now, so any device holding MK can mint a
+  // fresh sheet, and that whole branch is gone.
+  return "recoveryKit"
 }
 
 // Note: whether the recovery kit is *reissuing* rather than issuing is
@@ -129,7 +130,7 @@ export function resolveSetupStep(evidence: SetupEvidence): SetupStep {
 // discarded when the last sheet rendered, so a new paper version is the only
 // honest move — but the screen also has to distinguish "no row" from "the
 // query has not answered yet", and this module only sees the settled evidence.
-// See `useRecoveryMaterial`, which takes the loaded flag explicitly.
+// See `useRecoveryMaterial`, which takes the whole context or `null`.
 
 /** The retry gate on 2.1b. Support handoff replaces "try again" at the cap. */
 export function identityRetriesExhausted(attempts: number): boolean {

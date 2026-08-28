@@ -10,8 +10,9 @@
  * The intuition runs the other way — people expect "remove device" to reach
  * into a lost phone and wipe it — so the confirm says what it actually does
  * and, more usefully, what to do instead when a phone is genuinely gone:
- * reissue the recovery sheet and the guardian's share, which is what makes the
- * material still sitting on that phone worthless.
+ * reissue the recovery sheet, which re-wraps MK under a fresh share and is what
+ * makes the material still sitting on that phone worthless. (It used to say
+ * "and the guardian's share" — the guardian has no share of K_rec any more.)
  *
  * Revoked rows stay in the list rather than disappearing, because the audit
  * line that records the revocation needs its subject to remain nameable.

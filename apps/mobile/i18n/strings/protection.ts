@@ -41,11 +41,14 @@ export const PROTECTION = {
   needed: { ar: "مطلوب", en: "Needed" },
   later: { ar: "لاحقاً", en: "Later" },
 
-  // The one warning that outranks the others: without a guardian the printed
-  // sheet cannot actually recover anything.
+  // This used to read "without a guardian, the printed sheet alone cannot
+  // recover your vault" — which became false the moment K_rec stopped needing
+  // a second share. The urgency is real but it was pointed at the wrong risk:
+  // a guardian now protects *delivery*, and a vault without one releases a box
+  // no heir can open.
   guardianUrgent: {
-    ar: "بدون وصي، وثيقة الاسترداد وحدها لا تكفي لاستعادة خزنتك.",
-    en: "Without a guardian, the printed sheet alone cannot recover your vault.",
+    ar: "بدون وصي، لا يستطيع ورثتك فتح ما تركته لهم.",
+    en: "Without a guardian, your heirs cannot open what you leave them.",
   },
 } satisfies LabelSet<string>
 
@@ -53,13 +56,14 @@ export const PROTECTION = {
 export const GUARDIAN = {
   title: { ar: "الوصي", en: "Your guardian" },
   intro: {
-    ar: "الوصي شخص تثق به يحتفظ بنصف مفتاح الاسترداد. لا يرى محتوى خزنتك أبداً، ولا يستطيع فتحها وحده.",
-    en: "A guardian is someone you trust who holds half of your recovery key. They never see your vault's contents, and cannot open it alone.",
+    ar: "الوصي شخص تثق به يحتفظ بنصف مفتاح التسليم لكل وارث. لا يرى محتوى خزنتك أبداً، وهو من يبلّغ عن وفاتك ويقدّم شهادة الوفاة.",
+    en: "A guardian is someone you trust who holds half of the delivery key for each heir. They never see your vault's contents, and they are the person who reports your death and provides the certificate.",
   },
-  // The half-sentence that makes the model legible in one read.
+  // The half-sentence that makes the model legible in one read. It used to
+  // describe recovery; recovery is the sheet alone now, so this is delivery.
   howItWorks: {
-    ar: "وثيقتك المطبوعة + نصيب الوصي = استعادة خزنتك. أيٌّ منهما وحده لا يكفي.",
-    en: "Your printed sheet + your guardian's share = your vault back. Neither half is enough alone.",
+    ar: "نصيب الوصي + نصيب الخادم = فتح صندوق الوارث. لا خزنتك ولا استعادتك تمرّان به.",
+    en: "Your guardian's share + the server's share = an heir's box opens. Neither your vault nor your recovery passes through them.",
   },
 
   nameLabel: { ar: "اسم الوصي", en: "Guardian's name" },
@@ -77,9 +81,11 @@ export const GUARDIAN = {
     en: "Send this code to {name} by a channel you trust. It works once, and expires in 7 days.",
   },
   share: { ar: "أرسل الدعوة", en: "Send the invitation" },
+  // Points at the website, not the app: a guardian has no reason to install
+  // the mobile app, which is the owner's.
   inviteMessage: {
-    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح التطبيق وأدخل هذا الرمز: {token}",
-    en: "You've been asked to be a guardian for a Wassiya vault. Open the app and enter this code: {token}",
+    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح موقع وصيّة وأدخل هذا الرمز: {token}",
+    en: "You've been asked to be a guardian for a Wassiya vault. Open the Wassiya website and enter this code: {token}",
   },
 
   statusInvited: { ar: "بانتظار القبول", en: "Waiting to accept" },
@@ -87,33 +93,26 @@ export const GUARDIAN = {
   statusActive: { ar: "مفعّل", en: "Active" },
   statusRevoked: { ar: "مُلغى", en: "Revoked" },
 
-  // Accepting publishes their key; sealing is the owner's own separate act,
-  // because it needs the owner's biometric and their copy of S_guardian.
-  sealTitle: { ar: "أرسل نصيب الوصي", en: "Send the guardian's share" },
-  sealBody: {
-    ar: "{name} قبل الدعوة ونشر مفتاحه. أرسل نصيبه الآن لتكتمل قدرتك على الاستعادة.",
-    en: "{name} accepted and published their key. Send their share now to complete your ability to recover.",
+  // The seal ceremony that used to live here is gone: it sealed the *recovery*
+  // share, and there is no such share. What is left is a wait, and the copy
+  // says whose it is — the owner has nothing to do and no way to hurry it.
+  awaitingAcceptance: {
+    ar: "أرسلنا الدعوة. يقبلها وصيّك من موقع وصيّة — لا شيء مطلوب منك حتى ذلك الحين.",
+    en: "The invitation is out. Your guardian accepts it on the Wassiya website — there's nothing for you to do until then.",
   },
-  seal: { ar: "أرسل النصيب", en: "Send the share" },
-  sealing: { ar: "جارٍ الإرسال…", en: "Sending…" },
-  sealDone: {
-    ar: "اكتملت الاستعادة. وثيقتك المطبوعة تعمل الآن مع نصيب الوصي.",
-    en: "Recovery is complete. Your printed sheet now works with your guardian's share.",
-  },
-  sealFailed: {
-    ar: "تعذّر إرسال النصيب. لم يتغيّر شيء — حاول مرة أخرى.",
-    en: "Could not send the share. Nothing changed — try again.",
-  },
-  sealKeyLost: {
-    ar: "لم يعد هذا الجهاز يستطيع قراءة نصيب الوصي. تحتاج إلى ترقية الاسترداد من جهاز يحمل مفتاحك.",
-    en: "This device can no longer read the guardian share. You'll need to reissue recovery from a device that holds your key.",
+  acceptedBody: {
+    ar: "قبل وصيّك ونشر مفتاحه. أصبح بإمكان ورثتك استلام ما تركته لهم.",
+    en: "Your guardian accepted and published their key. Your heirs can now receive what you leave them.",
   },
 
   revoke: { ar: "ألغِ الوصي", en: "Remove guardian" },
   revokeTitle: { ar: "إلغاء الوصي؟", en: "Remove this guardian?" },
+  // No longer mentions reissuing the sheet: the sheet has nothing to do with
+  // the guardian now, and telling an owner to reprint would be busywork that
+  // also puts a live recovery code on a printer for no reason.
   revokeBody: {
-    ar: "سيتوقف نصيبه عن العمل، وستحتاج إلى وصي بديل وإعادة إصدار وثيقة الاسترداد.",
-    en: "Their share stops working, and you'll need a replacement guardian and a reissued recovery sheet.",
+    ar: "لن يعود بإمكانه تأكيد وفاتك أو مساعدة ورثتك على الفتح. اختر وصياً بديلاً.",
+    en: "They will no longer be able to confirm your death or help your heirs open their box. Choose a replacement.",
   },
   revokeConfirm: { ar: "ألغِ", en: "Remove" },
   cancel: { ar: "إلغاء", en: "Cancel" },
@@ -121,41 +120,6 @@ export const GUARDIAN = {
   emptyTitle: { ar: "لم تختر وصياً بعد", en: "No guardian yet" },
 } satisfies LabelSet<string>
 
-/** ٦.٢b — accepting an invitation, guardian side. */
-export const GUARDIAN_ACCEPT = {
-  title: { ar: "كن وصياً", en: "Become a guardian" },
-  intro: {
-    ar: "طُلب منك أن تكون وصياً. ستحتفظ بنصف مفتاح استرداد — لا ترى محتوى الخزنة، ولا تستطيع فتحها وحدك.",
-    en: "You've been asked to be a guardian. You'll hold half of a recovery key — you never see the vault's contents, and cannot open it alone.",
-  },
-  responsibility: {
-    ar: "ما يُطلب منك: أن تحتفظ بهذا الجهاز، وأن تؤكّد الطلب عندما يحتاج صاحب الخزنة إلى الاستعادة.",
-    en: "What's asked of you: keep this device, and confirm the request when the vault's owner needs to recover.",
-  },
-  tokenLabel: { ar: "رمز الدعوة", en: "Invitation code" },
-  tokenPlaceholder: { ar: "الصق الرمز الذي وصلك", en: "Paste the code you received" },
-  accept: { ar: "اقبل وأنشئ مفتاحك", en: "Accept and create your key" },
-  accepting: { ar: "جارٍ القبول…", en: "Accepting…" },
-  // The biometric that seals their new secret key into this device.
-  keyPrompt: {
-    ar: "أثبت هويتك لإنشاء مفتاح الوصي على هذا الجهاز",
-    en: "Confirm it's you to create your guardian key on this device",
-  },
-  acceptedTitle: { ar: "أصبحت وصياً", en: "You're a guardian" },
-  acceptedBody: {
-    ar: "مفتاحك محفوظ على هذا الجهاز خلف بصمتك. لا يغادره أبداً.",
-    en: "Your key is stored on this device behind your fingerprint. It never leaves it.",
-  },
-  invalid: {
-    ar: "رمز غير صالح أو منتهي. اطلب دعوة جديدة.",
-    en: "That code is invalid or expired. Ask for a new invitation.",
-  },
-  failed: { ar: "تعذّر القبول. حاول مرة أخرى.", en: "Could not accept. Try again." },
-  ownerSelf: {
-    ar: "لا يمكنك أن تكون وصياً على خزنتك.",
-    en: "You cannot be a guardian for your own vault.",
-  },
-} satisfies LabelSet<string>
 
 /** ٦.٤ — the life check-in. */
 export const CHECKIN = {
@@ -270,110 +234,4 @@ export const CLAIM_VETO = {
   none: { ar: "لا توجد طلبات على حسابك.", en: "No claims against your account." },
 } satisfies LabelSet<string>
 
-/**
- * ٧ — the guardian's side of a death claim.
- *
- * A guardian is asked for something twice, and both are dead ends without them:
- * confirming the claim, which starts the owner's 30-day objection window, and —
- * after release — handing the heir the half of the key only they can open.
- *
- * ## The tone here is not the veto screen's
- *
- * `CLAIM_VETO` speaks to someone who is alive and being asked to prove it, so it
- * is reassuring and slightly urgent. This speaks to someone who has probably
- * just been told a friend has died and is being asked to act on it. It is
- * plainer, slower, and it never implies the guardian is deciding whether the
- * death happened — they are confirming what they already know from outside the
- * app. Nothing here should read as an accusation of the claimant or as pressure
- * on the guardian.
- *
- * ## What it refuses to say
- *
- * There is no "reject" here, because the backend has none: a guardian who does
- * nothing lets the claim sit in `guardian_review` indefinitely, and that is the
- * correct behaviour — doubt should stall a claim, not kill it. Saying "decline"
- * would promise an action that does not exist.
- */
-export const GUARDIAN_CLAIM = {
-  title: { ar: "طلبات تنتظرك كوصي", en: "Claims waiting on you" },
-  intro: {
-    ar: "أنت وصيٌّ على خزائن. حين يصل طلب وراثة على إحداها ويجتاز المراجعة، يُطلب منك تأكيده — وأنت آخر إنسان يراه قبل أن تبدأ مهلة الاعتراض.",
-    en: "You guard vaults for other people. When an inheritance claim on one of them passes review, you are asked to confirm it — the last person to see it before the objection window starts.",
-  },
-  empty: { ar: "لا شيء ينتظرك الآن", en: "Nothing is waiting on you" },
 
-  relation: { ar: "أنت وصيّه — {relation}", en: "You are their guardian — {relation}" },
-  claimant: { ar: "تقدّم بالطلب: {name}", en: "Filed by {name}" },
-  certificate: { ar: "شهادة الوفاة: {name}", en: "Certificate: {name}" },
-  certificateNone: { ar: "لم تصل شهادة", en: "No certificate" },
-
-  // ── Confirming ───────────────────────────────────────────────────────────
-  confirmTitle: { ar: "تأكيد الوفاة", en: "Confirm the death" },
-  confirmBody: {
-    ar: "بتأكيدك تبدأ مهلة اعتراض مدتها ٣٠ يوماً. خلالها يستطيع صاحب الخزنة إيقاف الطلب بنفسه — فإن كان حيّاً، سيوقفه. لا يُفرج عن شيء قبل انتهاء المهلة.",
-    en: "Confirming starts a 30-day objection window. During it the vault's owner can stop the claim themselves — so if they are alive, they will. Nothing is released before it ends.",
-  },
-  confirm: { ar: "أؤكّد أنّه توفّي", en: "I confirm they have died" },
-  confirming: { ar: "جارٍ التأكيد…", en: "Confirming…" },
-  confirmPrompt: {
-    ar: "أثبت هويتك لتأكيد الطلب",
-    en: "Confirm it's you to confirm this claim",
-  },
-  confirmed: {
-    ar: "أُكِّد الطلب. بدأت مهلة الاعتراض، وأُبلغ صاحب الخزنة.",
-    en: "Confirmed. The objection window has started and the owner has been told.",
-  },
-
-  // Doing nothing is a legitimate choice, and the screen says so rather than
-  // leaving a guardian to guess whether silence has consequences.
-  unsureTitle: { ar: "إن لم تكن متأكّداً", en: "If you are not sure" },
-  unsureBody: {
-    ar: "لا تؤكّد. لا يمضي الطلب دون تأكيدك، ولا يترتّب على انتظارك شيء — تحقّق أولاً بالطريقة التي تراها.",
-    en: "Do not confirm. The claim does not proceed without you, and waiting costs nothing — check first, however you see fit.",
-  },
-
-  notLinked: {
-    ar: "لم يُربط هذا الطلب بوريث بعد. لا يمكن تأكيده قبل ذلك — سيتولّاه فريق المراجعة.",
-    en: "This claim is not linked to an heir yet, so it cannot be confirmed. The review team handles that.",
-  },
-
-  biometricFailed: {
-    ar: "لم يتم التحقق. التأكيد يحتاج بصمتك — وهذا ما يمنع شخصاً آخر من التأكيد نيابةً عنك.",
-    en: "Not verified. Confirming needs your biometrics — which is what stops someone else confirming for you.",
-  },
-  failed: {
-    ar: "تعذّر تأكيد الطلب. لم يتغيّر شيء — حاول مرة أخرى.",
-    en: "Could not confirm the claim. Nothing changed — try again.",
-  },
-
-  // ── Handing over the share, after release ────────────────────────────────
-  handoverTitle: { ar: "سلّم نصيبك للوارث", en: "Hand your share to the heir" },
-  handoverBody: {
-    ar: "انتهت المهلة وأُفرج عن الطلب. لا يستطيع الوارث فتح ما خُصّص له إلا بنصفَي المفتاح: نصف لديه، والنصف الآخر لا يفتحه إلا جهازك.",
-    en: "The window ended and the claim released. The heir cannot open what was left to them without both halves of the key: they hold one, and only your device can open the other.",
-  },
-  handover: { ar: "افتح نصيبي", en: "Open my share" },
-  handoverPrompt: {
-    ar: "أثبت هويتك لفتح نصيبك",
-    en: "Confirm it's you to open your share",
-  },
-  shareTitle: { ar: "نصيبك", en: "Your share" },
-  // Before the share appears, never after — the same rule the recovery ceremony
-  // states, and for the same reason: a warning read under the value it guards
-  // is worth nothing.
-  verifyFirst: {
-    ar: "تأكّد أنّك تسلّمه لمن تعرف أنّه الوارث. من يملك هذا النصيب مع نصيب الوارث يفتح ما خُصّص له.",
-    en: "Make sure you are handing this to someone you know to be the heir. Whoever holds this half together with theirs opens what was left to them.",
-  },
-  shareBody: {
-    ar: "أعطِه للوارث بالطريقة التي تثق بها. لا يمرّ هذا النصيب عبر خوادمنا مفتوحاً، ولا نستطيع إرساله نيابةً عنك.",
-    en: "Give it to the heir however you trust. This half never passes through our servers in the open, and we cannot send it for you.",
-  },
-  copy: { ar: "انسخ", en: "Copy" },
-  copied: { ar: "نُسخ", en: "Copied" },
-  done: { ar: "تم", en: "Done" },
-  keyLost: {
-    ar: "لم يعد هذا الجهاز يملك مفتاح الوصاية. إن تغيّرت بصمتك أو أُعيد ضبط الجهاز، فالمفتاح ذهب معه.",
-    en: "This device no longer holds the guardian key. If your biometrics changed or the device was reset, the key went with it.",
-  },
-} satisfies LabelSet<string>

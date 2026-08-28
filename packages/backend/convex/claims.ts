@@ -563,7 +563,7 @@ export const generateCertificateUploadUrl = mutation({
  * in the web funnel, even though `submit` accepts one for callers that have it
  * up front.
  *
- * Narrow on purpose, in the same way `keyring.attachGuardian` is: re-calling
+ * Narrow on purpose: re-calling
  * `submit` to carry the certificate would need the caller to resend the
  * subject's email and their own details, and getting any of them wrong would
  * silently file nothing — `submit` answers `{ received: true }` either way,

@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import { KEY_BYTES, randomBytes } from "./bytes"
-import { generateMk } from "./keys"
 import {
   generateGuardianKeypair,
   guardianPublicKey,
   openFromGuardian,
   sealToGuardian,
 } from "./guardian"
-import { recoverMk, splitRecovery } from "./recovery"
+import { heirKey, makeHeirShares } from "./heir"
 
 describe("sealToGuardian / openFromGuardian", () => {
   it("round-trips a share to the guardian who owns the key", () => {
@@ -70,23 +69,23 @@ describe("sealToGuardian / openFromGuardian", () => {
   })
 })
 
-describe("the full recovery ceremony", () => {
-  it("restores MK from the paper sheet plus the guardian's sealed share", () => {
-    const mk = generateMk()
+describe("the guardian's remaining leg: release", () => {
+  it("restores K_h from the server share plus the guardian's sealed share", () => {
+    // Recovery is the sheet alone now — the guardian is not in it. Release is
+    // where the two-of-two survives, and this is the ceremony that proves it:
+    // the owner seals S_guardian_h at bundle-build time, the server withholds
+    // S_server_h until a claim is released, and neither half alone is K_h.
     const guardian = generateGuardianKeypair()
+    const { sServer, sGuardian } = makeHeirShares()
 
-    // On the owner's device at setup: split, seal, keep only ciphertext.
-    const { sPaper, sGuardian, mkWrappedByRecovery } = splitRecovery(mk)
-    const guardianShareSealed = sealToGuardian(sGuardian, guardian.publicKey)
+    const sealed = sealToGuardian(sGuardian, guardian.publicKey)
+    const handedOver = openFromGuardian(sealed, guardian.secretKey)
 
-    // Later, on a new device: the guardian decrypts their half and hands it
-    // over out of band; the owner reads the paper sheet.
-    const recoveredGuardianShare = openFromGuardian(
-      guardianShareSealed,
-      guardian.secretKey
+    expect(Array.from(heirKey(sServer, handedOver))).toEqual(
+      Array.from(heirKey(sServer, sGuardian))
     )
-    expect(
-      Array.from(recoverMk(sPaper, recoveredGuardianShare, mkWrappedByRecovery))
-    ).toEqual(Array.from(mk))
+    expect(Array.from(heirKey(sServer, handedOver))).not.toEqual(
+      Array.from(sServer)
+    )
   })
 })

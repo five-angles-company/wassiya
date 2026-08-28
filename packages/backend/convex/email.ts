@@ -95,17 +95,22 @@ const COPY = {
  * vault: an email is the least controlled surface this product touches, and a
  * guardian's inbox is not a place to disclose that a particular person has died
  * or that a particular person filed about it. It says only that something is
- * waiting and that the app is where it lives — which is all the recipient needs
- * to take the next step, and all an interceptor learns.
+ * waiting and where it lives — which is all the recipient needs to take the
+ * next step, and all an interceptor learns.
+ *
+ * **The destination is the website, not the phone app.** Guardians are web
+ * users; mobile is the owner's app. The copy stays link-free until the web
+ * guardian route exists — sending someone to a 404 is worse than naming the
+ * site — so a deep link is the web rework's job, not a missing value here.
  */
 const GUARDIAN_CLAIM_COPY = {
   ar: {
     subject: "طلب ينتظر تأكيدك",
-    body: "هناك طلب على خزنة أنت وصيٌّ عليها ينتظر تأكيدك. افتح وصيّة لمراجعته — لا يمكن تأكيده من البريد.",
+    body: "هناك طلب على خزنة أنت وصيٌّ عليها ينتظر تأكيدك. افتح موقع وصيّة لمراجعته — لا يمكن تأكيده من البريد.",
   },
   en: {
     subject: "Something is waiting for your confirmation",
-    body: "A claim on a vault you guard is waiting for you. Open Wassiya to review it — it cannot be confirmed from email.",
+    body: "A claim on a vault you guard is waiting for you. Open the Wassiya website to review it — it cannot be confirmed from email.",
   },
 } as const
 
@@ -184,4 +189,36 @@ export async function sendGuardianClaimNotice(
   guardianUserId: Id<"users">
 ): Promise<void> {
   await send(ctx, guardianUserId, GUARDIAN_CLAIM_COPY, "guardian claim notice")
+}
+
+/**
+ * Tell an owner their vault was opened with the printed sheet.
+ *
+ * This is the message that replaces a person. Recovery used to need the
+ * guardian's half, so an illegitimate attempt had a second human in it who
+ * could notice or refuse. K_rec is the sheet alone now, and the sheet is a
+ * bearer token — whoever photographs it can recover the vault, silently. This
+ * notice is what makes it not silent, which is why it is sent from the same
+ * transaction that records the use rather than from a cron that might not run.
+ *
+ * It names no device and no location: an inbox is an intercepted surface, and
+ * the recipient needs only "this happened, and here is what to do if it wasn't
+ * you."
+ */
+const RECOVERY_COPY = {
+  ar: {
+    subject: "مهم: فُتحت خزنتك باستخدام وثيقة الاسترداد",
+    body: "استُخدمت وثيقة الاسترداد المطبوعة لفتح خزنتك على جهاز. إن لم تكن أنت، افتح وصيّة الآن: اطبع وثيقة جديدة — فالقديمة تبطل بذلك — وألغِ الأجهزة التي لا تعرفها.",
+  },
+  en: {
+    subject: "Important: your vault was opened with your recovery sheet",
+    body: "Your printed recovery sheet was used to open your vault on a device. If this wasn't you, open Wassiya now: print a new sheet — that voids the old one — and revoke any device you don't recognise.",
+  },
+} as const
+
+export async function sendRecoveryNotice(
+  ctx: MutationCtx,
+  userId: Id<"users">
+): Promise<void> {
+  await send(ctx, userId, RECOVERY_COPY, "recovery notice")
 }

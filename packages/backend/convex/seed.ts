@@ -204,14 +204,11 @@ export const demo = internalMutation({
       }
 
       if (hasVault) {
-        const sealed = guardianId !== undefined && rand() < 0.6
         await ctx.db.insert("keyring", {
           userId,
           mkWrappedByRecovery: fakeBytes(72),
           paperVersion: 1,
           paperPrintedAt: rand() < 0.65 ? now - Math.floor(rand() * 40) * DAY_MS : undefined,
-          guardianId: sealed ? guardianId : undefined,
-          guardianShareSealed: sealed ? fakeBytes(48) : undefined,
           rotatedAt: now - Math.floor(rand() * 40) * DAY_MS,
         })
 
@@ -320,7 +317,7 @@ export const demo = internalMutation({
         role: "owner" as const,
       })
 
-      const demoGuardian = await ctx.db.insert("guardians", {
+      await ctx.db.insert("guardians", {
         userId: ownerId,
         name: "منيرة الدوسري",
         relation: "أخت",
@@ -336,8 +333,6 @@ export const demo = internalMutation({
         mkWrappedByRecovery: fakeBytes(72),
         paperVersion: 1,
         paperPrintedAt: now - 20 * DAY_MS,
-        guardianId: demoGuardian,
-        guardianShareSealed: fakeBytes(48),
         rotatedAt: now - 20 * DAY_MS,
       })
 
