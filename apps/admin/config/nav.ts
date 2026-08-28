@@ -81,8 +81,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     key: "groupRecords",
     items: [
-      { key: "audit", icon: FileClockIcon, href: null },
-      { key: "notifications", icon: BellIcon, href: null },
+      { key: "audit", icon: FileClockIcon, href: "/audit" },
+      { key: "notifications", icon: BellIcon, href: "/notifications" },
     ],
   },
 ]

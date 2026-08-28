@@ -2016,6 +2016,308 @@ export const jobRunsList = query({
   },
 })
 
+// ---------------------------------------------------------------------------
+// Records — the append-only material.
+// ---------------------------------------------------------------------------
+
+/**
+ * The domains an audit event can belong to, taken from the prefix of its name.
+ *
+ * Faceting on the *domain* rather than the exact event, because there are
+ * thirty-odd events and a dropdown of thirty checkboxes is not a filter anyone
+ * uses. The events themselves are shown raw — the same decision the claim
+ * history made, and for the same reason: a reviewer comparing the console
+ * against the deployment needs the two to be the same string.
+ */
+const AUDIT_DOMAINS = [
+  "asset",
+  "checkin",
+  "claim",
+  "device",
+  "email",
+  "guardian",
+  "heir",
+  "identity",
+  "keyring",
+  "profile",
+  "release",
+  "routing",
+] as const
+
+const auditDomainValidator = v.union(
+  ...AUDIT_DOMAINS.map((domain) => v.literal(domain))
+)
+
+/**
+ * Match every event in a domain without enumerating them.
+ *
+ * Convex orders strings lexicographically, so `"claim." <= event < "claim/"` is
+ * a prefix range — `/` is the next code point after `.`. That matters more than
+ * elegance: enumerating the events per domain would be a list to forget to
+ * update, and a new `claim.*` event would silently stop being filterable while
+ * still appearing in the table. A prefix has nothing to keep in sync.
+ */
+function eventInDomain(q: any, domain: string) {
+  return prefixRange(q, "event", domain)
+}
+
+/** The same range over a notification's `kind`. */
+function kindInDomain(q: any, domain: string) {
+  return prefixRange(q, "kind", domain)
+}
+
+function prefixRange(q: any, field: string, domain: string) {
+  return q.and(
+    q.gte(q.field(field), `${domain}.`),
+    q.lt(q.field(field), `${domain}/`)
+  )
+}
+
+const auditFilterArgs = {
+  domains: v.array(auditDomainValidator),
+  /** Matched against the subject of the event — see `ownerIdsMatching`. */
+  search: v.string(),
+}
+
+/**
+ * The audit log, across every account.
+ *
+ * The compliance backbone of a product that hands over estates: who did what,
+ * to whom, and when. Until `by_at` existed there was no way to read it except
+ * one user at a time, so "what happened recently" had no answer.
+ *
+ * Append-only and read-only, enforced two ways — `verify-invariants.mjs` fails
+ * the build on any `patch`, `replace` or `delete` against this table, and there
+ * is deliberately no mutation here to call.
+ *
+ * Newest first, always. A log with one meaningful order should not offer a
+ * column sort that reorders only the page in front of you.
+ */
+export const auditPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...auditFilterArgs },
+  handler: async (ctx, { paginationOpts, search, domains }) => {
+    await requireAdmin(ctx)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { page: [], isDone: true, continueCursor: "" }
+    }
+
+    const result = await ctx.db
+      .query("auditLog")
+      .withIndex("by_at")
+      .order("desc")
+      .filter((q) => {
+        const clauses = []
+        if (domains.length > 0) {
+          clauses.push(
+            q.or(...domains.map((domain) => eventInDomain(q, domain)))
+          )
+        }
+        if (ownerMatch !== null) {
+          clauses.push(
+            q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
+          )
+        }
+        if (clauses.length === 0) return true
+        return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+      })
+      .paginate(paginationOpts)
+
+    const subjects = new Map<string, Doc<"users"> | null>()
+    for (const row of result.page) {
+      const key = row.userId as string
+      if (!subjects.has(key)) {
+        subjects.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      ...result,
+      page: result.page.map((row) => {
+        const subject = subjects.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          event: row.event,
+          subjectId: row.userId,
+          subjectName: subject?.name ?? null,
+          subjectEmail: subject?.email ?? null,
+          // Scalars only, by schema. Every writer keeps third-party personal
+          // data out of it deliberately — `claim.certificate_attached` logs the
+          // claim id and not the name on the certificate.
+          meta: row.meta,
+          deviceId: row.deviceId ?? null,
+          at: row.at,
+        }
+      }),
+    }
+  },
+})
+
+/** Bounded count for the audit filters. See `claimsTally`. */
+export const auditTally = query({
+  args: auditFilterArgs,
+  handler: async (ctx, { search, domains }) => {
+    await requireAdmin(ctx)
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { count: 0, more: false }
+    }
+    const rows = await ctx.db
+      .query("auditLog")
+      .withIndex("by_at")
+      .order("desc")
+      .filter((q) => {
+        const clauses = []
+        if (domains.length > 0) {
+          clauses.push(
+            q.or(...domains.map((domain) => eventInDomain(q, domain)))
+          )
+        }
+        if (ownerMatch !== null) {
+          clauses.push(
+            q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
+          )
+        }
+        if (clauses.length === 0) return true
+        return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+      })
+      .take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
+/**
+ * The domains a *notification* kind can belong to.
+ *
+ * Deliberately shorter than `AUDIT_DOMAINS`: only three writers insert into
+ * `notifications` — the escalation ladder (`checkin.*`), the claim machine
+ * (`claim.*`, including the guardian review) and `keyring.recoverAttempt`
+ * (`recovery.attempted`). Offering a facet for a domain nothing can write
+ * would be a filter that always returns nothing.
+ */
+const NOTIFICATION_DOMAINS = ["checkin", "claim", "recovery"] as const
+
+const notificationFilterArgs = {
+  domains: v.array(
+    v.union(...NOTIFICATION_DOMAINS.map((domain) => v.literal(domain)))
+  ),
+  /** `true` for unread only, `false` for read only. */
+  unread: v.optional(v.boolean()),
+  search: v.string(),
+}
+
+/**
+ * The filter both notification reads share.
+ *
+ * Shared rather than written twice because the tally and the page must agree:
+ * a count that ignored the facets would report the whole table under every
+ * filter, which is worse than no count at all.
+ */
+function notificationClause(
+  q: any,
+  domains: readonly string[],
+  ownerIds: Id<"users">[] | null,
+  unread: boolean | undefined
+) {
+  const clauses = []
+  if (domains.length > 0) {
+    clauses.push(q.or(...domains.map((domain) => kindInDomain(q, domain))))
+  }
+  if (ownerIds !== null) {
+    clauses.push(q.or(...ownerIds.map((id) => q.eq(q.field("userId"), id))))
+  }
+  if (unread === true) clauses.push(q.eq(q.field("readAt"), undefined))
+  if (unread === false) clauses.push(q.neq(q.field("readAt"), undefined))
+  if (clauses.length === 0) return true
+  return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+}
+
+/**
+ * What owners were told *in the app*, as opposed to by mail.
+ *
+ * The pair to the email log, and the reason both exist: an owner who missed a
+ * check-in gets an in-app row and a message, and "did this person ever actually
+ * hear from us" is only answerable with both. The mailer being unconfigured on
+ * this deployment is exactly the case where the two disagree.
+ *
+ * `notifications` carries only `by_userId` indexes, so this scans in creation
+ * order and filters. Affordable because notifications are bounded by owners
+ * and events rather than by traffic, and pagination bounds it either way.
+ */
+export const notificationsPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...notificationFilterArgs },
+  handler: async (ctx, { paginationOpts, search, domains, unread }) => {
+    await requireAdmin(ctx)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { page: [], isDone: true, continueCursor: "" }
+    }
+
+    const result = await ctx.db
+      .query("notifications")
+      .order("desc")
+      .filter((q) =>
+        notificationClause(q, domains, ownerMatch?.ids ?? null, unread)
+      )
+      .paginate(paginationOpts)
+
+    const recipients = new Map<string, Doc<"users"> | null>()
+    for (const row of result.page) {
+      const key = row.userId as string
+      if (!recipients.has(key)) {
+        recipients.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      ...result,
+      page: result.page.map((row) => {
+        const user = recipients.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          kind: row.kind,
+          recipientId: row.userId,
+          recipientName: user?.name ?? null,
+          recipientEmail: user?.email ?? null,
+          // Scalars only, by schema, and written by us rather than typed by
+          // anyone — `daysOverdue`, `nextDueAt`, a claim id. It is the substance
+          // of what the owner was told, which is the question the screen asks.
+          payload: row.payload,
+          readAt: row.readAt ?? null,
+          at: row._creationTime,
+        }
+      }),
+    }
+  },
+})
+
+/** Bounded count for the notification filters. See `claimsTally`. */
+export const notificationsTally = query({
+  args: notificationFilterArgs,
+  handler: async (ctx, { search, domains, unread }) => {
+    await requireAdmin(ctx)
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { count: 0, more: false }
+    }
+    const rows = await ctx.db
+      .query("notifications")
+      .filter((q) =>
+        notificationClause(q, domains, ownerMatch?.ids ?? null, unread)
+      )
+      .take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
 /** Audit rows scanned looking for one claim's history. */
 const HISTORY_SCAN = 400
 

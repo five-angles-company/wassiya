@@ -55,6 +55,7 @@ const SHARED = [
  * feature missing from this list is a feature nothing is watching.
  */
 const FEATURES = [
+  "audit",
   "claims",
   "dashboard",
   "devices",
@@ -65,6 +66,7 @@ const FEATURES = [
   "checkins",
   "email",
   "jobs",
+  "notifications",
   "releases",
   "subscriptions",
 ]

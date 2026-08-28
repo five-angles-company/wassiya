@@ -1,0 +1,160 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { api } from "@workspace/backend/api"
+import { Skeleton } from "@workspace/ui/components/skeleton"
+import { useQuery } from "convex/react"
+import { FileClockIcon } from "lucide-react"
+
+import { DataTable } from "@/components/data-table"
+import { useLocale } from "@/components/locale-provider"
+import { MultiFacet } from "@/components/multi-facet"
+import {
+  auditColumns,
+  type AuditRow,
+} from "@/features/audit/components/audit-columns"
+import { AUDIT } from "@/features/audit/strings/audit"
+import {
+  AUDIT_DOMAINS,
+  domainLabel,
+  type AuditDomain,
+} from "@/lib/audit-domains"
+import { t } from "@/lib/i18n/locale"
+import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
+import { useLastLoaded } from "@/lib/use-last-loaded"
+
+/**
+ * ٩.٣ from the console's side — the append-only record.
+ *
+ * The compliance backbone of a product that hands over estates: who did what,
+ * to whom, and when. Until `auditLog.by_at` existed it could only be read one
+ * account at a time, so *"what happened recently"* had no answer at all.
+ *
+ * Read-only in the strongest sense available here. `verify-invariants.mjs`
+ * fails the build on any `patch`, `replace` or `delete` against this table, so
+ * there is no mutation for this screen to call even if someone wanted one — and
+ * the screen says so above the table rather than leaving it to be assumed.
+ *
+ * Faceted by **domain**, not by event: fifteen event names live on the
+ * deployment today and the code can write more, so a dropdown of every one is
+ * a filter nobody uses. The server resolves a domain to a prefix range, which
+ * means a new `claim.*` event is filterable the day it is written with nothing
+ * to keep in sync.
+ *
+ * Newest first, and no column sorts. A log with one meaningful order should not
+ * offer a sort that silently reorders only the page in front of you.
+ */
+export function AuditLog() {
+  const locale = useLocale()
+  const labels = useMemo(() => t(AUDIT, locale), [locale])
+  const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
+
+  const [domains, setDomains] = useState<AuditDomain[]>([])
+  const [searchInput, setSearchInput] = useState("")
+  const [search, setSearch] = useState("")
+  const [pageSize, setPageSize] = useState(25)
+  const [cursors, setCursors] = useState<(string | null)[]>([null])
+
+  const cursor = cursors[cursors.length - 1] ?? null
+  const resetPaging = useCallback(() => setCursors([null]), [])
+
+  useEffect(() => {
+    if (searchInput.trim() === search) return
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim())
+      resetPaging()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput, search, resetPaging])
+
+  const filters = useMemo(() => ({ domains, search }), [domains, search])
+
+  const { data: page, loading } = useLastLoaded(
+    useQuery(api.admin.auditPage, {
+      ...filters,
+      paginationOpts: { numItems: pageSize, cursor },
+    })
+  )
+  const { data: tally } = useLastLoaded(useQuery(api.admin.auditTally, filters))
+
+  const columns = useMemo(() => auditColumns(locale), [locale])
+  const columnLabels = useMemo(
+    () => ({
+      event: labels.colEvent,
+      subject: labels.colSubject,
+      meta: labels.colMeta,
+      at: labels.colAt,
+    }),
+    [labels]
+  )
+  const options = useMemo(
+    () =>
+      AUDIT_DOMAINS.map((value) => ({
+        value,
+        label: domainLabel(value, locale),
+      })),
+    [locale]
+  )
+
+  if (page === undefined) {
+    return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <p className="max-w-3xl text-sm text-muted-foreground">{labels.intro}</p>
+
+      <DataTable<AuditRow>
+        columns={columns}
+        data={page.page}
+        busy={loading}
+        fill
+        labels={tableLabels}
+        locale={locale}
+        columnLabels={columnLabels}
+        getRowId={(row) => row.id}
+        searchPlaceholder={labels.searchPlaceholder}
+        filters={
+          <MultiFacet
+            title={labels.filterDomain}
+            options={options}
+            values={domains}
+            onChange={setDomains}
+            onReset={resetPaging}
+            clearLabel={tableLabels.resetFilters}
+          />
+        }
+        server={{
+          search: searchInput,
+          onSearchChange: setSearchInput,
+          sorting: [],
+          onSortingChange: () => undefined,
+          sortLocked: false,
+          page: cursors.length,
+          pageSize,
+          onPageSizeChange: (size) => {
+            setPageSize(size)
+            resetPaging()
+          },
+          canPrev: cursors.length > 1,
+          canNext: !page.isDone,
+          onPrev: () =>
+            setCursors((current) =>
+              current.length > 1 ? current.slice(0, -1) : current
+            ),
+          onNext: () =>
+            setCursors((current) => [...current, page.continueCursor]),
+          total: tally,
+          loading,
+        }}
+        empty={
+          <div className="flex flex-col items-center justify-center gap-2 text-center">
+            <FileClockIcon className="size-6 text-muted-foreground" />
+            <p className="font-medium">{labels.empty}</p>
+            <p className="text-sm text-muted-foreground">{labels.emptyHint}</p>
+          </div>
+        }
+      />
+    </div>
+  )
+}
