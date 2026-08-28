@@ -4,8 +4,15 @@ import {
   identityLabel,
   identityVariant,
   type IdentityStatus,
-} from "@/features/claims/lib/identity"
+} from "@/lib/identity"
 import type { Locale } from "@/lib/i18n/locale"
+
+/**
+ * Shared rather than owned by the claims feature, which is where it started.
+ * The identity queue renders the same badge over the same four states, and
+ * `import/no-restricted-paths` forbids one feature reaching into another — so
+ * anything two features need lives here by construction, not by preference.
+ */
 
 /**
  * The claimant's Didit state.

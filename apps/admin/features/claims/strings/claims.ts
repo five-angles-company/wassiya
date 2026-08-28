@@ -44,10 +44,8 @@ export const CLAIMS = {
   colActions: { ar: "إجراءات", en: "Actions" },
   colHeir: { ar: "الوريث", en: "Heir" },
 
-  identityVerified: { ar: "موثّقة", en: "Verified" },
-  identityPending: { ar: "قيد التحقق", en: "Pending" },
-  identityUnverified: { ar: "غير موثّقة", en: "Unverified" },
-  identityRejected: { ar: "مرفوضة", en: "Rejected" },
+  // The four state labels moved to `lib/i18n/strings/identity-status.ts` —
+  // three screens read them and shared code cannot import a feature's strings.
 
   certificateView: { ar: "فتح الملف", en: "Open file" },
   certificateNone: { ar: "لم تصل", en: "Not received" },

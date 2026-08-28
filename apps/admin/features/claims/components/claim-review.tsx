@@ -30,8 +30,8 @@ import {
 import { toast } from "sonner"
 
 import { useLocale } from "@/components/locale-provider"
-import { ConfirmAction } from "@/features/claims/components/confirm-action"
-import { IdentityBadge } from "@/features/claims/components/identity-badge"
+import { ConfirmAction } from "@/components/confirm-action"
+import { IdentityBadge } from "@/components/identity-badge"
 import {
   claimStatusLabel,
   type ClaimStatus,

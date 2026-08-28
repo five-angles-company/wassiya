@@ -19,7 +19,7 @@ import { useClaimQueryState } from "@/features/claims/lib/use-claim-query-state"
 import {
   IDENTITY_STATUSES,
   identityLabel,
-} from "@/features/claims/lib/identity"
+} from "@/lib/identity"
 import {
   CLAIM_STATUSES,
   claimStatusLabel,

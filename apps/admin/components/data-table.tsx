@@ -78,6 +78,9 @@ type DataTableProps<TData extends RowData> = {
    * paging a page.
    */
   server?: ServerTable
+  /** Defaults to true; false for lists with no searchable field. */
+  searchable?: boolean
+  searchPlaceholder?: string
   initialPageSize?: number
   /** Row click target, for tables whose rows open a detail screen. */
   onRowClick?: (row: TData) => void
@@ -124,6 +127,8 @@ export function DataTable<TData extends RowData>({
   bulk,
   capped,
   server,
+  searchable = true,
+  searchPlaceholder,
   initialPageSize = 10,
   onRowClick,
   compact = false,
@@ -175,6 +180,8 @@ export function DataTable<TData extends RowData>({
             capped={capped}
             filters={filters}
             server={server}
+            searchable={searchable}
+            searchPlaceholder={searchPlaceholder}
           />
         </div>
       )}

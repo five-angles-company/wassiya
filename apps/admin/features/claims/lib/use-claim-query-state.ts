@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import type { SortingState } from "@tanstack/react-table"
 
 import type { ClaimStatus } from "@/features/claims/lib/status"
-import type { IdentityStatus } from "@/features/claims/lib/identity"
+import type { IdentityStatus } from "@/lib/identity"
 
 /** What the workspace opens on — the only status with a decision in front of it. */
 const DEFAULT_STATUSES: ClaimStatus[] = ["submitted"]

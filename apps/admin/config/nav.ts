@@ -43,9 +43,12 @@ export type NavGroup = { key: NavKey; items: readonly NavItem[] }
  * the owner's record; **Operations** is what runs unattended (the two hourly
  * crons, escalation mail, release); **Records** is the append-only material.
  *
- * Exactly one item resolves today. That is the honest state of the console: the
- * dashboard reads real data, and everything else is a named place to put the
- * next piece of work.
+ * **Review resolves; the other three groups do not.** That is deliberate rather
+ * than incidental — the sidebar is worked group by group, and Review is the one
+ * the console exists for: the human-judgement path a death claim walks. The
+ * remaining items are named places to put the next piece of work, and a `null`
+ * href renders disabled with a "soon" badge rather than as a working link to an
+ * empty page.
  */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {
@@ -53,8 +56,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { key: "dashboard", icon: LayoutDashboardIcon, href: "/" },
       { key: "claims", icon: ClipboardCheckIcon, href: "/claims" },
-      { key: "identity", icon: ShieldCheckIcon, href: null },
-      { key: "guardians", icon: GavelIcon, href: null },
+      { key: "identity", icon: ShieldCheckIcon, href: "/identity" },
+      { key: "guardians", icon: GavelIcon, href: "/guardians" },
     ],
   },
   {

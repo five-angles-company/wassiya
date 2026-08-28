@@ -15,10 +15,12 @@ import {
   action,
   internalMutation,
   internalQuery,
+  mutation,
   query,
   type MutationCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { requireAdmin } from "./model/access"
 import { getCurrentUser } from "./users"
 
 const DEFAULT_API_URL = "https://verification.didit.me/v2/session/"
@@ -222,3 +224,56 @@ async function resolveSubject(
     .withIndex("by_diditSessionId", (q) => q.eq("diditSessionId", sessionId))
     .unique()
 }
+
+/**
+ * Give a blocked owner their Didit attempts back.
+ *
+ * ## The hole this fills
+ *
+ * At three failures the mobile app stops offering a retry and shows *"Let's
+ * finish this together — contact support"*. Until this existed, support had
+ * nothing to do next: no console screen listed the affected accounts and no
+ * mutation could clear the counter. The product shipped a promise that its own
+ * operators could not keep.
+ *
+ * ## What it deliberately does not do
+ *
+ * It does not touch `identityStatus`. The webhook is the only thing allowed to
+ * write `verified`, and that stays true — this hands back an attempt, it does
+ * not grant a verification. There is no admin path to `verified` and there must
+ * never be one: identity is the blocking gate a whole vault rests on, and the
+ * verified legal name is what a death certificate is later matched against.
+ *
+ * It is also not a security boundary being lifted. The three-attempt cap lives
+ * in the mobile app (`identityRetriesExhausted`), not in `startSession`, so a
+ * reset returns the owner to a state they could already occupy.
+ *
+ * The audit line records `adminUserId` in `meta` because `writeAudit`'s own
+ * `userId` is the *subject* — without it the log would say this owner's
+ * attempts were reset and never say by whom, which for the console's one
+ * support action is the difference between an audit trail and a rumour.
+ */
+export const adminResetAttempts = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const admin = await requireAdmin(ctx)
+    const user = await ctx.db.get("users", userId)
+    if (user === null) {
+      throw new Error("Not found")
+    }
+    if (user.identityStatus === "verified") {
+      // Nothing to unblock, and clearing the counter would only make the audit
+      // trail harder to read.
+      throw new Error("This account is already verified")
+    }
+
+    const from = user.identityAttempts ?? 0
+    await ctx.db.patch("users", userId, { identityAttempts: 0 })
+    await writeAudit(ctx, {
+      userId,
+      event: "identity.attempts_reset",
+      meta: { from, adminUserId: admin._id },
+    })
+    return null
+  },
+})

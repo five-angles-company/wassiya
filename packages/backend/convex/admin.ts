@@ -833,6 +833,303 @@ export const claimsTally = query({
   },
 })
 
+// ---------------------------------------------------------------------------
+// The identity queue — Review's third screen.
+// ---------------------------------------------------------------------------
+
+/** The filters the identity queue can apply, shared by its page and its tally. */
+const identityFilterArgs = {
+  statuses: v.array(identityStatusValidator),
+  /** Only owners who have burned every Didit attempt. */
+  stuckOnly: v.boolean(),
+  /** Exact address, not a substring. Empty means no lookup. */
+  email: v.string(),
+  sort: v.union(v.literal("newest"), v.literal("oldest")),
+}
+
+type IdentityFilters = {
+  statuses: string[]
+  stuckOnly: boolean
+  email: string
+  sort: "newest" | "oldest"
+}
+
+/**
+ * Build the filtered, ordered owners query.
+ *
+ * Three shapes, most selective first:
+ *
+ *  1. **An email is a seek.** `by_email` is an equality index, so a lookup
+ *     costs one range rather than a scan.
+ *  2. **One status is a seek too** — `by_identityStatus`. This branch is worth
+ *     the six lines the claims pair does without: `users` is the table that
+ *     grows fastest in this product, one row per signup, and a single status is
+ *     the common case for a queue.
+ *  3. **Otherwise** creation order, filtered.
+ *
+ * > The email lookup **distinguishes a hit from a miss**, which `claims.submit`
+ * > deliberately refuses to do — it answers `{ received: true }` either way so a
+ * > stranger cannot test who holds an account. That is safe here only because
+ * > every caller passes `requireAdmin`, and it returns nothing the queue row
+ * > does not already show. This pattern must never be lifted into a query that
+ * > is not admin-gated.
+ */
+function identityQuery(ctx: QueryCtx, filters: IdentityFilters) {
+  const base =
+    filters.email.length > 0
+      ? ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", filters.email))
+      : filters.statuses.length === 1
+        ? ctx.db
+            .query("users")
+            .withIndex("by_identityStatus", (q) =>
+              q.eq("identityStatus", filters.statuses[0] as Doc<"users">["identityStatus"])
+            )
+            .order(filters.sort === "oldest" ? "asc" : "desc")
+        : ctx.db
+            .query("users")
+            .order(filters.sort === "oldest" ? "asc" : "desc")
+
+  return base.filter((q) => {
+    const clauses = [
+      // Staff are not owners and do not belong in the owners' queue — the same
+      // exclusion `risk` and `activation` apply.
+      q.neq(q.field("role"), "admin"),
+    ]
+    // Already narrowed by the index when exactly one was asked for.
+    if (filters.statuses.length > 1) {
+      clauses.push(
+        q.or(
+          ...filters.statuses.map((status) =>
+            q.eq(q.field("identityStatus"), status)
+          )
+        )
+      )
+    } else if (filters.statuses.length === 1 && filters.email.length > 0) {
+      // The email index drove the query, so the status is still unapplied.
+      clauses.push(q.eq(q.field("identityStatus"), filters.statuses[0]))
+    }
+    if (filters.stuckOnly) {
+      clauses.push(
+        q.gte(q.field("identityAttempts"), MAX_IDENTITY_ATTEMPTS)
+      )
+    }
+    return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+  })
+}
+
+function identityRow(user: Doc<"users">) {
+  const attempts = user.identityAttempts ?? 0
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    status: user.identityStatus ?? ("unverified" as const),
+    verifiedName: user.identityVerifiedName ?? null,
+    docType: user.identityDocType ?? null,
+    verifiedAt: user.identityVerifiedAt ?? null,
+    attempts,
+    attemptsAllowed: MAX_IDENTITY_ATTEMPTS,
+    /** Out of retries in the app, and with no way back without a reviewer. */
+    stuck: attempts >= MAX_IDENTITY_ATTEMPTS,
+    joinedAt: user._creationTime,
+  }
+}
+
+/**
+ * One page of the identity queue.
+ *
+ * `activation` already counts owners who have exhausted their attempts, so the
+ * dashboard can say *four are stuck* — and until this query existed, nothing
+ * anywhere could say **which four**. That gap is the reason the screen exists:
+ * the mobile app tells a blocked owner to contact support, and support could
+ * not find them.
+ *
+ * Never returns anything that would let the console impersonate or verify:
+ * `diditSessionId` and `externalId` are deliberately absent.
+ */
+export const identityPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...identityFilterArgs },
+  handler: async (ctx, { paginationOpts, ...filters }) => {
+    await requireAdmin(ctx)
+    const result = await identityQuery(ctx, filters).paginate(paginationOpts)
+    return { ...result, page: result.page.map(identityRow) }
+  },
+})
+
+/** Bounded count for the identity queue's filters. See `claimsTally`. */
+export const identityTally = query({
+  args: identityFilterArgs,
+  handler: async (ctx, filters) => {
+    await requireAdmin(ctx)
+    const rows = await identityQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
+
+// ---------------------------------------------------------------------------
+// The guardians list — Review's fourth screen.
+// ---------------------------------------------------------------------------
+
+/**
+ * What a guardian appointment actually *is*, as opposed to what it stores.
+ *
+ * The raw `status` hides the two conditions worth acting on. An `invited` row
+ * whose window has closed still reads `invited`, so an owner believes they have
+ * a guardian and does not. An `accepted` row with no published key cannot be
+ * sealed an heir's share, so it protects delivery no more than an empty seat.
+ *
+ * Derived here rather than in the browser so the filter and the badge cannot
+ * disagree, and so filtering by `expired` narrows the query rather than the
+ * page.
+ */
+const guardianStateValidator = v.union(
+  v.literal("live"),
+  v.literal("accepted"),
+  v.literal("invited"),
+  v.literal("expired"),
+  v.literal("revoked")
+)
+
+type GuardianState = "live" | "accepted" | "invited" | "expired" | "revoked"
+
+function guardianState(row: Doc<"guardians">, now: number): GuardianState {
+  if (row.status === "revoked") return "revoked"
+  if (row.status === "accepted") {
+    // `isGuardianLive`, server-side: accepted alone seals nothing.
+    return row.x25519PublicKey !== undefined ? "live" : "accepted"
+  }
+  return row.inviteExpiresAt < now ? "expired" : "invited"
+}
+
+const guardianFilterArgs = {
+  states: v.array(guardianStateValidator),
+  /** Passed in: a query may not read the wall clock. */
+  now: v.number(),
+  sort: v.union(v.literal("newest"), v.literal("expiring")),
+}
+
+type GuardianFilters = {
+  states: GuardianState[]
+  now: number
+  sort: "newest" | "expiring"
+}
+
+/**
+ * Guardian rows for the console.
+ *
+ * The derived state is not indexable — it reads three columns and the clock —
+ * so the raw statuses it could possibly come from are pushed into the query and
+ * the rest is settled per row. `live` and `accepted` both live under the
+ * `accepted` status; `invited` and `expired` both under `invited`.
+ */
+async function guardianRows(
+  ctx: QueryCtx,
+  filters: GuardianFilters,
+  limit: number
+): Promise<Doc<"guardians">[]> {
+  const wanted = new Set(filters.states)
+  const statuses =
+    wanted.size === 0
+      ? null
+      : [
+          ...new Set(
+            [...wanted].map((state) =>
+              state === "live" || state === "accepted"
+                ? "accepted"
+                : state === "revoked"
+                  ? "revoked"
+                  : "invited"
+            )
+          ),
+        ]
+
+  const base =
+    statuses !== null && statuses.length === 1
+      ? ctx.db
+          .query("guardians")
+          .withIndex("by_status", (q) =>
+            q.eq("status", statuses[0] as Doc<"guardians">["status"])
+          )
+      : ctx.db.query("guardians").order("desc")
+
+  const rows = await base.take(limit)
+  const matched =
+    wanted.size === 0
+      ? rows
+      : rows.filter((row) => wanted.has(guardianState(row, filters.now)))
+
+  return filters.sort === "expiring"
+    ? matched.sort((a, b) => a.inviteExpiresAt - b.inviteExpiresAt)
+    : matched.sort((a, b) => b._creationTime - a._creationTime)
+}
+
+/**
+ * How many guardian rows one console read scans.
+ *
+ * Not paginated, unlike claims and identity, and the reason is the derived
+ * state: `expired` cannot be expressed as an index range, so a cursor page
+ * would come back arbitrarily short after filtering and "another page follows"
+ * would stop meaning anything. Guardians are bounded by owners rather than by
+ * traffic — one or two per vault — so a capped read is the honest shape. The
+ * console says when it hits the cap.
+ */
+const GUARDIANS_SCAN = 1000
+
+/**
+ * The guardians list, and the count of what was scanned.
+ *
+ * **Never selects `inviteToken`.** That token is the whole capability of an
+ * invitation: `guardians.accept` takes nothing else, so a console that could
+ * read one could enrol itself as any owner's guardian. `guardians.ts` returns
+ * it from `invite` alone, to the owner, exactly so the deployment cannot choose
+ * a guardian — and this query would be the hole in that. Nothing here may
+ * select it, now or later.
+ */
+export const guardiansList = query({
+  args: guardianFilterArgs,
+  handler: async (ctx, filters) => {
+    await requireAdmin(ctx)
+    const rows = await guardianRows(ctx, filters, GUARDIANS_SCAN + 1)
+    const capped = rows.length > GUARDIANS_SCAN
+    const page = rows.slice(0, GUARDIANS_SCAN)
+
+    const owners = new Map<string, Doc<"users"> | null>()
+    for (const row of page) {
+      const key = row.userId as string
+      if (!owners.has(key)) {
+        owners.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      rows: page.map((row) => {
+        const owner = owners.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          ownerName: owner?.name ?? null,
+          ownerEmail: owner?.email ?? null,
+          guardianName: row.name,
+          relation: row.relation,
+          state: guardianState(row, filters.now),
+          hasPublicKey: row.x25519PublicKey !== undefined,
+          /** Whether an account was ever bound — `accept` is what writes it. */
+          claimed: row.guardianUserId !== undefined,
+          inviteExpiresAt: row.inviteExpiresAt,
+          invitedAt: row._creationTime,
+        }
+      }),
+      capped,
+      scanCap: GUARDIANS_SCAN,
+    }
+  },
+})
+
 /** Audit rows scanned looking for one claim's history. */
 const HISTORY_SCAN = 400
 

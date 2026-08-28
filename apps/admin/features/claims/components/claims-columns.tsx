@@ -16,7 +16,7 @@ import type { FunctionReturnType } from "convex/server"
 import { ExternalLinkIcon, MoreHorizontalIcon } from "lucide-react"
 
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
-import { IdentityBadge } from "@/features/claims/components/identity-badge"
+import { IdentityBadge } from "@/components/identity-badge"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import type { DataTableFeatures } from "@/lib/data-table-features"
