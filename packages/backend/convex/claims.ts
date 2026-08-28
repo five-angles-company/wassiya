@@ -37,6 +37,7 @@ import {
   vetoWindowElapsed,
 } from "./model/claimFlow"
 import { sendGuardianClaimNotice } from "./email"
+import { recordJobRun } from "./model/jobRuns"
 import { getCurrentUserOrThrow } from "./users"
 
 /**
@@ -438,8 +439,9 @@ export const adminLinkHeir = mutation({
  * prevent.
  */
 export const advance = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+  /** See `checkin.sweep` — set by the reschedule, so only the first pass trims. */
+  args: { continued: v.optional(v.boolean()) },
+  handler: async (ctx, { continued }) => {
     const now = Date.now()
     const due = await ctx.db
       .query("claims")
@@ -470,9 +472,25 @@ export const advance = internalMutation({
 
     // Only continue on real progress, so a batch that released nothing cannot
     // reschedule itself in a loop.
-    if (released === ADVANCE_BATCH) {
-      await ctx.scheduler.runAfter(0, internal.claims.advance, {})
+    const rescheduled = released === ADVANCE_BATCH
+    if (rescheduled) {
+      await ctx.scheduler.runAfter(0, internal.claims.advance, {
+        continued: true,
+      })
     }
+
+    // Written every pass, including the ones that release nothing. A veto
+    // window that has not elapsed yet is the normal case, and the console has
+    // to be able to tell that apart from a scheduler that has stopped.
+    await recordJobRun(ctx, {
+      name: "claims.advance",
+      ranAt: now,
+      scanned: due.length,
+      changed: released,
+      rescheduled,
+      continued: continued === true,
+    })
+
     return { scanned: due.length, released }
   },
 })

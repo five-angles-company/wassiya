@@ -28,6 +28,7 @@ import { Resend } from "@convex-dev/resend"
 import { components } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
 import type { MutationCtx } from "./_generated/server"
+import { writeAudit } from "./audit"
 
 export const resend: Resend = new Resend(components.resend, {
   // On unless explicitly turned off, so the safe state is the default one.
@@ -155,6 +156,27 @@ async function send(
     to: user.email,
     subject: text.subject,
     text: text.body,
+  })
+
+  // Written here and only here, after the message is actually enqueued — the
+  // single funnel every notice passes through, so one call covers the
+  // escalation ladder, the guardian notice and the recovery alert at once.
+  // Until this existed no outbound mail left any record at all, and "did this
+  // owner get the day-14 warning?" had no answer short of the Resend dashboard.
+  //
+  // Deliberately *after* the two early returns above. A missing `RESEND_FROM`
+  // or a user with no address means no mail went out, and the absence of a row
+  // beside a `checkin.escalated` is exactly the diagnostic worth having: the
+  // rung advanced and nothing reached anyone.
+  //
+  // The kind, never the body. An escalation notice is a fact about someone's
+  // mortality, the log is append-only and staff-readable, and `userId` already
+  // identifies the recipient — the address would be a second copy of something
+  // the users table holds.
+  await writeAudit(ctx, {
+    userId,
+    event: "email.sent",
+    meta: { kind: what },
   })
 }
 

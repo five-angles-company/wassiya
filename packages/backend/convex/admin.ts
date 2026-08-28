@@ -1630,6 +1630,392 @@ export const devicesTally = query({
   },
 })
 
+// ---------------------------------------------------------------------------
+// Operations — the machinery, and whether it ran.
+// ---------------------------------------------------------------------------
+
+const escalationStateValidator = v.union(
+  v.literal("idle"),
+  v.literal("day0"),
+  v.literal("day7"),
+  v.literal("day14"),
+  v.literal("countdown")
+)
+
+const checkinFilterArgs = {
+  states: v.array(escalationStateValidator),
+  /** Matched against the owner — see `ownerIdsMatching`. */
+  search: v.string(),
+  /** `soonest` puts the furthest past due first; `latest` reverses it. */
+  sort: v.union(v.literal("soonest"), v.literal("latest")),
+  /** Passed in: a query may not read the clock. Drives "days overdue". */
+  now: v.number(),
+}
+
+type CheckinFilters = {
+  states: string[]
+  sort: "soonest" | "latest"
+}
+
+/**
+ * Owners ordered by how far past due they are.
+ *
+ * `by_nextDueAt` rather than the compound `by_escalationState_and_nextDueAt`:
+ * the compound index leads on the state, so it cannot order by due date across
+ * several states or none. One key gives the same order however the states are
+ * filtered, which is what makes the sort mean one thing.
+ */
+function checkinsQuery(
+  ctx: QueryCtx,
+  filters: CheckinFilters,
+  ownerIds: Id<"users">[] | null
+) {
+  return ctx.db
+    .query("checkinConfig")
+    .withIndex("by_nextDueAt")
+    .order(filters.sort === "soonest" ? "asc" : "desc")
+    .filter((q) => {
+      const clauses = []
+      if (ownerIds !== null) {
+        clauses.push(q.or(...ownerIds.map((id) => q.eq(q.field("userId"), id))))
+      }
+      if (filters.states.length > 0) {
+        clauses.push(
+          q.or(
+            ...filters.states.map((state) =>
+              q.eq(q.field("escalationState"), state)
+            )
+          )
+        )
+      }
+      if (clauses.length === 0) return true
+      return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
+    })
+}
+
+/**
+ * One page of the check-in ladder.
+ *
+ * `admin.overview` has always counted these by state, so the dashboard could
+ * say *six owners are mid-escalation* while nothing anywhere could say which
+ * six. Third time that gap has appeared in this console — the identity queue
+ * and the claims workspace were the others.
+ */
+export const checkinsPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...checkinFilterArgs },
+  handler: async (ctx, { paginationOpts, search, now, ...filters }) => {
+    await requireAdmin(ctx)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { page: [], isDone: true, continueCursor: "" }
+    }
+
+    const result = await checkinsQuery(
+      ctx,
+      filters,
+      ownerMatch?.ids ?? null
+    ).paginate(paginationOpts)
+
+    const owners = new Map<string, Doc<"users"> | null>()
+    for (const row of result.page) {
+      const key = row.userId as string
+      if (!owners.has(key)) {
+        owners.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      ...result,
+      page: result.page.map((row) => {
+        const owner = owners.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          ownerId: row.userId,
+          ownerName: owner?.name ?? null,
+          ownerEmail: owner?.email ?? null,
+          escalationState: row.escalationState,
+          cadenceMonths: row.cadenceMonths,
+          graceDays: row.graceDays,
+          nextDueAt: row.nextDueAt,
+          lastConfirmedAt: row.lastConfirmedAt,
+          /** Negative until the deadline passes; the console reads the sign. */
+          overdueMs: now - row.nextDueAt,
+        }
+      }),
+    }
+  },
+})
+
+/** Bounded count for the check-in filters. See `claimsTally`. */
+export const checkinsTally = query({
+  args: checkinFilterArgs,
+  handler: async (ctx, { search, now: _now, ...filters }) => {
+    await requireAdmin(ctx)
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { count: 0, more: false }
+    }
+    const rows = await checkinsQuery(ctx, filters, ownerMatch?.ids ?? null).take(
+      CLAIMS_TALLY_CAP + 1
+    )
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+    }
+  },
+})
+
+/** How many rows each release band shows before it says it was cut short. */
+const RELEASE_BAND_CAP = 100
+
+/**
+ * The release pipeline: what is counting down, and what already went.
+ *
+ * **Not a list of bundles**, because there are none — `releaseBundles` has
+ * never held a row, since `makeHeirShares`, `buildReleaseBundle` and
+ * `release.saveBundles` have no caller in any app. What exists instead is a
+ * pipeline, and this screen's job is to show where it stops.
+ *
+ * Bounded rather than paginated: a countdown an operator pages through has
+ * stopped being a countdown. Each band says so when it hits the cap.
+ *
+ * ## Three delivery states, not two
+ *
+ * A released claim can fail to deliver two different ways, and reporting them
+ * as one would blame the wrong thing:
+ *
+ *  - **no heir linked** — `claim.heirId` is unset, so nothing *could* be built
+ *  - **no bundle** — an heir is linked and nothing was built for them
+ *
+ * `guardianConfirm` requires `heirId`, so a claim cannot legitimately reach
+ * `awaiting_veto` without one; today's rows that lack it are seed artefacts,
+ * written straight to a status past the state machine. On real data the first
+ * state should be unreachable, which makes it an alarm rather than noise.
+ */
+export const releasesPipeline = query({
+  args: { now: v.number() },
+  handler: async (ctx, { now }) => {
+    await requireAdmin(ctx)
+
+    const pending = await ctx.db
+      .query("claims")
+      .withIndex("by_status_and_vetoDeadline", (q) =>
+        q.eq("status", "awaiting_veto")
+      )
+      .take(RELEASE_BAND_CAP + 1)
+
+    const done = await ctx.db
+      .query("claims")
+      .withIndex("by_status", (q) => q.eq("status", "released"))
+      .order("desc")
+      .take(RELEASE_BAND_CAP + 1)
+
+    const subjects = new Map<string, Doc<"users"> | null>()
+    const subjectOf = async (row: Doc<"claims">) => {
+      const key = row.subjectUserId as string
+      if (!subjects.has(key)) {
+        subjects.set(key, await ctx.db.get("users", row.subjectUserId))
+      }
+      return subjects.get(key) ?? null
+    }
+
+    const counting = []
+    for (const row of pending.slice(0, RELEASE_BAND_CAP)) {
+      const subject = await subjectOf(row)
+      counting.push({
+        id: row._id,
+        subjectName: subject?.name ?? null,
+        subjectEmail: subject?.email ?? null,
+        claimantName: row.claimantName,
+        vetoDeadline: row.vetoDeadline ?? null,
+        /** Negative once the deadline has passed and the sweep has not run. */
+        remainingMs: (row.vetoDeadline ?? now) - now,
+        heirLinked: row.heirId !== undefined,
+      })
+    }
+
+    const released = []
+    for (const row of done.slice(0, RELEASE_BAND_CAP)) {
+      const subject = await subjectOf(row)
+      // Only probed when there is an heir to probe with — the absence of a
+      // link is a different answer, not a missing bundle.
+      let delivery: "delivered" | "no-bundle" | "no-heir" = "no-heir"
+      if (row.heirId !== undefined) {
+        const bundle = await ctx.db
+          .query("releaseBundles")
+          .withIndex("by_heirId", (q) => q.eq("heirId", row.heirId!))
+          .first()
+        delivery = bundle === null ? "no-bundle" : "delivered"
+      }
+      released.push({
+        id: row._id,
+        subjectName: subject?.name ?? null,
+        subjectEmail: subject?.email ?? null,
+        claimantName: row.claimantName,
+        releasedAt: row.vetoDeadline ?? row._creationTime,
+        delivery,
+      })
+    }
+
+    return {
+      counting,
+      countingCapped: pending.length > RELEASE_BAND_CAP,
+      released,
+      releasedCapped: done.length > RELEASE_BAND_CAP,
+      bandCap: RELEASE_BAND_CAP,
+    }
+  },
+})
+
+/**
+ * What the system emailed, to whom, and when.
+ *
+ * A slice of `auditLog` rather than a table of its own: `email.ts`'s `send()`
+ * now writes one row per message, and that log already exists. Reads the new
+ * `by_at` index, because "recently" across every account was otherwise a full
+ * scan of the one table that only grows.
+ *
+ * Returns the kind and the recipient, never a body — see `send()` for why the
+ * row holds as little as it does.
+ */
+export const emailLogPage = query({
+  args: { paginationOpts: paginationOptsValidator, search: v.string() },
+  handler: async (ctx, { paginationOpts, search }) => {
+    await requireAdmin(ctx)
+
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { page: [], isDone: true, continueCursor: "" }
+    }
+
+    const result = await ctx.db
+      .query("auditLog")
+      .withIndex("by_at")
+      .order("desc")
+      .filter((q) => {
+        const isEmail = q.eq(q.field("event"), "email.sent")
+        return ownerMatch === null
+          ? isEmail
+          : q.and(
+              isEmail,
+              q.or(
+                ...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id))
+              )
+            )
+      })
+      .paginate(paginationOpts)
+
+    const recipients = new Map<string, Doc<"users"> | null>()
+    for (const row of result.page) {
+      const key = row.userId as string
+      if (!recipients.has(key)) {
+        recipients.set(key, await ctx.db.get("users", row.userId))
+      }
+    }
+
+    return {
+      ...result,
+      page: result.page.map((row) => {
+        const user = recipients.get(row.userId as string) ?? null
+        return {
+          id: row._id,
+          kind: typeof row.meta.kind === "string" ? row.meta.kind : "unknown",
+          recipientId: row.userId,
+          recipientName: user?.name ?? null,
+          recipientEmail: user?.email ?? null,
+          at: row.at,
+        }
+      }),
+    }
+  },
+})
+
+/**
+ * Bounded count of recorded sends, and whether a mailer is configured at all.
+ *
+ * `send()` returns early when `RESEND_FROM` is unset — no mail, and by design
+ * no row. So an empty log has two very different causes: nothing has been sent,
+ * or **nothing can be**. On this deployment right now it is the second: eleven
+ * rungs have advanced and not one message has left. A screen that showed an
+ * empty table without saying so would be reporting silence as calm.
+ */
+export const emailLogTally = query({
+  args: { search: v.string() },
+  handler: async (ctx, { search }) => {
+    await requireAdmin(ctx)
+    const mailerConfigured = process.env.RESEND_FROM !== undefined
+    const ownerMatch = await ownerIdsMatching(ctx, search)
+    if (ownerMatch !== null && ownerMatch.ids.length === 0) {
+      return { count: 0, more: false, mailerConfigured }
+    }
+    const rows = await ctx.db
+      .query("auditLog")
+      .withIndex("by_at")
+      .order("desc")
+      .filter((q) => q.eq(q.field("event"), "email.sent"))
+      .take(CLAIMS_TALLY_CAP + 1)
+    return {
+      count: Math.min(rows.length, CLAIMS_TALLY_CAP),
+      more: rows.length > CLAIMS_TALLY_CAP,
+      mailerConfigured,
+    }
+  },
+})
+
+/** The two crons, by name, in the order they appear in `crons.ts`. */
+const JOB_NAMES = ["checkin.sweep", "claims.advance"] as const
+
+/** How many recent runs one job shows. */
+const JOB_RUNS_SHOWN = 20
+
+/**
+ * Whether the machinery is running.
+ *
+ * Per job: the most recent run, and the most recent run that *changed*
+ * something. Both, because they answer different questions — the first says
+ * the cron is alive, the second says when it last had work. A sweep that finds
+ * nothing due is healthy, and until `jobRuns` existed it was indistinguishable
+ * from one that had stopped.
+ *
+ * A job with no rows at all has either never run or been renamed. The console
+ * says so rather than rendering an empty row, because "no data" and "no cron"
+ * are the confusion this whole table exists to remove.
+ */
+export const jobRunsList = query({
+  args: {},
+  handler: async (ctx) => {
+    await requireAdmin(ctx)
+
+    const jobs = []
+    for (const name of JOB_NAMES) {
+      const recent = await ctx.db
+        .query("jobRuns")
+        .withIndex("by_name_and_ranAt", (q) => q.eq("name", name))
+        .order("desc")
+        .take(JOB_RUNS_SHOWN)
+
+      jobs.push({
+        name,
+        lastRun: recent[0] ?? null,
+        lastChange: recent.find((row) => row.changed > 0) ?? null,
+        /** Whether `lastChange` is merely outside the window shown. */
+        changeOutsideWindow:
+          recent.length === JOB_RUNS_SHOWN &&
+          recent.every((row) => row.changed === 0),
+        runs: recent.map((row) => ({
+          id: row._id,
+          ranAt: row.ranAt,
+          scanned: row.scanned,
+          changed: row.changed,
+          rescheduled: row.rescheduled,
+        })),
+      })
+    }
+    return { jobs, shown: JOB_RUNS_SHOWN }
+  },
+})
+
 /** Audit rows scanned looking for one claim's history. */
 const HISTORY_SCAN = 400
 

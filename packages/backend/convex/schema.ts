@@ -307,7 +307,13 @@ export default defineSchema({
     .index("by_escalationState_and_nextDueAt", [
       "escalationState",
       "nextDueAt",
-    ]),
+    ])
+    // The console's overdue list. The compound index above cannot serve it:
+    // its first key is the state, so ordering by due date across *several*
+    // states — or none — is not a range it can express. One key, one order,
+    // and "who is furthest past due" reads the same however the states are
+    // filtered.
+    .index("by_nextDueAt", ["nextDueAt"]),
 
   claims: defineTable({
     subjectUserId: v.id("users"),
@@ -380,7 +386,36 @@ export default defineSchema({
     deviceId: v.optional(v.id("devices")),
     meta: scalarRecord,
     at: v.number(),
-  }).index("by_userId_and_at", ["userId", "at"]),
+  })
+    .index("by_userId_and_at", ["userId", "at"])
+    // Read across every account, newest first — the console's email log, and
+    // the Records group's audit view after it. Without it "what happened
+    // recently" is a full scan of the one table that only ever grows.
+    .index("by_at", ["at"]),
+
+  /**
+   * A heartbeat per cron invocation.
+   *
+   * The audit log records *effects*: `checkin.escalated` when a rung advances,
+   * `claim.released` when a claim does. An hourly sweep that correctly finds
+   * nothing due writes nothing at all — so "the switch is quiet" and "the
+   * switch is dead" are the same absence of data, in a product where the second
+   * one means no estate is ever delivered.
+   *
+   * This separates them. One row per invocation, written from the counts both
+   * crons already return and currently hand to a scheduler that discards them.
+   *
+   * `rescheduled` marks a full batch that queued a continuation, so one logical
+   * run can be several rows — which is why the console shows the most recent
+   * run *and* the most recent one that changed something.
+   */
+  jobRuns: defineTable({
+    name: v.string(),
+    ranAt: v.number(),
+    scanned: v.number(),
+    changed: v.number(),
+    rescheduled: v.boolean(),
+  }).index("by_name_and_ranAt", ["name", "ranAt"]),
 
   notifications: defineTable({
     userId: v.id("users"),

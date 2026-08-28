@@ -72,10 +72,10 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     key: "groupOperations",
     items: [
-      { key: "checkins", icon: HeartPulseIcon, href: null },
-      { key: "releases", icon: UnlockIcon, href: null },
-      { key: "email", icon: MailIcon, href: null },
-      { key: "jobs", icon: TimerIcon, href: null },
+      { key: "checkins", icon: HeartPulseIcon, href: "/checkins" },
+      { key: "releases", icon: UnlockIcon, href: "/releases" },
+      { key: "email", icon: MailIcon, href: "/email" },
+      { key: "jobs", icon: TimerIcon, href: "/jobs" },
     ],
   },
   {

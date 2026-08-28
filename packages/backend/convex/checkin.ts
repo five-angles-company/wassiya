@@ -17,6 +17,7 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { sendEscalation } from "./email"
+import { recordJobRun } from "./model/jobRuns"
 import { requireUser } from "./model/access"
 import { DAY_MS } from "./model/claimFlow"
 
@@ -179,8 +180,11 @@ export const snooze7d = mutation({
  * each continuation makes strict progress against a finite backlog.
  */
 export const sweep = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+  // Set by the reschedule below, absent on the pass the cron itself started.
+  // `recordJobRun` prunes only on the first, so one logical sweep leaves one
+  // trim behind rather than one per batch.
+  args: { continued: v.optional(v.boolean()) },
+  handler: async (ctx, { continued }) => {
     const now = Date.now()
     let scanned = 0
     let advanced = 0
@@ -234,9 +238,26 @@ export const sweep = internalMutation({
       }
     }
 
-    if (advanced === SWEEP_BATCH) {
-      await ctx.scheduler.runAfter(0, internal.checkin.sweep, {})
+    const rescheduled = advanced === SWEEP_BATCH
+    if (rescheduled) {
+      await ctx.scheduler.runAfter(0, internal.checkin.sweep, {
+        continued: true,
+      })
     }
+
+    // The heartbeat. Written on every pass including the ones that advance
+    // nothing — which is the whole point: an escalation ladder that finds
+    // nobody due is doing its job, and until this row existed that was
+    // indistinguishable from a cron that had stopped running.
+    await recordJobRun(ctx, {
+      name: "checkin.sweep",
+      ranAt: now,
+      scanned,
+      changed: advanced,
+      rescheduled,
+      continued: continued === true,
+    })
+
     return { scanned, advanced }
   },
 })

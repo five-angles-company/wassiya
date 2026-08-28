@@ -62,6 +62,10 @@ const FEATURES = [
   "heirs",
   "identity",
   "owners",
+  "checkins",
+  "email",
+  "jobs",
+  "releases",
   "subscriptions",
 ]
 
