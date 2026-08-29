@@ -49,9 +49,9 @@ export default async function DashboardLayout({
 
           `SidebarProvider` ships `min-h-svh`, which lets a long page grow the
           document — so a hundred-row table pushed its own pager below the fold
-          and took the toolbar with it. Pinning the height here instead means a
-          screen that wants to scroll its rows can, and one that wants to scroll
-          normally still does, in the region below.
+          and took the toolbar with it. Pinning the height here means the
+          sidebar and the header never move, and the region below owns the
+          scroll.
 
           `min-h-0` on each link of the chain is what makes that work: a flex
           child defaults to `min-height: auto` and refuses to shrink below its
@@ -61,7 +61,21 @@ export default async function DashboardLayout({
           <AppSidebar />
           <SidebarInset className="min-h-0">
             <AppHeader />
-            <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto p-4 md:p-6">
+            {/*
+              A plain scrolling column, not a flex one.
+
+              It was a flex column so that a table could claim the leftover
+              height — and that quietly broke every other page, because a flex
+              child defaults to `flex-shrink: 1`. The dashboard's cards and
+              charts compressed to fit the viewport instead of overflowing it,
+              so they showed half their content *and* the region never scrolled,
+              because nothing ever grew past it.
+
+              Blocks do not shrink, so panels keep their natural height and this
+              region scrolls the ordinary way. The pages that want the other
+              behaviour ask for it, with `FillScreen`.
+            */}
+            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 md:p-6">
               {children}
             </div>
             {/* Action feedback for the claim review. Mounted inside the shell

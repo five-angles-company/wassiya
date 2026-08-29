@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { FillScreen } from "@/components/fill-screen"
 import { HeirsBrowser } from "@/features/heirs/components/heirs-browser"
 import { HEIRS } from "@/features/heirs/strings/heirs"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
@@ -10,11 +11,11 @@ export default async function Page() {
   const labels = t(HEIRS, locale)
 
   return (
-    <>
+    <FillScreen>
       <h1 className="font-heading text-2xl font-bold tracking-tight">
         {labels.pageTitle}
       </h1>
       <HeirsBrowser />
-    </>
+    </FillScreen>
   )
 }

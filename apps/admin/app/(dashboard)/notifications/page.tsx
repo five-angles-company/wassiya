@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { FillScreen } from "@/components/fill-screen"
 import { NotificationsLog } from "@/features/notifications/components/notifications-log"
 import { NOTIFICATIONS } from "@/features/notifications/strings/notifications"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
@@ -10,11 +11,11 @@ export default async function Page() {
   const labels = t(NOTIFICATIONS, locale)
 
   return (
-    <>
+    <FillScreen>
       <h1 className="font-heading text-2xl font-bold tracking-tight">
         {labels.pageTitle}
       </h1>
       <NotificationsLog />
-    </>
+    </FillScreen>
   )
 }

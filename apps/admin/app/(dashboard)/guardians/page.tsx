@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { FillScreen } from "@/components/fill-screen"
 import { GuardiansBrowser } from "@/features/guardians/components/guardians-browser"
 import { GUARDIANS } from "@/features/guardians/strings/guardians"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
@@ -10,11 +11,11 @@ export default async function GuardiansPage() {
   const labels = t(GUARDIANS, locale)
 
   return (
-    <>
+    <FillScreen>
       <h1 className="font-heading text-2xl font-bold tracking-tight">
         {labels.pageTitle}
       </h1>
       <GuardiansBrowser />
-    </>
+    </FillScreen>
   )
 }

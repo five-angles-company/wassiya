@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { FillScreen } from "@/components/fill-screen"
 import { SubscriptionsBrowser } from "@/features/subscriptions/components/subscriptions-browser"
 import { SUBSCRIPTIONS } from "@/features/subscriptions/strings/subscriptions"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
@@ -10,7 +11,7 @@ export default async function Page() {
   const labels = t(SUBSCRIPTIONS, locale)
 
   return (
-    <>
+    <FillScreen>
       <h1 className="font-heading text-2xl font-bold tracking-tight">
         {labels.pageTitle}
       </h1>
@@ -18,6 +19,6 @@ export default async function Page() {
         {labels.intro}
       </p>
       <SubscriptionsBrowser />
-    </>
+    </FillScreen>
   )
 }
