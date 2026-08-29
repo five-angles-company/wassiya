@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 
 import { IdentityFlow } from "@/components/claim/identity-flow"
-import { CLAIM_IDENTITY } from "@/lib/claim-copy"
+import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
+import { CLAIM_IDENTITY } from "@/lib/i18n/strings/claim-identity"
 
 /**
  * ٧.٢ — `/claim/identity`. Step 1 of 3.
@@ -29,9 +31,13 @@ import { CLAIM_IDENTITY } from "@/lib/claim-copy"
  */
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: CLAIM_IDENTITY.metaTitle,
-  robots: { index: false, follow: false },
+/** Async because the title follows the reader's locale, like every string. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
+  return {
+    title: t(CLAIM_IDENTITY, locale).metaTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 export default function ClaimIdentityPage() {

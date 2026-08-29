@@ -3,7 +3,9 @@ import Link from "next/link"
 
 import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimSteps } from "@/components/claim/claim-steps"
-import { CLAIM } from "@/lib/claim-copy"
+import { t, type Resolved } from "@/lib/i18n/locale"
+import { getLocale } from "@/lib/i18n/server"
+import { CLAIM } from "@/lib/i18n/strings/claim"
 
 /**
  * ٧.١ — the public claim landing, at `/claim`.
@@ -29,12 +31,26 @@ import { CLAIM } from "@/lib/claim-copy"
  * Public, unauthenticated and indexable — deliberately. Someone searching for
  * what to do about a relative's Wassiya vault should find this page.
  */
-export const metadata: Metadata = {
-  title: CLAIM.metaTitle,
-  description: CLAIM.metaDescription,
+export async function generateMetadata(): Promise<Metadata> {
+  const labels = t(CLAIM, await getLocale())
+  return { title: labels.metaTitle, description: labels.metaDescription }
 }
 
-export default function ClaimLandingPage() {
+export default async function ClaimLandingPage() {
+  const locale = await getLocale()
+  const labels = t(CLAIM, locale)
+
+  // Rebuilt from resolved labels rather than held as arrays in the dictionary,
+  // which `t()` cannot walk. Each line stays individually addressable, and the
+  // order lives here — where the layout that depends on it is.
+  const needs = [labels.needId, labels.needCertificate, labels.needPhone]
+  const steps = [
+    { label: labels.stepIdentity, meta: labels.stepIdentityMeta },
+    { label: labels.stepCertificate },
+    { label: labels.stepVeto, meta: labels.stepVetoMeta },
+    { label: labels.stepRelease },
+  ]
+
   return (
     <div className="min-h-screen pb-28 md:pb-0">
       <ClaimBrand />
@@ -44,33 +60,33 @@ export default function ClaimLandingPage() {
           {/* The ask. */}
           <div>
             <h1 className="text-[30px] leading-[1.25] md:text-[40px]">
-              {CLAIM.title}
+              {labels.title}
             </h1>
             <p className="text-sand-700 mt-4 text-[15.5px] leading-[1.75]">
-              {CLAIM.intro}
+              {labels.intro}
             </p>
             {/* Reviewed copy, one sentence, first person. It is the first thing
                 said to someone who has just lost a person. */}
             <p className="text-sand-700 mt-3 text-[15.5px] leading-[1.75]">
-              {CLAIM.condolence}
+              {labels.condolence}
             </p>
 
             <div className="mt-7 hidden md:block">
-              <StartButton />
+              <StartButton labels={labels} />
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <QuietLink
                 href="/claim/resume"
-                title={CLAIM.resumeTitle}
-                body={CLAIM.resumeBody}
+                title={labels.resumeTitle}
+                body={labels.resumeBody}
               />
               {/* Deliberately quiet but present: a living owner sometimes lands
                   here first, and telling them where to go costs one line. */}
               <QuietLink
                 href="/claim/guardian"
-                title={CLAIM.guardianTitle}
-                body={CLAIM.guardianBody}
+                title={labels.guardianTitle}
+                body={labels.guardianBody}
               />
             </div>
           </div>
@@ -78,9 +94,9 @@ export default function ClaimLandingPage() {
           {/* What they need, and what happens. Beside the CTA, never below. */}
           <aside className="flex flex-col gap-6">
             <section className="bg-card rounded-card p-5">
-              <h2 className="text-[17px]">{CLAIM.needTitle}</h2>
+              <h2 className="text-[17px]">{labels.needTitle}</h2>
               <ul className="mt-3 flex flex-col gap-2.5">
-                {CLAIM.needs.map((need) => (
+                {needs.map((need) => (
                   <li
                     key={need}
                     className="flex items-start gap-2.5 text-[14.5px] leading-[1.6]"
@@ -95,23 +111,23 @@ export default function ClaimLandingPage() {
               </ul>
             </section>
 
-            <ClaimSteps steps={CLAIM.steps} />
+            <ClaimSteps steps={steps} locale={locale} />
           </aside>
         </div>
 
         <footer className="text-sand-600 mt-12 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] pt-6 text-[13px]">
           {/* Said plainly and early, because the commonest misunderstanding is
               that this service divides an estate. It does not. */}
-          <p>{CLAIM.disclaimer}</p>
+          <p>{labels.disclaimer}</p>
           <nav className="mt-3 flex flex-wrap gap-4">
             <Link className="hover:text-terracotta-700" href="/legal/terms">
-              {CLAIM.terms}
+              {labels.terms}
             </Link>
             <Link className="hover:text-terracotta-700" href="/legal/privacy">
-              {CLAIM.privacy}
+              {labels.privacy}
             </Link>
             <Link className="hover:text-terracotta-700" href="/legal/encryption">
-              {CLAIM.howEncryption}
+              {labels.howEncryption}
             </Link>
           </nav>
         </footer>
@@ -120,21 +136,21 @@ export default function ClaimLandingPage() {
       {/* 7.1m: on mobile web the CTA sticks, because this is the likeliest
           first contact and the page is long on a 320px screen. */}
       <div className="bg-background/95 fixed inset-x-0 bottom-0 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] px-5 py-4 backdrop-blur md:hidden">
-        <StartButton />
+        <StartButton labels={labels} />
       </div>
     </div>
   )
 }
 
-function StartButton() {
+function StartButton({ labels }: { labels: Resolved<typeof CLAIM> }) {
   return (
     <Link
       href="/claim/identity"
       className="bg-primary text-primary-foreground hover:bg-terracotta-600 flex w-full items-center justify-center rounded-full px-8 py-3.5 text-[15.5px] font-semibold transition-colors md:w-auto"
     >
-      {CLAIM.start}
+      {labels.start}
       <span className="text-primary-foreground/75 me-3 text-[13px] font-normal">
-        {CLAIM.startMeta}
+        {labels.startMeta}
       </span>
     </Link>
   )

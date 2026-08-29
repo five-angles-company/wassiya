@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 
 import { CertificateFlow } from "@/components/claim/certificate-flow"
-import { CLAIM_CERTIFICATE } from "@/lib/claim-copy"
+import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
+import { CLAIM_CERTIFICATE } from "@/lib/i18n/strings/claim-certificate"
 
 /**
  * ٧.٣ — `/claim/certificate`. Step 2 of 3.
@@ -18,9 +20,13 @@ import { CLAIM_CERTIFICATE } from "@/lib/claim-copy"
  */
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: CLAIM_CERTIFICATE.metaTitle,
-  robots: { index: false, follow: false },
+/** Async because the title follows the reader's locale, like every string. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
+  return {
+    title: t(CLAIM_CERTIFICATE, locale).metaTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 export default function ClaimCertificatePage() {

@@ -8,7 +8,10 @@ import { api } from "@workspace/backend/api"
 
 import { ClaimStepper } from "@/components/claim/claim-stepper"
 import { Field } from "@/components/claim/field"
-import { CLAIM_IDENTITY } from "@/lib/claim-copy"
+import { useLocale } from "@/components/locale-provider"
+import { fmtStepNumber } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
+import { CLAIM_IDENTITY } from "@/lib/i18n/strings/claim-identity"
 import { shortRef } from "@/lib/claim-ref"
 
 type Phase = "filing" | "verify"
@@ -40,6 +43,12 @@ type Phase = "filing" | "verify"
  * mutation below would fail in that window.
  */
 export function IdentityFlow() {
+  const locale = useLocale()
+  const labels = t(CLAIM_IDENTITY, locale)
+
+  // Rebuilt from resolved labels — `t()` walks a flat dictionary, so the list
+  // lives here where its order is visible next to the markup that numbers it.
+  const checks = [labels.checkDocument, labels.checkFace, labels.checkCode]
   const router = useRouter()
   const submit = useMutation(api.claims.submit)
   const startSession = useAction(api.identity.startSession)
@@ -72,7 +81,7 @@ export function IdentityFlow() {
       })
       setPhase("verify")
     } catch {
-      setError(CLAIM_IDENTITY.failed)
+      setError(labels.failed)
     } finally {
       setBusy(false)
     }
@@ -92,9 +101,9 @@ export function IdentityFlow() {
       const opened = window.open(url, "_blank", "width=520,height=720")
       // `null` means the browser blocked it. Say so and offer the link rather
       // than leaving the button looking broken.
-      if (opened === null) setError(CLAIM_IDENTITY.popupBlocked)
+      if (opened === null) setError(labels.popupBlocked)
     } catch {
-      setError(CLAIM_IDENTITY.failed)
+      setError(labels.failed)
     } finally {
       setBusy(false)
     }
@@ -105,22 +114,22 @@ export function IdentityFlow() {
       current={1}
       reference={claim === null ? undefined : shortRef(claim.id)}
     >
-      <h1 className="text-[27px] leading-[1.25]">{CLAIM_IDENTITY.heading}</h1>
+      <h1 className="text-[27px] leading-[1.25]">{labels.heading}</h1>
       <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-        {CLAIM_IDENTITY.intro}
+        {labels.intro}
       </p>
 
       <Unauthenticated>
         <section className="bg-card rounded-card mt-7 p-5">
-          <h2 className="text-[17px]">{CLAIM_IDENTITY.signInTitle}</h2>
+          <h2 className="text-[17px]">{labels.signInTitle}</h2>
           <p className="text-sand-700 mt-2 text-[14px] leading-[1.7]">
-            {CLAIM_IDENTITY.signInBody}
+            {labels.signInBody}
           </p>
           <Link
             href="/sign-in?redirect_url=/claim/identity"
             className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-4 inline-flex rounded-full px-6 py-2.5 text-[14.5px] font-semibold"
           >
-            {CLAIM_IDENTITY.signIn}
+            {labels.signIn}
           </Link>
         </section>
       </Unauthenticated>
@@ -129,21 +138,21 @@ export function IdentityFlow() {
         {phase === "filing" && claim === null ? (
           <section className="mt-7 flex flex-col gap-4">
             <Field
-              label={CLAIM_IDENTITY.subjectLabel}
-              hint={CLAIM_IDENTITY.subjectHint}
+              label={labels.subjectLabel}
+              hint={labels.subjectHint}
               value={subjectEmail}
               onChange={setSubjectEmail}
               type="email"
               dir="ltr"
             />
             <Field
-              label={CLAIM_IDENTITY.nameLabel}
+              label={labels.nameLabel}
               value={name}
               onChange={setName}
             />
             <Field
-              label={CLAIM_IDENTITY.contactLabel}
-              hint={CLAIM_IDENTITY.contactHint}
+              label={labels.contactLabel}
+              hint={labels.contactHint}
               value={contact}
               onChange={setContact}
               type="tel"
@@ -160,19 +169,19 @@ export function IdentityFlow() {
               }
               className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-1 rounded-full px-6 py-3 text-[15px] font-semibold disabled:opacity-50"
             >
-              {busy ? CLAIM_IDENTITY.filing : CLAIM_IDENTITY.fileClaim}
+              {busy ? labels.filing : labels.fileClaim}
             </button>
           </section>
         ) : (
           <section className="mt-7">
             <ol className="flex flex-col gap-3">
-              {CLAIM_IDENTITY.checks.map((check, index) => (
+              {checks.map((check, index) => (
                 <li key={check} className="flex items-start gap-3">
                   <span
                     aria-hidden
                     className="bg-card text-terracotta-700 flex size-6 shrink-0 items-center justify-center rounded-full text-[12.5px] font-bold"
                   >
-                    {"١٢٣"[index]}
+                    {fmtStepNumber(index + 1, locale)}
                   </span>
                   <span className="text-[14.5px] leading-[1.55]">{check}</span>
                 </li>
@@ -182,14 +191,14 @@ export function IdentityFlow() {
             {verified ? (
               <div className="bg-olive-100 rounded-card mt-6 p-4">
                 <p className="text-olive-700 text-[14.5px] font-semibold">
-                  {CLAIM_IDENTITY.verified}
+                  {labels.verified}
                 </p>
                 <button
                   type="button"
                   onClick={() => router.push("/claim/certificate")}
                   className="bg-secondary text-secondary-foreground hover:bg-olive-600 mt-3 rounded-full px-5 py-2.5 text-[14.5px] font-semibold"
                 >
-                  {CLAIM_IDENTITY.continue}
+                  {labels.continue}
                 </button>
               </div>
             ) : (
@@ -200,10 +209,10 @@ export function IdentityFlow() {
                   disabled={busy}
                   className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-6 rounded-full px-6 py-3 text-[15px] font-semibold disabled:opacity-50"
                 >
-                  {busy ? CLAIM_IDENTITY.starting : CLAIM_IDENTITY.startVerify}
+                  {busy ? labels.starting : labels.startVerify}
                 </button>
                 <p className="text-sand-600 mt-2 text-[12.5px]">
-                  {CLAIM_IDENTITY.popupNote}
+                  {labels.popupNote}
                 </p>
               </>
             )}
@@ -213,10 +222,10 @@ export function IdentityFlow() {
             {providerUrl !== null ? (
               <div className="bg-card rounded-card mt-5 p-4">
                 <h2 className="text-[15.5px]">
-                  {CLAIM_IDENTITY.handoffTitle}
+                  {labels.handoffTitle}
                 </h2>
                 <p className="text-sand-700 mt-1.5 text-[13.5px] leading-[1.65]">
-                  {CLAIM_IDENTITY.handoffBody}
+                  {labels.handoffBody}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button
@@ -229,7 +238,7 @@ export function IdentityFlow() {
                     }}
                     className="border-border hover:bg-sand-200 rounded-full border px-4 py-2 text-[13.5px]"
                   >
-                    {copied ? CLAIM_IDENTITY.copied : CLAIM_IDENTITY.copyLink}
+                    {copied ? labels.copied : labels.copyLink}
                   </button>
                   <a
                     href={providerUrl}
@@ -237,7 +246,7 @@ export function IdentityFlow() {
                     rel="noreferrer"
                     className="border-border hover:bg-sand-200 rounded-full border px-4 py-2 text-[13.5px]"
                   >
-                    {CLAIM_IDENTITY.openInTab}
+                    {labels.openInTab}
                   </a>
                 </div>
               </div>
@@ -245,10 +254,10 @@ export function IdentityFlow() {
 
             <div className="bg-card rounded-card mt-5 p-4">
               <h2 className="text-[15.5px]">
-                {CLAIM_IDENTITY.whyNumberTitle}
+                {labels.whyNumberTitle}
               </h2>
               <p className="text-sand-700 mt-1.5 text-[13.5px] leading-[1.7]">
-                {CLAIM_IDENTITY.whyNumberBody}
+                {labels.whyNumberBody}
               </p>
             </div>
           </section>
@@ -261,7 +270,7 @@ export function IdentityFlow() {
         ) : null}
 
         <p className="text-sand-600 mt-6 text-[12.5px] leading-[1.7]">
-          {CLAIM_IDENTITY.privacyNote}
+          {labels.privacyNote}
         </p>
       </Authenticated>
     </ClaimStepper>

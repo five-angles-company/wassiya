@@ -10,8 +10,10 @@ import { heirKey, openReleaseBundle } from "@workspace/crypto/heir"
 
 import { ClaimBrand } from "@/components/claim/claim-brand"
 import { Field } from "@/components/claim/field"
-import { HEIR_BOX } from "@/lib/claim-copy"
-import { fmtArabicDate, fmtArabicNumber } from "@workspace/ui/lib/format-ar"
+import { useLocale } from "@/components/locale-provider"
+import { fmtDate, fmtNumber } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
+import { HEIR_BOX } from "@/lib/i18n/strings/heir-box"
 
 type BoxState =
   | { status: "locked" }
@@ -56,6 +58,8 @@ type BoxState =
  * DEK it protects — which is the whole point of having withheld one half.
  */
 export function HeirBox({ claimId }: { claimId: string }) {
+  const locale = useLocale()
+  const labels = t(HEIR_BOX, locale)
   const fetchBundle = useMutation(api.release.releasedBundleForHeir)
   const [share, setShare] = useState("")
   const [state, setState] = useState<BoxState>({ status: "locked" })
@@ -109,13 +113,13 @@ export function HeirBox({ claimId }: { claimId: string }) {
       <main className="mx-auto max-w-3xl px-5 pt-8 md:px-8">
         <Unauthenticated>
           <p className="text-sand-700 text-[15px] leading-[1.75]">
-            {HEIR_BOX.notReleased}
+            {labels.notReleased}
           </p>
           <Link
             href={`/claim/${claimId}`}
             className="border-border hover:bg-sand-200 mt-4 inline-flex rounded-full border px-5 py-2.5 text-[14.5px]"
           >
-            {HEIR_BOX.checkStatus}
+            {labels.checkStatus}
           </Link>
         </Unauthenticated>
 
@@ -125,19 +129,19 @@ export function HeirBox({ claimId }: { claimId: string }) {
           ) : (
             <section>
               <h1 className="text-[27px] leading-[1.25]">
-                {HEIR_BOX.lockedTitle}
+                {labels.lockedTitle}
               </h1>
               {/* The explanation comes before the input. Someone who has just
                   been told their relative died should not meet a bare field
                   labelled "guardian share". */}
               <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-                {HEIR_BOX.lockedBody}
+                {labels.lockedBody}
               </p>
 
               <div className="mt-6 flex flex-col gap-4">
                 <Field
-                  label={HEIR_BOX.shareLabel}
-                  placeholder={HEIR_BOX.sharePlaceholder}
+                  label={labels.shareLabel}
+                  placeholder={labels.sharePlaceholder}
                   value={share}
                   onChange={(value) => {
                     setShare(value)
@@ -145,7 +149,7 @@ export function HeirBox({ claimId }: { claimId: string }) {
                   }}
                   dir="ltr"
                   error={
-                    state.status === "badShare" ? HEIR_BOX.badShare : undefined
+                    state.status === "badShare" ? labels.badShare : undefined
                   }
                 />
                 <button
@@ -157,8 +161,8 @@ export function HeirBox({ claimId }: { claimId: string }) {
                   className="bg-primary text-primary-foreground hover:bg-terracotta-600 w-full rounded-full px-6 py-3.5 text-[15px] font-semibold disabled:opacity-50 sm:w-auto"
                 >
                   {state.status === "opening"
-                    ? HEIR_BOX.unlocking
-                    : HEIR_BOX.unlock}
+                    ? labels.unlocking
+                    : labels.unlock}
                 </button>
               </div>
             </section>
@@ -179,20 +183,22 @@ export function HeirBox({ claimId }: { claimId: string }) {
  * scanned once, on a laptop, possibly printed for a lawyer.
  */
 function OpenBox({ keyCount }: { keyCount: number }) {
+  const locale = useLocale()
+  const labels = t(HEIR_BOX, locale)
   return (
     <section>
       <p className="text-sand-600 text-[13px]">
-        {HEIR_BOX.releasedAt.replace("{date}", fmtArabicDate(new Date()))}
+        {labels.releasedAt.replace("{date}", fmtDate(new Date(), locale))}
       </p>
       <h1 className="mt-1 text-[28px] leading-[1.25]">
-        {HEIR_BOX.heading.replace("{owner}", "")}
+        {labels.heading.replace("{owner}", "")}
       </h1>
       <p className="bg-olive-100 text-olive-700 rounded-card mt-4 p-4 text-[14px] leading-[1.7]">
-        {HEIR_BOX.scope}
+        {labels.scope}
       </p>
 
       <h2 className="mt-8 text-[18px]">
-        {HEIR_BOX.assetsTitle.replace("{n}", fmtArabicNumber(keyCount))}
+        {labels.assetsTitle.replace("{n}", fmtNumber(keyCount, locale))}
       </h2>
 
       {/* The routed set is inside the bundle as key material, not as a
@@ -203,10 +209,10 @@ function OpenBox({ keyCount }: { keyCount: number }) {
           on this screen, and it is why the table is not drawn yet rather than
           drawn with placeholder rows. */}
       <p className="text-sand-700 mt-3 text-[14.5px] leading-[1.75]">
-        {HEIR_BOX.farAid}
+        {labels.farAid}
       </p>
       <p className="text-sand-600 mt-3 text-[13px] leading-[1.7]">
-        {HEIR_BOX.expiry}
+        {labels.expiry}
       </p>
     </section>
   )

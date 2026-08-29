@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import { cookies } from "next/headers"
 
 import { HeirBox } from "@/components/claim/heir-box"
-import { HEIR_BOX } from "@/lib/claim-copy"
+import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
+import { HEIR_BOX } from "@/lib/i18n/strings/heir-box"
 
 /**
  * ٧.٦ — `/heir/:id`. The endpoint of the whole product.
@@ -23,9 +25,13 @@ import { HEIR_BOX } from "@/lib/claim-copy"
  */
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: HEIR_BOX.metaTitle,
-  robots: { index: false, follow: false },
+/** Async because the title follows the reader's locale, like every string. */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
+  return {
+    title: t(HEIR_BOX, locale).metaTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function HeirBoxPage({

@@ -8,7 +8,9 @@ import type { Id } from "@workspace/backend/dataModel"
 
 import { ClaimStepper } from "@/components/claim/claim-stepper"
 import { Field } from "@/components/claim/field"
-import { CLAIM_CERTIFICATE } from "@/lib/claim-copy"
+import { useLocale } from "@/components/locale-provider"
+import { t } from "@/lib/i18n/locale"
+import { CLAIM_CERTIFICATE } from "@/lib/i18n/strings/claim-certificate"
 import { shortRef } from "@/lib/claim-ref"
 
 const MAX_BYTES = 20 * 1024 * 1024
@@ -45,6 +47,7 @@ const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "image/heic"]
  * it later.
  */
 export function CertificateFlow() {
+  const labels = t(CLAIM_CERTIFICATE, useLocale())
   const router = useRouter()
   const claims = useQuery(api.claims.mine)
   const generateUploadUrl = useMutation(api.claims.generateCertificateUploadUrl)
@@ -66,11 +69,11 @@ export function CertificateFlow() {
   async function upload(picked: File) {
     setError(null)
     if (picked.size > MAX_BYTES) {
-      setError(CLAIM_CERTIFICATE.tooLarge)
+      setError(labels.tooLarge)
       return
     }
     if (!ACCEPTED.includes(picked.type)) {
-      setError(CLAIM_CERTIFICATE.wrongType)
+      setError(labels.wrongType)
       return
     }
     setBusy(true)
@@ -88,7 +91,7 @@ export function CertificateFlow() {
       setStorageId(body.storageId)
       setFile({ name: picked.name, size: picked.size })
     } catch {
-      setError(CLAIM_CERTIFICATE.failed)
+      setError(labels.failed)
     } finally {
       setBusy(false)
     }
@@ -109,7 +112,7 @@ export function CertificateFlow() {
       })
       router.push(`/claim/${claim.id}`)
     } catch {
-      setError(CLAIM_CERTIFICATE.failed)
+      setError(labels.failed)
     } finally {
       setBusy(false)
     }
@@ -120,9 +123,9 @@ export function CertificateFlow() {
       current={2}
       reference={claim === null ? undefined : shortRef(claim.id)}
     >
-      <h1 className="text-[27px] leading-[1.25]">{CLAIM_CERTIFICATE.heading}</h1>
+      <h1 className="text-[27px] leading-[1.25]">{labels.heading}</h1>
       <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-        {CLAIM_CERTIFICATE.intro}
+        {labels.intro}
       </p>
 
       {file === null ? (
@@ -143,10 +146,10 @@ export function CertificateFlow() {
           }`}
         >
           <p className="text-[16px] font-semibold">
-            {CLAIM_CERTIFICATE.dropHere}
+            {labels.dropHere}
           </p>
           <p className="text-sand-600 text-[13px]">
-            {CLAIM_CERTIFICATE.dropHint}
+            {labels.dropHint}
           </p>
           <button
             type="button"
@@ -154,7 +157,7 @@ export function CertificateFlow() {
             disabled={busy}
             className="border-border hover:bg-sand-200 mt-3 rounded-full border px-5 py-2.5 text-[14px] disabled:opacity-50"
           >
-            {busy ? CLAIM_CERTIFICATE.uploading : CLAIM_CERTIFICATE.pickFile}
+            {busy ? labels.uploading : labels.pickFile}
           </button>
           <input
             ref={inputRef}
@@ -179,7 +182,7 @@ export function CertificateFlow() {
             <p className="truncate text-[14.5px] font-semibold">{file.name}</p>
             <p className="text-sand-600 text-[12.5px]">
               {(file.size / 1024 / 1024).toFixed(1)} م.ب ·{" "}
-              {CLAIM_CERTIFICATE.uploaded}
+              {labels.uploaded}
             </p>
           </div>
           <button
@@ -190,34 +193,34 @@ export function CertificateFlow() {
             }}
             className="text-sand-600 hover:text-terracotta-700 text-[13px]"
           >
-            {CLAIM_CERTIFICATE.replace}
+            {labels.replace}
           </button>
         </div>
       )}
 
       <section className="mt-6 flex flex-col gap-4">
         <Field
-          label={CLAIM_CERTIFICATE.nameLabel}
-          hint={CLAIM_CERTIFICATE.nameHint}
+          label={labels.nameLabel}
+          hint={labels.nameHint}
           value={deceasedName}
           onChange={setDeceasedName}
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label={CLAIM_CERTIFICATE.dateLabel}
+            label={labels.dateLabel}
             value={deathDate}
             onChange={setDeathDate}
             type="date"
             dir="ltr"
           />
           <Field
-            label={CLAIM_CERTIFICATE.placeLabel}
+            label={labels.placeLabel}
             value={place}
             onChange={setPlace}
           />
         </div>
         <Field
-          label={CLAIM_CERTIFICATE.refLabel}
+          label={labels.refLabel}
           value={reference}
           onChange={setReference}
           dir="ltr"
@@ -228,7 +231,7 @@ export function CertificateFlow() {
           grandmother's name is spelled three ways across three documents
           should not spend a month thinking they were caught lying. */}
       <p className="bg-olive-100 text-olive-700 rounded-card mt-5 p-4 text-[13.5px] leading-[1.7]">
-        {CLAIM_CERTIFICATE.matchNote}
+        {labels.matchNote}
       </p>
 
       <button
@@ -242,10 +245,10 @@ export function CertificateFlow() {
       }
         className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-6 w-full rounded-full px-6 py-3.5 text-[15px] font-semibold disabled:opacity-50 sm:w-auto"
       >
-        {busy ? CLAIM_CERTIFICATE.submitting : CLAIM_CERTIFICATE.submit}
+        {busy ? labels.submitting : labels.submit}
       </button>
       <p className="text-sand-600 mt-2 text-[12.5px]">
-        {CLAIM_CERTIFICATE.submitNote}
+        {labels.submitNote}
       </p>
 
       {error !== null ? (

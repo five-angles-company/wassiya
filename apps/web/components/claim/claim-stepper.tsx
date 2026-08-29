@@ -1,14 +1,18 @@
+"use client"
+
 import { ClaimBrand } from "@/components/claim/claim-brand"
+import { useLocale } from "@/components/locale-provider"
+import { fmtStepNumber } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
+import { CLAIM } from "@/lib/i18n/strings/claim"
 
 export type ClaimStepperProps = {
-  /** 1-based: هويتك · شهادة الوفاة · الانتظار. */
+  /** 1-based: identity · certificate · waiting. */
   current: 1 | 2 | 3
   /** The human-quotable reference, when a claim exists. */
   reference?: string
   children: React.ReactNode
 }
-
-const LABELS = ["هويتك", "شهادة الوفاة", "الانتظار"] as const
 
 /**
  * The three-step chrome for ٧.٢ and ٧.٣.
@@ -26,13 +30,21 @@ export function ClaimStepper({
   reference,
   children,
 }: ClaimStepperProps) {
+  const locale = useLocale()
+  const labels = t(CLAIM, locale)
+  const stepLabels = [
+    labels.stepperIdentity,
+    labels.stepperCertificate,
+    labels.stepperWaiting,
+  ]
+
   return (
     <div className="min-h-screen pb-16">
       <ClaimBrand />
 
       <div className="mx-auto max-w-3xl px-5 pt-6 md:px-8">
         <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {LABELS.map((label, index) => {
+          {stepLabels.map((label, index) => {
             const step = index + 1
             const done = step < current
             const active = step === current
@@ -48,7 +60,7 @@ export function ClaimStepper({
                         : "border-sand-400 text-sand-600 flex size-5 items-center justify-center rounded-full border text-[11px]"
                   }
                 >
-                  {done ? "✓" : toArabic(step)}
+                  {done ? "✓" : fmtStepNumber(step, locale)}
                 </span>
                 <span
                   className={
@@ -78,6 +90,3 @@ export function ClaimStepper({
   )
 }
 
-function toArabic(n: number): string {
-  return "٠١٢٣٤٥٦٧٨٩"[n] ?? String(n)
-}

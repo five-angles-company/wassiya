@@ -6,9 +6,12 @@ import type { Id } from "@workspace/backend/dataModel"
 
 import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimTimeline } from "@/components/claim/claim-timeline"
-import { CLAIM, CLAIM_STATUS } from "@/lib/claim-copy"
 import { shortRef } from "@/lib/claim-ref"
-import { fmtArabicDate, fmtArabicNumber } from "@workspace/ui/lib/format-ar"
+import { fmtDate, fmtNumber } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
+import { getLocale } from "@/lib/i18n/server"
+import { CLAIM } from "@/lib/i18n/strings/claim"
+import { CLAIM_STATUS } from "@/lib/i18n/strings/claim-status"
 
 /**
  * ٧.٤ — `/claim/:id`. The most-visited page in the funnel.
@@ -39,11 +42,13 @@ import { fmtArabicDate, fmtArabicNumber } from "@workspace/ui/lib/format-ar"
  */
 export const dynamic = "force-dynamic"
 
-export const metadata: Metadata = {
-  title: CLAIM_STATUS.metaTitle,
-  // Never indexable: the id is a capability, and a search engine holding it
-  // would hand the page to anyone.
-  robots: { index: false, follow: false },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: t(CLAIM_STATUS, await getLocale()).metaTitle,
+    // Never indexable: the id is a capability, and a search engine holding it
+    // would hand the page to anyone.
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function ClaimStatusPage({
@@ -53,6 +58,8 @@ export default async function ClaimStatusPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const locale = await getLocale()
+  const labels = t(CLAIM_STATUS, locale)
 
   const claim = await fetchQuery(api.claims.publicStatus, {
     claimId: id as Id<"claims">,
@@ -61,15 +68,15 @@ export default async function ClaimStatusPage({
   if (claim === null) {
     return (
       <Shell>
-        <h1 className="text-[26px]">{CLAIM_STATUS.notFoundTitle}</h1>
+        <h1 className="text-[26px]">{labels.notFoundTitle}</h1>
         <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-          {CLAIM_STATUS.notFoundBody}
+          {labels.notFoundBody}
         </p>
         <Link
           href="/claim"
           className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-6 inline-flex rounded-full px-6 py-3 text-[15px] font-semibold"
         >
-          {CLAIM_STATUS.startOver}
+          {labels.startOver}
         </Link>
       </Shell>
     )
@@ -78,9 +85,9 @@ export default async function ClaimStatusPage({
   if (claim.status === "vetoed" || claim.status === "locked") {
     return (
       <Shell>
-        <h1 className="text-[26px]">{CLAIM_STATUS.vetoedTitle}</h1>
+        <h1 className="text-[26px]">{labels.vetoedTitle}</h1>
         <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-          {CLAIM_STATUS.vetoedBody}
+          {labels.vetoedBody}
         </p>
         <ClaimRef id={claim.id} submittedAt={claim.submittedAt} />
       </Shell>
@@ -90,15 +97,15 @@ export default async function ClaimStatusPage({
   if (claim.status === "released") {
     return (
       <Shell>
-        <h1 className="text-[26px]">{CLAIM_STATUS.releasedTitle}</h1>
+        <h1 className="text-[26px]">{labels.releasedTitle}</h1>
         <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-          {CLAIM_STATUS.releasedBody}
+          {labels.releasedBody}
         </p>
         <Link
           href={`/heir/${claim.id}`}
           className="bg-secondary text-secondary-foreground hover:bg-olive-600 mt-6 inline-flex rounded-full px-6 py-3 text-[15px] font-semibold"
         >
-          {CLAIM_STATUS.openBox}
+          {labels.openBox}
         </Link>
         <ClaimRef id={claim.id} submittedAt={claim.submittedAt} />
       </Shell>
@@ -123,12 +130,12 @@ export default async function ClaimStatusPage({
       <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:gap-12">
         <div>
           <h1 className="text-[28px] leading-[1.25] md:text-[34px]">
-            {CLAIM_STATUS.heading}
+            {labels.heading}
           </h1>
           <p className="text-sand-700 mt-4 text-[15.5px] leading-[1.75]">
-            {CLAIM_STATUS.why.replace(
+            {labels.why.replace(
               "{date}",
-              deadline === null ? "—" : fmtArabicDate(new Date(deadline))
+              deadline === null ? "—" : fmtDate(new Date(deadline), locale)
             )}
           </p>
 
@@ -139,6 +146,7 @@ export default async function ClaimStatusPage({
             guardianConfirmed={claim.guardianConfirmed}
             status={claim.status}
             deadline={deadline}
+            locale={locale}
           />
         </div>
 
@@ -147,15 +155,15 @@ export default async function ClaimStatusPage({
           {daysLeft !== null ? (
             <div className="bg-card rounded-card flex flex-col items-center px-5 py-7">
               <span className="text-terracotta-700 text-[52px] leading-none font-black">
-                {fmtArabicNumber(daysLeft)}
+                {fmtNumber(daysLeft, locale)}
               </span>
               <span className="text-sand-700 mt-2 text-[14px]">
-                {CLAIM_STATUS.daysLeft}
+                {labels.daysLeft}
               </span>
               <span className="text-sand-600 mt-3 text-center text-[12.5px] leading-[1.6]">
-                {CLAIM_STATUS.vetoEnds.replace(
+                {labels.vetoEnds.replace(
                   "{date}",
-                  fmtArabicDate(new Date(deadline!))
+                  fmtDate(new Date(deadline!), locale)
                 )}
               </span>
             </div>
@@ -164,13 +172,13 @@ export default async function ClaimStatusPage({
           <ClaimRef id={claim.id} submittedAt={claim.submittedAt} />
 
           <p className="text-sand-600 text-[13px] leading-[1.7]">
-            {CLAIM_STATUS.noLogin}
+            {labels.noLogin}
           </p>
           <Link
             href="/claim/contact"
             className="border-border hover:bg-sand-200 rounded-full border px-5 py-2.5 text-center text-[14px]"
           >
-            {CLAIM_STATUS.contact}
+            {labels.contact}
           </Link>
         </aside>
       </div>
@@ -178,33 +186,44 @@ export default async function ClaimStatusPage({
   )
 }
 
-function ClaimRef({ id, submittedAt }: { id: string; submittedAt: number }) {
+async function ClaimRef({
+  id,
+  submittedAt,
+}: {
+  id: string
+  submittedAt: number
+}) {
+  const locale = await getLocale()
+  const labels = t(CLAIM_STATUS, locale)
+
   return (
     <div className="bg-card rounded-row mt-6 p-4">
-      <p className="text-sand-600 text-[12px]">{CLAIM_STATUS.claimRef}</p>
+      <p className="text-sand-600 text-[12px]">{labels.claimRef}</p>
       {/* A Latin reference inside Arabic prose — isolated so the bidi
           algorithm does not reorder it. */}
       <p className="ltr-isolate mt-1 text-[15px] font-semibold">
         {shortRef(id)}
       </p>
       <p className="text-sand-600 mt-2 text-[12.5px]">
-        {CLAIM_STATUS.submittedAt.replace(
+        {labels.submittedAt.replace(
           "{date}",
-          fmtArabicDate(new Date(submittedAt))
+          fmtDate(new Date(submittedAt), locale)
         )}
       </p>
     </div>
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+async function Shell({ children }: { children: React.ReactNode }) {
+  const labels = t(CLAIM, await getLocale())
+
   return (
     <div className="min-h-screen pb-16">
       <ClaimBrand />
       <main className="mx-auto max-w-5xl px-5 pt-6 md:px-8 md:pt-12">
         {children}
         <footer className="text-sand-600 mt-12 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] pt-6 text-[13px]">
-          {CLAIM.disclaimer}
+          {labels.disclaimer}
         </footer>
       </main>
     </div>

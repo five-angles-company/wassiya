@@ -1,5 +1,6 @@
-import { CLAIM_STATUS } from "@/lib/claim-copy"
-import { fmtArabicDate } from "@workspace/ui/lib/format-ar"
+import { fmtDate } from "@/lib/format"
+import { t, type Locale } from "@/lib/i18n/locale"
+import { CLAIM_STATUS } from "@/lib/i18n/strings/claim-status"
 
 export type ClaimTimelineProps = {
   identityVerified: boolean
@@ -7,6 +8,7 @@ export type ClaimTimelineProps = {
   guardianConfirmed: boolean
   status: string
   deadline: number | null
+  locale: Locale
   className?: string
 }
 
@@ -31,40 +33,42 @@ export function ClaimTimeline({
   guardianConfirmed,
   status,
   deadline,
+  locale,
   className,
 }: ClaimTimelineProps) {
+  const labels = t(CLAIM_STATUS, locale)
   const inVeto = status === "awaiting_veto"
   const inGuardian = status === "guardian_review"
 
   const steps: { label: string; meta?: string; state: StepState }[] = [
     {
-      label: CLAIM_STATUS.stepReceived,
+      label: labels.stepReceived,
       state: identityVerified ? "done" : "current",
     },
     {
-      label: CLAIM_STATUS.stepNotified,
-      meta: CLAIM_STATUS.stepNotifiedMeta,
+      label: labels.stepNotified,
+      meta: labels.stepNotifiedMeta,
       state: certificateReceived || inVeto ? "done" : "future",
     },
     {
-      label: CLAIM_STATUS.stepVeto,
+      label: labels.stepVeto,
       meta:
         deadline === null
           ? undefined
-          : CLAIM_STATUS.vetoEnds.replace(
+          : labels.vetoEnds.replace(
               "{date}",
-              fmtArabicDate(new Date(deadline))
+              fmtDate(new Date(deadline), locale)
             ),
       state: inVeto ? "current" : inGuardian ? "done" : "future",
     },
     {
-      label: CLAIM_STATUS.stepGuardian,
-      meta: CLAIM_STATUS.stepGuardianMeta,
+      label: labels.stepGuardian,
+      meta: labels.stepGuardianMeta,
       state: guardianConfirmed ? "done" : inGuardian ? "current" : "future",
     },
     {
-      label: CLAIM_STATUS.stepRelease,
-      meta: CLAIM_STATUS.stepReleaseMeta,
+      label: labels.stepRelease,
+      meta: labels.stepReleaseMeta,
       state: "future",
     },
   ]
