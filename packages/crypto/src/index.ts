@@ -34,10 +34,16 @@ export {
 } from "./recovery"
 
 export {
+  type CodeFormat,
   type DecodedPaperCode,
+  type DecodedSecretCode,
+  GUARDIAN_CODE_FORMAT,
+  RECOVERY_CODE_FORMAT,
   crc16,
   decodePaperCode,
+  decodeSecretCode,
   encodePaperCode,
+  encodeSecretCode,
 } from "./papercode"
 
 export {
@@ -48,6 +54,16 @@ export {
   openFromGuardian,
   sealToGuardian,
 } from "./guardian"
+
+export {
+  type DecodedGuardianKey,
+  type GuardianKeySheet,
+  GUARDIAN_SHEET_VERSION,
+  decodeGuardianKey,
+  encodeGuardianKey,
+  guardianKeyMatches,
+  mintGuardianKeySheet,
+} from "./guardianKey"
 
 export {
   type HeirShares,
