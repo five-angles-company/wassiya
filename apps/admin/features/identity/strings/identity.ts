@@ -30,7 +30,10 @@ export const IDENTITY = {
   nameNone: { ar: "بلا اسم", en: "No name" },
   none: { ar: "—", en: "—" },
 
-  empty: { ar: "لا أحد في الانتظار", en: "Nobody is waiting" },
+  // Not "nobody is waiting" — that read the table as the pending queue, which
+  // it was only while `pending`/`rejected` were preselected. Nothing is
+  // preselected now, so an empty table means the filter matched nothing.
+  empty: { ar: "لا حسابات", en: "No accounts" },
   emptyHint: {
     ar: "لا توجد حسابات مطابقة لهذه التصفية.",
     en: "No accounts match this filter.",

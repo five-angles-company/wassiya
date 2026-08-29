@@ -12,9 +12,6 @@ import { CLAIM_STATUSES, type ClaimStatus } from "@/features/claims/lib/status"
 import { IDENTITY_STATUSES, type IdentityStatus } from "@/lib/identity"
 import { useTableUrlState } from "@/lib/use-table-url-state"
 
-/** What the workspace opens on — the only status with a decision in front of it. */
-const DEFAULT_STATUSES: ClaimStatus[] = ["submitted"]
-
 /** The default order, and what the sort headers fall back to. */
 const DEFAULT_SORTING: SortingState = [{ id: "submittedAt", desc: true }]
 
@@ -39,12 +36,18 @@ type ClaimSort = "newest" | "oldest" | "nameAsc" | "nameDesc"
  * `/claims?status=submitted` is the "awaiting review" tile's destination. The
  * cursor stack stays local, and rewinds whenever the URL changes; see
  * `use-table-url-state` for why both halves are that way round.
+ *
+ * **No status is preselected.** The workspace used to open on `submitted`,
+ * which meant the screen's own answer to "how many claims are there" was four
+ * when there are ten, and the six it hid were the ones nobody was looking for.
+ * A console opens on its data; narrowing is the operator's move, and the
+ * dashboard tile is there for whoever wants to arrive already narrowed.
  */
 export function useClaimQueryState() {
   const [facets, setFacets] = useQueryStates(
     {
       status: parseAsArrayOf(parseAsStringLiteral(CLAIM_STATUSES)).withDefault(
-        DEFAULT_STATUSES
+        []
       ),
       identity: parseAsArrayOf(
         parseAsStringLiteral(IDENTITY_STATUSES)

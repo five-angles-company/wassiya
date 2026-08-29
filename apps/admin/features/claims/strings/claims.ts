@@ -57,7 +57,8 @@ export const CLAIMS = {
   actionCopyId: { ar: "نسخ معرّف الطلب", en: "Copy claim id" },
   actionOpen: { ar: "افتح الطلب", en: "Open claim" },
 
-  empty: { ar: "لا طلبات في هذه الحالة", en: "No claims in this state" },
+  // "In this state" assumed a status was always selected. None is, now.
+  empty: { ar: "لا طلبات", en: "No claims" },
   emptyHint: {
     ar: "لا شيء هنا الآن — وهذا هو الوضع الطبيعي، لا خلل.",
     en: "Nothing here right now. That is the normal state, not a fault.",

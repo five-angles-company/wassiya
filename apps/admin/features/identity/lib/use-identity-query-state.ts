@@ -12,14 +12,6 @@ import type { SortingState } from "@tanstack/react-table"
 import { IDENTITY_STATUSES, type IdentityStatus } from "@/lib/identity"
 import { useTableUrlState } from "@/lib/use-table-url-state"
 
-/**
- * What the queue opens on: the two states with work in front of them.
- *
- * `verified` is an archive and `unverified` is most of the table — someone who
- * signed up and has not started. Neither is a queue.
- */
-const DEFAULT_STATUSES: IdentityStatus[] = ["pending", "rejected"]
-
 const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
 
 /** The one column the server can order by. */
@@ -32,18 +24,18 @@ const SORTABLE = ["joinedAt"] as const
  * carries the whole reasoning, including why the reset is derived rather than
  * called by each setter.
  *
- * The default is non-empty, which makes one nuqs behaviour load-bearing: an
- * absent `status` param falls back to `DEFAULT_STATUSES`, while an explicitly
- * emptied one serialises as `status=` and parses back to `[]`. Clearing the
- * facet to see the whole table therefore survives a reload, instead of snapping
- * back to the queue.
+ * **No status is preselected.** This used to open on `pending` and `rejected`,
+ * on the argument that the other two are an archive rather than a queue. The
+ * cost was that the screen quietly disagreed with every count of it, and an
+ * operator looking for a specific person had to work out why they were not
+ * there. The facet is one click away; a hidden filter is not.
  */
 export function useIdentityQueryState() {
   const [facets, setFacets] = useQueryStates(
     {
       status: parseAsArrayOf(
         parseAsStringLiteral(IDENTITY_STATUSES)
-      ).withDefault(DEFAULT_STATUSES),
+      ).withDefault([]),
       stuck: parseAsBoolean.withDefault(false),
     },
     { history: "replace", clearOnDefault: true }
