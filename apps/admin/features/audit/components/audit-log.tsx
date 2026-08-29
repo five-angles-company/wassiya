@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { api } from "@workspace/backend/api"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
 import { FileClockIcon } from "lucide-react"
+import { parseAsArrayOf, parseAsStringLiteral, useQueryState } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { useLocale } from "@/components/locale-provider"
@@ -14,14 +15,26 @@ import {
   type AuditRow,
 } from "@/features/audit/components/audit-columns"
 import { AUDIT } from "@/features/audit/strings/audit"
-import {
-  AUDIT_DOMAINS,
-  domainLabel,
-  type AuditDomain,
-} from "@/lib/audit-domains"
+import { AUDIT_DOMAINS, domainLabel } from "@/lib/audit-domains"
 import { t } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
+
+/**
+ * Validated against the twelve domains the server accepts.
+ *
+ * Load-bearing rather than tidy: `auditFilterArgs.domains` is a literal union,
+ * so `?domains=notadomain` reaching Convex would throw a validator error and
+ * blank the screen. `parseAsArrayOf` drops the unknown member instead, which
+ * is the only sane reading of a hand-edited or stale link.
+ */
+const domainsParser = parseAsArrayOf(
+  parseAsStringLiteral(AUDIT_DOMAINS)
+).withDefault([])
+
+/** No column sorts, so nothing is sortable and the default is empty. */
+const NO_SORTING = [] as const
 
 /**
  * ٩.٣ from the console's side — the append-only record.
@@ -35,7 +48,7 @@ import { useLastLoaded } from "@/lib/use-last-loaded"
  * there is no mutation for this screen to call even if someone wanted one — and
  * the screen says so above the table rather than leaving it to be assumed.
  *
- * Faceted by **domain**, not by event: fifteen event names live on the
+ * Faceted by **domain**, not by event: thirty-five event names live on the
  * deployment today and the code can write more, so a dropdown of every one is
  * a filter nobody uses. The server resolves a domain to a prefix range, which
  * means a new `claim.*` event is filterable the day it is written with nothing
@@ -49,30 +62,22 @@ export function AuditLog() {
   const labels = useMemo(() => t(AUDIT, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [domains, setDomains] = useState<AuditDomain[]>([])
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
+  const [domains, setDomains] = useQueryState("domains", domainsParser)
+  const url = useTableUrlState({
+    defaultSorting: [],
+    sortableIds: NO_SORTING,
+    facetKey: domains.join(","),
+  })
 
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (searchInput.trim() === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
-
-  const filters = useMemo(() => ({ domains, search }), [domains, search])
+  const filters = useMemo(
+    () => ({ domains, search: url.search }),
+    [domains, url.search]
+  )
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.auditPage, {
       ...filters,
-      paginationOpts: { numItems: pageSize, cursor },
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(useQuery(api.admin.auditTally, filters))
@@ -120,30 +125,22 @@ export function AuditLog() {
             options={options}
             values={domains}
             onChange={setDomains}
-            onReset={resetPaging}
             clearLabel={tableLabels.resetFilters}
           />
         }
         server={{
-          search: searchInput,
-          onSearchChange: setSearchInput,
+          search: url.searchInput,
+          onSearchChange: url.setSearch,
           sorting: [],
           onSortingChange: () => undefined,
           sortLocked: false,
-          page: cursors.length,
-          pageSize,
-          onPageSizeChange: (size) => {
-            setPageSize(size)
-            resetPaging()
-          },
-          canPrev: cursors.length > 1,
+          page: url.pageNumber,
+          pageSize: url.pageSize,
+          onPageSizeChange: url.setPageSize,
+          canPrev: url.canPrev,
           canNext: !page.isDone,
-          onPrev: () =>
-            setCursors((current) =>
-              current.length > 1 ? current.slice(0, -1) : current
-            ),
-          onNext: () =>
-            setCursors((current) => [...current, page.continueCursor]),
+          onPrev: url.prevPage,
+          onNext: () => url.nextPage(page.continueCursor),
           total: tally,
           loading,
         }}

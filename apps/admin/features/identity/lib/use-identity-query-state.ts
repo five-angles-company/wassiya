@@ -1,9 +1,16 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
+import {
+  parseAsArrayOf,
+  parseAsBoolean,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs"
 import type { SortingState } from "@tanstack/react-table"
 
-import type { IdentityStatus } from "@/lib/identity"
+import { IDENTITY_STATUSES, type IdentityStatus } from "@/lib/identity"
+import { useTableUrlState } from "@/lib/use-table-url-state"
 
 /**
  * What the queue opens on: the two states with work in front of them.
@@ -13,124 +20,98 @@ import type { IdentityStatus } from "@/lib/identity"
  */
 const DEFAULT_STATUSES: IdentityStatus[] = ["pending", "rejected"]
 
-/** Matches `use-claim-query-state`; see there for why a keystroke waits. */
-const SEARCH_DEBOUNCE_MS = 300
-
 const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
+
+/** The one column the server can order by. */
+const SORTABLE = ["joinedAt"] as const
 
 /**
  * Every argument the identity queue sends, and its cursor bookkeeping.
  *
- * The same shape as `use-claim-query-state` and for the same reason: a cursor
- * is a position in one particular ordered, filtered stream, so every filter,
- * search or sort change has to reset paging. Keeping the setters together is
- * what makes that impossible to forget.
+ * The filters live in the URL; the cursor stack does not. `use-table-url-state`
+ * carries the whole reasoning, including why the reset is derived rather than
+ * called by each setter.
  *
- * Not shared with the claims hook despite the resemblance — the filters differ
- * entirely, and the common part is four lines of cursor stack. Merging them
- * would produce a generic hook parameterised by everything.
+ * The default is non-empty, which makes one nuqs behaviour load-bearing: an
+ * absent `status` param falls back to `DEFAULT_STATUSES`, while an explicitly
+ * emptied one serialises as `status=` and parses back to `[]`. Clearing the
+ * facet to see the whole table therefore survives a reload, instead of snapping
+ * back to the queue.
  */
 export function useIdentityQueryState() {
-  const [statuses, setStatuses] = useState<IdentityStatus[]>(DEFAULT_STATUSES)
-  const [stuckOnly, setStuckOnly] = useState(false)
-  const [sorting, setSortingState] = useState<SortingState>(DEFAULT_SORTING)
-  const [pageSize, setPageSizeState] = useState(25)
-
-  const [emailInput, setEmailInput] = useState("")
-  const [email, setEmail] = useState("")
-
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (emailInput === email) return
-    const timer = setTimeout(() => {
-      // Trimmed here rather than server-side: an address pasted from an email
-      // client arrives with whitespace, and an equality index does not forgive
-      // it — the lookup would simply return nothing.
-      setEmail(emailInput.trim())
-      resetPaging()
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(timer)
-  }, [emailInput, email, resetPaging])
-
-  const sort = useMemo<"newest" | "oldest">(
-    () => (sorting[0]?.desc === false ? "oldest" : "newest"),
-    [sorting]
+  const [facets, setFacets] = useQueryStates(
+    {
+      status: parseAsArrayOf(
+        parseAsStringLiteral(IDENTITY_STATUSES)
+      ).withDefault(DEFAULT_STATUSES),
+      stuck: parseAsBoolean.withDefault(false),
+    },
+    { history: "replace", clearOnDefault: true }
   )
 
+  const url = useTableUrlState({
+    defaultSorting: DEFAULT_SORTING,
+    sortableIds: SORTABLE,
+    facetKey: `${facets.status.join(",")}|${facets.stuck}`,
+  })
+
+  const sort = url.sorting[0]?.desc === false ? "oldest" : "newest"
+
   const filters = useMemo(
-    () => ({ statuses, stuckOnly, email, sort }),
-    [statuses, stuckOnly, email, sort]
+    () => ({
+      statuses: facets.status,
+      stuckOnly: facets.stuck,
+      email: url.search,
+      sort: sort as "newest" | "oldest",
+    }),
+    [facets.status, facets.stuck, url.search, sort]
   )
 
   const toggleStatus = useCallback(
     (value: string, checked: boolean) => {
-      setStatuses((current) => {
-        const next = new Set(current)
-        if (checked) next.add(value as IdentityStatus)
-        else next.delete(value as IdentityStatus)
-        return [...next]
-      })
-      resetPaging()
+      // `useQueryStates` takes an updater over the whole map, not per key —
+      // the partial-object form only accepts values.
+      void setFacets((current) => ({
+        status: checked
+          ? current.status.includes(value as IdentityStatus)
+            ? current.status
+            : [...current.status, value as IdentityStatus]
+          : current.status.filter((entry) => entry !== value),
+      }))
     },
-    [resetPaging]
+    [setFacets]
   )
 
   return {
     filters,
-    cursor: cursors[cursors.length - 1] ?? null,
-    pageSize,
-    setPageSize: useCallback(
-      (size: number) => {
-        setPageSizeState(size)
-        resetPaging()
-      },
-      [resetPaging]
+    cursor: url.cursor,
+    pageSize: url.pageSize,
+    setPageSize: url.setPageSize,
+    searchInput: url.searchInput,
+    setSearch: url.setSearch,
+    sorting: url.sorting,
+    setSorting: url.setSorting,
+    statusSelection: useMemo(
+      () => new Set<string>(facets.status),
+      [facets.status]
     ),
-    searchInput: emailInput,
-    setSearch: setEmailInput,
-    sorting,
-    setSorting: useCallback(
-      (next: SortingState) => {
-        setSortingState(next.length === 0 ? DEFAULT_SORTING : next)
-        resetPaging()
-      },
-      [resetPaging]
-    ),
-    statusSelection: useMemo(() => new Set<string>(statuses), [statuses]),
     toggleStatus,
-    clearStatuses: useCallback(() => {
-      setStatuses([])
-      resetPaging()
-    }, [resetPaging]),
+    clearStatuses: useCallback(
+      () => void setFacets({ status: [] }),
+      [setFacets]
+    ),
     stuckSelection: useMemo(
-      () => new Set<string>(stuckOnly ? ["stuck"] : []),
-      [stuckOnly]
+      () => new Set<string>(facets.stuck ? ["stuck"] : []),
+      [facets.stuck]
     ),
     toggleStuck: useCallback(
-      (_value: string, checked: boolean) => {
-        setStuckOnly(checked)
-        resetPaging()
-      },
-      [resetPaging]
+      (_value: string, checked: boolean) => void setFacets({ stuck: checked }),
+      [setFacets]
     ),
-    clearStuck: useCallback(() => {
-      setStuckOnly(false)
-      resetPaging()
-    }, [resetPaging]),
-    pageNumber: cursors.length,
-    canPrev: cursors.length > 1,
-    prevPage: useCallback(
-      () =>
-        setCursors((current) =>
-          current.length > 1 ? current.slice(0, -1) : current
-        ),
-      []
-    ),
-    nextPage: useCallback((continueCursor: string | null) => {
-      if (continueCursor === null) return
-      setCursors((current) => [...current, continueCursor])
-    }, []),
+    clearStuck: useCallback(() => void setFacets({ stuck: false }), [setFacets]),
+    pageNumber: url.pageNumber,
+    canPrev: url.canPrev,
+    prevPage: url.prevPage,
+    nextPage: url.nextPage,
   }
 }

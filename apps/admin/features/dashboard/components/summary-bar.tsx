@@ -28,6 +28,19 @@ import { fmtDate, fmtNumber, fmtTally } from "@/lib/format"
  * product has begun escalating against, and heirs who would receive nothing
  * tonight. The rest were counts of things, and counts of things belong in the
  * table or the chart that already shows them.
+ *
+ * ## Three of the four open the rows they count
+ *
+ * Each `href` reproduces its own number exactly — `?status=submitted` is the
+ * claims workspace's own facet, `?state=day7,day14,countdown` is the same three
+ * rungs this file sums below. Clicking a tile and counting the rows on arrival
+ * is the acceptance test, and it is the reason the filters moved into the URL.
+ *
+ * **The fourth stays unlinked, deliberately.** `heirsAtRisk` is heirs whose
+ * bundle is missing or older than their routing, summed across owners — and
+ * `/heirs` filters on `unroutedOnly`, which is a different predicate. There is
+ * no URL that reproduces the number, so there is no link. Its detail is the
+ * risk table further down this same page, which names the owners one by one.
  */
 export function SummaryBar() {
   const locale = useLocale()
@@ -72,6 +85,7 @@ export function SummaryBar() {
         label={labels.awaitingReview}
         value={fmtTally(overview.claims.submitted, locale)}
         hint={labels.awaitingReviewHint}
+        href="/claims?status=submitted"
         emphasis={overview.claims.submitted.count > 0}
       />
       <StatCard
@@ -84,12 +98,14 @@ export function SummaryBar() {
             ? undefined
             : `${labels.nextRelease}: ${fmtDate(overview.nextReleaseAt, locale)}`
         }
+        href="/claims?status=awaiting_veto"
       />
       <StatCard
         icon={HeartPulseIcon}
         label={labels.escalating}
         value={fmtTally(escalating, locale)}
         hint={labels.escalatingHint}
+        href="/checkins?state=day7,day14,countdown"
         emphasis={escalating.count > 0}
       />
       <StatCard

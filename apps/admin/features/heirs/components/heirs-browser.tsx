@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -13,6 +13,7 @@ import {
 import type { FunctionReturnType } from "convex/server"
 import { useQuery } from "convex/react"
 import { ScrollTextIcon } from "lucide-react"
+import { parseAsBoolean, useQueryState } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
@@ -24,10 +25,14 @@ import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
 
 type HeirRow = FunctionReturnType<typeof api.admin.heirsPage>["page"][number]
 
 const DEFAULT_SORTING: SortingState = [{ id: "addedAt", desc: true }]
+
+/** The one column the server can order by. */
+const SORTABLE = ["addedAt"] as const
 
 const helper = createColumnHelper<DataTableFeatures, HeirRow>()
 
@@ -135,33 +140,22 @@ export function HeirsBrowser() {
   const labels = useMemo(() => t(HEIRS, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [unroutedOnly, setUnroutedOnly] = useState(false)
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
-
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  // Debounced, like every other server-side search here: a keystroke would
-  // otherwise be a round trip and a fresh subscription.
-  useEffect(() => {
-    if (searchInput === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
+  const [unroutedOnly, setUnroutedOnly] = useQueryState(
+    "unrouted",
+    parseAsBoolean.withDefault(false)
+  )
+  const url = useTableUrlState({
+    defaultSorting: DEFAULT_SORTING,
+    sortableIds: SORTABLE,
+    facetKey: String(unroutedOnly),
+  })
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.heirsPage, {
       unroutedOnly,
-      search,
-      sort: sorting[0]?.desc === false ? "oldest" : "newest",
-      paginationOpts: { numItems: pageSize, cursor },
+      search: url.search,
+      sort: url.sorting[0]?.desc === false ? "oldest" : "newest",
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(useQuery(api.admin.heirsTally, {}))
@@ -201,42 +195,27 @@ export function HeirsBrowser() {
           title={labels.filterRouting}
           options={[{ value: "unrouted", label: labels.unroutedOnly }]}
           selected={routingSelection}
-          onToggle={(_value, checked) => {
-            setUnroutedOnly(checked)
-            resetPaging()
-          }}
-          onClear={() => {
-            setUnroutedOnly(false)
-            resetPaging()
-          }}
+          onToggle={(_value, checked) => void setUnroutedOnly(checked)}
+          onClear={() => void setUnroutedOnly(false)}
           count={() => undefined}
           clearLabel={tableLabels.resetFilters}
         />
       }
       server={{
-        search: searchInput,
-        onSearchChange: setSearchInput,
-        sorting,
-        onSortingChange: (next) => {
-          setSorting(next.length === 0 ? DEFAULT_SORTING : next)
-          resetPaging()
-        },
+        search: url.searchInput,
+        onSearchChange: url.setSearch,
+        sorting: url.sorting,
+        onSortingChange: url.setSorting,
         // Owner matches are ranked by the search index, but the heirs stream
         // itself is still ordered by creation — so the sort headers keep working.
         sortLocked: false,
-        page: cursors.length,
-        pageSize,
-        onPageSizeChange: (size) => {
-          setPageSize(size)
-          resetPaging()
-        },
-        canPrev: cursors.length > 1,
+        page: url.pageNumber,
+        pageSize: url.pageSize,
+        onPageSizeChange: url.setPageSize,
+        canPrev: url.canPrev,
         canNext: !page.isDone,
-        onPrev: () =>
-          setCursors((current) =>
-            current.length > 1 ? current.slice(0, -1) : current
-          ),
-        onNext: () => setCursors((current) => [...current, page.continueCursor]),
+        onPrev: url.prevPage,
+        onNext: () => url.nextPage(page.continueCursor),
         total: tally,
         loading,
       }}

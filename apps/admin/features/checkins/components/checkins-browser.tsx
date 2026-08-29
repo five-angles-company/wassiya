@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -18,11 +18,12 @@ import {
 import type { FunctionReturnType } from "convex/server"
 import { useQuery } from "convex/react"
 import { HeartPulseIcon, InfoIcon } from "lucide-react"
+import { parseAsArrayOf, parseAsStringLiteral, useQueryState } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
-import { FacetedFilter } from "@/components/data-table-faceted-filter"
 import { useLocale } from "@/components/locale-provider"
+import { MultiFacet } from "@/components/multi-facet"
 import { CHECKINS } from "@/features/checkins/strings/checkins"
 import type { DataTableFeatures } from "@/lib/data-table-features"
 import {
@@ -35,6 +36,21 @@ import { fmtDate, fmtNumber } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
+
+/**
+ * The escalation rungs, validated against the five the schema declares.
+ *
+ * This is the dashboard's "mid-escalation" tile made addressable:
+ * `/checkins?state=day7,day14,countdown` is exactly the three states that tile
+ * sums, so the number on the card and the rows on arrival are the same set.
+ */
+const statesParser = parseAsArrayOf(
+  parseAsStringLiteral(ESCALATION_STATES)
+).withDefault([])
+
+/** The one column the server can order by. */
+const SORTABLE = ["nextDueAt"] as const
 
 type CheckinRow = FunctionReturnType<
   typeof api.admin.checkinsPage
@@ -190,36 +206,24 @@ export function CheckinsBrowser() {
   // Once per mount. A query may not read the clock, and two renders
   // disagreeing about "days overdue" would be a row that flickers.
   const [now] = useState(() => Date.now())
-  const [states, setStates] = useState<EscalationState[]>([])
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
-
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (searchInput === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
+  const [states, setStates] = useQueryState("state", statesParser)
+  const url = useTableUrlState({
+    defaultSorting: DEFAULT_SORTING,
+    sortableIds: SORTABLE,
+    facetKey: states.join(","),
+  })
 
   const sort: "soonest" | "latest" =
-    sorting[0]?.desc === true ? "latest" : "soonest"
+    url.sorting[0]?.desc === true ? "latest" : "soonest"
   const filters = useMemo(
-    () => ({ states, search, sort, now }),
-    [states, search, sort, now]
+    () => ({ states, search: url.search, sort, now }),
+    [states, url.search, sort, now]
   )
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.checkinsPage, {
       ...filters,
-      paginationOpts: { numItems: pageSize, cursor },
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(
@@ -238,7 +242,6 @@ export function CheckinsBrowser() {
     }),
     [labels]
   )
-  const stateSelection = useMemo(() => new Set<string>(states), [states])
 
   if (page === undefined) {
     return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
@@ -256,52 +259,30 @@ export function CheckinsBrowser() {
       getRowId={(row) => row.id}
       searchPlaceholder={labels.searchPlaceholder}
       filters={
-        <FacetedFilter
+        <MultiFacet
           title={labels.filterState}
           options={ESCALATION_STATES.map((value) => ({
             value,
             label: escalationLabel(value, locale),
           }))}
-          selected={stateSelection}
-          onToggle={(value, checked) => {
-            setStates((current) => {
-              const next = new Set(current)
-              if (checked) next.add(value as EscalationState)
-              else next.delete(value as EscalationState)
-              return [...next]
-            })
-            resetPaging()
-          }}
-          onClear={() => {
-            setStates([])
-            resetPaging()
-          }}
-          count={() => undefined}
+          values={states}
+          onChange={setStates}
           clearLabel={tableLabels.resetFilters}
         />
       }
       server={{
-        search: searchInput,
-        onSearchChange: setSearchInput,
-        sorting,
-        onSortingChange: (next) => {
-          setSorting(next.length === 0 ? DEFAULT_SORTING : next)
-          resetPaging()
-        },
+        search: url.searchInput,
+        onSearchChange: url.setSearch,
+        sorting: url.sorting,
+        onSortingChange: url.setSorting,
         sortLocked: false,
-        page: cursors.length,
-        pageSize,
-        onPageSizeChange: (size) => {
-          setPageSize(size)
-          resetPaging()
-        },
-        canPrev: cursors.length > 1,
+        page: url.pageNumber,
+        pageSize: url.pageSize,
+        onPageSizeChange: url.setPageSize,
+        canPrev: url.canPrev,
         canNext: !page.isDone,
-        onPrev: () =>
-          setCursors((current) =>
-            current.length > 1 ? current.slice(0, -1) : current
-          ),
-        onNext: () => setCursors((current) => [...current, page.continueCursor]),
+        onPrev: url.prevPage,
+        onNext: () => url.nextPage(page.continueCursor),
         total: tally,
         loading,
       }}

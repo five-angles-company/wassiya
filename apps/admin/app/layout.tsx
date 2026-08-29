@@ -7,6 +7,7 @@ import {
   Inter,
 } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
+import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
@@ -98,15 +99,21 @@ export default async function RootLayout({
       }
     >
       <body>
-        {/* ClerkProvider must wrap ConvexClientProvider — Convex reads Clerk's
-            context to get its access token. */}
-        <ClerkProvider>
-          <ThemeProvider>
-            <ConvexClientProvider>
-              <LocaleProvider locale={locale}>{children}</LocaleProvider>
-            </ConvexClientProvider>
-          </ThemeProvider>
-        </ClerkProvider>
+        {/* Outermost because it is orthogonal to every other provider: it reads
+            the App Router's own hooks and patches `window.history`, and knows
+            nothing about auth or locale. Unlike the Clerk/Convex pair below
+            there is no ordering constraint to get wrong. */}
+        <NuqsAdapter>
+          {/* ClerkProvider must wrap ConvexClientProvider — Convex reads
+              Clerk's context to get its access token. */}
+          <ClerkProvider>
+            <ThemeProvider>
+              <ConvexClientProvider>
+                <LocaleProvider locale={locale}>{children}</LocaleProvider>
+              </ConvexClientProvider>
+            </ThemeProvider>
+          </ClerkProvider>
+        </NuqsAdapter>
       </body>
     </html>
   )

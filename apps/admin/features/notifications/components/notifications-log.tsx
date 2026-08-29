@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { api } from "@workspace/backend/api"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
 import { BellIcon } from "lucide-react"
+import { parseAsArrayOf, parseAsStringLiteral, useQueryStates } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { useLocale } from "@/components/locale-provider"
@@ -14,20 +15,22 @@ import {
   type NotificationRow,
 } from "@/features/notifications/components/notification-columns"
 import { NOTIFICATIONS } from "@/features/notifications/strings/notifications"
-import {
-  NOTIFICATION_DOMAINS,
-  domainLabel,
-  type NotificationDomain,
-} from "@/lib/audit-domains"
+import { NOTIFICATION_DOMAINS, domainLabel } from "@/lib/audit-domains"
 import { t } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
+
+const READ_STATES = ["unread", "read"] as const
 
 /** Both selected, or neither, is the same question: no constraint. */
-function unreadArg(states: ReadonlySet<string>): boolean | undefined {
-  if (states.size !== 1) return undefined
-  return states.has("unread")
+function unreadArg(states: readonly string[]): boolean | undefined {
+  if (states.length !== 1) return undefined
+  return states[0] === "unread"
 }
+
+/** No column sorts — an append-only log has one meaningful order. */
+const NO_SORTING = [] as const
 
 /**
  * ٣.٣ from the console's side — what an owner was told inside the app.
@@ -54,35 +57,35 @@ export function NotificationsLog() {
   const labels = useMemo(() => t(NOTIFICATIONS, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [domains, setDomains] = useState<NotificationDomain[]>([])
-  const [states, setStates] = useState<string[]>([])
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
+  const [facets, setFacets] = useQueryStates(
+    {
+      domain: parseAsArrayOf(
+        parseAsStringLiteral(NOTIFICATION_DOMAINS)
+      ).withDefault([]),
+      state: parseAsArrayOf(parseAsStringLiteral(READ_STATES)).withDefault([]),
+    },
+    { history: "replace", clearOnDefault: true }
+  )
 
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
+  const url = useTableUrlState({
+    defaultSorting: [],
+    sortableIds: NO_SORTING,
+    facetKey: `${facets.domain.join(",")}|${facets.state.join(",")}`,
+  })
 
-  useEffect(() => {
-    if (searchInput.trim() === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
-
-  const stateSet = useMemo(() => new Set<string>(states), [states])
   const filters = useMemo(
-    () => ({ domains, search, unread: unreadArg(stateSet) }),
-    [domains, search, stateSet]
+    () => ({
+      domains: facets.domain,
+      search: url.search,
+      unread: unreadArg(facets.state),
+    }),
+    [facets.domain, facets.state, url.search]
   )
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.notificationsPage, {
       ...filters,
-      paginationOpts: { numItems: pageSize, cursor },
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(
@@ -139,41 +142,36 @@ export function NotificationsLog() {
             <MultiFacet
               title={labels.filterDomain}
               options={domainOptions}
-              values={domains}
-              onChange={setDomains}
-              onReset={resetPaging}
+              values={facets.domain}
+              onChange={(update) =>
+                void setFacets((current) => ({ domain: update(current.domain) }))
+              }
               clearLabel={tableLabels.resetFilters}
             />
             <MultiFacet
               title={labels.filterRead}
               options={stateOptions}
-              values={states}
-              onChange={setStates}
-              onReset={resetPaging}
+              values={facets.state}
+              onChange={(update) =>
+                void setFacets((current) => ({ state: update(current.state) }))
+              }
               clearLabel={tableLabels.resetFilters}
             />
           </>
         }
         server={{
-          search: searchInput,
-          onSearchChange: setSearchInput,
+          search: url.searchInput,
+          onSearchChange: url.setSearch,
           sorting: [],
           onSortingChange: () => undefined,
           sortLocked: false,
-          page: cursors.length,
-          pageSize,
-          onPageSizeChange: (size) => {
-            setPageSize(size)
-            resetPaging()
-          },
-          canPrev: cursors.length > 1,
+          page: url.pageNumber,
+          pageSize: url.pageSize,
+          onPageSizeChange: url.setPageSize,
+          canPrev: url.canPrev,
           canNext: !page.isDone,
-          onPrev: () =>
-            setCursors((current) =>
-              current.length > 1 ? current.slice(0, -1) : current
-            ),
-          onNext: () =>
-            setCursors((current) => [...current, page.continueCursor]),
+          onPrev: url.prevPage,
+          onNext: () => url.nextPage(page.continueCursor),
           total: tally,
           loading,
         }}

@@ -1,11 +1,20 @@
 "use client"
 
-import type { Dispatch, SetStateAction } from "react"
-
 import {
   FacetedFilter,
   type FacetOption,
 } from "@/components/data-table-faceted-filter"
+
+/**
+ * Accepts an updater and nothing else.
+ *
+ * Deliberately narrower than `Dispatch<SetStateAction<T[]>>`, so that both a
+ * `useState` setter and a nuqs one satisfy it: nuqs returns a promise and
+ * allows `null` for "clear the param", neither of which `Dispatch` describes.
+ * Restricting the call site to the function form is what makes the two
+ * interchangeable here.
+ */
+type ArrayUpdater<T> = (updater: (current: T[]) => T[]) => unknown
 
 /**
  * `FacetedFilter` bound to a `useState` array of selected values.
@@ -32,9 +41,15 @@ export function MultiFacet<T extends string>({
   title: string
   options: FacetOption[]
   values: T[]
-  onChange: Dispatch<SetStateAction<T[]>>
-  /** Run after every change — in practice, rewinding to the first page. */
-  onReset: () => void
+  onChange: ArrayUpdater<T>
+  /**
+   * Run after every change.
+   *
+   * Now that the values live in the URL the cursor stack rewinds on its own —
+   * see `use-table-url-state`. This stays for anything a screen genuinely has
+   * to do alongside, and every current caller passes a no-op.
+   */
+  onReset?: () => void
   clearLabel: string
 }) {
   return (
@@ -50,11 +65,11 @@ export function MultiFacet<T extends string>({
               : [...current, value as T]
             : current.filter((entry) => entry !== value)
         )
-        onReset()
+        onReset?.()
       }}
       onClear={() => {
-        onChange([])
-        onReset()
+        onChange(() => [])
+        onReset?.()
       }}
       count={() => undefined}
       clearLabel={clearLabel}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -18,6 +18,10 @@ import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
+
+/** No facets and no column sorts — the log has one order and one question. */
+const NO_SORTING = [] as const
 
 type EmailRow = FunctionReturnType<
   typeof api.admin.emailLogPage
@@ -112,31 +116,20 @@ export function EmailLog() {
   const labels = useMemo(() => t(EMAIL_LOG, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
-
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (searchInput === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
+  const url = useTableUrlState({
+    defaultSorting: [],
+    sortableIds: NO_SORTING,
+    facetKey: "",
+  })
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.emailLogPage, {
-      search,
-      paginationOpts: { numItems: pageSize, cursor },
+      search: url.search,
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(
-    useQuery(api.admin.emailLogTally, { search })
+    useQuery(api.admin.emailLogTally, { search: url.search })
   )
 
   const columns = useMemo(() => emailColumns(locale), [locale])
@@ -179,25 +172,18 @@ export function EmailLog() {
         getRowId={(row) => row.id}
         searchPlaceholder={labels.searchPlaceholder}
         server={{
-          search: searchInput,
-          onSearchChange: setSearchInput,
+          search: url.searchInput,
+          onSearchChange: url.setSearch,
           sorting: [],
           onSortingChange: () => undefined,
           sortLocked: false,
-          page: cursors.length,
-          pageSize,
-          onPageSizeChange: (size) => {
-            setPageSize(size)
-            resetPaging()
-          },
-          canPrev: cursors.length > 1,
+          page: url.pageNumber,
+          pageSize: url.pageSize,
+          onPageSizeChange: url.setPageSize,
+          canPrev: url.canPrev,
           canNext: !page.isDone,
-          onPrev: () =>
-            setCursors((current) =>
-              current.length > 1 ? current.slice(0, -1) : current
-            ),
-          onNext: () =>
-            setCursors((current) => [...current, page.continueCursor]),
+          onPrev: url.prevPage,
+          onNext: () => url.nextPage(page.continueCursor),
           total: tally,
           loading,
         }}

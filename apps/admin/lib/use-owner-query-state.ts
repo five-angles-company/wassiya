@@ -1,14 +1,30 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
+import {
+  parseAsArrayOf,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs"
 import type { SortingState } from "@tanstack/react-table"
 
-import type { IdentityStatus } from "@/lib/identity"
-
-/** Matches the other browsers; see `use-claim-query-state` for the debounce. */
-const SEARCH_DEBOUNCE_MS = 300
+import { IDENTITY_STATUSES, type IdentityStatus } from "@/lib/identity"
+import { useTableUrlState } from "@/lib/use-table-url-state"
 
 const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
+
+/** The one column the server can order by. */
+const SORTABLE = ["joinedAt"] as const
+
+/**
+ * Plan names as the subscription stores them, not a guess at a catalogue.
+ *
+ * A closed list here rather than `v.array(v.string())`'s freedom, because this
+ * is the URL: a hand-edited `?plan=enterprise` should fall out rather than
+ * reach the server as a filter that matches nothing and looks like an empty
+ * table. Both facets on both screens offer exactly these two.
+ */
+const PLANS = ["free", "paid"] as const
 
 /**
  * Every argument the owners list sends, and its cursor bookkeeping.
@@ -18,103 +34,80 @@ const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
  * of them importing the other would be exactly the cross-feature reach this
  * app forbids.
  *
- * Third of its kind, and deliberately still not abstracted: the shared part is
- * a cursor stack and a debounce, and the filters differ entirely between the
- * three. A generic hook parameterised by every filter shape would be longer
- * than the three it replaced, and would make each of them harder to read.
+ * The filters live in the URL and the cursor stack does not — `use-table-url-
+ * state` carries that reasoning, along with why the paging reset is derived
+ * from the params rather than called by each setter.
  */
 export function useOwnerQueryState() {
-  const [identity, setIdentity] = useState<IdentityStatus[]>([])
-  const [plans, setPlans] = useState<string[]>([])
-  const [sorting, setSortingState] = useState<SortingState>(DEFAULT_SORTING)
-  const [pageSize, setPageSizeState] = useState(25)
-
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (searchInput === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
-
-  const sort = useMemo<"newest" | "oldest">(
-    () => (sorting[0]?.desc === false ? "oldest" : "newest"),
-    [sorting]
+  const [facets, setFacets] = useQueryStates(
+    {
+      identity: parseAsArrayOf(
+        parseAsStringLiteral(IDENTITY_STATUSES)
+      ).withDefault([]),
+      plan: parseAsArrayOf(parseAsStringLiteral(PLANS)).withDefault([]),
+    },
+    { history: "replace", clearOnDefault: true }
   )
 
+  const url = useTableUrlState({
+    defaultSorting: DEFAULT_SORTING,
+    sortableIds: SORTABLE,
+    facetKey: `${facets.identity.join(",")}|${facets.plan.join(",")}`,
+  })
+
+  const sort: "newest" | "oldest" =
+    url.sorting[0]?.desc === false ? "oldest" : "newest"
+
   const filters = useMemo(
-    () => ({ identity, plans, search, sort }),
-    [identity, plans, search, sort]
+    () => ({
+      identity: facets.identity,
+      plans: facets.plan as string[],
+      search: url.search,
+      sort,
+    }),
+    [facets.identity, facets.plan, url.search, sort]
   )
 
   const toggleIn = useCallback(
-    <T extends string>(
-      set: React.Dispatch<React.SetStateAction<T[]>>
-    ) =>
-      (value: string, checked: boolean) => {
-        set((current) => {
-          const next = new Set<T>(current)
-          if (checked) next.add(value as T)
-          else next.delete(value as T)
-          return [...next]
-        })
-        resetPaging()
-      },
-    [resetPaging]
+    (key: "identity" | "plan") => (value: string, checked: boolean) => {
+      void setFacets((current) => ({
+        [key]: checked
+          ? current[key].includes(value as never)
+            ? current[key]
+            : [...current[key], value]
+          : current[key].filter((entry: string) => entry !== value),
+      }))
+    },
+    [setFacets]
   )
 
   return {
     filters,
-    cursor: cursors[cursors.length - 1] ?? null,
-    pageSize,
-    setPageSize: useCallback(
-      (size: number) => {
-        setPageSizeState(size)
-        resetPaging()
-      },
-      [resetPaging]
+    cursor: url.cursor,
+    pageSize: url.pageSize,
+    setPageSize: url.setPageSize,
+    searchInput: url.searchInput,
+    setSearch: url.setSearch,
+    sorting: url.sorting,
+    setSorting: url.setSorting,
+    identitySelection: useMemo(
+      () => new Set<string>(facets.identity),
+      [facets.identity]
     ),
-    searchInput,
-    setSearch: setSearchInput,
-    sorting,
-    setSorting: useCallback(
-      (next: SortingState) => {
-        setSortingState(next.length === 0 ? DEFAULT_SORTING : next)
-        resetPaging()
-      },
-      [resetPaging]
+    toggleIdentity: toggleIn("identity") as (
+      value: string,
+      checked: boolean
+    ) => void,
+    clearIdentity: useCallback(
+      () => void setFacets({ identity: [] as IdentityStatus[] }),
+      [setFacets]
     ),
-    identitySelection: useMemo(() => new Set<string>(identity), [identity]),
-    toggleIdentity: toggleIn(setIdentity),
-    clearIdentity: useCallback(() => {
-      setIdentity([])
-      resetPaging()
-    }, [resetPaging]),
-    planSelection: useMemo(() => new Set<string>(plans), [plans]),
-    togglePlan: toggleIn(setPlans),
-    clearPlans: useCallback(() => {
-      setPlans([])
-      resetPaging()
-    }, [resetPaging]),
-    pageNumber: cursors.length,
-    canPrev: cursors.length > 1,
-    prevPage: useCallback(
-      () =>
-        setCursors((current) =>
-          current.length > 1 ? current.slice(0, -1) : current
-        ),
-      []
-    ),
-    nextPage: useCallback((continueCursor: string | null) => {
-      if (continueCursor === null) return
-      setCursors((current) => [...current, continueCursor])
-    }, []),
+    planSelection: useMemo(() => new Set<string>(facets.plan), [facets.plan]),
+    togglePlan: toggleIn("plan"),
+    clearPlans: useCallback(() => void setFacets({ plan: [] }), [setFacets]),
+    pageNumber: url.pageNumber,
+    canPrev: url.canPrev,
+    prevPage: url.prevPage,
+    nextPage: url.nextPage,
   }
 }

@@ -29,6 +29,9 @@ export type NavItem = {
    * It renders with its icon and label, disabled, carrying a "soon" badge —
    * deliberately not a working link to an empty page, which would read as a
    * finished feature that happens to have no data.
+   *
+   * Nothing is `null` today; the type stays so the next unbuilt section has a
+   * place to sit that is not a dead link.
    */
   href: string | null
 }
@@ -43,12 +46,13 @@ export type NavGroup = { key: NavKey; items: readonly NavItem[] }
  * the owner's record; **Operations** is what runs unattended (the two hourly
  * crons, escalation mail, release); **Records** is the append-only material.
  *
- * **Review resolves; the other three groups do not.** That is deliberate rather
- * than incidental — the sidebar is worked group by group, and Review is the one
- * the console exists for: the human-judgement path a death claim walks. The
- * remaining items are named places to put the next piece of work, and a `null`
- * href renders disabled with a "soon" badge rather than as a working link to an
- * empty page.
+ * All four groups resolve. The sidebar was worked group by group in that
+ * order — Review first, because it is what the console exists for: the
+ * human-judgement path a death claim walks.
+ *
+ * Every screen's filters live in the URL, which is what lets the dashboard's
+ * tiles link at a filtered list rather than a landing page — see `stat-card`
+ * and `use-table-url-state`.
  */
 export const NAV_GROUPS: readonly NavGroup[] = [
   {

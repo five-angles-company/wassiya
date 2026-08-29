@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -21,24 +21,37 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { MoreHorizontalIcon, SmartphoneIcon } from "lucide-react"
+import {
+  parseAsArrayOf,
+  parseAsStringLiteral,
+  useQueryStates,
+} from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { FacetedFilter } from "@/components/data-table-faceted-filter"
 import { useLocale } from "@/components/locale-provider"
+import { MultiFacet } from "@/components/multi-facet"
 import { DEVICES } from "@/features/devices/strings/devices"
 import type { DataTableFeatures } from "@/lib/data-table-features"
 import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
+import { useTableUrlState } from "@/lib/use-table-url-state"
 
 type DeviceRow = FunctionReturnType<
   typeof api.admin.devicesPage
 >["page"][number]
 
-type Platform = "ios" | "android" | "web"
-const PLATFORMS: Platform[] = ["ios", "android", "web"]
+const PLATFORMS = ["ios", "android", "web"] as const
+type Platform = (typeof PLATFORMS)[number]
+
+/** Absent is "either" — ticking both sides asks the same question as neither. */
+const DEVICE_STATES = ["live", "revoked"] as const
+
+/** The one column the server can order by. */
+const SORTABLE = ["registeredAt"] as const
 
 const DEFAULT_SORTING: SortingState = [{ id: "registeredAt", desc: true }]
 
@@ -184,40 +197,36 @@ export function DevicesBrowser() {
   const labels = useMemo(() => t(DEVICES, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [platforms, setPlatforms] = useState<Platform[]>([])
-  const [searchInput, setSearchInput] = useState("")
-  const [search, setSearch] = useState("")
-  const [revoked, setRevoked] = useState<boolean | undefined>(undefined)
-  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING)
-  const [pageSize, setPageSize] = useState(25)
-  const [cursors, setCursors] = useState<(string | null)[]>([null])
+  const [facets, setFacets] = useQueryStates(
+    {
+      platform: parseAsArrayOf(parseAsStringLiteral(PLATFORMS)).withDefault([]),
+      state: parseAsStringLiteral(DEVICE_STATES),
+    },
+    { history: "replace", clearOnDefault: true }
+  )
+  const url = useTableUrlState({
+    defaultSorting: DEFAULT_SORTING,
+    sortableIds: SORTABLE,
+    facetKey: `${facets.platform.join(",")}|${facets.state}`,
+  })
 
-  const cursor = cursors[cursors.length - 1] ?? null
-  const resetPaging = useCallback(() => setCursors([null]), [])
-
-  useEffect(() => {
-    if (searchInput === search) return
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim())
-      resetPaging()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchInput, search, resetPaging])
+  const platforms = facets.platform as Platform[]
+  const revoked = facets.state === null ? undefined : facets.state === "revoked"
 
   const { data: page, loading } = useLastLoaded(
     useQuery(api.admin.devicesPage, {
       platforms,
       revoked,
-      search,
-      sort: sorting[0]?.desc === false ? "oldest" : "newest",
-      paginationOpts: { numItems: pageSize, cursor },
+      search: url.search,
+      sort: url.sorting[0]?.desc === false ? "oldest" : "newest",
+      paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
   const { data: tally } = useLastLoaded(
     useQuery(api.admin.devicesTally, {
       platforms,
       revoked,
-      search,
+      search: url.search,
       sort: "newest",
     })
   )
@@ -235,10 +244,6 @@ export function DevicesBrowser() {
     [labels]
   )
 
-  const platformSelection = useMemo(
-    () => new Set<string>(platforms),
-    [platforms]
-  )
   /** One boolean worn as a two-value facet — both ticked means "either". */
   const stateSelection = useMemo(
     () =>
@@ -265,24 +270,15 @@ export function DevicesBrowser() {
       getRowId={(row) => row.id}
       filters={
         <>
-          <FacetedFilter
+          <MultiFacet
             title={labels.filterPlatform}
             options={PLATFORMS.map((value) => ({ value, label: value }))}
-            selected={platformSelection}
-            onToggle={(value, checked) => {
-              setPlatforms((current) => {
-                const next = new Set(current)
-                if (checked) next.add(value as Platform)
-                else next.delete(value as Platform)
-                return [...next]
-              })
-              resetPaging()
-            }}
-            onClear={() => {
-              setPlatforms([])
-              resetPaging()
-            }}
-            count={() => undefined}
+            values={facets.platform}
+            onChange={(update) =>
+              void setFacets((current) => ({
+                platform: update(current.platform),
+              }))
+            }
             clearLabel={tableLabels.resetFilters}
           />
           <FacetedFilter
@@ -292,47 +288,39 @@ export function DevicesBrowser() {
               { value: "revoked", label: labels.stateRevoked },
             ]}
             selected={stateSelection}
-            onToggle={(value, checked) => {
-              const side = value === "revoked"
-              setRevoked((current) => {
-                if (!checked) return current === side ? undefined : current
-                return current === undefined || current === side
-                  ? side
-                  : undefined
+            onToggle={(value, checked) =>
+              void setFacets((current) => {
+                const side = value as (typeof DEVICE_STATES)[number]
+                if (!checked) {
+                  return { state: current.state === side ? null : current.state }
+                }
+                return {
+                  state:
+                    current.state === null || current.state === side
+                      ? side
+                      : null,
+                }
               })
-              resetPaging()
-            }}
-            onClear={() => {
-              setRevoked(undefined)
-              resetPaging()
-            }}
+            }
+            onClear={() => void setFacets({ state: null })}
             count={() => undefined}
             clearLabel={tableLabels.resetFilters}
           />
         </>
       }
       server={{
-        search: searchInput,
-        onSearchChange: setSearchInput,
-        sorting,
-        onSortingChange: (next) => {
-          setSorting(next.length === 0 ? DEFAULT_SORTING : next)
-          resetPaging()
-        },
+        search: url.searchInput,
+        onSearchChange: url.setSearch,
+        sorting: url.sorting,
+        onSortingChange: url.setSorting,
         sortLocked: false,
-        page: cursors.length,
-        pageSize,
-        onPageSizeChange: (size) => {
-          setPageSize(size)
-          resetPaging()
-        },
-        canPrev: cursors.length > 1,
+        page: url.pageNumber,
+        pageSize: url.pageSize,
+        onPageSizeChange: url.setPageSize,
+        canPrev: url.canPrev,
         canNext: !page.isDone,
-        onPrev: () =>
-          setCursors((current) =>
-            current.length > 1 ? current.slice(0, -1) : current
-          ),
-        onNext: () => setCursors((current) => [...current, page.continueCursor]),
+        onPrev: url.prevPage,
+        onNext: () => url.nextPage(page.continueCursor),
         total: tally,
         loading,
       }}
