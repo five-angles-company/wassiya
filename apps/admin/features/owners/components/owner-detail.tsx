@@ -3,12 +3,12 @@
 import { useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
 import { Badge } from "@workspace/ui/components/badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
 
 import { useLocale } from "@/components/locale-provider"
+import { RecordNotFound } from "@/components/record-not-found"
 import {
   Fact,
   FactsEmpty,
@@ -42,12 +42,24 @@ export function OwnerDetail({ userId }: { userId: string }) {
   // that is stale by minutes is not an inaccuracy — and reading the clock in a
   // render body would let two renders disagree about the same guardian.
   const [now] = useState(() => Date.now())
-  const detail = useQuery(api.admin.ownerDetail, {
-    userId: userId as Id<"users">,
-  })
+  // No cast: the server takes the raw path segment and normalises it, so an id
+  // that is malformed and one that names a deleted account both come back as
+  // `null` rather than throwing. This screen is linked to from eight places,
+  // one of which is the audit log — append-only, and therefore outliving the
+  // accounts it names.
+  const detail = useQuery(api.admin.ownerDetail, { userId })
 
   if (detail === undefined) {
     return <Skeleton className="h-96 w-full rounded-xl" />
+  }
+  if (detail === null) {
+    return (
+      <RecordNotFound
+        id={userId}
+        backHref="/owners"
+        backLabel={labels.back}
+      />
+    )
   }
 
   const { owner, devices, heirs, claims } = detail

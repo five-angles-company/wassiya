@@ -1249,13 +1249,22 @@ export const ownersTally = query({
  * no `inviteToken`. Both are the same rule stated in `guardiansList`.
  */
 export const ownerDetail = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, { userId }) => {
+  // `v.string()` rather than `v.id("users")`, and the id checked in the body.
+  //
+  // The argument validator would reject a malformed id by *throwing*, which on
+  // a screen reached by a pasted or stale link is a crash rather than an
+  // answer. `normalizeId` returns null for a string that is not an id for this
+  // table, so a bad id and a deleted account take the same route out — the
+  // caller gets `null` and renders "not found", the way `claimDetail` already
+  // did. The route passes an unchecked path segment; this is where it stops
+  // being trusted.
+  args: { userId: v.string() },
+  handler: async (ctx, { userId: rawUserId }) => {
     await requireAdmin(ctx)
+    const userId = ctx.db.normalizeId("users", rawUserId)
+    if (userId === null) return null
     const user = await ctx.db.get("users", userId)
-    if (user === null) {
-      throw new Error("Not found")
-    }
+    if (user === null) return null
 
     const devices = await ctx.db
       .query("devices")
@@ -2359,9 +2368,13 @@ const HISTORY_SCAN = 400
  * lets a reviewer see what the backend missed.
  */
 export const claimDetail = query({
-  args: { claimId: v.id("claims") },
-  handler: async (ctx, { claimId }) => {
+  /** `v.string()` + `normalizeId` — see `ownerDetail` for why. */
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId: rawClaimId }) => {
     await requireAdmin(ctx)
+
+    const claimId = ctx.db.normalizeId("claims", rawClaimId)
+    if (claimId === null) return null
 
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) return null

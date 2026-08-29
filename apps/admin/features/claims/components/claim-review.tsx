@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -20,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { useLocale } from "@/components/locale-provider"
+import { RecordNotFound } from "@/components/record-not-found"
 import { ClaimVerdict } from "@/features/claims/components/claim-verdict"
 import { ClaimHeirLink } from "@/features/claims/components/claim-heir-link"
 import { ClaimHistory } from "@/features/claims/components/claim-history"
@@ -46,14 +46,18 @@ import { fmtDate } from "@/lib/format"
 export function ClaimReview({ claimId }: { claimId: string }) {
   const locale = useLocale()
   const labels = t(CLAIMS, locale)
-  const detail = useQuery(api.admin.claimDetail, {
-    claimId: claimId as Id<"claims">,
-  })
+  // No cast: the server normalises the raw path segment, so a malformed id and
+  // a claim that is gone come back the same way rather than throwing.
+  const detail = useQuery(api.admin.claimDetail, { claimId })
 
   if (detail === undefined)
     return <Skeleton className="h-96 w-full rounded-xl" />
   if (detail === null) {
-    return <p className="text-muted-foreground">{labels.empty}</p>
+    // Was a bare "No claims" line, which read as an empty list rather than a
+    // wrong address and left no way back but the browser's own button.
+    return (
+      <RecordNotFound id={claimId} backHref="/claims" backLabel={labels.back} />
+    )
   }
 
   const { claim, subject, heirs, priorClaims, history, blocked } = detail

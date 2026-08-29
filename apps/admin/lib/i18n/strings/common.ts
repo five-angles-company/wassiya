@@ -28,6 +28,35 @@ export const COMMON = {
   },
   checkingSession: { ar: "جارٍ التحقق من الجلسة…", en: "Checking session…" },
 
+  // The error boundary. Says what to do, not what went wrong — the reader is a
+  // reviewer, and the cases this actually catches (a deployment mid-push, a
+  // dropped socket, a role that changed under the session) are all cured by
+  // trying again.
+  errorTitle: { ar: "تعذّر تحميل هذه الشاشة", en: "This screen did not load" },
+  errorBody: {
+    ar: "انقطع الاتصال بالخادم أو رُفض الطلب. أعد المحاولة؛ إن تكرّر فالمعرّف أدناه يحدّد الخطأ في السجلات.",
+    en: "The request to the server failed or was refused. Try again — if it keeps happening, the reference below identifies it in the logs.",
+  },
+  errorDigest: { ar: "المرجع", en: "Reference" },
+  retry: { ar: "أعد المحاولة", en: "Try again" },
+
+  // A detail route whose id names nothing. Reachable from a stale link out of
+  // the audit log, which outlives the accounts it names.
+  notFoundTitle: { ar: "لا يوجد سجل بهذا المعرّف", en: "No such record" },
+  notFoundBody: {
+    ar: "لم يعد هذا المعرّف يشير إلى شيء — إمّا حُذف السجل، أو أن الرابط الذي أوصلك إلى هنا قديم أو غير صحيح.",
+    en: "This id no longer points at anything. Either the record is gone, or the link that brought you here is stale or mistyped.",
+  },
+
+  // The 404, for a path that matches no route at all — as opposed to a route
+  // that exists and holds nothing.
+  routeMissingTitle: { ar: "لا توجد صفحة هنا", en: "No page here" },
+  routeMissingBody: {
+    ar: "هذا المسار لا يقابل أي شاشة في اللوحة.",
+    en: "This address does not match any screen in the console.",
+  },
+  backToDashboard: { ar: "العودة إلى اللوحة", en: "Back to the dashboard" },
+
   language: { ar: "اللغة", en: "Language" },
   arabic: { ar: "العربية", en: "العربية" },
   english: { ar: "English", en: "English" },

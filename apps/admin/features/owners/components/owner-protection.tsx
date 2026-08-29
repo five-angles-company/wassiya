@@ -18,7 +18,13 @@ import { OWNERS } from "@/features/owners/strings/owners"
 import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 
-type Detail = FunctionReturnType<typeof api.admin.ownerDetail>
+/**
+ * `NonNullable`, because the query now answers `null` for an id that names
+ * nothing and the caller resolves that before rendering this. Widening here
+ * instead would push a null check into every field below for a case that
+ * cannot reach them.
+ */
+type Detail = NonNullable<FunctionReturnType<typeof api.admin.ownerDetail>>
 
 /**
  * The vault, the check-in and the guardians — the three things that decide
