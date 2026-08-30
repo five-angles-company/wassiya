@@ -32,11 +32,11 @@
  *
  * `blocked` marks an outstanding item that is waiting on somebody else. The
  * guardian is the live case: the owner sends an invitation from this app, but
- * *accepting* happens in the web app, which has not shipped. Promoting that to
- * the single amber row would accuse the owner, every time they open the app, of
- * a step they have no way to take — so a blocked item stays `later`, wears the
- * waiting pill, and is skipped for `topGap`. It still counts against the score,
- * because the vault really is incomplete.
+ * *accepting* happens on the web, where the invited person mints their own key.
+ * Promoting that to the single amber row would accuse the owner, every time
+ * they open the app, of a step only somebody else can take — so a blocked item
+ * stays `later`, wears the waiting pill, and is skipped for `topGap`. It still
+ * counts against the score, because the vault really is incomplete.
  *
  * ## This hook never needs the vault unlocked
  *
