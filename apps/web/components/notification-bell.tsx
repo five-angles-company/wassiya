@@ -20,7 +20,13 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * label is still spelled out in the mobile menu and on `aria-label` for anyone
  * reading with a screen reader.
  *
- * `unreadCount` stops counting at ten, so ten is rendered as "٩+" — a number
+ * Active is a colour change, not a fill — the same reasoning as the links, and
+ * the same numbers: no tint in this palette clears 3:1 against the near-white
+ * bar, so a filled circle here would be a shape nobody can see.
+ *
+ * The badge keeps the **solid** primary while nothing else in the chrome does,
+ * and that is the point: an unread count is the one thing in this bar asking
+ * for something. `unreadCount` stops at ten, so ten renders as "٩+" — a number
  * past that would be precision the query never had.
  */
 export function NotificationBell() {
@@ -37,10 +43,10 @@ export function NotificationBell() {
       href="/notifications"
       aria-label={nav.notifications}
       aria-current={active ? "page" : undefined}
-      className={`relative inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors ${
+      className={`hover:bg-sand-100 relative inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors ${
         active
-          ? "bg-background text-primary"
-          : "text-muted-foreground hover:text-foreground hover:bg-sand-200"
+          ? "text-terracotta-800"
+          : "text-sand-700 hover:text-foreground"
       }`}
     >
       <BellIcon className="size-[18px]" strokeWidth={2.3} aria-hidden />

@@ -24,13 +24,22 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * guardian's begin, for the person who is both. Without it, "صندوقي" and "ما هو
  * مطلوب" sit adjacent and read as one list of five unrelated things.
  *
- * ## Active is a carved pill, not a painted one
+ * ## Why the active item is not a filled pill
  *
- * The bar sits on the card tone and the page on the ground; the active item
- * takes the *ground* colour, so it reads as a notch cut through the bar to the
- * screen below rather than as a fifth coloured object. Terracotta stays
- * reserved for the one action a screen is asking for — a nav bar that wears the
- * accent on every visit spends it.
+ * It was, twice, and both fills are unusable on a near-white bar. Measured
+ * against `sand-50`: the sand ground is a 4% step, and `accent` — the palette's
+ * soft terracotta tint — comes out at **1.19:1**, well under the 3:1 a shape
+ * needs to read as a shape. A pill nobody can see is worse than no pill,
+ * because the row then has an invisible fourth state in it.
+ *
+ * So the state is carried by ink and a rule: `terracotta-800` at 6.5:1 against
+ * the bar, over a 2.5px underline at 3.5:1. That is the top-bar idiom for a
+ * reason — on a light chrome it is the only treatment with contrast to spare,
+ * and it leaves the solid accent unspent for the one action a screen is asking
+ * for.
+ *
+ * Inactive is `sand-700` (6.3:1), not `--muted-foreground` (4.1:1, under AA at
+ * this size). Nav labels are the last place to spend a shortfall.
  */
 export function NavLinks() {
   const locale = useLocale()
@@ -41,13 +50,13 @@ export function NavLinks() {
   )
 
   return (
-    <nav className="hidden items-center gap-1 md:flex">
+    <nav className="hidden h-16 items-stretch md:flex">
       {groups.map((group, index) => (
-        <div key={group.key} className="flex items-center gap-1">
+        <div key={group.key} className="flex items-stretch">
           {index > 0 && (
             <span
               aria-hidden
-              className="bg-border mx-2 h-5 w-px shrink-0 self-center"
+              className="bg-border mx-3 my-auto h-5 w-px shrink-0"
             />
           )}
           {group.items
@@ -59,10 +68,13 @@ export function NavLinks() {
                   key={item.key}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors ${
+                  // The underline is an `::after` pinned to the bar's own
+                  // bottom edge, which is why each link is full bar height
+                  // rather than a floating pill.
+                  className={`relative inline-flex items-center gap-2 px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[2.5px] after:rounded-t-full ${
                     active
-                      ? "bg-background text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-sand-200"
+                      ? "text-terracotta-800 after:bg-primary"
+                      : "text-sand-700 hover:text-foreground after:bg-transparent"
                   }`}
                 >
                   <item.icon

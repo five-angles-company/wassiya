@@ -31,6 +31,10 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * The section labels come back too. They are what tell a person who is both an
  * heir and a guardian that these are two different jobs.
  *
+ * The active row is ink plus a rule at the start edge, for the reason
+ * `nav-links` measures out: against the near-white sheet no tint in this
+ * palette reaches the 3:1 a shape needs, so a filled row would be invisible.
+ *
  * ## Two details that only bite in Arabic
  *
  * `side` comes from the locale rather than the stylesheet: the RTL transform
@@ -59,7 +63,7 @@ export function MobileNav() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="hover:bg-sand-200 -ms-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors md:hidden"
+        className="hover:bg-sand-100 text-sand-700 hover:text-foreground -ms-1.5 inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors md:hidden"
         aria-label={nav.openMenu}
       >
         <MenuIcon className="size-5" strokeWidth={2.3} aria-hidden />
@@ -68,7 +72,7 @@ export function MobileNav() {
       <SheetContent
         side={locale === "ar" ? "right" : "left"}
         showCloseButton={false}
-        className="bg-card gap-0 p-0"
+        className="bg-sand-50 gap-0 p-0"
       >
         <SheetHeader className="border-border flex-row items-center justify-between gap-3 border-b px-5 py-4">
           <SheetTitle className="flex items-center gap-2.5 text-start">
@@ -84,7 +88,7 @@ export function MobileNav() {
           </SheetTitle>
           <SheetClose
             aria-label={nav.closeMenu}
-            className="hover:bg-sand-200 inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors"
+            className="hover:bg-sand-100 text-sand-700 hover:text-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors"
           >
             <XIcon className="size-5" strokeWidth={2.3} aria-hidden />
           </SheetClose>
@@ -104,8 +108,15 @@ export function MobileNav() {
                     href={item.href}
                     onClick={() => setOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`flex h-11 items-center gap-3 rounded-full px-3 text-[15px] font-semibold transition-colors ${
-                      active ? "bg-background text-primary" : "hover:bg-sand-200"
+                    // Ink and a start rule, not a filled pill — the same
+                    // measurement that decided the bar: no tint in this palette
+                    // clears 3:1 against `sand-50`, so a fill here would be a
+                    // shape nobody can see. The rule is the vertical-list
+                    // equivalent of the bar's underline.
+                    className={`relative flex h-11 items-center gap-3 rounded-full ps-4 pe-3 text-[15px] font-semibold transition-colors ${
+                      active
+                        ? "text-terracotta-800 before:bg-primary before:absolute before:inset-y-2.5 before:start-0 before:w-[3px] before:rounded-full"
+                        : "text-sand-700 hover:text-foreground hover:bg-sand-100"
                     }`}
                   >
                     <item.icon

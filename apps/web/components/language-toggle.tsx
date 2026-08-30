@@ -36,7 +36,7 @@ export async function LanguageToggle({ locale }: { locale: Locale }) {
         type="submit"
         lang={next}
         aria-label={labels.language}
-        className="text-sand-600 hover:text-terracotta-700 hover:bg-sand-200 rounded-full px-2.5 py-1 text-[13.5px] transition-colors"
+        className="text-sand-700 hover:text-terracotta-700 hover:bg-sand-100 h-9 rounded-full px-3 text-[13.5px] font-semibold transition-colors"
       >
         {next === "en" ? "English" : "العربية"}
       </button>

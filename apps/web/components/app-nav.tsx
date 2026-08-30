@@ -22,6 +22,19 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * console — which is a different tool for a different person, and the one thing
  * this surface should not feel like.
  *
+ * ## Why it is near-white and the page is not
+ *
+ * The bar took the card tone first, and that was wrong: `#ebddc5` on `#f5ead8`
+ * is a four-percent step, so the chrome read as another panel of content rather
+ * than as the frame around it. `sand-50` is the palette's only near-white and
+ * exists for this — enough separation that the bar is obviously chrome, warm
+ * enough that it is not a foreign component. Pure white would pick up a cold
+ * cast beside the sand ground.
+ *
+ * A hairline underneath and nothing else. No shadow: the contrast step is
+ * already doing that work, and a drop shadow on a bar that never overlaps
+ * anything is decoration.
+ *
  * ## It is a Server Component with client leaves
  *
  * `LanguageToggle` is a form POST that must work with no JavaScript, and it
@@ -31,21 +44,13 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * subscription). A server parent can render client children; the reverse is
  * what does not work, which is why this file is the shell and not the whole
  * bar.
- *
- * ## The bar takes the card tone
- *
- * `--card` over the page's `--background`. The Organic palette separates the
- * two by about four percent of lightness, which is not enough on its own — so
- * the hairline border does the rest of the work, and the active link is cut
- * back through to the ground colour. Three quiet steps rather than one loud
- * one, on a surface someone opens in the worst week of their life.
  */
 export async function AppNav() {
   const locale = await getLocale()
   const nav = t(NAV, locale)
 
   return (
-    <header className="bg-card/95 border-border sticky top-0 z-40 border-b backdrop-blur">
+    <header className="bg-sand-50/90 border-border sticky top-0 z-40 border-b backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-[1180px] items-center gap-2 px-4 md:gap-3 md:px-6">
         <MobileNav />
 

@@ -208,6 +208,15 @@
 
 @theme {
   /* Sand — the ground and every neutral surface. */
+  /* The top of the ramp, and the only near-white in the palette.
+
+     Added for the app bar. The Organic ground is `#f5ead8` and its surface
+     `#ebddc5`; both are saturated enough that chrome sitting on them reads as
+     another panel of content rather than as the frame around it. This is warm
+     rather than pure white on purpose — `#fff` beside `#f5ead8` picks up a
+     cold cast from simultaneous contrast and looks like a different product's
+     component pasted in. */
+  --color-sand-50: #fdfaf4;
   --color-sand-100: #f9f4ed;
   --color-sand-200: #eee7db;
   --color-sand-300: #dcd3c4;
