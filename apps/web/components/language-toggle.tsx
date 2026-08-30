@@ -1,42 +1,45 @@
-"use client"
+import { headers } from "next/headers"
 
-import { useRouter } from "next/navigation"
-
-import { useLocale } from "@/components/locale-provider"
-import { t, writeLocaleCookie, type Locale } from "@/lib/i18n/locale"
+import { t, type Locale } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 
 /**
- * The one control that changes the language.
+ * The language switch — a form, not a button with an `onClick`.
  *
- * A cookie write plus `router.refresh()`, not client state: `dir` and `lang`
- * live on `<html>`, which only the server emits, so the switch has to go back
- * through the server to take effect. `refresh()` re-renders the route tree in
- * place, keeping form input and scroll position — which matters here, because
- * someone may switch language halfway through filling in a death certificate.
+ * A Server Component on purpose. The previous version was a Client Component
+ * calling `router.refresh()`, which put a hydration boundary into the claim
+ * landing page's header and quietly cost that page the property its own doc
+ * comment still promised: that it works with JavaScript disabled. The board
+ * asks for that explicitly — this funnel is reached *"in the worst week of
+ * someone's life"*, on *"an old browser"*.
  *
- * Each language is written in its own script, always. A reader who has landed
- * on the wrong one cannot be expected to recognise "الإنجليزية".
+ * Posting to `/api/locale` sets the cookie and 303s back, so the next document
+ * arrives with `dir` and `lang` already right. No flash, no client state, and
+ * nothing to hydrate.
+ *
+ * Each language is written in its own script, always. Someone who has landed on
+ * the wrong one cannot be expected to recognise "الإنجليزية".
  */
-export function LanguageToggle() {
-  const locale = useLocale()
-  const router = useRouter()
+export async function LanguageToggle({ locale }: { locale: Locale }) {
   const labels = t(COMMON, locale)
-
   const next: Locale = locale === "ar" ? "en" : "ar"
 
+  // Where to come back to. `x-pathname` is set by `proxy.ts`; without it the
+  // switch still works and simply lands on the home page.
+  const here = (await headers()).get("x-pathname") ?? "/"
+
   return (
-    <button
-      type="button"
-      lang={next}
-      aria-label={labels.language}
-      onClick={() => {
-        writeLocaleCookie(next)
-        router.refresh()
-      }}
-      className="text-sand-600 hover:text-terracotta-700 text-[13.5px] underline-offset-4 hover:underline"
-    >
-      {next === "en" ? "English" : "العربية"}
-    </button>
+    <form action="/api/locale" method="post" className="flex">
+      <input type="hidden" name="locale" value={next} />
+      <input type="hidden" name="redirect_to" value={here} />
+      <button
+        type="submit"
+        lang={next}
+        aria-label={labels.language}
+        className="text-sand-600 hover:text-terracotta-700 hover:bg-sand-200 rounded-full px-2.5 py-1 text-[13.5px] transition-colors"
+      >
+        {next === "en" ? "English" : "العربية"}
+      </button>
+    </form>
   )
 }

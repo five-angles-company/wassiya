@@ -1,8 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimSteps } from "@/components/claim/claim-steps"
+import { SiteShell } from "@/components/shell/site-shell"
 import { t, type Resolved } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { CLAIM } from "@/lib/i18n/strings/claim"
@@ -52,11 +52,8 @@ export default async function ClaimLandingPage() {
   ]
 
   return (
-    <div className="min-h-screen pb-28 md:pb-0">
-      <ClaimBrand />
-
-      <main className="mx-auto max-w-5xl px-5 pt-6 md:px-8 md:pt-12">
-        <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:gap-12">
+    <SiteShell className="pb-28 md:pb-4">
+      <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:gap-12">
           {/* The ask. */}
           <div>
             <h1 className="text-[30px] leading-[1.25] md:text-[40px]">
@@ -115,30 +112,13 @@ export default async function ClaimLandingPage() {
           </aside>
         </div>
 
-        <footer className="text-sand-600 mt-12 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] pt-6 text-[13px]">
-          {/* Said plainly and early, because the commonest misunderstanding is
-              that this service divides an estate. It does not. */}
-          <p>{labels.disclaimer}</p>
-          <nav className="mt-3 flex flex-wrap gap-4">
-            <Link className="hover:text-terracotta-700" href="/legal/terms">
-              {labels.terms}
-            </Link>
-            <Link className="hover:text-terracotta-700" href="/legal/privacy">
-              {labels.privacy}
-            </Link>
-            <Link className="hover:text-terracotta-700" href="/legal/encryption">
-              {labels.howEncryption}
-            </Link>
-          </nav>
-        </footer>
-      </main>
 
       {/* 7.1m: on mobile web the CTA sticks, because this is the likeliest
           first contact and the page is long on a 320px screen. */}
       <div className="bg-background/95 fixed inset-x-0 bottom-0 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] px-5 py-4 backdrop-blur md:hidden">
         <StartButton labels={labels} />
       </div>
-    </div>
+    </SiteShell>
   )
 }
 

@@ -1,6 +1,5 @@
 "use client"
 
-import { ClaimBrand } from "@/components/claim/claim-brand"
 import { useLocale } from "@/components/locale-provider"
 import { fmtStepNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
@@ -39,10 +38,8 @@ export function ClaimStepper({
   ]
 
   return (
-    <div className="min-h-screen pb-16">
-      <ClaimBrand />
-
-      <div className="mx-auto max-w-3xl px-5 pt-6 md:px-8">
+    <div className="pb-16">
+      <div className="mx-auto max-w-3xl px-5 pt-8 md:px-8">
         <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
           {stepLabels.map((label, index) => {
             const step = index + 1

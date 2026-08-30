@@ -245,6 +245,31 @@
   --radius-card: 26px;
   --radius-sheet: 34px;
 
+  /* ---------------------------------------------------------------------
+     Elevation.
+
+     The Organic palette separates a surface from the page by about four
+     percent of lightness — `#ebddc5` on `#f5ead8`. That is below the step at
+     which a card reads as sitting *on* something rather than as a discoloured
+     patch of it, which is the mechanical reason the funnel reads flat: it has
+     no shadows at all, and never had.
+
+     The shadow is a deep brown rather than black. Black at low alpha over sand
+     goes grey and reads as dirt; `#201e1d` is the same ink the type uses, so a
+     shadow made from it stays in the same family as everything around it.
+
+     Three steps and no more. `raised` is a card at rest, `overlay` is the app
+     bar once the page has scrolled under it, `sheet` is a dialog. A fourth
+     would only invite arguments about which to use.
+     --------------------------------------------------------------------- */
+  --shadow-raised:
+    0 1px 2px color-mix(in srgb, #201e1d 5%, transparent),
+    0 2px 8px -2px color-mix(in srgb, #201e1d 8%, transparent);
+  --shadow-overlay:
+    0 1px 2px color-mix(in srgb, #201e1d 6%, transparent),
+    0 8px 24px -8px color-mix(in srgb, #201e1d 18%, transparent);
+  --shadow-sheet: 0 24px 64px -24px color-mix(in srgb, #201e1d 32%, transparent);
+
   --font-heading-wassiya: var(--font-cairo), system-ui, sans-serif;
   --font-body-wassiya: var(--font-plex-arabic), system-ui, sans-serif;
 }

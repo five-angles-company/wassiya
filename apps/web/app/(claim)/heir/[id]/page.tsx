@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
 import { HeirBox } from "@/components/claim/heir-box"
+import { SiteShell } from "@/components/shell/site-shell"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
 import { HEIR_BOX } from "@/lib/i18n/strings/heir-box"
 
@@ -40,5 +41,9 @@ export default async function HeirBoxPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <HeirBox claimId={id} />
+  return (
+    <SiteShell width="narrow">
+      <HeirBox claimId={id} />
+    </SiteShell>
+  )
 }

@@ -8,7 +8,6 @@ import type { Id } from "@workspace/backend/dataModel"
 import { hexToBytes } from "@workspace/crypto/bytes"
 import { heirKey, openReleaseBundle } from "@workspace/crypto/heir"
 
-import { ClaimBrand } from "@/components/claim/claim-brand"
 import { Field } from "@/components/claim/field"
 import { useLocale } from "@/components/locale-provider"
 import { fmtDate, fmtNumber } from "@/lib/format"
@@ -108,9 +107,8 @@ export function HeirBox({ claimId }: { claimId: string }) {
   }
 
   return (
-    <div className="min-h-screen pb-16">
-      <ClaimBrand />
-      <main className="mx-auto max-w-3xl px-5 pt-8 md:px-8">
+    <div className="flex flex-col gap-6">
+      <div>
         <Unauthenticated>
           <p className="text-sand-700 text-[15px] leading-[1.75]">
             {labels.notReleased}
@@ -168,7 +166,7 @@ export function HeirBox({ claimId }: { claimId: string }) {
             </section>
           )}
         </Authenticated>
-      </main>
+      </div>
     </div>
   )
 }

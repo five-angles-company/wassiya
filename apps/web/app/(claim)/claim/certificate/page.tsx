@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 
 import { CertificateFlow } from "@/components/claim/certificate-flow"
+import { SiteHeader } from "@/components/shell/site-header"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
 import { CLAIM_CERTIFICATE } from "@/lib/i18n/strings/claim-certificate"
 
@@ -30,5 +31,14 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function ClaimCertificatePage() {
-  return <CertificateFlow />
+  // The focused bar: mark and language, no nav. A row of exits halfway
+  // through filing a death report is the one place the board's no-chrome rule
+  // was literally right. Rendered here rather than inside the flow because the
+  // flow is a Client Component and this bar is an async Server one.
+  return (
+    <>
+      <SiteHeader variant="focused" />
+      <CertificateFlow />
+    </>
+  )
 }

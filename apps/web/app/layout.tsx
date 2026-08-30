@@ -102,7 +102,28 @@ export default async function RootLayout({
       <body>
         {/* ClerkProvider must wrap ConvexClientProvider — Convex reads Clerk's
             context to get its access token. */}
-        <ClerkProvider>
+        {/* Clerk's card ships white-and-blue, which on a sand ground reads as
+            a different product's login bolted onto this one. These map its
+            surfaces onto the Organic tokens; the pill radius matches every
+            other button in the funnel. */}
+        <ClerkProvider
+          appearance={{
+            variables: {
+              colorPrimary: "#c67139",
+              colorBackground: "#ebddc5",
+              colorForeground: "#201e1d",
+              colorMutedForeground: "#82796a",
+              colorInput: "#f5ead8",
+              colorInputForeground: "#201e1d",
+              borderRadius: "0.75rem",
+              fontFamily: "var(--font-sans)",
+            },
+            elements: {
+              card: "shadow-none border border-[color-mix(in_srgb,#201e1d_16%,transparent)]",
+              formButtonPrimary: "rounded-full text-[15px] font-semibold",
+            },
+          }}
+        >
           <ThemeProvider>
             <ConvexClientProvider>
               <LocaleProvider locale={locale}>{children}</LocaleProvider>

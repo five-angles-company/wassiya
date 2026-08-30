@@ -4,13 +4,12 @@ import { fetchQuery } from "convex/nextjs"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 
-import { ClaimBrand } from "@/components/claim/claim-brand"
 import { ClaimTimeline } from "@/components/claim/claim-timeline"
+import { SiteShell } from "@/components/shell/site-shell"
 import { shortRef } from "@/lib/claim-ref"
 import { fmtDate, fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
-import { CLAIM } from "@/lib/i18n/strings/claim"
 import { CLAIM_STATUS } from "@/lib/i18n/strings/claim-status"
 
 /**
@@ -215,17 +214,5 @@ async function ClaimRef({
 }
 
 async function Shell({ children }: { children: React.ReactNode }) {
-  const labels = t(CLAIM, await getLocale())
-
-  return (
-    <div className="min-h-screen pb-16">
-      <ClaimBrand />
-      <main className="mx-auto max-w-5xl px-5 pt-6 md:px-8 md:pt-12">
-        {children}
-        <footer className="text-sand-600 mt-12 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] pt-6 text-[13px]">
-          {labels.disclaimer}
-        </footer>
-      </main>
-    </div>
-  )
+  return <SiteShell>{children}</SiteShell>
 }

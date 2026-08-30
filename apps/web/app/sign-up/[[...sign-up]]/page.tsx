@@ -1,9 +1,12 @@
 import { SignUp } from "@clerk/nextjs"
 
+import { SiteShell } from "@/components/shell/site-shell"
+
+/** See `/sign-in` — same reasoning, same shell. */
 export default function Page() {
   return (
-    <div className="flex min-h-svh items-center justify-center p-6">
+    <SiteShell width="narrow" className="flex justify-center">
       <SignUp />
-    </div>
+    </SiteShell>
   )
 }
