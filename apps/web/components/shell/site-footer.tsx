@@ -1,75 +1,45 @@
 import Link from "next/link"
 
-import { t, type Locale } from "@/lib/i18n/locale"
+import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { NAV } from "@/lib/i18n/strings/nav"
 
 /**
- * The footer: documents, support, and the disclaimer.
+ * One quiet line, and a deliberate departure from the board.
  *
- * The disclaimer — *"وصيّة ليست جهة قانونية ولا تقسّم التركات"* — used to appear
- * on exactly two screens, which is two fewer than the number of screens where
- * someone might form the belief it corrects. The commonest misunderstanding
- * about this product is that it divides an estate. It does not, and saying so
- * once per page is cheap.
+ * **The board has no footer at all**, and says why: *"The no-legal-authority
+ * line is on the entry page rather than buried in a footer."* That call is
+ * right and is honoured — the disclaimer now sits on `/claim`, in the reader's
+ * path, not down here.
+ *
+ * What the board does not solve is that terms and privacy then have no route
+ * to them from anywhere, which an app store or a payment processor will ask
+ * about. So this is the minimum that keeps them reachable: three links and no
+ * columns, no headings, no disclaimer — nothing that reintroduces the weight
+ * the board removed.
  */
 export async function SiteFooter() {
-  const locale = await getLocale()
-  const labels = t(NAV, locale)
+  const labels = t(NAV, await getLocale())
 
-  const columns: { title: string; links: { href: string; label: string }[] }[] =
-    [
-      {
-        title: labels.footerService,
-        links: [
-          { href: "/claim", label: labels.fileClaim },
-          { href: "/claim/resume", label: labels.resume },
-          { href: "/claim/guardian", label: labels.guardian },
-        ],
-      },
-      {
-        title: labels.footerLegal,
-        links: [
-          { href: "/legal/terms", label: labels.terms },
-          { href: "/legal/privacy", label: labels.privacy },
-          { href: "/legal/encryption", label: labels.encryption },
-        ],
-      },
-      {
-        title: labels.footerSupport,
-        links: [{ href: "/claim/contact", label: labels.contact }],
-      },
-    ]
+  const links = [
+    { href: "/legal/terms", label: labels.terms },
+    { href: "/legal/privacy", label: labels.privacy },
+    { href: "/legal/encryption", label: labels.encryption },
+  ]
 
   return (
-    <footer className="border-border mt-20 border-t">
-      <div className="mx-auto max-w-5xl px-5 py-12 md:px-8">
-        <div className="grid gap-8 sm:grid-cols-3">
-          {columns.map((column) => (
-            <nav key={column.title} className="flex flex-col gap-2.5">
-              <h2 className="text-sand-600 text-[12px] font-semibold tracking-wide uppercase">
-                {column.title}
-              </h2>
-              {column.links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-sand-700 hover:text-terracotta-700 text-[14px] transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          ))}
-        </div>
-
-        <p className="text-sand-600 border-border mt-10 border-t pt-6 text-[13px]">
-          {labels.disclaimer}
-        </p>
-      </div>
+    <footer className="mx-auto w-full max-w-[1280px] px-[22px] pt-10 pb-12 md:px-11">
+      <nav className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="hover:text-terracotta-700 text-[13px] opacity-55 transition-colors hover:opacity-100"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
     </footer>
   )
 }
-
-/** Exported for the pages that need the locale without re-reading the cookie. */
-export type FooterLocale = Locale

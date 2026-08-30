@@ -1,8 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowLeftIcon } from "lucide-react"
+import { ArrowRightIcon, SmartphoneIcon } from "lucide-react"
 
-import { Band } from "@/components/shell/band"
 import { SiteShell } from "@/components/shell/site-shell"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
@@ -14,150 +13,105 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * `/` — the front door.
+ * `/` — two doors, and a third message for the owner who lands here by mistake.
  *
- * ## What changed, and why the palette did not
+ * Built to the design board, whose own note explains the shape:
  *
- * The colours were never the problem; the *distribution* was. Cream everywhere
- * with terracotta rationed out to thumb-sized buttons reads as timid however
- * good the hex values are. The same tokens used as whole fields — a terracotta
- * hero, an olive band of reassurance, ink at the close — read as confident.
- * Nothing here is a new colour.
+ * > Type-led and single-column: eyebrow, a 72px Cairo 900 headline with its
+ * > second line in terracotta, one paragraph at 600px, two pills, a 14px rule.
+ * > Nothing competes for the same horizontal band, which is what makes it read
+ * > calm at this scale — the earlier side-column version crowded the captions
+ * > and forced the headline larger than the page could hold.
  *
- * ## Two questions, still
+ * **The two doors carry no captions.** What each path needs is stated on its
+ * own first screen, and repeating it here was the crowding. Most visitors are
+ * claimants, but a guardian must never have to hunt — so the doors sit
+ * adjacent, filled terracotta against olive outline, not primary and footnote.
  *
- * An owner is told to leave: they are mobile-only on purpose, because MK, the
- * biometric gate and the check-in need a hardware keystore a browser does not
- * have. And the guardian's path is drawn as an equal, not a footnote — someone
- * arriving from an emailed invitation is not a lesser visitor than a bereaved
- * relative.
+ * **The owner message is third and deliberately dull.** It exists to end a
+ * visit, not to start one — and saying that a browser *cannot* open a vault is
+ * the encryption promise doing its own marketing.
+ *
+ * Renders fully without JavaScript.
  */
 export default async function Page() {
   const labels = t(HOME, await getLocale())
 
   return (
     <SiteShell bleed>
-      {/* The one loud thing on the page. Everything after it is quieter, which
-          is what stops the loudness reading as noise. */}
-      <Band tone="primary" size="tall">
-        <div className="flex flex-col items-start gap-7">
-          <h1
-            className="rise max-w-[15ch] text-[clamp(36px,8vw,72px)] leading-[1.08]"
-            style={{ "--rise-delay": "60ms" } as React.CSSProperties}
-          >
-            {labels.heroTitle}
+      <div className="mx-auto max-w-[1280px]">
+        <div className="px-[22px] pt-[30px] pb-[34px] md:px-11 md:pt-[72px] md:pb-16">
+          {/* Rule and eyebrow. The rule is a bar, not a dash — it reads as a
+              mark of place rather than punctuation. */}
+          <div className="mb-6 flex items-center gap-3 md:mb-[38px] md:gap-3.5">
+            <span
+              aria-hidden
+              className="bg-primary h-1 w-[42px] shrink-0 rounded-full md:w-[54px]"
+            />
+            <span className="text-terracotta-700 text-[12.5px] font-semibold whitespace-nowrap md:text-[14px]">
+              {labels.eyebrow}
+            </span>
+          </div>
+
+          {/* The second line takes the accent. Colour inside the type rather
+              than behind it — the board grounds the page on sand and spends
+              terracotta on the words, the action and one bar. */}
+          <h1 className="mb-[22px] text-[46px] leading-[1.1] font-black tracking-[-0.02em] md:mb-7 md:text-[72px] md:leading-[1.08]">
+            {labels.heroLineOne}
+            <br />
+            <span className="text-primary">{labels.heroLineTwo}</span>
           </h1>
-          <p
-            className="rise max-w-[46ch] text-[17px] leading-[1.75] opacity-90 md:text-[19px]"
-            style={{ "--rise-delay": "180ms" } as React.CSSProperties}
-          >
+
+          <p className="mb-8 max-w-[600px] text-[16.5px] leading-[1.7] opacity-[.76] md:mb-11 md:text-[19px] md:leading-[1.68]">
             {labels.heroBody}
           </p>
-          <div
-            className="rise flex flex-wrap gap-3"
-            style={{ "--rise-delay": "300ms" } as React.CSSProperties}
-          >
+
+          <div className="flex flex-col gap-3 sm:flex-row md:gap-3.5">
             <Link
               href="/claim"
-              className="group bg-background text-foreground hover:bg-card lift inline-flex items-center gap-2.5 rounded-full px-7 py-4 text-[16px] font-bold"
+              className="bg-primary text-primary-foreground hover:bg-terracotta-600 font-heading inline-flex h-[60px] items-center justify-center gap-[11px] rounded-full px-8 text-[17px] font-extrabold whitespace-nowrap transition-colors md:h-[68px] md:px-[38px] md:text-[19px]"
             >
               {labels.claimAction}
-              <ArrowLeftIcon
-                className="nudge size-4.5 ltr:rotate-180"
+              {/* Points the way the reader is going: leftward in Arabic, and
+                  flipped back for English. */}
+              <ArrowRightIcon
+                className="size-5 rtl:-scale-x-100 md:size-[21px]"
+                strokeWidth={2.75}
                 aria-hidden
               />
             </Link>
             <Link
               href="/claim/guardian"
-              className="hover:bg-primary-foreground/12 inline-flex items-center rounded-full border-2 border-[color:var(--primary-foreground)]/45 px-7 py-4 text-[16px] font-bold transition-colors"
+              className="border-secondary text-olive-700 hover:bg-olive-100 font-heading inline-flex h-[60px] items-center justify-center rounded-full border-2 px-7 text-[17px] font-extrabold whitespace-nowrap transition-colors md:h-[68px] md:px-[34px] md:text-[19px]"
             >
               {labels.guardianAction}
             </Link>
           </div>
         </div>
-      </Band>
 
-      {/* The two readers, as equals. */}
-      <Band tone="page">
-        <div className="grid gap-5 md:grid-cols-2">
-          <Link
-            href="/claim"
-            className="group bg-card rounded-sheet lift shadow-raised rise-in flex flex-col gap-4 p-8"
-          >
-            <h2 className="text-[26px] leading-[1.15]">{labels.claimTitle}</h2>
-            <p className="text-sand-700 text-[15px] leading-[1.75]">
-              {labels.claimBody}
-            </p>
-            <span className="text-terracotta-700 mt-2 inline-flex items-center gap-2 text-[15px] font-bold">
-              {labels.claimAction}
-              <ArrowLeftIcon className="nudge size-4 ltr:rotate-180" aria-hidden />
+        {/* The one solid field on the page. It separates the offer from the
+            aside without a border and without a second surface colour. */}
+        <div aria-hidden className="bg-primary h-[14px]" />
+
+        <div className="px-[22px] pt-[26px] pb-[34px] md:px-11">
+          <div className="bg-muted flex flex-col gap-4 rounded-[26px] p-[26px] md:flex-row md:items-center md:gap-[26px] md:px-8">
+            <span className="bg-accent text-accent-foreground grid size-[46px] shrink-0 place-items-center rounded-[14px]">
+              <SmartphoneIcon className="size-[22px]" strokeWidth={2.75} aria-hidden />
             </span>
-          </Link>
-
-          <Link
-            href="/claim/guardian"
-            className="group rounded-sheet lift rise-in border-border flex flex-col gap-4 border-2 p-8"
-          >
-            <h2 className="text-[26px] leading-[1.15]">
-              {labels.guardianTitle}
-            </h2>
-            <p className="text-sand-700 text-[15px] leading-[1.75]">
-              {labels.guardianBody}
-            </p>
-            <span className="text-terracotta-700 mt-2 inline-flex items-center gap-2 text-[15px] font-bold">
-              {labels.guardianAction}
-              <ArrowLeftIcon className="nudge size-4 ltr:rotate-180" aria-hidden />
+            <div className="flex-1">
+              <div className="font-heading mb-1.5 text-[17px] font-extrabold md:text-[19px]">
+                {labels.ownerTitle}
+              </div>
+              <p className="text-[14.5px] leading-[1.65] opacity-75">
+                {labels.ownerBody}
+              </p>
+            </div>
+            <span className="hover:bg-sand-200 shrink-0 self-start rounded-full border-[1.5px] border-[color:var(--border)] px-[26px] py-[15px] text-[14.5px] font-semibold whitespace-nowrap transition-colors md:self-auto">
+              {labels.ownerAction}
             </span>
-          </Link>
-        </div>
-      </Band>
-
-      {/* Olive, because in this product olive already means "settled". */}
-      <Band tone="olive" size="tall">
-        <div className="rise-in flex flex-col gap-8">
-          <h2 className="max-w-[18ch] text-[clamp(28px,5vw,46px)] leading-[1.15]">
-            {labels.sealedTitle}
-          </h2>
-          <div className="grid gap-8 sm:grid-cols-3">
-            <Fact value={labels.factKeyValue} label={labels.factKeyLabel} />
-            <Fact value={labels.factHoldValue} label={labels.factHoldLabel} />
-            <Fact value={labels.factHalvesValue} label={labels.factHalvesLabel} />
           </div>
-          <Link
-            href="/legal/encryption"
-            className="group bg-secondary-foreground text-secondary lift inline-flex items-center gap-2.5 self-start rounded-full px-6 py-3.5 text-[15px] font-bold"
-          >
-            {labels.sealedMore}
-            <ArrowLeftIcon className="nudge size-4 ltr:rotate-180" aria-hidden />
-          </Link>
         </div>
-      </Band>
-
-      {/* The owner, told plainly there is nothing here for them. */}
-      <Band tone="ink" size="tight">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-[20px] leading-[1.3]">{labels.ownerTitle}</h2>
-          <p className="max-w-[62ch] text-[15px] leading-[1.75] opacity-75">
-            {labels.ownerBody}
-          </p>
-        </div>
-      </Band>
+      </div>
     </SiteShell>
-  )
-}
-
-/**
- * One number-shaped claim.
- *
- * The value is set at display size because these are the three facts that
- * decide whether someone believes the product, and a fact set in body copy is
- * a fact nobody read.
- */
-function Fact({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-[22px] leading-[1.25] font-bold">{value}</span>
-      <span className="text-[14px] leading-[1.65] opacity-80">{label}</span>
-    </div>
   )
 }

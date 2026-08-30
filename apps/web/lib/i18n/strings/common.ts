@@ -48,16 +48,19 @@ export const HOME = {
 
   title: { ar: "وصيّة", en: "Wassiya" },
 
-  // The hero. Short, concrete, and about the reader rather than the product —
-  // at 72px there is room for about fifteen characters and no room at all for
-  // a value proposition.
-  heroTitle: {
-    ar: "ما تركه لك، يصل إليك.",
-    en: "What they left you reaches you.",
+  eyebrow: {
+    ar: "خزنة إرث رقمي",
+    en: "A digital-inheritance vault",
   },
+
+  // Two lines because the second one takes the accent colour. At 72px there is
+  // room for about fifteen characters a line and none at all for a value
+  // proposition — and the board names death plainly rather than around it.
+  heroLineOne: { ar: "ما تركه لك،", en: "What they left you" },
+  heroLineTwo: { ar: "يصل إليك.", en: "reaches you." },
   heroBody: {
-    ar: "إن فقدت شخصاً عزيزاً كان يحفظ إرثه الرقمي في وصيّة، ابدأ من هنا. مجاناً، وبدون تطبيق.",
-    en: "If you have lost someone who kept their digital legacy in Wassiya, start here. Free, and no app to install.",
+    ar: "إن توفّي شخص ترك لك شيئاً في وصيّة، تبدأ من هنا. وإن كنت وصيّاً على خزنة أحدهم، فلك بابك الخاص.",
+    en: "If someone who left you something has died, start here. If you're a guardian for someone's vault, you have your own door.",
   },
 
   // The three facts the olive band carries. Each is a claim someone deciding
@@ -78,25 +81,31 @@ export const HOME = {
     en: "An heir's box needs our half and the guardian's together.",
   },
 
-  ownerTitle: { ar: "خزنتك على هاتفك", en: "Your vault is on your phone" },
-  ownerBody: {
-    ar: "لا يمكن فتح الخزنة من المتصفح، وهذا مقصود: مفتاحها محفوظ في الشريحة الأمنية لهاتفك ومحميّ ببصمتك. حمّل التطبيق وسجّل الدخول من هناك.",
-    en: "The vault cannot be opened from a browser, and that is deliberate: its key is held in your phone's secure hardware and gated by your fingerprint. Install the app and sign in there.",
+  ownerTitle: {
+    ar: "صاحب خزنة؟ خزنتك على جوّالك",
+    en: "Vault owner? Your vault lives on your phone",
   },
+  // Saying the browser *cannot* open a vault is the encryption promise doing
+  // its own marketing — which is why this dull little row earns its place.
+  ownerBody: {
+    ar: "لا يمكن فتح الخزنة من المتصفّح، ولا نحفظ مفتاحها على خدمتنا — لذلك لا يوجد هنا ما يخصّك. حمّل التطبيق للمتابعة.",
+    en: "A vault can't be opened in a browser and we don't hold its key on our service — so there's nothing for you here. Get the app to continue.",
+  },
+  ownerAction: { ar: "حمّل التطبيق", en: "Get the app" },
 
   claimTitle: { ar: "فقدت شخصاً عزيزاً؟", en: "Have you lost someone?" },
   claimBody: {
     ar: "إن كان يحفظ إرثه الرقمي في وصيّة، يمكنك تقديم بلاغ وفاة من هنا. مجاناً، وبدون تطبيق.",
     en: "If they kept their digital legacy in Wassiya, you can file a death report here. Free, and no app to install.",
   },
-  claimAction: { ar: "تقديم بلاغ وفاة", en: "File a death report" },
+  claimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
 
   guardianTitle: { ar: "أنت وصي؟", en: "Are you a guardian?" },
   guardianBody: {
     ar: "وُثِق بك لتؤكّد الوفاة وتسلّم نصيبك من المفتاح عند الإفراج. اعرف ما سيُطلب منك.",
     en: "Someone trusted you to confirm a death and hand over your half of the key at release. See what you will be asked to do.",
   },
-  guardianAction: { ar: "ما دور الوصي؟", en: "What a guardian does" },
+  guardianAction: { ar: "أنا وصيّ", en: "I'm a guardian" },
 
   sealedTitle: {
     ar: "الخزنة مغلقة علينا نحن أيضاً",

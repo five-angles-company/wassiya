@@ -20,6 +20,8 @@ export const NAV = {
   help: { ar: "مساعدة", en: "Help" },
 
   signIn: { ar: "تسجيل الدخول", en: "Sign in" },
+  /** The bar is tight on a 390px screen; the board drops the verb. */
+  signInShort: { ar: "دخول", en: "Sign in" },
   myAccount: { ar: "حسابي", en: "My account" },
 
   footerService: { ar: "الخدمة", en: "Service" },
