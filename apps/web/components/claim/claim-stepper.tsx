@@ -1,89 +1,60 @@
 "use client"
 
+import { BrandMark } from "@/components/shell/brand-mark"
 import { useLocale } from "@/components/locale-provider"
 import { fmtStepNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
-import { CLAIM } from "@/lib/i18n/strings/claim"
+import { NAV } from "@/lib/i18n/strings/nav"
 
 export type ClaimStepperProps = {
   /** 1-based: identity · certificate · waiting. */
   current: 1 | 2 | 3
-  /** The human-quotable reference, when a claim exists. */
-  reference?: string
   children: React.ReactNode
 }
 
 /**
- * The three-step chrome for ٧.٢ and ٧.٣.
+ * The mid-flow chrome: a mark, three bars, and a count.
  *
- * The step count is shown from the first screen onward because the board's 7.1
- * already promised "٣ خطوات · نحو ١٠ دقائق" — a funnel that announces three
- * steps and then hides where you are in them reads as though it is stalling,
- * which is the exact impression this whole section is written to avoid.
+ * The board replaced a labelled stepper with this. Three 7px bars carry the
+ * same information in a tenth of the space — and the labels were doing real
+ * harm, because naming the steps meant naming *"الانتظار"* (waiting) to someone
+ * who had not yet agreed to wait a month.
  *
- * The reference appears as soon as a claim exists, so someone who abandons the
- * tab has something to quote to support.
+ * No nav, no links, no wordmark. A row of exits halfway through filing a death
+ * report is the one place the funnel's original no-chrome rule was literally
+ * right, and the board keeps it.
  */
-export function ClaimStepper({
-  current,
-  reference,
-  children,
-}: ClaimStepperProps) {
+export function ClaimStepper({ current, children }: ClaimStepperProps) {
   const locale = useLocale()
-  const labels = t(CLAIM, locale)
-  const stepLabels = [
-    labels.stepperIdentity,
-    labels.stepperCertificate,
-    labels.stepperWaiting,
-  ]
+  const labels = t(NAV, locale)
 
   return (
-    <div className="pb-16">
-      <div className="mx-auto max-w-3xl px-5 pt-8 md:px-8">
-        <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          {stepLabels.map((label, index) => {
-            const step = index + 1
-            const done = step < current
-            const active = step === current
-            return (
-              <li key={label} className="flex items-center gap-2">
-                <span
-                  aria-hidden
-                  className={
-                    done
-                      ? "bg-olive-600 flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                      : active
-                        ? "bg-terracotta-700 flex size-5 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                        : "border-sand-400 text-sand-600 flex size-5 items-center justify-center rounded-full border text-[11px]"
-                  }
-                >
-                  {done ? "✓" : fmtStepNumber(step, locale)}
-                </span>
-                <span
-                  className={
-                    active
-                      ? "text-[13.5px] font-semibold"
-                      : "text-sand-600 text-[13.5px]"
-                  }
-                >
-                  {label}
-                </span>
-                {step < 3 ? (
-                  <span aria-hidden className="bg-sand-300 mx-1 h-px w-6" />
-                ) : null}
-              </li>
-            )
-          })}
-          {reference !== undefined ? (
-            <li className="text-sand-600 ms-auto text-[12.5px]">
-              <span className="ltr-isolate">{reference}</span>
-            </li>
-          ) : null}
-        </ol>
-
-        <main className="mt-8">{children}</main>
+    <div className="flex min-h-screen flex-col">
+      <div className="mx-auto flex w-full max-w-[1280px] items-center gap-4 px-[22px] pt-[22px] md:gap-5 md:px-11">
+        <BrandMark />
+        <div className="flex flex-1 items-center gap-2.5" aria-hidden>
+          {[1, 2, 3].map((step) => (
+            <span
+              key={step}
+              className={`h-[7px] flex-1 rounded-full ${
+                step <= current ? "bg-primary" : "bg-card"
+              }`}
+            />
+          ))}
+        </div>
+        <span className="shrink-0 text-[13.5px] font-semibold opacity-60">
+          {labels.stepOf
+            .replace("{n}", fmtStepNumber(current, locale))
+            .replace("{total}", fmtStepNumber(3, locale))}
+        </span>
       </div>
+
+      <main
+        id="content"
+        className="mx-auto w-full max-w-[1280px] px-[22px] pt-[34px] pb-16 md:px-11"
+      >
+        {children}
+      </main>
     </div>
   )
 }
-

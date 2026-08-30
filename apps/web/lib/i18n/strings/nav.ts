@@ -13,6 +13,8 @@ export const NAV = {
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
   openMenu: { ar: "القائمة", en: "Menu" },
   home: { ar: "الرئيسية", en: "Home" },
+  /** The mid-flow count. The board shows the bars; this names them. */
+  stepOf: { ar: "{n} من {total}", en: "{n} of {total}" },
 
   fileClaim: { ar: "طلب وراثة", en: "File a claim" },
   guardian: { ar: "أنا وصي", en: "I'm a guardian" },

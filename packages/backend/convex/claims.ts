@@ -576,12 +576,27 @@ export type Claim = Doc<"claims">
  * "radical transparency" the screen asks for and nothing more.
  */
 export const publicStatus = query({
-  args: { claimId: v.id("claims") },
-  handler: async (ctx, { claimId }) => {
+  // `v.string()` and normalised in the body, not `v.id("claims")`. This id
+  // arrives from a path segment in an emailed link, and links get truncated by
+  // mail clients and re-typed by hand — the argument validator would reject a
+  // mangled one by *throwing*, which on the page someone re-opens weekly is a
+  // crash rather than "we could not find this report".
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId: rawClaimId }) => {
+    const claimId = ctx.db.normalizeId("claims", rawClaimId)
+    if (claimId === null) return null
+
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) return null
+
+    // Whose vault this is. The claimant knows who died — they filed against
+    // this person's email — so naming them here reveals nothing they did not
+    // bring, and it is what stops the page reading as a generic receipt.
+    const subject = await ctx.db.get("users", claim.subjectUserId)
+
     return {
       id: claim._id,
+      subjectName: subject?.name ?? null,
       status: claim.status,
       submittedAt: claim._creationTime,
       vetoDeadline: claim.vetoDeadline ?? null,

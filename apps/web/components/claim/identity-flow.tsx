@@ -12,7 +12,6 @@ import { useLocale } from "@/components/locale-provider"
 import { fmtStepNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { CLAIM_IDENTITY } from "@/lib/i18n/strings/claim-identity"
-import { shortRef } from "@/lib/claim-ref"
 
 type Phase = "filing" | "verify"
 
@@ -112,7 +111,6 @@ export function IdentityFlow() {
   return (
     <ClaimStepper
       current={1}
-      reference={claim === null ? undefined : shortRef(claim.id)}
     >
       <h1 className="text-[27px] leading-[1.25]">{labels.heading}</h1>
       <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">

@@ -11,7 +11,6 @@ import { Field } from "@/components/claim/field"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { CLAIM_CERTIFICATE } from "@/lib/i18n/strings/claim-certificate"
-import { shortRef } from "@/lib/claim-ref"
 
 const MAX_BYTES = 20 * 1024 * 1024
 const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "image/heic"]
@@ -121,7 +120,6 @@ export function CertificateFlow() {
   return (
     <ClaimStepper
       current={2}
-      reference={claim === null ? undefined : shortRef(claim.id)}
     >
       <h1 className="text-[27px] leading-[1.25]">{labels.heading}</h1>
       <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">

@@ -1,103 +1,71 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * ٧ — the heir-claim funnel's landing page.
+ * ٧.١ — the claim funnel's entry page.
  *
- * The voice is the constraint, and it is the board's: **plain, warm, never
- * euphemistic about death.** The English is written to that instruction rather
- * than mirrored word for word off the Arabic — "بلاغ وفاة" is a *death report*,
- * not a "bereavement notification", and softening it here would be the one
- * thing the board rules out.
+ * The voice is the board's: **plain, warm, never euphemistic about death.**
+ * "بلاغ وفاة" is a *death report* and the headline says so in two words.
  *
- * Lists are flattened into individual keys rather than kept as arrays, because
- * `t()` resolves a `Record<string, LabelSet>`. The call site rebuilds the array
- * from the resolved labels, which also makes each line addressable on its own.
+ * Two lines here are placed rather than merely written. *"We're sorry for your
+ * loss"* appears once, on this page, and never again in the funnel — repeated
+ * condolence stops reading as sympathy and starts reading as a script. And the
+ * no-legal-authority line sits here, in the reader's path, rather than in a
+ * footer where the belief it corrects would already have formed.
  */
 export const CLAIM = {
   metaTitle: {
-    ar: "طلب الوصول إلى إرث رقمي · وصيّة",
-    en: "Claim access to a digital legacy · Wassiya",
+    ar: "بلاغ وفاة · وصيّة",
+    en: "Report a death · Wassiya",
   },
   metaDescription: {
-    ar: "إذا فقدت شخصاً عزيزاً كان يحفظ إرثه الرقمي في وصيّة، يمكنك تقديم بلاغ وفاة لبدء التحقق. مجاناً، وبدون تطبيق.",
-    en: "If you have lost someone who kept their digital legacy in Wassiya, you can file a death report to begin verification. Free, and no app to install.",
+    ar: "إن توفّي شخص ترك لك شيئاً في وصيّة، تبدأ من هنا. لا تحتاج حساباً ولا بطاقة.",
+    en: "If someone who left you something in Wassiya has died, start here. No account, no card.",
   },
 
-  brand: { ar: "وصيّة", en: "Wassiya" },
-  myAccount: { ar: "هذا حسابي", en: "This is my account" },
+  alreadyFiled: { ar: "لديك بلاغ سابق؟", en: "Already filed?" },
 
-  title: {
-    ar: "طلب الوصول إلى إرث رقمي",
-    en: "Claim access to a digital legacy",
+  timing: {
+    ar: "نحو عشر دقائق · يمكنك التوقّف والعودة",
+    en: "About ten minutes · you can stop and come back",
   },
+  title: { ar: "بلاغ وفاة", en: "Report a death" },
   intro: {
-    ar: "إذا فقدت شخصاً عزيزاً كان يحفظ إرثه الرقمي في وصيّة، يمكنك تقديم بلاغ وفاة لبدء التحقق.",
-    en: "If you have lost someone who kept their digital legacy in Wassiya, you can file a death report to begin verification.",
+    ar: "نأسف لفقدك. سنطلب منك إثبات هويتك وشهادة الوفاة، ثم نبدأ إجراءً واضحاً ينتهي بتسليمك ما تركه لك — دون أن نطلع على شيء منه.",
+    en: "We're sorry for your loss. We'll ask you to prove who you are and upload the death certificate, then begin a clear process that ends with you receiving what was left to you — without us seeing any of it.",
   },
-  condolence: {
-    ar: "نعتذر لخسارتك. سنشرح كل خطوة قبل أن تبدأها، ولن نطلب منك أي مبلغ.",
-    en: "We are sorry for your loss. We will explain every step before you take it, and we will never ask you for money.",
-  },
-
-  start: { ar: "تقديم بلاغ وفاة", en: "File a death report" },
-  startMeta: {
-    ar: "٣ خطوات · نحو ١٠ دقائق",
-    en: "3 steps · about 10 minutes",
-  },
-
-  resumeTitle: { ar: "لديك رابط طلب سابق؟", en: "Already have a claim link?" },
-  resumeBody: {
-    ar: "افتحه لمتابعة الحالة — أرسلناه إلى بريدك",
-    en: "Open it to follow the status — we emailed it to you",
-  },
-  guardianTitle: { ar: "أنت وصي؟", en: "Are you a guardian?" },
-  guardianBody: {
-    ar: "دورك يأتي بعد مدة الاعتراض",
-    en: "Your part comes after the objection period",
-  },
-
-  needTitle: { ar: "ستحتاج ثلاثة أشياء", en: "You will need three things" },
-  needId: {
-    ar: "هويتك الوطنية أو الإقامة",
-    en: "Your national ID or residence permit",
-  },
-  needCertificate: {
-    ar: "شهادة الوفاة الرسمية",
-    en: "The official death certificate",
-  },
-  needPhone: {
-    ar: "الهاتف الذي سجّله لك",
-    en: "The phone they registered for you",
-  },
-
-  stepsTitle: { ar: "ما يحدث بعد ذلك", en: "What happens next" },
-  stepIdentity: { ar: "تحقّق من هويتك", en: "Verify your identity" },
-  stepIdentityMeta: { ar: "دقيقتان", en: "2 minutes" },
-  stepCertificate: {
-    ar: "رفع شهادة الوفاة ومطابقة الاسم",
-    en: "Upload the death certificate and match the name",
-  },
-  stepVeto: { ar: "مدة اعتراض ٣٠ يوماً", en: "A 30-day objection period" },
-  stepVetoMeta: {
-    ar: "نُبلغ صاحب الحساب",
-    en: "We notify the account holder",
-  },
-  stepRelease: {
-    ar: "الإفراج عمّا خُصّص لك وحدك",
-    en: "Release of what was left to you alone",
-  },
-
-  // The three-step chrome on ٧.٢ and ٧.٣. Shorter than the `step*` labels
-  // above, which describe what happens; these name where you are.
-  stepperIdentity: { ar: "هويتك", en: "Your identity" },
-  stepperCertificate: { ar: "شهادة الوفاة", en: "Death certificate" },
-  stepperWaiting: { ar: "الانتظار", en: "Waiting" },
+  start: { ar: "ابدأ الخطوة الأولى", en: "Start step one" },
+  startMeta: { ar: "لا تحتاج حساباً ولا بطاقة", en: "No account, no card" },
 
   disclaimer: {
-    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات.",
-    en: "Wassiya is not a legal authority and does not divide estates.",
+    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات. الأنصبة يحدّدها القانون والفرائض الشرعية — نحن نوصّل ما وُجّه إليك بالاسم، لا أكثر.",
+    en: "Wassiya is not a legal authority and does not divide estates. Shares are set by law and by the fara'id — we only deliver what was routed to you by name.",
   },
-  terms: { ar: "الشروط", en: "Terms" },
-  privacy: { ar: "الخصوصية", en: "Privacy" },
-  howEncryption: { ar: "كيف يعمل التشفير", en: "How the encryption works" },
+
+  // The ink panel. Three items and no more; the third carries the longest
+  // explanation because "the email they registered" is the one an heir usually
+  // has to go and find.
+  needTitle: { ar: "جهّز هذه قبل أن تبدأ", en: "Have these ready first" },
+  needWhy: {
+    ar: "أكثر ما يوقف الناس هو البدء بلا شهادة الوفاة.",
+    en: "The commonest reason people stall is starting without the certificate.",
+  },
+  needIdTitle: { ar: "هويتك أنت", en: "Your own ID" },
+  needIdBody: {
+    ar: "الهوية الوطنية أو الإقامة أو جواز السفر — صورة وسيلفي حيّة",
+    en: "National ID, iqama or passport — a photo and a liveness selfie",
+  },
+  needCertificateTitle: { ar: "شهادة الوفاة", en: "The death certificate" },
+  needCertificateBody: {
+    ar: "PDF أو صورة واضحة، حتى ٢٠ م.ب",
+    en: "PDF or a clear photo, up to 20 MB",
+  },
+  needEmailTitle: { ar: "بريد المتوفّى المسجّل", en: "The email they registered" },
+  needEmailBody: {
+    ar: "البريد الذي أنشأ به خزنته — غالباً في وثيقة الاسترداد المطبوعة",
+    en: "The address their vault was created with — usually on the printed recovery sheet",
+  },
+  needPrivacy: {
+    ar: "مستنداتك تُستخدم للتحقق من البلاغ فقط، ولا تُسلّم لأي وارث آخر.",
+    en: "Your documents are used to verify this report only, and are never passed to another heir.",
+  },
 } as const satisfies Dictionary
