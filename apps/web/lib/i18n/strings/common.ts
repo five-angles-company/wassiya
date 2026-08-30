@@ -47,6 +47,37 @@ export const HOME = {
   },
 
   title: { ar: "وصيّة", en: "Wassiya" },
+
+  // The hero. Short, concrete, and about the reader rather than the product —
+  // at 72px there is room for about fifteen characters and no room at all for
+  // a value proposition.
+  heroTitle: {
+    ar: "ما تركه لك، يصل إليك.",
+    en: "What they left you reaches you.",
+  },
+  heroBody: {
+    ar: "إن فقدت شخصاً عزيزاً كان يحفظ إرثه الرقمي في وصيّة، ابدأ من هنا. مجاناً، وبدون تطبيق.",
+    en: "If you have lost someone who kept their digital legacy in Wassiya, start here. Free, and no app to install.",
+  },
+
+  // The three facts the olive band carries. Each is a claim someone deciding
+  // whether to trust us would want checked.
+  factKeyValue: { ar: "لا يغادر الجهاز", en: "Never leaves the device" },
+  factKeyLabel: {
+    ar: "مفتاح الخزنة يُولَّد على هاتف صاحبها ويبقى فيه.",
+    en: "The vault's key is generated on its owner's phone and stays there.",
+  },
+  factHoldValue: { ar: "نصّ مشفّر فقط", en: "Ciphertext only" },
+  factHoldLabel: {
+    ar: "ما يصل إلى خوادمنا مشفّر، ولا نملك ما يفتحه.",
+    en: "What reaches our servers is encrypted, and we do not hold what opens it.",
+  },
+  factHalvesValue: { ar: "نصفان، لا نصف", en: "Two halves, not one" },
+  factHalvesLabel: {
+    ar: "صندوق الوارث يحتاج نصيبنا ونصيب الوصي معاً.",
+    en: "An heir's box needs our half and the guardian's together.",
+  },
+
   ownerTitle: { ar: "خزنتك على هاتفك", en: "Your vault is on your phone" },
   ownerBody: {
     ar: "لا يمكن فتح الخزنة من المتصفح، وهذا مقصود: مفتاحها محفوظ في الشريحة الأمنية لهاتفك ومحميّ ببصمتك. حمّل التطبيق وسجّل الدخول من هناك.",
@@ -67,10 +98,9 @@ export const HOME = {
   },
   guardianAction: { ar: "ما دور الوصي؟", en: "What a guardian does" },
 
-  sealedTitle: { ar: "الخزنة مغلقة علينا نحن أيضاً", en: "The vault is sealed to us too" },
-  sealedBody: {
-    ar: "مفتاح الخزنة لا يغادر جهاز صاحبها. ما نحفظه نحن مشفّر، ولا نملك ما يفتحه.",
-    en: "The vault's key never leaves its owner's device. What we hold is ciphertext, and we do not hold what opens it.",
+  sealedTitle: {
+    ar: "الخزنة مغلقة علينا نحن أيضاً",
+    en: "The vault is sealed to us too",
   },
   sealedMore: { ar: "كيف يعمل التشفير", en: "How the encryption works" },
 } as const satisfies Dictionary

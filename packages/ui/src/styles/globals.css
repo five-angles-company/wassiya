@@ -322,6 +322,90 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Motion.
+
+   All of it is CSS. The claim funnel is required to work with JavaScript
+   disabled — the board asks for "an old browser", and the landing page is a
+   Server Component that ships no client bundle — so an IntersectionObserver
+   reveal was never an option here.
+
+   `animation-timeline: view()` does scroll-driven reveals natively. Where a
+   browser does not support it the element is simply already in place, which is
+   the correct degradation: the content is never hidden waiting for a script
+   that will not run.
+
+   `.rise` is the only reveal. One motion, used everywhere, is what keeps a page
+   feeling composed rather than twitchy.
+   --------------------------------------------------------------------------- */
+@keyframes wassiya-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.wassiya .rise {
+  animation: wassiya-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* On load, staggered. The delay is a custom property so a caller can order a
+   group without inventing a class per position. */
+.wassiya .rise {
+  animation-delay: var(--rise-delay, 0ms);
+}
+
+/* Below the fold, driven by scroll position rather than by a timer. */
+@supports (animation-timeline: view()) {
+  .wassiya .rise-in {
+    animation: wassiya-rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 26%;
+  }
+}
+
+/* A surface that answers the pointer. Transform and shadow only — both are
+   compositor-friendly, so this stays smooth on the cheap phone the funnel is
+   most likely opened on. */
+.wassiya .lift {
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.wassiya .lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-overlay);
+}
+
+/* An arrow that leans the way the reader is going. `:dir()` rather than a
+   `[dir]` selector so it follows the element's resolved direction. */
+.wassiya .nudge {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.wassiya .group:hover .nudge:dir(rtl) {
+  transform: translateX(-4px);
+}
+.wassiya .group:hover .nudge:dir(ltr) {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wassiya .rise,
+  .wassiya .rise-in,
+  .wassiya .lift,
+  .wassiya .nudge {
+    animation: none;
+    transition: none;
+  }
+  .wassiya .lift:hover {
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    The admin console's theme.
 
    Same Organic semantics as `.wassiya`, plus the two things the claim funnel

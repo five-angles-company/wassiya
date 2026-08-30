@@ -21,10 +21,16 @@ import { NAV } from "@/lib/i18n/strings/nav"
 export async function SiteShell({
   width,
   className,
+  bleed = false,
   children,
 }: {
   width?: "prose" | "narrow" | "default"
   className?: string
+  /**
+   * Skip the centred container: the page is composing its own full-bleed
+   * `Band`s and needs to reach both edges of the viewport.
+   */
+  bleed?: boolean
   children: React.ReactNode
 }) {
   const labels = t(NAV, await getLocale())
@@ -39,9 +45,15 @@ export async function SiteShell({
       </a>
 
       <SiteHeader />
-      <Page width={width} className={className}>
-        {children}
-      </Page>
+      {bleed ? (
+        <main id="content" className={className}>
+          {children}
+        </main>
+      ) : (
+        <Page width={width} className={className}>
+          {children}
+        </Page>
+      )}
       <div className="mt-auto">
         <SiteFooter />
       </div>

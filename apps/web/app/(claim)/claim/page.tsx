@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { ClaimSteps } from "@/components/claim/claim-steps"
+import { Band } from "@/components/shell/band"
 import { SiteShell } from "@/components/shell/site-shell"
 import { t, type Resolved } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
@@ -52,25 +53,38 @@ export default async function ClaimLandingPage() {
   ]
 
   return (
-    <SiteShell className="pb-28 md:pb-4">
-      <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:gap-12">
+    <SiteShell bleed className="pb-24 md:pb-0">
+      {/* The ask, on terracotta. The condolence is the first sentence anyone
+          reads here, so it sits at display size rather than as body copy under
+          a heading that outranks it. */}
+      <Band tone="primary" size="tall">
+        <h1
+          className="rise max-w-[16ch] text-[clamp(32px,7vw,60px)] leading-[1.1]"
+          style={{ "--rise-delay": "60ms" } as React.CSSProperties}
+        >
+          {labels.title}
+        </h1>
+        <p
+          className="rise mt-6 max-w-[48ch] text-[17px] leading-[1.75] opacity-90 md:text-[19px]"
+          style={{ "--rise-delay": "170ms" } as React.CSSProperties}
+        >
+          {labels.condolence}
+        </p>
+        <div
+          className="rise mt-8 hidden md:block"
+          style={{ "--rise-delay": "280ms" } as React.CSSProperties}
+        >
+          <StartButton labels={labels} />
+        </div>
+      </Band>
+
+      <Band tone="page">
+        <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:gap-12">
           {/* The ask. */}
           <div>
-            <h1 className="text-[30px] leading-[1.25] md:text-[40px]">
-              {labels.title}
-            </h1>
-            <p className="text-sand-700 mt-4 text-[15.5px] leading-[1.75]">
+            <p className="text-sand-700 text-[16px] leading-[1.8]">
               {labels.intro}
             </p>
-            {/* Reviewed copy, one sentence, first person. It is the first thing
-                said to someone who has just lost a person. */}
-            <p className="text-sand-700 mt-3 text-[15.5px] leading-[1.75]">
-              {labels.condolence}
-            </p>
-
-            <div className="mt-7 hidden md:block">
-              <StartButton labels={labels} />
-            </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
               <QuietLink
@@ -90,8 +104,8 @@ export default async function ClaimLandingPage() {
 
           {/* What they need, and what happens. Beside the CTA, never below. */}
           <aside className="flex flex-col gap-6">
-            <section className="bg-card rounded-card p-5">
-              <h2 className="text-[17px]">{labels.needTitle}</h2>
+            <section className="bg-card rounded-sheet shadow-raised rise-in p-6">
+              <h2 className="text-[19px]">{labels.needTitle}</h2>
               <ul className="mt-3 flex flex-col gap-2.5">
                 {needs.map((need) => (
                   <li
@@ -111,25 +125,43 @@ export default async function ClaimLandingPage() {
             <ClaimSteps steps={steps} locale={locale} />
           </aside>
         </div>
+      </Band>
 
 
       {/* 7.1m: on mobile web the CTA sticks, because this is the likeliest
           first contact and the page is long on a 320px screen. */}
-      <div className="bg-background/95 fixed inset-x-0 bottom-0 border-t border-[color-mix(in_srgb,#201e1d_12%,transparent)] px-5 py-4 backdrop-blur md:hidden">
-        <StartButton labels={labels} />
+      <div className="bg-background/92 border-border fixed inset-x-0 bottom-0 border-t px-5 py-4 backdrop-blur-md md:hidden">
+        <StartButton labels={labels} tone="default" />
       </div>
     </SiteShell>
   )
 }
 
-function StartButton({ labels }: { labels: Resolved<typeof CLAIM> }) {
+/**
+ * The one call to action, in two tones.
+ *
+ * `onColor` is cream on the terracotta hero; `default` is terracotta on the
+ * cream sticky bar. They are the same button and they cannot share a class —
+ * the hero version on a cream ground would be a cream button on cream.
+ */
+function StartButton({
+  labels,
+  tone = "onColor",
+}: {
+  labels: Resolved<typeof CLAIM>
+  tone?: "onColor" | "default"
+}) {
   return (
     <Link
       href="/claim/identity"
-      className="bg-primary text-primary-foreground hover:bg-terracotta-600 flex w-full items-center justify-center rounded-full px-8 py-3.5 text-[15.5px] font-semibold transition-colors md:w-auto"
+      className={`group lift flex w-full items-center justify-center rounded-full px-8 py-4 text-[16px] font-bold md:w-auto ${
+        tone === "onColor"
+          ? "bg-background text-foreground hover:bg-card"
+          : "bg-primary text-primary-foreground hover:bg-terracotta-600"
+      }`}
     >
       {labels.start}
-      <span className="text-primary-foreground/75 me-3 text-[13px] font-normal">
+      <span className="me-3 text-[13px] font-normal opacity-70">
         {labels.startMeta}
       </span>
     </Link>
