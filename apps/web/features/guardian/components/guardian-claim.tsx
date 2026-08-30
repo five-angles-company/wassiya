@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 
@@ -7,6 +8,7 @@ import { RecordNotFound } from "@/components/record-not-found"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
+import { ConfirmDone } from "@/features/guardian/components/confirm-done"
 import { ConfirmPanel } from "@/features/guardian/components/confirm-panel"
 import { HandoverPanel } from "@/features/guardian/components/handover-panel"
 import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
@@ -23,15 +25,31 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * screen needs. Finding the row in it costs one filter over a list that is
  * almost always length 0 or 1.
  *
- * The consequence is the honest one: a claim that is no longer a duty is not
- * found here. That is correct — a guardian who has already confirmed has
- * nothing left to do on it, and the row leaving the list *is* the receipt.
+ * ## The confirmed state has to outlive the query
+ *
+ * That choice has one sharp edge, and it is on the single action this whole
+ * role exists for. `guardianConfirm` moves the claim from `guardian_review` to
+ * `awaiting_veto`; `pendingApprovals` queries only `guardian_review` and
+ * `released`. So the duty row disappears the instant the mutation lands, the
+ * `find` below returns `undefined`, and without `confirmed` the guardian would
+ * tap "أؤكّد الوفاة" and be shown **"لم نجد هذا"**.
+ *
+ * `confirmed` is held here, above the subscription, so the receipt survives the
+ * row that produced it. A claim that is no longer a duty and was *not* just
+ * confirmed here is genuinely not found — that case is correct, and the row
+ * leaving the list is its own receipt on a return visit.
+ *
+ * Handover has no equivalent edge: a `released` claim stays `released`, so its
+ * row is still there afterwards.
  */
 export function GuardianClaim({ claimId }: { claimId: string }) {
   const locale = useLocale()
   const labels = t(GUARDIAN_DUTIES, locale)
   const common = t(COMMON, locale)
   const duties = useQuery(api.guardians.pendingApprovals, {})
+  const [confirmed, setConfirmed] = useState(false)
+
+  if (confirmed) return <ConfirmDone />
 
   if (duties === undefined) {
     return <p className="text-muted-foreground text-[14.5px]">{common.loading}</p>
@@ -58,6 +76,7 @@ export function GuardianClaim({ claimId }: { claimId: string }) {
       certificateName={duty.certificateName}
       nameMatch={duty.nameMatch}
       heirLinked={duty.heirLinked}
+      onConfirmed={() => setConfirmed(true)}
     />
   ) : (
     <HandoverPanel claimId={duty.claimId} subjectName={subjectName} />

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
-import { CheckIcon, UserCheckIcon } from "lucide-react"
+import { UserCheckIcon } from "lucide-react"
 
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
@@ -21,6 +21,13 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * they are handing over an estate will hesitate, and a guardian who believes it
  * is a formality will tap without thinking. Neither is what the ceremony needs.
  *
+ * ## Success is reported upward, not held here
+ *
+ * `guardianConfirm` moves the claim out of `guardian_review`, which is one of
+ * the two states `pendingApprovals` queries — so this component's own row
+ * vanishes the moment it succeeds. `onConfirmed` hands the fact to a parent
+ * that outlives the query; see `confirm-done.tsx`.
+ *
  * ## There is deliberately no self-signing check
  *
  * AGENTS.md is explicit: refusing a confirmation when the confirmer is also the
@@ -36,6 +43,7 @@ export function ConfirmPanel({
   certificateName,
   nameMatch,
   heirLinked,
+  onConfirmed,
 }: {
   claimId: string
   subjectName: string
@@ -43,11 +51,11 @@ export function ConfirmPanel({
   certificateName: string | null
   nameMatch: boolean | null
   heirLinked: boolean
+  onConfirmed: () => void
 }) {
   const labels = t(GUARDIAN_DUTIES, useLocale())
   const confirm = useMutation(api.claims.guardianConfirm)
   const [busy, setBusy] = useState(false)
-  const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   async function act() {
@@ -55,22 +63,15 @@ export function ConfirmPanel({
     setError(null)
     try {
       await confirm({ claimId: claimId as Id<"claims"> })
-      setDone(true)
+      onConfirmed()
     } catch {
       setError(labels.confirmFailed)
-    } finally {
       setBusy(false)
     }
-  }
-
-  if (done) {
-    return (
-      <Panel tone="settled" icon={CheckIcon} title={labels.confirmDone}>
-        <p className="text-[14.5px] leading-[1.7] opacity-90">
-          {labels.confirmWhatHappens}
-        </p>
-      </Panel>
-    )
+    // No `finally`: on success this component is already being replaced, and
+    // clearing `busy` there would re-enable the button for the frame before it
+    // unmounts — on a mutation that refuses a second call anyway, but which
+    // should never look retryable.
   }
 
   return (

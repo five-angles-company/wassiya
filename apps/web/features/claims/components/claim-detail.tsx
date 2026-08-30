@@ -25,12 +25,41 @@ import { CLAIMS } from "@/features/claims/strings/claims"
  *
  * ## The next step is at the top, and there is only ever one
  *
- * The funnel this replaces was three routes deep, which meant that someone
- * coming back a week later had to remember which step they had reached. Here
- * the report *is* the screen and the outstanding step is the panel at the top
- * of it — identity, then certificate, then nothing at all. Once both are done
- * the page has no ask on it, and says so out loud rather than leaving a gap
- * where the reader looks for one.
+ * The funnel this replaces was three routes deep, which meant someone coming
+ * back a week later had to remember which step they had reached. Here the
+ * report *is* the screen and the outstanding step is the panel at the top of it
+ * — identity, then certificate, then nothing at all. Once both are done the
+ * page has no ask on it, and says so out loud rather than leaving a gap where
+ * the reader looks for one.
+ *
+ * ## Which "identity verified" decides the step (this bit is load-bearing)
+ *
+ * There are two, and they are allowed to disagree.
+ * `claims.claimantIdentityStatus` is a **snapshot taken at submit**, refreshed
+ * only as a side effect of an admin's `adminSetNameMatch`;
+ * `users.identityStatus` is what the Didit webhook writes and is live. Someone
+ * who files first and verifies afterwards — the ordinary case — sits between
+ * the two for as long as review takes.
+ *
+ * Branching on the snapshot would deadlock exactly that person: the page would
+ * decide identity is outstanding and render `IdentityPanel`, which reads the
+ * live value and reports "verified" — an ask that answers itself, with the
+ * certificate step never appearing behind it.
+ *
+ * So the step is chosen on the **live** value, which is also the one the reader
+ * can act on. `attachCertificate` gates on ownership and an open claim, not on
+ * identity, so proceeding is genuinely correct and the snapshot catches up at
+ * review.
+ *
+ * ## The actions are gated on ownership; the reading is not
+ *
+ * `claims.publicStatus` deliberately has no claimant check — the URL is a
+ * capability, and a relative who was forwarded the link is meant to be able to
+ * read the status. Hanging the panels off it would be a different thing: a
+ * Didit session started against someone else's claim is a billed verification
+ * of the wrong person, and an upload would be taken by the browser and refused
+ * by the server. `claims.mine` is already in flight for the rail, so checking
+ * membership costs nothing.
  *
  * ## The countdown is a component, not a number
  *
@@ -44,7 +73,10 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
   const labels = t(CLAIMS, locale)
   const status = t(CLAIM_STATUS, locale)
   const common = t(COMMON, locale)
+
   const claim = useQuery(api.claims.publicStatus, { claimId })
+  const identity = useQuery(api.identity.status, {})
+  const mine = useQuery(api.claims.mine, {})
 
   if (claim === undefined) {
     return <p className="text-muted-foreground text-[14.5px]">{status.loading}</p>
@@ -60,6 +92,13 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
   }
 
   const name = claim.subjectName ?? labels.unknownVault
+  // Live, not the claim's snapshot — see the header. In flight counts as
+  // unverified, which delays the panel by a frame and never shows an ask that
+  // is already answered.
+  const identityVerified = identity?.status === "verified"
+  // Loading and not-mine both render the report without its actions, rather
+  // than guessing in the reader's favour.
+  const isMine = mine?.some((row) => row.id === claim.id) === true
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,22 +116,23 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
         <ClaimStatusPill status={claim.status} locale={locale} />
       </header>
 
-      {/* Exactly one ask, in the order the backend enforces it. */}
-      {!claim.identityVerified ? (
-        <IdentityPanel />
-      ) : !claim.certificateReceived ? (
-        <CertificatePanel claimId={claim.id} />
-      ) : claim.status === "released" ? (
+      {/* Exactly one panel. A terminal state outranks an ask: a released box
+          must not be hidden behind an identity prompt because a later Didit
+          webhook flipped the live status, and a vetoed claim must never ask for
+          a certificate it will not use. */}
+      {claim.status === "released" ? (
         <Panel tone="settled" icon={PackageIcon} title={status.releasedHeading}>
           <p className="mb-5 max-w-[62ch] text-[14.5px] leading-[1.7] opacity-90">
             {status.releasedBody}
           </p>
-          <Link
-            href={`/box/${claim.id}`}
-            className="text-secondary inline-flex rounded-full bg-[color:var(--secondary-foreground)] px-7 py-3 text-[15px] font-bold"
-          >
-            {status.openBox}
-          </Link>
+          {isMine && (
+            <Link
+              href={`/box/${claim.id}`}
+              className="text-secondary inline-flex rounded-full bg-[color:var(--secondary-foreground)] px-7 py-3 text-[15px] font-bold"
+            >
+              {status.openBox}
+            </Link>
+          )}
           <p className="mt-4 text-[13px] leading-[1.6] opacity-75">
             {status.releasedKeyNote}
           </p>
@@ -112,6 +152,10 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
             {status.lockedBody}
           </p>
         </Panel>
+      ) : isMine && !identityVerified ? (
+        <IdentityPanel />
+      ) : isMine && !claim.certificateReceived ? (
+        <CertificatePanel claimId={claim.id} />
       ) : (
         <Panel tone="settled" title={status.nothingTitle}>
           <p className="max-w-[62ch] text-[14.5px] leading-[1.7] opacity-90">
@@ -125,7 +169,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
 
       <Panel title={status.timelineTitle}>
         <ClaimTimeline
-          identityVerified={claim.identityVerified}
+          identityVerified={identityVerified}
           certificateReceived={claim.certificateReceived}
           guardianConfirmed={claim.guardianConfirmed}
           status={claim.status}
