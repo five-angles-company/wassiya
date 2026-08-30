@@ -1,16 +1,14 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@clerk/nextjs/server"
-import { SidebarInset, SidebarProvider } from "@workspace/ui/components/sidebar"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
-import { AppHeader } from "@/components/app-header"
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppNav } from "@/components/app-nav"
 import { AuthGate } from "@/components/auth-gate"
-import { safePath } from "@/lib/safe-path"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
+import { safePath } from "@/lib/safe-path"
 import { NAV } from "@/lib/i18n/strings/nav"
 
 /**
@@ -36,21 +34,17 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * Component cannot read its own URL, so the path comes from `x-pathname`, which
  * `proxy.ts` sets for exactly this and for the language switch.
  *
- * ## The shell is one viewport tall and the region below owns the scroll
+ * ## The document scrolls; the bar sticks
  *
- * `SidebarProvider` ships `min-h-svh`, which lets a long page grow the document
- * and take the sidebar with it. Pinning the height here means the rail and the
- * bar never move. `min-h-0` on each link of the chain is what makes that work:
- * a flex child defaults to `min-height: auto` and refuses to shrink below its
- * content, so without it every `flex-1` below is a lie.
+ * This used to pin the shell to one viewport and hand an inner region the
+ * scroll, which is what a rail needs — a rail must not travel with the page. A
+ * bar has no such requirement and gets stickiness for free, so the constraint
+ * is gone and a whole class of bug goes with it: a height-constrained flex
+ * column makes every card a shrinkable child, and cards compressing to fit
+ * instead of overflowing is exactly how this product broke once already.
  *
- * The content region is a **block**, not a flex column. A flex child defaults
- * to `flex-shrink: 1`, so cards would compress to fit the viewport instead of
- * overflowing it, and the region would never scroll.
- *
- * `TooltipProvider` is required rather than optional: `SidebarMenuButton`
- * renders a `Tooltip` whenever the rail is collapsed, and this package's
- * `Tooltip` is a bare Radix root with no provider of its own.
+ * `TooltipProvider` stays. This package's `Tooltip` is a bare Radix root with
+ * no provider of its own, and any screen below is free to use one.
  */
 export default async function AppLayout({
   children,
@@ -68,25 +62,23 @@ export default async function AppLayout({
   return (
     <AuthGate>
       <TooltipProvider delayDuration={0}>
-        <SidebarProvider className="h-svh overflow-hidden">
-          <a
-            href="#content"
-            className="bg-primary text-primary-foreground sr-only rounded-full px-4 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:start-3 focus:top-3 focus:z-50"
-          >
-            {nav.skipToContent}
-          </a>
-          <AppSidebar />
-          <SidebarInset className="min-h-0">
-            <AppHeader />
-            <div
-              id="content"
-              className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 md:p-6"
-            >
-              {children}
-            </div>
-            <Toaster position="bottom-center" richColors />
-          </SidebarInset>
-        </SidebarProvider>
+        <a
+          href="#content"
+          className="bg-primary text-primary-foreground sr-only rounded-full px-4 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:start-3 focus:top-3 focus:z-50"
+        >
+          {nav.skipToContent}
+        </a>
+
+        <AppNav />
+
+        <main
+          id="content"
+          className="mx-auto w-full max-w-[1180px] space-y-6 px-4 py-6 md:px-6 md:py-8"
+        >
+          {children}
+        </main>
+
+        <Toaster position="bottom-center" richColors />
       </TooltipProvider>
     </AuthGate>
   )

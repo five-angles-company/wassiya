@@ -298,26 +298,6 @@
   --input: color-mix(in srgb, #201e1d 16%, transparent);
   --ring: #c67139;
 
-  /* The eight sidebar tokens.
-
-     These used to live only on `.wassiya-admin`, back when this class dressed
-     a single-column funnel with no rail. `apps/web` is an application now and
-     renders the same `Sidebar` primitive, which reads `--sidebar-*` and
-     nothing else — without them the rail falls through to `:root`'s stock
-     grey and sits on the sand ground looking borrowed.
-
-     Light values only. What kept `.wassiya-admin` separate was its dark ramp,
-     not these: this surface is light-only by a recorded decision, and
-     `apps/web` no longer mounts a theme provider at all. */
-  --sidebar: #ebddc5;
-  --sidebar-foreground: #201e1d;
-  --sidebar-primary: #c67139;
-  --sidebar-primary-foreground: #fff2eb;
-  --sidebar-accent: #dcd3c4;
-  --sidebar-accent-foreground: #201e1d;
-  --sidebar-border: color-mix(in srgb, #201e1d 16%, transparent);
-  --sidebar-ring: #c67139;
-
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-body-wassiya);
@@ -428,9 +408,10 @@
 /* ---------------------------------------------------------------------------
    The admin console's theme.
 
-   Same Organic semantics as `.wassiya`, plus the one thing `apps/web` does
-   not have: a dark ramp. (The eight `--sidebar-*` tokens were exclusive to
-   this class too, until `apps/web` grew a rail and declared its own.)
+   Same Organic semantics as `.wassiya`, plus the two things no other surface
+   needs: the eight `--sidebar-*` tokens, and a dark ramp. `apps/web` briefly
+   declared the first set when it had a rail; it has a top bar now, so this is
+   again the only class in the repo that dresses a `Sidebar`.
 
    ## Why this is a separate class and not a widened `.wassiya`
 

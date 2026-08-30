@@ -1,15 +1,17 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The sidebar's labels, and the shell's.
+ * The nav bar's labels, and the shell's.
  *
  * `config/nav.ts` indexes this dictionary by key rather than carrying copy of
  * its own, so adding a nav item without adding both languages fails the build
- * instead of shipping an English label into an Arabic sidebar.
+ * instead of shipping an English label into an Arabic bar.
  */
 export const NAV = {
   appName: { ar: "وصيّة", en: "Wassiya" },
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
+  openMenu: { ar: "افتح القائمة", en: "Open the menu" },
+  closeMenu: { ar: "أغلق القائمة", en: "Close the menu" },
 
   groupOverview: { ar: "البداية", en: "Start" },
   home: { ar: "الرئيسية", en: "Home" },
@@ -30,7 +32,7 @@ export const NAV = {
   notifications: { ar: "الإشعارات", en: "Notifications" },
   account: { ar: "الحساب", en: "Account" },
 
-  /** The rail's unread badge, capped — counting past ten is waste. */
+  /** The bell's unread badge, capped — counting past ten is waste. */
   unreadMany: { ar: "٩+", en: "9+" },
 
   signOut: { ar: "تسجيل الخروج", en: "Sign out" },
