@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { LOCALE_COOKIE, LOCALE_MAX_AGE, resolveLocale } from "@/lib/i18n/locale"
+import { safePath } from "@/lib/safe-path"
 
 /**
  * The language switch, as a plain form POST.
@@ -23,8 +24,9 @@ export async function POST(request: NextRequest) {
   // Only ever a same-origin path. `redirect_to` arrives from a hidden field in
   // our own form, but a hidden field is user input like any other, and an
   // absolute URL here would turn the language switch into an open redirect.
-  const raw = String(form.get("redirect_to") ?? "/")
-  const to = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/"
+  // `safePath` is shared with sign-in's `redirect_url`, which is the identical
+  // problem written as a query parameter.
+  const to = safePath(String(form.get("redirect_to") ?? "/"))
 
   const response = NextResponse.redirect(new URL(to, request.url), {
     // 303: the browser must follow with GET. Without it the redirect inherits

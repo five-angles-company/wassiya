@@ -154,7 +154,17 @@ export const revoke = mutation({
   },
 })
 
-/** Everyone this caller is a guardian for. The guardian-side home screen. */
+/**
+ * Everyone this caller is a guardian for. The guardian-side home screen.
+ *
+ * `x25519PublicKey` is returned deliberately. It is a **public** key — the
+ * guardian's device published it at accept time and every heir bundle is
+ * sealed to it — so returning it hands over no capability. What it buys is the
+ * one check a guardian can otherwise never make: `apps/web`'s key page lets
+ * them type their printed sheet and confirm it still reproduces the key this
+ * vault is sealed to. Without it, a guardian discovers a lost or mistranscribed
+ * sheet at the handover, which is the single ceremony that cannot be retried.
+ */
 export const guardianFor = query({
   args: {},
   handler: async (ctx) => {
@@ -167,6 +177,9 @@ export const guardianFor = query({
           subjectUserId: row.userId,
           subjectName: subject?.name ?? null,
           relation: row.relation,
+          // `undefined` for a guardianship accepted before key publication
+          // existed. The key page says so rather than rendering a failed check.
+          x25519PublicKey: row.x25519PublicKey ?? null,
         }
       })
     )

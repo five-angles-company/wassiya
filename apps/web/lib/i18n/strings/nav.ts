@@ -1,43 +1,38 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The shell: the bar across the top and the columns at the bottom.
+ * The sidebar's labels, and the shell's.
  *
- * **The top bar carries tasks; the footer carries documents.** Four links up
- * there, all of them something a reader might be trying to *do*. Terms and
- * privacy are things they might need to *read*, and belong at the bottom where
- * documents live — putting them in the bar would spend two of four slots on
- * text nobody navigates to.
+ * `config/nav.ts` indexes this dictionary by key rather than carrying copy of
+ * its own, so adding a nav item without adding both languages fails the build
+ * instead of shipping an English label into an Arabic sidebar.
  */
 export const NAV = {
+  appName: { ar: "وصيّة", en: "Wassiya" },
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
-  openMenu: { ar: "القائمة", en: "Menu" },
+
+  groupOverview: { ar: "البداية", en: "Start" },
   home: { ar: "الرئيسية", en: "Home" },
-  /** The mid-flow count. The board shows the bars; this names them. */
-  stepOf: { ar: "{n} من {total}", en: "{n} of {total}" },
 
-  fileClaim: { ar: "طلب وراثة", en: "File a claim" },
-  guardian: { ar: "أنا وصي", en: "I'm a guardian" },
-  security: { ar: "الأمان", en: "Security" },
-  help: { ar: "مساعدة", en: "Help" },
+  // The heir's side. "بلاغاتي" rather than "مطالباتي": a claim here is a report
+  // someone files about a death, not a demand against an estate.
+  groupHeir: { ar: "ما تركوه لك", en: "Left to you" },
+  claims: { ar: "بلاغاتي", en: "My reports" },
+  newClaim: { ar: "بلاغ جديد", en: "New report" },
+  box: { ar: "صندوقي", en: "My box" },
 
-  signIn: { ar: "تسجيل الدخول", en: "Sign in" },
-  /** The bar is tight on a 390px screen; the board drops the verb. */
-  signInShort: { ar: "دخول", en: "Sign in" },
-  myAccount: { ar: "حسابي", en: "My account" },
+  // The guardian's side.
+  groupGuardian: { ar: "وصايتك", en: "Your guardianship" },
+  guardian: { ar: "ما هو مطلوب", en: "What needs you" },
+  guardianKey: { ar: "مفتاحي", en: "My key" },
 
-  footerService: { ar: "الخدمة", en: "Service" },
-  footerLegal: { ar: "قانوني", en: "Legal" },
-  footerSupport: { ar: "الدعم", en: "Support" },
+  groupAccount: { ar: "حسابك", en: "Your account" },
+  notifications: { ar: "الإشعارات", en: "Notifications" },
+  account: { ar: "الحساب", en: "Account" },
 
-  resume: { ar: "متابعة طلب سابق", en: "Resume a claim" },
-  terms: { ar: "الشروط", en: "Terms" },
-  privacy: { ar: "الخصوصية", en: "Privacy" },
-  encryption: { ar: "كيف يعمل التشفير", en: "How the encryption works" },
-  contact: { ar: "تواصل معنا", en: "Contact us" },
+  /** The rail's unread badge, capped — counting past ten is waste. */
+  unreadMany: { ar: "٩+", en: "9+" },
 
-  disclaimer: {
-    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات.",
-    en: "Wassiya is not a legal authority and does not divide estates.",
-  },
+  signOut: { ar: "تسجيل الخروج", en: "Sign out" },
+  language: { ar: "اللغة", en: "Language" },
 } as const satisfies Dictionary

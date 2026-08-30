@@ -12,7 +12,6 @@ import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
 import { ConvexClientProvider } from "@/components/convex-client-provider"
 import { LocaleProvider } from "@/components/locale-provider"
-import { ThemeProvider } from "@/components/theme-provider"
 import { dirFor, LOCALE_COOKIE, resolveLocale } from "@/lib/i18n/locale"
 
 /** Latin face, bound to `--font-latin` so the two stacks can sit side by side. */
@@ -124,11 +123,9 @@ export default async function RootLayout({
             },
           }}
         >
-          <ThemeProvider>
-            <ConvexClientProvider>
-              <LocaleProvider locale={locale}>{children}</LocaleProvider>
-            </ConvexClientProvider>
-          </ThemeProvider>
+          <ConvexClientProvider>
+            <LocaleProvider locale={locale}>{children}</LocaleProvider>
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>

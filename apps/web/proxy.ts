@@ -22,7 +22,11 @@ export default clerkMiddleware((_auth, request: NextRequest) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // The `\.` is a literal dot in the *regex*, so it needs two
+    // backslashes in a JS string. Written with one it was a plain `.` — an
+    // any-character class — which quietly made the static-asset skip match far
+    // more paths than intended.
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
     // Clerk's own handshake/proxy endpoints.
     "/__clerk/(.*)",

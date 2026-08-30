@@ -233,3 +233,103 @@ export const guardianShareForClaim = mutation({
     return { guardianShareSealed: bundle.guardianShareSealed }
   },
 })
+
+/**
+ * The assets an heir was left, for a claim that has been released.
+ *
+ * ## Why this had to exist
+ *
+ * `releasedBundleForHeir` hands over the DEKs and nothing else. Until this
+ * query there was no list to decrypt them against, so an opened box could
+ * report a key count and not one thing an heir could actually receive. The
+ * crypto for the rest was already sitting in `@workspace/crypto` unused —
+ * `openLabel` for the name, `decryptAsset` for the content.
+ *
+ * ## A query, not a mutation
+ *
+ * `releasedBundleForHeir` is a mutation because handing out the withheld half
+ * of K_h is not something that may happen unlogged. This hands out **no key
+ * material at all**: the ciphertext below is useless without the DEK the heir
+ * already holds, and the label is sealed under that same DEK. So it audits
+ * nothing and may be re-read freely as the box paginates.
+ *
+ * ## The four preconditions are re-asserted, not inherited
+ *
+ * Identical to the bundle's, and deliberately duplicated rather than factored
+ * into a helper both call: this is the second door into the same room, and a
+ * shared helper is a single place for someone to relax a check for one caller
+ * and weaken the other by accident.
+ */
+export const assetsForHeir = query({
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId: rawClaimId }) => {
+    const claimant = await getCurrentUserOrThrow(ctx)
+
+    const claimId = ctx.db.normalizeId("claims", rawClaimId)
+    if (claimId === null) return null
+
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) return null
+    if (claim.status !== "released") return null
+    if (claim.nameMatch !== true || claim.guardianConfirmedAt === undefined) {
+      return null
+    }
+    if (claim.claimantIdentityStatus !== "verified") return null
+    if (claim.claimantUserId !== claimant._id) return null
+
+    const heirId = claim.heirId
+    if (heirId === undefined) return null
+
+    // Routed directly to this heir, plus everything routed to every heir. Two
+    // indexed reads rather than one filtered scan, for the reason
+    // `routing.previewForHeir` gives: an owner with hundreds of executor rows
+    // would otherwise push an "allHeirs" row past the window and silently drop
+    // an asset out of an heir's inheritance, with no error anywhere.
+    const direct = await ctx.db
+      .query("assetRecipients")
+      .withIndex("by_userId_and_recipientHeirId", (q) =>
+        q.eq("userId", claim.subjectUserId).eq("recipientHeirId", heirId)
+      )
+      .take(500)
+    const shared = await ctx.db
+      .query("assetRecipients")
+      .withIndex("by_userId_and_recipientKind", (q) =>
+        q.eq("userId", claim.subjectUserId).eq("recipientKind", "allHeirs")
+      )
+      .take(500)
+
+    const items = []
+    for (const row of [...direct, ...shared]) {
+      const asset = await ctx.db.get("assets", row.assetId)
+      if (asset === null) continue
+
+      // Every URL the heir needs, resolved here: an asset can be chunked across
+      // several storage objects and the browser has no way to ask for them.
+      const contentUrls: string[] = []
+      for (const storageId of asset.storageIds) {
+        const url = await ctx.storage.getUrl(storageId)
+        if (url !== null) contentUrls.push(url)
+      }
+
+      items.push({
+        assetId: asset._id,
+        type: asset.type,
+        // Sealed under the asset's own DEK, which is exactly what the heir got
+        // in the bundle. The server has never been able to read it.
+        labelSealed: asset.labelSealed,
+        meta: asset.meta,
+        via: row.recipient.kind,
+        contentUrls,
+        instructionsCiphertext: row.instructionsCiphertext ?? null,
+      })
+    }
+
+    const heir = await ctx.db.get("heirs", heirId)
+
+    return {
+      heirName: heir?.name ?? null,
+      messageKind: heir?.messageMeta?.kind ?? null,
+      items,
+    }
+  },
+})
