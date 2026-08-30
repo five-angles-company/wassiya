@@ -123,9 +123,18 @@ export const status = query({
  * and audited every time.
  */
 export const releasedBundleForHeir = mutation({
-  args: { claimId: v.id("claims") },
-  handler: async (ctx, { claimId }) => {
+  // `v.string()` + `normalizeId`, like the rest of the claim surface: this id
+  // reaches the heir in an email and mail clients truncate links. Normalising
+  // weakens nothing — every one of the four assertions below still runs, and a
+  // malformed id now fails as "not found" rather than as a validator crash.
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId: rawClaimId }) => {
     const claimant = await getCurrentUserOrThrow(ctx)
+
+    const claimId = ctx.db.normalizeId("claims", rawClaimId)
+    if (claimId === null) {
+      throw new Error("Not found")
+    }
 
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) {

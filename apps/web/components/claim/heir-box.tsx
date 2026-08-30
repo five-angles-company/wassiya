@@ -4,14 +4,18 @@ import { useState } from "react"
 import Link from "next/link"
 import { Authenticated, Unauthenticated, useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
 import { hexToBytes } from "@workspace/crypto/bytes"
 import { heirKey, openReleaseBundle } from "@workspace/crypto/heir"
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  KeyRoundIcon,
+  LaptopIcon,
+  ShieldCheckIcon,
+} from "lucide-react"
 
-import { Field } from "@/components/claim/field"
 import { useLocale } from "@/components/locale-provider"
-import { fmtDate, fmtNumber } from "@/lib/format"
-import { t } from "@/lib/i18n/locale"
+import { t, type Resolved } from "@/lib/i18n/locale"
 import { HEIR_BOX } from "@/lib/i18n/strings/heir-box"
 
 type BoxState =
@@ -22,39 +26,27 @@ type BoxState =
   | { status: "failed" }
 
 /**
- * ٧.٦ — the heir's box.
+ * ٧.٦ — the heir's box, and the gate in front of it.
  *
- * ## The board draws an opened box; the security model requires a step to
- * reach it, and that step is here
- *
- * This is the one place in section ٧ where the design file and `AGENTS.md`'s
- * locked model do not line up, so it is worth being explicit about which wins
- * and why. The board shows the box already open, with a message and a download
- * table. It does not draw a key step. But the model says:
+ * ## The gate is the screen, not an obstacle in front of it
  *
  *   K_h = S_server_h ⊕ S_guardian_h
  *
- * `release.releasedBundleForHeir` hands over **only** `serverShare`, and its
- * own comment says so: *"the heir still needs S_guardian_h from the guardian to
- * open anything, so this alone is not a decryption capability."*
- * `release.guardianShareForClaim` returns the other half **to the guardian**,
- * who *"decrypt it locally and hand the plaintext to the heir out of band."*
+ * `release.releasedBundleForHeir` hands over **only** `serverShare`; the other
+ * half reaches the heir from a person. There is no path to an opened box that
+ * skips that, and the design does not try to hide it — it draws it. Our half
+ * and the guardian's, side by side, and the line that explains why it is built
+ * this way: *"Two, never one."*
  *
- * There is no path that reaches an opened box without the heir receiving that
- * half from a person. AGENTS.md marks the security model LOCKED and says no
- * session may drift from it; the board's omission is a drawing that skipped an
- * implementation step, not a decision to weaken the model. So the box asks.
- *
- * The copy is written to make that feel like custody rather than an obstacle —
- * the guardian holding half is the reason nobody, including this company, can
- * open the box alone.
+ * That framing is the whole design. "Enter a key" is a chore. "Nobody can open
+ * this alone, including us" is the product's central promise, arriving at the
+ * exact moment it can be demonstrated rather than asserted.
  *
  * ## Everything below happens in the browser
  *
- * `@workspace/crypto` is platform-neutral by design ("the same source runs in
- * Expo, the browser, a Next.js server and Vitest"), so the bundle is fetched
+ * `@workspace/crypto` is platform-neutral by design, so the bundle is fetched
  * and opened client-side. The server never sees K_h, either half of it, or any
- * DEK it protects — which is the whole point of having withheld one half.
+ * DEK it protects — which is the entire point of having withheld one half.
  */
 export function HeirBox({ claimId }: { claimId: string }) {
   const locale = useLocale()
@@ -65,37 +57,27 @@ export function HeirBox({ claimId }: { claimId: string }) {
 
   async function unlock() {
     setState({ status: "opening" })
+    let kH: Uint8Array | undefined
+    let guardianShare: Uint8Array | undefined
     try {
-      const { bundleUrl, serverShare } = await fetchBundle({
-        claimId: claimId as Id<"claims">,
-      })
+      const { bundleUrl, serverShare } = await fetchBundle({ claimId })
       if (bundleUrl === null) {
         setState({ status: "failed" })
         return
       }
 
-      // The guardian's half arrives as hex, which is how the app renders every
-      // other share the user is asked to carry between devices.
-      const guardianShare = hexToBytes(share.trim().replace(/\s+/g, ""))
-      const kH = heirKey(new Uint8Array(serverShare), guardianShare)
+      guardianShare = hexToBytes(share.trim().replace(/[\s-]/g, ""))
+      kH = heirKey(new Uint8Array(serverShare), guardianShare)
 
-      const blob = new Uint8Array(
-        await (await fetch(bundleUrl)).arrayBuffer()
-      )
+      const blob = new Uint8Array(await (await fetch(bundleUrl)).arrayBuffer())
       const contents = openReleaseBundle(blob, kH)
-
-      // Zero the working key material as soon as the bundle is open. The
-      // plaintext DEKs live on in `contents` for the session — they have to,
-      // to decrypt anything — but K_h and the guardian's half do not.
-      kH.fill(0)
-      guardianShare.fill(0)
 
       setState({
         status: "open",
         keyCount: Object.keys(contents.deks).length,
       })
     } catch (cause) {
-      // A wrong share and a tampered bundle are indistinguishable here by
+      // A wrong half and a tampered bundle are indistinguishable here by
       // design — `open` throws identically for both. The message names the
       // recoverable one, because that is what it almost always is.
       setState(
@@ -103,115 +85,217 @@ export function HeirBox({ claimId }: { claimId: string }) {
           ? { status: "badShare" }
           : { status: "failed" }
       )
+    } finally {
+      // In `finally`, not at the end of `try`: a throw between deriving K_h and
+      // opening the bundle would otherwise leave both halves sitting in memory
+      // for the life of the page — which is the one case where it matters.
+      kH?.fill(0)
+      guardianShare?.fill(0)
     }
   }
 
+  if (state.status === "open") {
+    return <OpenedBox keyCount={state.keyCount} labels={labels} />
+  }
+
+  const error =
+    state.status === "badShare"
+      ? labels.badShare
+      : state.status === "failed"
+        ? labels.failed
+        : undefined
+
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <Unauthenticated>
-          <p className="text-sand-700 text-[15px] leading-[1.75]">
-            {labels.notReleased}
+    <>
+      <Unauthenticated>
+        <div className="max-w-[560px]">
+          <p className="text-[17px] leading-[1.7] opacity-80">
+            {labels.signInFirst}
           </p>
           <Link
-            href={`/claim/${claimId}`}
-            className="border-border hover:bg-sand-200 mt-4 inline-flex rounded-full border px-5 py-2.5 text-[14.5px]"
+            href={`/sign-in?redirect_url=/heir/${claimId}`}
+            className="bg-primary text-primary-foreground hover:bg-terracotta-600 font-heading mt-6 inline-flex h-[60px] items-center rounded-full px-9 text-[18px] font-extrabold transition-colors"
           >
-            {labels.checkStatus}
+            {labels.signIn}
           </Link>
-        </Unauthenticated>
+        </div>
+      </Unauthenticated>
 
-        <Authenticated>
-          {state.status === "open" ? (
-            <OpenBox keyCount={state.keyCount} />
-          ) : (
-            <section>
-              <h1 className="text-[27px] leading-[1.25]">
-                {labels.lockedTitle}
-              </h1>
-              {/* The explanation comes before the input. Someone who has just
-                  been told their relative died should not meet a bare field
-                  labelled "guardian share". */}
-              <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
-                {labels.lockedBody}
-              </p>
+      <Authenticated>
+        <div className="grid items-center gap-9 lg:grid-cols-[1fr_.9fr] lg:gap-10">
+          <div>
+            <h1 className="mb-5 text-[34px] leading-[1.08] font-black md:text-[50px]">
+              {labels.gateTitle}
+            </h1>
+            <p className="mb-[30px] max-w-[560px] text-[17px] leading-[1.7] opacity-80 md:text-[17.5px]">
+              {labels.gateBody}
+            </p>
 
-              <div className="mt-6 flex flex-col gap-4">
-                <Field
-                  label={labels.shareLabel}
-                  placeholder={labels.sharePlaceholder}
-                  value={share}
-                  onChange={(value) => {
-                    setShare(value)
-                    if (state.status !== "locked") setState({ status: "locked" })
-                  }}
-                  dir="ltr"
-                  error={
-                    state.status === "badShare" ? labels.badShare : undefined
-                  }
-                />
+            <div className="max-w-[560px]">
+              <label className="mb-2.5 block text-[14px] font-semibold">
+                {labels.shareLabel}
+              </label>
+              {/* Bordered in terracotta rather than the usual hairline: it is
+                  the only input on the screen and the only thing the reader is
+                  being asked for. */}
+              <input
+                dir="ltr"
+                value={share}
+                onChange={(event) => {
+                  setShare(event.target.value)
+                  if (state.status !== "locked") setState({ status: "locked" })
+                }}
+                placeholder={labels.sharePlaceholder}
+                spellCheck={false}
+                autoComplete="off"
+                autoCapitalize="characters"
+                className="bg-card border-primary h-[70px] w-full rounded-full border-2 px-[26px] font-mono text-[17px] font-semibold tracking-[.06em] outline-none focus-visible:border-[color:var(--accent-foreground)]"
+              />
+              {error !== undefined && (
+                <p className="text-terracotta-800 mt-3 text-[14px] leading-[1.65]">
+                  {error}
+                </p>
+              )}
+
+              <div className="mt-[22px] flex flex-wrap items-center gap-5">
                 <button
                   type="button"
                   onClick={() => void unlock()}
                   disabled={
                     state.status === "opening" || share.trim().length === 0
                   }
-                  className="bg-primary text-primary-foreground hover:bg-terracotta-600 w-full rounded-full px-6 py-3.5 text-[15px] font-semibold disabled:opacity-50 sm:w-auto"
+                  className="bg-primary text-primary-foreground hover:bg-terracotta-600 font-heading inline-flex h-[68px] items-center gap-[11px] rounded-full px-10 text-[19px] font-extrabold transition-colors disabled:opacity-50"
                 >
-                  {state.status === "opening"
-                    ? labels.unlocking
-                    : labels.unlock}
+                  {state.status === "opening" ? labels.unlocking : labels.unlock}
+                  <ArrowRightIcon
+                    className="size-5 rtl:-scale-x-100"
+                    strokeWidth={2.75}
+                    aria-hidden
+                  />
                 </button>
+                <span className="max-w-[200px] text-[14px] leading-[1.55] opacity-60">
+                  {labels.onDevice}
+                </span>
               </div>
-            </section>
-          )}
-        </Authenticated>
-      </div>
-    </div>
+            </div>
+
+            <div className="bg-muted mt-[30px] max-w-[600px] rounded-[26px] px-7 py-6">
+              <div className="font-heading mb-2.5 text-[17px] font-extrabold">
+                {labels.askTitle}
+              </div>
+              <p className="mb-3.5 text-[14.5px] leading-[1.7] opacity-[.78]">
+                {labels.askBody}
+              </p>
+              <div className="flex flex-wrap gap-2.5">
+                <span className="bg-primary text-primary-foreground rounded-full px-6 py-3.5 text-[14.5px] font-semibold">
+                  {labels.nudge}
+                </span>
+                <span className="rounded-full border-[1.5px] border-[color:var(--border)] px-6 py-3.5 text-[14.5px] font-semibold">
+                  {labels.cannotReach}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <HowItOpens labels={labels} />
+        </div>
+      </Authenticated>
+    </>
   )
 }
 
 /**
- * The opened box.
+ * The mechanism, drawn.
  *
- * **The message comes before the assets, deliberately** — the board says so and
- * it is the right order: a person opening this is not primarily here for files.
- *
- * A table is correct here and would be wrong in the app: five columns of state,
- * scanned once, on a laptop, possibly printed for a lawyer.
+ * This is the one place in the product where exposing how the cryptography
+ * works builds trust instead of confusing — because the reader is standing in
+ * front of the exact gate it explains.
  */
-function OpenBox({ keyCount }: { keyCount: number }) {
-  const locale = useLocale()
-  const labels = t(HEIR_BOX, locale)
+function HowItOpens({ labels }: { labels: Resolved<typeof HEIR_BOX> }) {
   return (
-    <section>
-      <p className="text-sand-600 text-[13px]">
-        {labels.releasedAt.replace("{date}", fmtDate(new Date(), locale))}
+    <aside className="rounded-[34px] bg-[#201e1d] px-10 pt-10 pb-11 text-[#f5ead8]">
+      <div
+        dir="ltr"
+        className="mb-7 text-[13px] font-semibold tracking-[.14em] uppercase opacity-50"
+      >
+        {labels.howTitle}
+      </div>
+
+      <div className="mb-[26px] flex items-center gap-4">
+        <div className="bg-primary text-primary-foreground flex-1 rounded-[24px] px-5 py-[22px] text-center">
+          <KeyRoundIcon className="mx-auto mb-2.5 size-6" strokeWidth={2.4} aria-hidden />
+          <div className="font-heading mb-1 text-[16px] font-extrabold">
+            {labels.ourHalf}
+          </div>
+          <div className="text-[12.5px] opacity-85">{labels.ourHalfMeta}</div>
+        </div>
+        <span
+          aria-hidden
+          className="font-heading flex-none text-[26px] font-black opacity-40"
+        >
+          +
+        </span>
+        <div className="bg-secondary text-secondary-foreground flex-1 rounded-[24px] px-5 py-[22px] text-center">
+          <ShieldCheckIcon className="mx-auto mb-2.5 size-6" strokeWidth={2.4} aria-hidden />
+          <div className="font-heading mb-1 text-[16px] font-extrabold">
+            {labels.guardianHalf}
+          </div>
+          <div className="text-[12.5px] opacity-85">
+            {labels.guardianHalfMeta}
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-[26px] flex justify-center">
+        <ArrowDownIcon className="size-6 opacity-40" strokeWidth={2.4} aria-hidden />
+      </div>
+
+      <div className="mb-[26px] rounded-[24px] border-2 border-[color:rgba(245,234,216,.28)] px-[22px] py-[26px] text-center">
+        <LaptopIcon className="mx-auto mb-2.5 size-6" strokeWidth={2.4} aria-hidden />
+        <div className="font-heading mb-1.5 text-[18px] font-extrabold">
+          {labels.opensHere}
+        </div>
+        <div className="text-[13px] leading-[1.65] opacity-60">
+          {labels.opensHereMeta}
+        </div>
+      </div>
+
+      <p className="text-[13.5px] leading-[1.75] opacity-60">
+        {labels.twoNotOne}
       </p>
-      <h1 className="mt-1 text-[28px] leading-[1.25]">
-        {labels.heading.replace("{owner}", "")}
+    </aside>
+  )
+}
+
+/**
+ * After the halves meet.
+ *
+ * The expiry was already stated on the status page — deliberately, so it could
+ * not be discovered here for the first time — but it is repeated once, quietly,
+ * because this is the screen someone will still be on in eighty days.
+ */
+function OpenedBox({
+  keyCount,
+  labels,
+}: {
+  keyCount: number
+  labels: Resolved<typeof HEIR_BOX>
+}) {
+  return (
+    <div className="bg-secondary text-secondary-foreground max-w-[820px] rounded-[34px] px-8 py-10 md:px-11">
+      <ShieldCheckIcon className="mb-6 size-9" strokeWidth={2.2} aria-hidden />
+      <h1 className="mb-5 text-[36px] leading-[1.08] font-black md:text-[46px]">
+        {labels.openTitle}
       </h1>
-      <p className="bg-olive-100 text-olive-700 rounded-card mt-4 p-4 text-[14px] leading-[1.7]">
-        {labels.scope}
+      <p className="mb-7 max-w-[560px] text-[17px] leading-[1.72] opacity-90">
+        {labels.openBody}
       </p>
-
-      <h2 className="mt-8 text-[18px]">
-        {labels.assetsTitle.replace("{n}", fmtNumber(keyCount, locale))}
-      </h2>
-
-      {/* The routed set is inside the bundle as key material, not as a
-          catalogue: `openReleaseBundle` returns DEKs by asset id and nothing
-          about what those assets are called. Rendering titles, types and sizes
-          means fetching each asset row and opening its sealed label with the
-          DEK — the same two-step the app's 4.1 does. That is the remaining work
-          on this screen, and it is why the table is not drawn yet rather than
-          drawn with placeholder rows. */}
-      <p className="text-sand-700 mt-3 text-[14.5px] leading-[1.75]">
-        {labels.farAid}
-      </p>
-      <p className="text-sand-600 mt-3 text-[13px] leading-[1.7]">
+      <div className="text-secondary inline-flex items-center rounded-full bg-[color:var(--secondary-foreground)] px-7 py-4 text-[17px] font-bold">
+        {labels.keyCount.replace("{n}", String(keyCount))}
+      </div>
+      <p className="mt-7 text-[14px] leading-[1.65] opacity-75">
         {labels.expiry}
       </p>
-    </section>
+    </div>
   )
 }

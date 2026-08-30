@@ -1,70 +1,97 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * ٧.٦ — the heir's box, after release.
+ * ٧.٦ — the heir's box, and the gate in front of it.
  *
- * `scope` states the ceiling before anything is shown, and `farAid` states the
- * one the product will not cross: Wassiya hands over *access*, and the division
- * of value is the law's business, not the app's. Neither line is decoration —
- * they are the product rule "routing, not shares" written where the heir reads
- * it.
+ * The whole screen exists to make one fact feel like custody rather than an
+ * obstacle: **the guardian holding half the key is the reason nobody — this
+ * company included — can open the box alone.** The board's closing line is the
+ * design in six words: *"اثنان لا واحد"*, two and never one.
+ *
+ * So the copy names the guardian. "Ask the guardian" is a chore; "ask Khaled,
+ * Fatima's guardian, who has it written on a sheet" is a phone call to a person
+ * the reader probably knows.
  */
 export const HEIR_BOX = {
-  metaTitle: { ar: "صندوق الوارث · وصيّة", en: "Heir's box · Wassiya" },
-  boxOf: { ar: "صندوقك · {name}", en: "Your box · {name}" },
-  releasedAt: { ar: "أُفرج {date}", en: "Released {date}" },
-  heading: { ar: "ما تركه لك {owner}", en: "What {owner} left you" },
-  scope: {
-    ar: "هذه نسختك وحدك — لا ترى ما خُصّص لغيرك، ولا يرى غيرك ما خُصّص لك.",
-    en: "This is your copy alone — you cannot see what was left to anyone else, and no one else can see what was left to you.",
-  },
+  metaTitle: { ar: "صندوقك · وصيّة", en: "Your box · Wassiya" },
+  boxOf: { ar: "صندوق {name}", en: "{name}'s box" },
 
-  // The key ceremony. The board draws the opened box; the security model
-  // requires this step to reach it.
-  lockedTitle: { ar: "أدخل نصيب الوصي", en: "Enter the guardian's share" },
-  lockedBody: {
-    ar: "نحتفظ بنصف مفتاح صندوقك فقط. النصف الآخر لدى الوصي — اطلبه منه وأدخله هنا. لا نستطيع فتح الصندوق بدونه، ولا نحتفظ بنسخة منه.",
-    en: "We hold only half of your box's key. The guardian holds the other half — ask them for it and enter it here. We cannot open the box without it, and we keep no copy of it.",
+  gateTitle: {
+    ar: "يحتاج فتح الصندوق نصفين",
+    en: "Opening the box takes two halves",
   },
-  shareLabel: { ar: "نصيب الوصي", en: "The guardian's share" },
-  sharePlaceholder: {
-    ar: "الصق النصيب الذي أعطاك إياه الوصي",
-    en: "Paste the share the guardian gave you",
+  gateBody: {
+    ar: "لا نستطيع فتح صندوقك وحدنا — وهذا مقصود. نحفظ نصف المفتاح ولم نُطلقه إلا الآن بعد اكتمال البلاغ، والنصف الآخر عند الوصي.",
+    en: "We can't open your box alone — by design. We hold one half of the key and only released it now that the report is complete; the other half is with the guardian.",
   },
+  shareLabel: { ar: "أدخل نصف المفتاح من الوصي", en: "Enter the key half from the guardian" },
+  sharePlaceholder: { ar: "WSYH2-····-····", en: "WSYH2-····-····" },
   unlock: { ar: "افتح الصندوق", en: "Open the box" },
   unlocking: { ar: "جارٍ الفتح…", en: "Opening…" },
+  onDevice: {
+    ar: "يُفتح على جهازك — لا يمرّ بخدمتنا",
+    en: "Decrypted on your device, never on our service",
+  },
+
   badShare: {
-    ar: "لم ينجح هذا النصيب في فتح الصندوق. تأكد أنك نسخته كاملاً من الوصي.",
-    en: "That share did not open the box. Check that you copied all of it from the guardian.",
+    ar: "لم يفتح هذا النصف الصندوق. تأكّد أنك نسخته كاملاً كما أعطاك إياه الوصي.",
+    en: "That half didn't open the box. Check you copied all of it, exactly as the guardian gave it to you.",
+  },
+  failed: {
+    ar: "تعذّر فتح الصندوق الآن. حاول مرة أخرى بعد قليل.",
+    en: "We couldn't open the box just now. Try again shortly.",
   },
 
-  messageTitle: { ar: "رسالة لك وحدك", en: "A message for you alone" },
-  assetsTitle: {
-    ar: "أصول خُصّصت لك — {n}",
-    en: "Assets left to you — {n}",
+  askTitle: { ar: "لا تعرف كيف تطلبه؟", en: "Not sure how to ask for it?" },
+  askBody: {
+    ar: "أبلغنا الوصي بأن صندوقك جاهز، وطلبنا منه تسليم نصفه. اتصل به أو أرسل له رسالة — النصف مكتوب على ورقة معه، ويستطيع إرساله من لوحته.",
+    en: "We've told the guardian your box is ready and asked them to hand over their half. Call or message them — the half is on a printed sheet they keep, and they can send it from their own dashboard.",
   },
-  downloadAll: { ar: "تحميل كل شيء", en: "Download everything" },
-  colAsset: { ar: "الأصل", en: "Asset" },
-  colType: { ar: "النوع", en: "Type" },
-  colHandover: { ar: "الاستلام", en: "Handover" },
-  colState: { ar: "الحالة", en: "State" },
-  stateOpen: { ar: "مفتوح", en: "Open" },
-  stateSteps: { ar: "يحتاج خطوات", en: "Needs steps" },
-  download: { ar: "تحميل", en: "Download" },
-  howTo: { ar: "كيف أستردها؟", en: "How do I recover it?" },
+  nudge: { ar: "ذكّر الوصي مرة أخرى", en: "Nudge the guardian again" },
+  cannotReach: { ar: "لا أستطيع الوصول إليه", en: "I can't reach them" },
 
-  farAid: {
-    ar: "تقسيم القيمة بينكم يتم وفق الفرائض وبإجراءات الإرث المعتادة — وصيّة سلّمتك الوصول فقط.",
-    en: "Dividing the value between you follows the law of inheritance and the usual estate procedures — Wassiya has handed you access, nothing more.",
+  // The ink panel: the mechanism, drawn.
+  howTitle: { ar: "how your box opens", en: "how your box opens" },
+  ourHalf: { ar: "نصفنا", en: "Our half" },
+  ourHalfMeta: {
+    ar: "أُطلق بعد اكتمال البلاغ",
+    en: "released once the report completed",
   },
+  guardianHalf: { ar: "نصف الوصي", en: "Guardian's half" },
+  guardianHalfMeta: { ar: "على ورقة عنده", en: "on a sheet they keep" },
+  opensHere: {
+    ar: "يُفتح صندوقك على جهازك",
+    en: "Your box opens on your device",
+  },
+  opensHereMeta: {
+    ar: "لا يمرّ محتواه بخدمتنا في أي لحظة",
+    en: "Its contents never pass through our service",
+  },
+  twoNotOne: {
+    ar: "لهذا لا نستطيع فتح صندوقك بأمر منّا وحدنا، ولا يستطيع الوصي فتحه وحده. اثنان لا واحد.",
+    en: "This is why we cannot open your box on our own say-so, and the guardian cannot open it on theirs. Two, never one.",
+  },
+
+  // Opened.
+  openTitle: { ar: "صندوقك مفتوح", en: "Your box is open" },
+  openBody: {
+    ar: "فُكّ التشفير على جهازك. هذه نسختك وحدك — لا ترى ما خُصّص لغيرك، ولا يرى غيرك ما خُصّص لك.",
+    en: "Decrypted on your device. This is your copy alone — you can't see what was left to anyone else, and no one else can see what was left to you.",
+  },
+  keyCount: { ar: "{n} عنصراً بانتظارك", en: "{n} items waiting for you" },
   expiry: {
-    ar: "يبقى هذا الصندوق متاحاً ٩٠ يوماً، فحمّل ما يهمّك.",
-    en: "This box stays available for 90 days, so download what matters to you.",
+    ar: "يبقى هذا الصندوق متاحاً ٩٠ يوماً من تاريخ التسليم.",
+    en: "This box stays available for 90 days from release.",
   },
 
   notReleased: {
-    ar: "لم يُفرج عن هذا الصندوق بعد.",
-    en: "This box has not been released yet.",
+    ar: "لم يُسلَّم هذا الصندوق بعد.",
+    en: "This box hasn't been released yet.",
   },
-  checkStatus: { ar: "تابع حالة الطلب", en: "Follow the claim status" },
+  checkStatus: { ar: "تابع حالة البلاغ", en: "Follow the report" },
+  signInFirst: {
+    ar: "سجّل الدخول بالحساب الذي قدّمت به البلاغ.",
+    en: "Sign in with the account you filed the report with.",
+  },
+  signIn: { ar: "تسجيل الدخول", en: "Sign in" },
 } as const satisfies Dictionary
