@@ -11,12 +11,12 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { ActionCard } from "@/components/action-card"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
 import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
-import { NeedsYouCard } from "@/features/overview/components/needs-you-card"
 import { SummaryTile } from "@/features/overview/components/summary-tile"
 import { WelcomeDoors } from "@/features/overview/components/welcome-doors"
 import { HOME } from "@/features/overview/strings/home"
@@ -151,7 +151,7 @@ export function HomeBoard() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {asks.map((ask, index) => (
-              <NeedsYouCard
+              <ActionCard
                 key={ask.key}
                 href={ask.href}
                 icon={ask.icon}

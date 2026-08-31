@@ -33,6 +33,11 @@ export const GUARDIAN_DUTIES = {
   },
 
   vaultsTitle: { ar: "الخزائن التي توصي عليها", en: "The vaults you guard" },
+  // The count is what is *loaded*, not what exists: `usePaginatedQuery` knows
+  // the first and not the second, and a number that silently meant "the first
+  // page" is the kind of thing that stays wrong for years.
+  vaultsShown: { ar: "معروض {n}", en: "{n} shown" },
+  vaultsMore: { ar: "المزيد", en: "Load more" },
   vaultsEmpty: {
     ar: "لا توجد وصاية على حسابك بعد. تُفتح الوصاية من رابط الدعوة وحده.",
     en: "There is no guardianship on your account yet. A guardianship starts from an invitation link and nothing else.",

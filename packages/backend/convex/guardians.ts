@@ -13,6 +13,7 @@
 // **Guardians live in the web app; mobile is the owner's app.** The owner-side
 // functions here (`list`, `invite`, `revoke`) are called from mobile; every
 // guardian-side one is called from web. See AGENTS.md.
+import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
@@ -183,6 +184,50 @@ export const guardianFor = query({
         }
       })
     )
+  },
+})
+
+/**
+ * The same list, a page at a time.
+ *
+ * `guardianFor` reads a fixed window and is right for what calls it — the nav
+ * only needs to know whether the list is empty, the home screen wants a count,
+ * and the key page needs every published public key at once to check a sheet
+ * against. None of those can page.
+ *
+ * The *screen* can, and past a dozen rows it must: a guardian who guards twenty
+ * vaults was getting a wall of names above the one thing actually asking for
+ * them. This is a separate function rather than a flag on that one, because a
+ * paginated return type would force every other caller to unwrap a page they
+ * did not want.
+ *
+ * It also has no window to fall out of. `acceptedGuardianships` caps at 50, so
+ * a guardian past that silently lost rows; a cursor has no cap.
+ */
+export const guardianForPage = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
+    const guardianUser = await getCurrentUserOrThrow(ctx)
+    const page = await ctx.db
+      .query("guardians")
+      .withIndex("by_guardianUserId_and_status", (q) =>
+        q.eq("guardianUserId", guardianUser._id).eq("status", "accepted")
+      )
+      .paginate(paginationOpts)
+
+    return {
+      ...page,
+      page: await Promise.all(
+        page.page.map(async (row) => {
+          const subject = await ctx.db.get("users", row.userId)
+          return {
+            guardianId: row._id,
+            subjectName: subject?.name ?? null,
+            relation: row.relation,
+          }
+        })
+      ),
+    }
   },
 })
 

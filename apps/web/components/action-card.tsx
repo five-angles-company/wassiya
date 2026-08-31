@@ -10,15 +10,19 @@ import { ArrowRightIcon, type LucideIcon } from "lucide-react"
  * ## Why not the row it used to be
  *
  * `ActionRow` is right where a row carries something at both ends — the reports
- * list puts a status pill there, the box list a date. On the home screen the
- * asks have neither, so a full-width bar held a 40px medallion, one line of
- * type, and then eight hundred pixels of nothing before a stranded chevron. The
- * emptiness was not the layout's fault so much as the content's: the row was
- * never given anything to say.
+ * list puts a status pill there, the box list a date. An *ask* has neither, so
+ * a full-width bar held a 40px medallion, one line of type, and then eight
+ * hundred pixels of nothing before a stranded chevron. The emptiness was not
+ * the layout's fault so much as the content's: the row was never given
+ * anything to say.
  *
  * So it says something now — every ask carries a sentence explaining what
  * happens if the reader acts — and it sits in a card two to a row, which is a
  * shape that sentence actually fills.
+ *
+ * Shared rather than owned by a feature: the home screen and the guardian's
+ * duties list show the *same* asks, and the second one was still rendering them
+ * as the bar the first had already replaced.
  *
  * ## `tone`
  *
@@ -28,7 +32,7 @@ import { ArrowRightIcon, type LucideIcon } from "lucide-react"
  * would throw. Rendering that in the accent would be the app demanding
  * something the reader cannot give.
  */
-export function NeedsYouCard({
+export function ActionCard({
   href,
   icon: Icon,
   title,
