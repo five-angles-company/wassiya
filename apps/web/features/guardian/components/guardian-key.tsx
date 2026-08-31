@@ -9,6 +9,7 @@ import { KeyRoundIcon } from "lucide-react"
 import { Button } from "@/components/button"
 import { EmptyState } from "@/components/empty-state"
 import { Panel } from "@/components/panel"
+import { DeviceKeyPanel } from "@/features/guardian/components/device-key-panel"
 import { TextInput } from "@/components/text-input"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
@@ -80,6 +81,11 @@ export function GuardianKey() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* First, because for a guardian who accepted here it answers both
+          questions outright — is this still the key, and can I have the sheet
+          back — without the typed check underneath being needed at all. */}
+      <DeviceKeyPanel published={published.map((key) => new Uint8Array(key))} />
+
       <Panel icon={KeyRoundIcon} title={labels.keyTitle}>
         <p className="max-w-[62ch] text-[14.5px] leading-[1.75]">
           {labels.keyBody}

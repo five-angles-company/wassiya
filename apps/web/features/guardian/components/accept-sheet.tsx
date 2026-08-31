@@ -1,18 +1,14 @@
 "use client"
 
 import type { GuardianKeySheet } from "@workspace/crypto/guardianKey"
-import { ArrowRightIcon, PrinterIcon } from "lucide-react"
+import { ArrowRightIcon } from "lucide-react"
 
-import { Button } from "@/components/button"
-import { CopyButton } from "@/components/copy-button"
 import type { Resolved } from "@/lib/i18n/locale"
+import { KeySheet } from "@/features/guardian/components/key-sheet"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
 
 /**
- * The sheet.
- *
- * Rendered as chips rather than one long string because a person reading it off
- * a screen to copy onto paper loses their place in a 56-character run.
+ * The sheet, at the moment it is created.
  *
  * The line the whole ceremony rests on is `keyLede`: *"It was never sent to us,
  * we hold no copy, and we cannot issue it again — because if we could, we could
@@ -20,6 +16,12 @@ import type { GUARDIAN } from "@/features/guardian/strings/guardian"
  * for you" as an apology. Said that way it is a proof, and it is why this screen
  * can ask someone to keep a piece of paper for a decade without sounding
  * negligent.
+ *
+ * That sentence stays exactly true now that the device can keep a copy. What
+ * the passkey holds is a copy *on the guardian's own hardware*, openable only
+ * by them; we still have nothing, and a wiped device still leaves the paper as
+ * the only way back. The offer to keep one comes after acceptance, on the next
+ * screen — before it, there is no guardianship for the copy to belong to.
  */
 export function AcceptSheet({
   labels,
@@ -30,8 +32,6 @@ export function AcceptSheet({
   sheet: GuardianKeySheet
   onNext: () => void
 }) {
-  const groups = sheet.code.split("-")
-
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-3">
@@ -53,60 +53,20 @@ export function AcceptSheet({
         {labels.keyLede}
       </p>
 
-      <div className="max-w-[640px]">
-        {/* On the page ground rather than the card tone: this is the one block
-            on screen meant to end up on paper, and a print takes the ground
-            with it. */}
-        <div className="rounded-card border-border bg-background mb-4 border-2 px-6 py-7">
-          <div className="font-heading mb-4 text-[16px] font-extrabold">
-            {labels.sheetTitle}
-          </div>
+      <KeySheet code={sheet.code} />
 
-          <div dir="ltr" className="mb-4 grid grid-cols-3 gap-2.5 sm:grid-cols-4">
-            {groups.map((group, index) => (
-              <span
-                key={`${group}-${index}`}
-                className="bg-card rounded-[12px] py-2.5 text-center font-mono text-[14px] font-semibold"
-              >
-                {group}
-              </span>
-            ))}
-          </div>
-
-          <p className="text-[13px] leading-[1.65] opacity-70">
-            {labels.sheetNote}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="secondary"
-            className="flex-1"
-            onClick={() => window.print()}
-          >
-            <PrinterIcon className="size-5" strokeWidth={2.4} aria-hidden />
-            {labels.print}
-          </Button>
-          <CopyButton
-            value={sheet.code}
-            label={labels.copy}
-            className="border-border hover:bg-sand-100 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-6 text-[14.5px] font-semibold transition-colors"
-          />
-        </div>
-
-        <button
-          type="button"
-          onClick={onNext}
-          className="font-heading mt-6 inline-flex items-center gap-2.5 text-[16px] font-extrabold"
-        >
-          {labels.confirmTitle}
-          <ArrowRightIcon
-            className="size-5 rtl:-scale-x-100"
-            strokeWidth={2.75}
-            aria-hidden
-          />
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onNext}
+        className="font-heading mt-6 inline-flex items-center gap-2.5 self-start text-[16px] font-extrabold"
+      >
+        {labels.confirmTitle}
+        <ArrowRightIcon
+          className="nudge size-5 rtl:-scale-x-100"
+          strokeWidth={2.75}
+          aria-hidden
+        />
+      </button>
     </div>
   )
 }

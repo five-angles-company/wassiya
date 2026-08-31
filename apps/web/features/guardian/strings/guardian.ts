@@ -93,14 +93,9 @@ export const GUARDIAN = {
     ar: "لم يُرسل إلينا، ولا نحفظ نسخة منه، ولا نستطيع إصداره لك مرة أخرى — لأننا لو استطعنا، لاستطعنا فتح صناديق الورثة وحدنا.",
     en: "It was never sent to us, we hold no copy, and we cannot issue it again — because if we could, we could open the heirs' boxes on our own.",
   },
-  sheetTitle: { ar: "وثيقة مفتاح الوصي", en: "Guardian key sheet" },
-  sheetNote: {
-    ar: "١٤ مجموعة من ٤ · احفظها مع أوراقك المهمة، لا في هاتفك وحده.",
-    en: "14 groups of 4 · keep it with your important papers, not only on your phone.",
-  },
-  print: { ar: "اطبعها", en: "Print it" },
-  copy: { ar: "انسخ المفتاح", en: "Copy the key" },
-  copied: { ar: "نُسخ", en: "Copied" },
+  // The sheet's own labels live with the sheet — see `strings/key-sheet.ts`.
+  // They were here, and were about to be copied into the duties dictionary
+  // so the key page could render the same block.
 
   // ---- confirm ------------------------------------------------------------
   confirmTitle: { ar: "اكتبه مرة واحدة", en: "Type it back once" },

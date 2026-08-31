@@ -21,7 +21,7 @@ type Phase =
   | { step: "review" }
   | { step: "sheet"; sheet: GuardianKeySheet }
   | { step: "confirm"; sheet: GuardianKeySheet; error?: "mismatch" | "failed" }
-  | { step: "done" }
+  | { step: "done"; sheet: GuardianKeySheet }
 
 /**
  * `/guardian/accept` — the invitation, the key, and the one confirmation.
@@ -72,7 +72,7 @@ export function AcceptFlow({
         // ship trailing bytes and fail the 32-byte check on the server.
         x25519PublicKey: new Uint8Array(sheet.publicKey).buffer,
       })
-      setPhase({ step: "done" })
+      setPhase({ step: "done", sheet })
     } catch {
       setPhase({ step: "confirm", sheet, error: "failed" })
     } finally {
@@ -111,6 +111,6 @@ export function AcceptFlow({
         />
       )
     case "done":
-      return <AcceptDone labels={labels} />
+      return <AcceptDone labels={labels} sheet={phase.sheet} />
   }
 }

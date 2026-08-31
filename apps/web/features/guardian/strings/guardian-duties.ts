@@ -149,6 +149,63 @@ export const GUARDIAN_DUTIES = {
     ar: "لم يُسجَّل مفتاح عام لهذه الوصاية، فلا شيء نقارن به.",
     en: "No public key was registered for this guardianship, so there is nothing to compare against.",
   },
+  // ---- the copy on this device -------------------------------------------
+  //
+  // Every one of these is written so that declining, or a browser that cannot
+  // do it, reads as a fact rather than as the reader's mistake. The printed
+  // sheet is the durable copy in all cases; this is convenience, and the copy
+  // must never imply otherwise.
+  deviceKeyLabel: { ar: "مفتاح الوصي — وصيّة", en: "Guardian key — Wassiya" },
+  deviceKeyOfferTitle: {
+    ar: "احتفظ بنسخة على هذا الجهاز",
+    en: "Keep a copy on this device",
+  },
+  deviceKeyOfferBody: {
+    ar: "نختمها ببصمة هذا الجهاز، فلا يفتحها إلا من يستطيع فتحه. تبقى الورقة هي النسخة الدائمة — وإن ضاع الجهاز أو مُسح، فالورقة وحدها ما يعيد المفتاح.",
+    en: "We seal it with this device's own biometrics, so only someone who can unlock the device can open it. The printed sheet stays the durable copy — if the device is lost or wiped, the paper is the only way back.",
+  },
+  deviceKeyOfferAction: { ar: "احفظها ببصمتي", en: "Save with my biometrics" },
+  deviceKeySaving: { ar: "جارٍ الحفظ…", en: "Saving…" },
+  deviceKeySaved: {
+    ar: "حُفظت نسخة على هذا الجهاز. يمكنك عرض الورقة وطباعتها متى شئت من صفحة «مفتاحي».",
+    en: "A copy is kept on this device. You can view and reprint the sheet whenever you like from the key page.",
+  },
+  deviceKeyUnsupported: {
+    ar: "لا يدعم هذا المتصفّح حفظ المفتاح ببصمة الجهاز. لا شيء تغيّر — ورقتك تعمل كما هي.",
+    en: "This browser can't seal a key to the device's biometrics. Nothing has changed — your printed sheet works exactly as before.",
+  },
+  deviceKeyDeclined: {
+    ar: "لم تُحفظ نسخة. ورقتك تعمل كما هي، ويمكنك المحاولة لاحقاً من صفحة «مفتاحي».",
+    en: "No copy was kept. Your printed sheet works as before, and you can try again later from the key page.",
+  },
+
+  // The key page, when the device holds it.
+  deviceHeldTitle: { ar: "هذا الجهاز يحمل مفتاحك", en: "This device holds your key" },
+  deviceHeldBody: {
+    ar: "مختوماً ببصمة الجهاز. اعرض الورقة لتطبعها من جديد، أو تأكّد أنها ما زالت المفتاح المسجّل — بلا كتابة حرف واحد.",
+    en: "Sealed with the device's own biometrics. Show the sheet to reprint it, or confirm it is still the registered key — without typing a character.",
+  },
+  deviceShowSheet: { ar: "اعرض الورقة", en: "Show the sheet" },
+  deviceUnlocking: { ar: "جارٍ الفتح…", en: "Unlocking…" },
+  deviceUnlockFailed: {
+    ar: "لم يُفتح المفتاح على هذا الجهاز. اكتب ورقتك بالأسفل بدلاً من ذلك.",
+    en: "The key on this device did not open. Type your sheet below instead.",
+  },
+  deviceHide: { ar: "أخفِ الورقة", en: "Hide the sheet" },
+  deviceForget: { ar: "احذف النسخة من هذا الجهاز", en: "Remove the copy from this device" },
+  deviceForgetNote: {
+    ar: "احذفها إن كان الجهاز مشتركاً أو مستعاراً. ورقتك المطبوعة لا تتأثر.",
+    en: "Remove it if this device is shared or borrowed. Your printed sheet is unaffected.",
+  },
+  deviceMatchOk: {
+    ar: "النسخة المحفوظة هي المفتاح المسجّل لهذه الخزائن.",
+    en: "The stored copy is the key registered for these vaults.",
+  },
+  deviceMatchBad: {
+    ar: "النسخة المحفوظة لا تطابق المفتاح المسجّل. أبلغ صاحب الخزنة ليعيد تعيينك.",
+    en: "The stored copy does not match the registered key. Tell the vault's owner so they can re-appoint you.",
+  },
+
   keyLostTitle: { ar: "إن ضاعت الورقة", en: "If the sheet is lost" },
   keyLostBody: {
     ar: "أبلغ صاحب الخزنة ليعيد تعيينك. سيُنشئ جهازك مفتاحاً جديداً، ويُعاد ختم نصيب كل وارث عليه. لا يمكن استرجاع القديم.",
