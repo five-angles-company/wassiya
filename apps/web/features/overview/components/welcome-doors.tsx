@@ -111,9 +111,9 @@ export function WelcomeDoors({ name }: { name: string | null }) {
         >
           <span
             aria-hidden
-            className="bg-secondary text-secondary-foreground mb-6 grid size-12 shrink-0 place-items-center rounded-full"
+            className="bg-secondary text-secondary-foreground mb-6 grid size-11 shrink-0 place-items-center rounded-full"
           >
-            <ShieldCheckIcon className="size-[22px]" strokeWidth={2.2} />
+            <ShieldCheckIcon className="size-5" strokeWidth={2.2} />
           </span>
 
           <h2 className="font-heading text-[19px] leading-tight font-extrabold md:text-[21px]">

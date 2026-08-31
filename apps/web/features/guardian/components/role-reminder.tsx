@@ -3,7 +3,7 @@
 import { ArrowRightIcon, CheckIcon, KeyRoundIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
-import { Panel } from "@/components/panel"
+import { Section } from "@/components/section"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { GUARDIAN } from "@/features/guardian/strings/guardian"
@@ -32,8 +32,11 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * emailed about a handover needs their sheet, and the link belongs next to the
  * sentence that says they will be asked for it.
  *
- * Quiet on purpose — `plain`, no fill. It is context, not a claim on the
- * reader's attention, and it sits below the duties for exactly that reason.
+ * ## A section, not a panel
+ *
+ * It is context, not an object — nothing here can be acted on except the link,
+ * and a border around a reminder is a border that has stopped meaning anything.
+ * It sits last for the same reason.
  */
 export function RoleReminder() {
   const locale = useLocale()
@@ -41,23 +44,10 @@ export function RoleReminder() {
   const labels = t(GUARDIAN_DUTIES, locale)
 
   return (
-    <Panel tone="plain" title={labels.roleTitle}>
-      <div className="grid gap-6 md:grid-cols-2">
-        <Job
-          title={invitation.willConfirm}
-          body={invitation.willConfirmBody}
-        />
-        <Job
-          title={invitation.willHandover}
-          body={invitation.willHandoverBody}
-        />
-      </div>
-
-      <div className="border-border mt-6 flex flex-wrap items-center gap-4 border-t pt-5">
-        <p className="text-muted-foreground max-w-[46ch] flex-1 text-[13.5px] leading-[1.7]">
-          {labels.roleKeyNote}
-        </p>
-        <ButtonLink href="/guardian/key" variant="outline" size="sm">
+    <Section
+      title={labels.roleTitle}
+      action={
+        <ButtonLink href="/guardian/key" variant="ghost" size="sm">
           <KeyRoundIcon className="size-4" strokeWidth={2.3} aria-hidden />
           {labels.keyTitle}
           <ArrowRightIcon
@@ -66,23 +56,35 @@ export function RoleReminder() {
             aria-hidden
           />
         </ButtonLink>
+      }
+    >
+      <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+        <Job title={invitation.willConfirm} body={invitation.willConfirmBody} />
+        <Job
+          title={invitation.willHandover}
+          body={invitation.willHandoverBody}
+        />
       </div>
-    </Panel>
+
+      <p className="text-muted-foreground mt-1 max-w-[62ch] text-[13px] leading-[1.7]">
+        {labels.roleKeyNote}
+      </p>
+    </Section>
   )
 }
 
 function Job({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex gap-3.5">
+    <div className="flex gap-3">
       <span
         aria-hidden
-        className="bg-secondary text-secondary-foreground mt-0.5 grid size-6 flex-none place-items-center rounded-full"
+        className="bg-secondary text-secondary-foreground mt-0.5 grid size-5 flex-none place-items-center rounded-full"
       >
-        <CheckIcon className="size-3.5" strokeWidth={3} />
+        <CheckIcon className="size-3" strokeWidth={3} />
       </span>
       <div>
-        <div className="text-[14.5px] font-semibold">{title}</div>
-        <div className="text-muted-foreground mt-1 text-[13.5px] leading-[1.65]">
+        <div className="text-[14px] font-semibold">{title}</div>
+        <div className="text-muted-foreground mt-1 text-[13px] leading-[1.65]">
           {body}
         </div>
       </div>

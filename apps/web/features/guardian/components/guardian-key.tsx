@@ -9,6 +9,7 @@ import { KeyRoundIcon } from "lucide-react"
 import { Button } from "@/components/button"
 import { EmptyState } from "@/components/empty-state"
 import { Panel } from "@/components/panel"
+import { Section } from "@/components/section"
 import { DeviceKeyPanel } from "@/features/guardian/components/device-key-panel"
 import { TextInput } from "@/components/text-input"
 import { useLocale } from "@/components/locale-provider"
@@ -99,7 +100,7 @@ export function GuardianKey() {
         </ul>
       </Panel>
 
-      <Panel tone="plain" title={labels.keyCheckTitle}>
+      <Panel title={labels.keyCheckTitle}>
         <p className="text-muted-foreground max-w-[62ch] text-[14px] leading-[1.7]">
           {labels.keyCheckBody}
         </p>
@@ -142,11 +143,11 @@ export function GuardianKey() {
         )}
       </Panel>
 
-      <Panel tone="plain" title={labels.keyLostTitle}>
+      <Section title={labels.keyLostTitle}>
         <p className="text-muted-foreground max-w-[62ch] text-[14px] leading-[1.7]">
           {labels.keyLostBody}
         </p>
-      </Panel>
+      </Section>
     </div>
   )
 }

@@ -109,9 +109,9 @@ export function AssetRow({ item }: { item: BoxItem }) {
     <li className="bg-card rounded-card flex flex-wrap items-start gap-4 p-4 md:p-5">
       <span
         aria-hidden
-        className="bg-background text-muted-foreground grid size-11 shrink-0 place-items-center rounded-full"
+        className="bg-background text-muted-foreground grid size-9 shrink-0 place-items-center rounded-full"
       >
-        <Icon className="size-5" strokeWidth={2.2} />
+        <Icon className="size-[17px]" strokeWidth={2.2} />
       </span>
 
       <div className="min-w-0 flex-1">

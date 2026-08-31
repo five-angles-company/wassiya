@@ -159,9 +159,9 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
         <div className="bg-background rounded-card mt-5 flex items-center gap-3 p-4">
           <span
             aria-hidden
-            className="bg-primary text-primary-foreground grid size-10 shrink-0 place-items-center rounded-full"
+            className="bg-primary text-primary-foreground grid size-9 shrink-0 place-items-center rounded-full"
           >
-            <FileCheck2Icon className="size-5" strokeWidth={2.3} />
+            <FileCheck2Icon className="size-[17px]" strokeWidth={2.3} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14.5px] font-semibold">{file.name}</p>

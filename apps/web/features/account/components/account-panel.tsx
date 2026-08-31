@@ -5,6 +5,7 @@ import { useQuery } from "convex/react"
 import { BadgeCheckIcon, EyeOffIcon, SmartphoneIcon } from "lucide-react"
 
 import { Panel } from "@/components/panel"
+import { Section } from "@/components/section"
 import { useLocale } from "@/components/locale-provider"
 import { fmtDate, fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
@@ -96,17 +97,22 @@ export function AccountPanel() {
         </p>
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Panel tone="plain" title={labels.languageTitle}>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Section title={labels.languageTitle}>
           <p className="text-muted-foreground text-[14px] leading-[1.7]">
             {labels.languageBody}
           </p>
-        </Panel>
-        <Panel tone="plain" icon={SmartphoneIcon} title={labels.ownerTitle}>
-          <p className="text-muted-foreground text-[14px] leading-[1.7]">
+        </Section>
+        <Section title={labels.ownerTitle}>
+          <p className="text-muted-foreground flex items-start gap-2.5 text-[14px] leading-[1.7]">
+            <SmartphoneIcon
+              className="mt-0.5 size-4 shrink-0"
+              strokeWidth={2.2}
+              aria-hidden
+            />
             {labels.ownerBody}
           </p>
-        </Panel>
+        </Section>
       </div>
     </div>
   )

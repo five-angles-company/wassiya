@@ -40,9 +40,9 @@ export function SummaryTile({
     >
       <span
         aria-hidden
-        className="bg-background text-muted-foreground grid size-10 shrink-0 place-items-center rounded-full"
+        className="bg-background text-muted-foreground grid size-9 shrink-0 place-items-center rounded-full"
       >
-        <Icon className="size-[18px]" strokeWidth={2.2} />
+        <Icon className="size-[17px]" strokeWidth={2.2} />
       </span>
 
       <div className="min-w-0 flex-1">

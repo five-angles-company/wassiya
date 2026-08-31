@@ -52,7 +52,7 @@ export function OpenedBox({
   // for the list — a vetoed claim, or a session that changed hands.
   if (contents === null) {
     return (
-      <Panel tone="plain" title={labels.notReleased}>
+      <Panel title={labels.notReleased}>
         <p className="text-muted-foreground text-[14px] leading-[1.7]">
           {labels.failed}
         </p>

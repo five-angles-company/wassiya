@@ -38,9 +38,9 @@ export function RecordNotFound({
     <div className="border-border rounded-card flex flex-col items-start gap-4 border p-6">
       <span
         aria-hidden
-        className="bg-muted text-muted-foreground grid size-10 place-items-center rounded-full"
+        className="bg-muted text-muted-foreground grid size-9 place-items-center rounded-full"
       >
-        <SearchXIcon className="size-5" />
+        <SearchXIcon className="size-[17px]" />
       </span>
 
       <div>

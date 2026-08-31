@@ -44,13 +44,13 @@ export function ActionRow({
     >
       <span
         aria-hidden
-        className={`grid size-10 shrink-0 place-items-center rounded-full ${
+        className={`grid size-9 shrink-0 place-items-center rounded-full ${
           tone === "now"
             ? "bg-primary text-primary-foreground"
             : "bg-background text-muted-foreground"
         }`}
       >
-        <Icon className="size-[18px]" strokeWidth={2.3} />
+        <Icon className="size-[17px]" strokeWidth={2.3} />
       </span>
 
       <div className="min-w-0 flex-1">

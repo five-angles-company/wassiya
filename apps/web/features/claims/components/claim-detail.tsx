@@ -7,6 +7,7 @@ import { PackageIcon } from "lucide-react"
 import { ButtonLink } from "@/components/button"
 import { ClaimStatusPill } from "@/components/claim-status-pill"
 import { Panel } from "@/components/panel"
+import { Section } from "@/components/section"
 import { RecordNotFound } from "@/components/record-not-found"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
@@ -135,7 +136,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           </p>
         </Panel>
       ) : claim.status === "vetoed" ? (
-        <Panel tone="plain" title={status.vetoedHeading}>
+        <Panel title={status.vetoedHeading}>
           <p className="max-w-[62ch] text-[14.5px] leading-[1.75]">
             {status.vetoedBody}
           </p>
@@ -144,7 +145,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           </p>
         </Panel>
       ) : claim.status === "locked" ? (
-        <Panel tone="plain" title={status.lockedHeading}>
+        <Panel title={status.lockedHeading}>
           <p className="max-w-[62ch] text-[14.5px] leading-[1.75]">
             {status.lockedBody}
           </p>
@@ -176,17 +177,17 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
         />
       </Panel>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Panel tone="plain" title={status.othersTitle}>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Section title={status.othersTitle}>
           <p className="text-muted-foreground text-[14px] leading-[1.7]">
             {status.othersBody}
           </p>
-        </Panel>
-        <Panel tone="plain" title={common.reference}>
+        </Section>
+        <Section title={common.reference}>
           <p className="text-muted-foreground text-[14px] leading-[1.7]">
             {status.refNote.replace("{ref}", shortRef(claim.id))}
           </p>
-        </Panel>
+        </Section>
       </div>
     </div>
   )
