@@ -21,24 +21,30 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * console — a different tool, for a different person, and the one thing this
  * surface should not feel like.
  *
+ * ## Three columns, and the middle one is a true centre
+ *
+ * The first version ran brand → links → `ms-auto` → controls, which is not a
+ * layout so much as the absence of one: everything piled against the start edge
+ * and left a hole in the middle of every screen. With two or three short Arabic
+ * words in the row, that hole was most of the bar.
+ *
+ * `grid-cols-[1fr_auto_1fr]` centres the links on the **page**, not on
+ * whatever is left over after the brand and the controls have taken their
+ * width. That distinction is the whole point: a flex row with `mx-auto` on the
+ * nav drifts as the link set changes, and this link set changes per person —
+ * an heir, a guardian, both, or neither each get a different number of links,
+ * and none of them should shunt the row sideways.
+ *
+ * `justify-self-start` / `-end` are logical, so the three columns mirror under
+ * RTL without a second rule.
+ *
  * ## Near-white, and 56px
  *
- * The bar took the card tone first, and that was wrong: `#ebddc5` on `#f5ead8`
- * is a four-percent step, so the chrome read as another panel of content rather
- * than the frame around it. `sand-50` is the palette's only near-white and
- * exists for this. Pure white would pick up a cold cast beside the sand ground.
- *
- * 56px rather than 64: this bar carries three short words and a controls
- * cluster, and the extra height was empty. A hairline underneath and nothing
- * else — no shadow, because the contrast step already does that work and a drop
- * shadow on a bar that never overlaps anything is decoration.
- *
- * ## One cluster, one footprint
- *
- * Bell, language and avatar are all 36px tall ghost controls with the same
- * hover. They were three different weights with a divider between two of them,
- * which is what made the row look assembled rather than designed; matching
- * footprints are most of the fix, and the divider was the rest.
+ * `#ebddc5` on `#f5ead8` is a four-percent step, so a card-toned bar read as
+ * another panel of content rather than the frame around it. `sand-50` is the
+ * palette's only near-white and exists for this; pure white would pick up a
+ * cold cast beside the sand ground. A hairline underneath and no shadow — the
+ * contrast step already does that work.
  *
  * ## It is a Server Component with client leaves
  *
@@ -54,29 +60,25 @@ export async function AppNav() {
 
   return (
     <header className="bg-sand-50/90 border-border sticky top-0 z-40 border-b backdrop-blur-md">
-      <div className="mx-auto flex h-14 w-full max-w-[1180px] items-center px-4 md:px-6">
-        <MobileNav />
-
-        <Link
-          href="/"
-          className="me-2 flex shrink-0 items-center gap-2.5 md:me-5"
-        >
-          <span
-            aria-hidden
-            className="bg-primary text-primary-foreground font-heading grid size-7 shrink-0 place-items-center rounded-[9px] text-[15px] font-black"
-          >
-            و
-          </span>
-          <span className="font-heading text-[15.5px] font-extrabold">
-            {nav.appName}
-          </span>
-        </Link>
+      <div className="mx-auto grid h-14 w-full max-w-[1180px] grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
+        <div className="flex items-center gap-2 justify-self-start">
+          <MobileNav />
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
+            <span
+              aria-hidden
+              className="bg-primary text-primary-foreground font-heading grid size-7 shrink-0 place-items-center rounded-[9px] text-[15px] font-black"
+            >
+              و
+            </span>
+            <span className="font-heading text-[15.5px] font-extrabold">
+              {nav.appName}
+            </span>
+          </Link>
+        </div>
 
         <NavLinks />
 
-        {/* `ms-auto`, not `ml-auto`: under RTL this has to push toward the left
-            edge, and only the logical property flips. */}
-        <div className="ms-auto flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0.5 justify-self-end">
           <NotificationBell />
           <LanguageToggle locale={locale} />
           <div className="ms-1.5 flex items-center">

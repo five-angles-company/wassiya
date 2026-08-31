@@ -53,7 +53,9 @@ export function NavLinks() {
   )
 
   return (
-    <nav className="hidden h-14 items-stretch md:flex">
+    // `justify-self-center` is the grid parent's middle column doing the
+    // centring; this element only has to not stretch inside it.
+    <nav className="hidden h-14 items-stretch justify-self-center md:flex">
       {groups.map((group, index) => (
         <div key={group.key} className="flex items-stretch">
           {index > 0 && (
