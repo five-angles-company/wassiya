@@ -115,7 +115,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
       </span>
 
       <div className="min-w-0 flex-1">
-        <div className="font-heading text-[16px] font-extrabold">
+        <div className="font-heading text-[15.5px] font-extrabold">
           {item.title ?? labels.noKeyTitle}
         </div>
         <p className="text-muted-foreground mt-1 text-[13.5px] leading-[1.6]">

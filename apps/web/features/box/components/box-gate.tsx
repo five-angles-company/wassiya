@@ -42,7 +42,7 @@ export function BoxGate({
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div>
-        <h1 className="font-heading text-[26px] leading-tight font-extrabold md:text-[32px]">
+        <h1 className="font-heading text-[26px] leading-[1.15] font-black md:text-[32px]">
           {labels.gateTitle}
         </h1>
         <p className="text-muted-foreground mt-3 max-w-[62ch] text-[15px] leading-[1.75]">
@@ -87,7 +87,7 @@ export function BoxGate({
         </div>
 
         <div className="bg-muted rounded-card mt-8 max-w-[640px] p-5">
-          <div className="font-heading mb-2 text-[16px] font-extrabold">
+          <div className="font-heading mb-2 text-[17px] font-extrabold">
             {labels.askTitle}
           </div>
           <p className="text-[14px] leading-[1.7] opacity-75">{labels.askBody}</p>

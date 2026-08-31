@@ -105,7 +105,7 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-[24px] leading-tight font-extrabold md:text-[28px]">
+          <h1 className="font-heading text-[26px] leading-tight font-extrabold md:text-[30px]">
             {labels.detailTitle.replace("{name}", name)}
           </h1>
           <p className="text-muted-foreground mt-2 text-[13.5px]">

@@ -55,7 +55,7 @@ export function WelcomeDoors({ name }: { name: string | null }) {
   return (
     <div className="flex min-h-[calc(100svh-3.5rem-3rem)] flex-col justify-center py-4 md:min-h-[calc(100svh-3.5rem-4rem)]">
       <header className="rise mb-8 md:mb-10" style={{ "--rise-delay": "0ms" } as React.CSSProperties}>
-        <h1 className="font-heading text-[28px] leading-tight font-extrabold md:text-[34px]">
+        <h1 className="font-heading text-[26px] leading-[1.15] font-black md:text-[32px]">
           {name === null
             ? labels.greetingAnonymous
             : labels.greeting.replace("{name}", name)}

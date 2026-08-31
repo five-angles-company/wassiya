@@ -44,7 +44,7 @@ export function AcceptSheet({
         </span>
       </div>
 
-      <h1 className="font-heading mt-6 mb-4 text-[28px] leading-[1.15] font-black md:text-[34px]">
+      <h1 className="font-heading mt-6 mb-4 text-[26px] leading-[1.15] font-black md:text-[32px]">
         {labels.keyTitleOne}{" "}
         <span className="text-secondary">{labels.keyTitleTwo}</span>
       </h1>

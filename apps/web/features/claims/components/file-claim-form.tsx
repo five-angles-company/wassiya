@@ -165,7 +165,7 @@ function Checklist({ labels }: { labels: Resolved<typeof CLAIMS> }) {
 
   return (
     <aside className="rounded-sheet border-border border p-6 md:p-7">
-      <h2 className="font-heading text-[16px] font-extrabold">
+      <h2 className="font-heading text-[17px] font-extrabold">
         {labels.needTitle}
       </h2>
       <p className="text-muted-foreground mt-2 text-[13px] leading-[1.65]">

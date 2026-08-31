@@ -32,7 +32,7 @@ export function KeySheet({ code }: { code: string }) {
   return (
     <div className="max-w-[640px]">
       <div className="rounded-sheet border-border bg-background mb-4 border-2 px-6 py-7 text-[color:var(--foreground)]">
-        <div className="font-heading mb-4 text-[16px] font-extrabold">
+        <div className="font-heading mb-4 text-[17px] font-extrabold">
           {labels.title}
         </div>
 

@@ -82,7 +82,7 @@ export function MobileNav() {
             >
               و
             </span>
-            <span className="font-heading text-[16px] font-extrabold">
+            <span className="font-heading text-[15.5px] font-extrabold">
               {nav.appName}
             </span>
           </SheetTitle>

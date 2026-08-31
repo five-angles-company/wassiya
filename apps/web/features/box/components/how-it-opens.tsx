@@ -61,7 +61,7 @@ export function HowItOpens() {
 
       <div className="border-border bg-background mb-5 rounded-[22px] border px-5 py-6 text-center">
         <LaptopIcon className="mx-auto mb-2 size-5" strokeWidth={2.4} aria-hidden />
-        <div className="font-heading mb-1.5 text-[16px] font-extrabold">
+        <div className="font-heading mb-1.5 text-[15.5px] font-extrabold">
           {labels.opensHere}
         </div>
         <div className="text-muted-foreground text-[12.5px] leading-[1.6]">
@@ -88,7 +88,7 @@ function Half({
   return (
     <div className={`flex-1 rounded-[22px] px-4 py-5 text-center ${className}`}>
       <Icon className="mx-auto mb-2 size-5" strokeWidth={2.4} aria-hidden />
-      <div className="font-heading mb-1 text-[15px] font-extrabold">{title}</div>
+      <div className="font-heading mb-1 text-[15.5px] font-extrabold">{title}</div>
       <div className="text-[12px] opacity-85">{meta}</div>
     </div>
   )

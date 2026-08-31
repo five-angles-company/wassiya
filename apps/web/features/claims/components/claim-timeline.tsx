@@ -126,7 +126,7 @@ export function ClaimTimeline({
                 step.state === "future" ? "opacity-55" : ""
               }`}
             >
-              <div className="font-heading mb-1.5 text-[16px] font-extrabold">
+              <div className="font-heading mb-1.5 text-[15.5px] font-extrabold">
                 {step.title}
               </div>
               <div className="max-w-[440px] text-[14.5px] leading-[1.6] opacity-70">

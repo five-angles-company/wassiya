@@ -36,7 +36,7 @@ export function AcceptReview({
         </span>
       </div>
 
-      <h1 className="font-heading mt-6 mb-4 text-[28px] leading-[1.15] font-black md:text-[36px]">
+      <h1 className="font-heading mt-6 mb-4 text-[26px] leading-[1.15] font-black md:text-[32px]">
         {labels.titleOne.replace("{name}", ownerName)}
         <br />
         <span className="text-secondary">{labels.titleTwo}</span>

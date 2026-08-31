@@ -6,8 +6,11 @@ import { KeyRoundIcon, ShieldCheckIcon, UserCheckIcon } from "lucide-react"
 
 import { ActionCard } from "@/components/action-card"
 import { EmptyState } from "@/components/empty-state"
+import { PageHeader } from "@/components/page-header"
+import { Section } from "@/components/section"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
+import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { RoleReminder } from "@/features/guardian/components/role-reminder"
 import { VaultsPanel } from "@/features/guardian/components/vaults-panel"
@@ -19,6 +22,15 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * `guardians.pendingApprovals` returns both duties in one list, because they
  * are one screen: a guardian opens this app having been emailed that something
  * needs them, not knowing which of the two it is.
+ *
+ * ## It is shaped like the home screen, and that was the fix
+ *
+ * This had drifted: a hero card with a medallion, an eyebrow and a bespoke pair
+ * of figures, where home is a plain title, a section heading with a count, then
+ * cards. One click apart, two different products. So it is `PageHeader` and
+ * `Section` now — the same two components home uses — and the hero is deleted.
+ * The vault count it carried was answering a question the table below already
+ * answers.
  *
  * ## The asks are the same cards the home screen shows
  *
@@ -34,9 +46,9 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  *
  * ## One duty does not go in a two-column grid
  *
- * `md:grid-cols-2` with a single child is a card beside a hole, and a guardian
- * usually has exactly one thing asking for them or none at all — so the common
- * case was the broken-looking one. The grid appears at two.
+ * `md:grid-cols-2` with a single child is a card beside a hole, and one-or-none
+ * is the *common* case for a guardian — so the common case was the
+ * broken-looking one. The grid appears at two.
  *
  * ## An unlinked claim is described, never offered
  *
@@ -47,27 +59,30 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * has been told the app is broken.
  */
 export function DutiesList() {
-  const labels = t(GUARDIAN_DUTIES, useLocale())
+  const locale = useLocale()
+  const labels = t(GUARDIAN_DUTIES, locale)
   const duties = useQuery(api.guardians.pendingApprovals, {})
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* No section heading: the route already titles this screen "ما هو مطلوب
-          منك", and a second heading sixty pixels below saying the same thing is
-          the duplication the reports list was just cured of. */}
-      <section className="flex flex-col gap-4">
-        {duties === undefined ? (
-          <div className="grid gap-4 md:grid-cols-2" aria-hidden>
-            <div className="bg-card rounded-sheet h-52 animate-pulse" />
-            <div className="bg-card rounded-sheet h-52 animate-pulse" />
-          </div>
-        ) : duties.length === 0 ? (
-          <EmptyState
-            icon={ShieldCheckIcon}
-            title={labels.nothingTitle}
-            body={labels.nothingBody}
-          />
-        ) : (
+    <>
+      <PageHeader title={labels.title} description={labels.body} />
+
+      {duties === undefined ? (
+        <div className="grid gap-4 md:grid-cols-2" aria-hidden>
+          <div className="bg-card rounded-sheet h-52 animate-pulse" />
+          <div className="bg-card rounded-sheet h-52 animate-pulse" />
+        </div>
+      ) : duties.length === 0 ? (
+        <EmptyState
+          icon={ShieldCheckIcon}
+          title={labels.nothingTitle}
+          body={labels.nothingBody}
+        />
+      ) : (
+        <Section
+          title={labels.asksTitle}
+          count={fmtNumber(duties.length, locale)}
+        >
           <div
             className={`grid gap-4 ${duties.length > 1 ? "md:grid-cols-2" : ""}`}
           >
@@ -84,9 +99,6 @@ export function DutiesList() {
                     ? labels.dutyConfirmTitle
                     : labels.dutyHandoverTitle
                   ).replace("{name}", name)}
-                  // The quotable half of the claim id. A guardian ringing
-                  // support, or the heir, needs something to read down a phone
-                  // that is not thirty-two characters of base32.
                   meta={shortRef(duty.claimId)}
                   body={
                     blocked
@@ -101,11 +113,11 @@ export function DutiesList() {
               )
             })}
           </div>
-        )}
-      </section>
+        </Section>
+      )}
 
       <VaultsPanel />
       <RoleReminder />
-    </div>
+    </>
   )
 }

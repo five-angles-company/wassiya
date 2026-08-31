@@ -71,7 +71,7 @@ export function ActionCard({
         <Icon className="size-5" strokeWidth={2.2} />
       </span>
 
-      <h3 className="font-heading text-[17px] leading-snug font-extrabold md:text-[18px]">
+      <h3 className="font-heading text-[17px] leading-snug font-extrabold">
         {title}
       </h3>
       {meta !== undefined && (

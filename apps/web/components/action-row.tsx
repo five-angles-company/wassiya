@@ -52,7 +52,7 @@ export function ActionRow({
       </span>
 
       <div className="min-w-0 flex-1">
-        <div className="font-heading text-[16px] font-extrabold">{title}</div>
+        <div className="font-heading text-[15.5px] font-extrabold">{title}</div>
         {body !== undefined && (
           <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.65]">
             {body}

@@ -34,7 +34,9 @@ export function ErrorPanel({
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-5 md:px-8">
       <div className="border-border rounded-card border p-6">
-        <h1 className="text-[22px] leading-[1.3]">{labels.errorTitle}</h1>
+        <h1 className="font-heading text-[19px] font-extrabold">
+          {labels.errorTitle}
+        </h1>
         <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
           {labels.errorBody}
         </p>

@@ -13,7 +13,9 @@ import {
 } from "lucide-react"
 
 import { ActionCard } from "@/components/action-card"
+import { PageHeader } from "@/components/page-header"
 import { Panel } from "@/components/panel"
+import { Section } from "@/components/section"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
 import { fmtNumber } from "@/lib/format"
@@ -125,24 +127,18 @@ export function HomeBoard() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-heading text-[26px] leading-tight font-extrabold md:text-[30px]">
-        {name === null
-          ? labels.greetingAnonymous
-          : labels.greeting.replace("{name}", name)}
-      </h1>
+      <PageHeader
+        title={
+          name === null
+            ? labels.greetingAnonymous
+            : labels.greeting.replace("{name}", name)
+        }
+      />
 
-      <section className="flex flex-col gap-4">
-        <div className="flex items-center gap-2.5">
-          <h2 className="font-heading text-[17px] font-extrabold">
-            {labels.needsYouTitle}
-          </h2>
-          {asks.length > 0 && (
-            <span className="bg-primary text-primary-foreground grid size-6 place-items-center rounded-full text-[12px] font-bold tabular-nums">
-              {fmtNumber(asks.length, locale)}
-            </span>
-          )}
-        </div>
-
+      <Section
+        title={labels.needsYouTitle}
+        count={asks.length > 0 ? fmtNumber(asks.length, locale) : undefined}
+      >
         {asks.length === 0 ? (
           <Panel accent="secondary" icon={CheckIcon} title={labels.nothingTitle}>
             <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.7]">
@@ -166,7 +162,7 @@ export function HomeBoard() {
             ))}
           </div>
         )}
-      </section>
+      </Section>
 
       <section className="grid gap-4 sm:grid-cols-2">
         {claims.length > 0 && (

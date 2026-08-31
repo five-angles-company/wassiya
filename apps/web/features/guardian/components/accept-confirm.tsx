@@ -30,7 +30,7 @@ export function AcceptConfirm({
 }) {
   return (
     <div className="max-w-[640px]">
-      <h1 className="font-heading mb-4 text-[28px] leading-[1.15] font-black md:text-[34px]">
+      <h1 className="font-heading mb-4 text-[26px] leading-[1.15] font-black md:text-[32px]">
         {labels.confirmTitle}
       </h1>
       <p className="mb-7 text-[15.5px] leading-[1.72] opacity-80">
