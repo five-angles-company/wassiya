@@ -32,6 +32,16 @@ export const GUARDIAN_DUTIES = {
     en: "That is the normal state, and it may last years. We'll email you when it changes.",
   },
 
+  // The reminder. It restates the invitation's own two lines rather than
+  // paraphrasing them — a guardian who reads a *different* description of the
+  // role than the one they agreed to has been told, quietly, that the terms
+  // moved.
+  roleTitle: { ar: "ما ستُسأل عنه، ومتى", en: "What you'll be asked, and when" },
+  roleKeyNote: {
+    ar: "ورقتك هي ما يُطلب منك في التسليم. تحقّق منها الآن، ولا تنتظر اليوم الذي لا يمكن إصلاحها فيه.",
+    en: "Your sheet is what the handover asks for. Check it now rather than on the one day it cannot be fixed.",
+  },
+
   vaultsTitle: { ar: "الخزائن التي توصي عليها", en: "The vaults you guard" },
   // The count is what is *loaded*, not what exists: `usePaginatedQuery` knows
   // the first and not the second, and a number that silently meant "the first

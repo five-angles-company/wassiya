@@ -7,7 +7,9 @@ import { KeyRoundIcon, ShieldCheckIcon, UserCheckIcon } from "lucide-react"
 import { ActionCard } from "@/components/action-card"
 import { EmptyState } from "@/components/empty-state"
 import { useLocale } from "@/components/locale-provider"
+import { shortRef } from "@/lib/claim-ref"
 import { t } from "@/lib/i18n/locale"
+import { RoleReminder } from "@/features/guardian/components/role-reminder"
 import { VaultsPanel } from "@/features/guardian/components/vaults-panel"
 import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 
@@ -29,6 +31,12 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * A guardian is asked to act twice at most in the whole life of a guardianship,
  * possibly years apart. "Nothing needs you" is not a failure to have data — it
  * is the answer, and it says how long it may last.
+ *
+ * ## One duty does not go in a two-column grid
+ *
+ * `md:grid-cols-2` with a single child is a card beside a hole, and a guardian
+ * usually has exactly one thing asking for them or none at all — so the common
+ * case was the broken-looking one. The grid appears at two.
  *
  * ## An unlinked claim is described, never offered
  *
@@ -60,7 +68,9 @@ export function DutiesList() {
             body={labels.nothingBody}
           />
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div
+            className={`grid gap-4 ${duties.length > 1 ? "md:grid-cols-2" : ""}`}
+          >
             {duties.map((duty, index) => {
               const name = duty.subjectName ?? "—"
               const blocked = duty.duty === "confirm" && !duty.heirLinked
@@ -74,6 +84,10 @@ export function DutiesList() {
                     ? labels.dutyConfirmTitle
                     : labels.dutyHandoverTitle
                   ).replace("{name}", name)}
+                  // The quotable half of the claim id. A guardian ringing
+                  // support, or the heir, needs something to read down a phone
+                  // that is not thirty-two characters of base32.
+                  meta={shortRef(duty.claimId)}
                   body={
                     blocked
                       ? labels.notLinkedBody
@@ -91,6 +105,7 @@ export function DutiesList() {
       </section>
 
       <VaultsPanel />
+      <RoleReminder />
     </div>
   )
 }
