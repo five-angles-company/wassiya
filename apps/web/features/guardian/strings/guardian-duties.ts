@@ -42,6 +42,14 @@ export const GUARDIAN_DUTIES = {
     en: "Your sheet is what the handover asks for. Check it now rather than on the one day it cannot be fixed.",
   },
 
+  // The hero. Standing first, prose second: this reader may not have opened
+  // the app since they accepted, and "how many depend on me, is anything
+  // waiting" is the question they arrive with.
+  heroEyebrow: { ar: "أنت وصي", en: "You are a guardian" },
+  heroVaults: { ar: "خزائن توصي عليها", en: "Vaults you guard" },
+  heroAsks: { ar: "يحتاجك الآن", en: "Needs you now" },
+
+  colVault: { ar: "الخزنة", en: "Vault" },
   vaultsTitle: { ar: "الخزائن التي توصي عليها", en: "The vaults you guard" },
   // The count is what is *loaded*, not what exists: `usePaginatedQuery` knows
   // the first and not the second, and a number that silently meant "the first

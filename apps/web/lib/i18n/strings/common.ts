@@ -43,6 +43,12 @@ export const COMMON = {
   cancel: { ar: "إلغاء", en: "Cancel" },
   close: { ar: "إغلاق", en: "Close" },
   filedOn: { ar: "قُدّم في", en: "Filed" },
+
+  // Table paging. `range` counts rows on screen, not a total: a cursor knows
+  // where it is, never how many follow.
+  previous: { ar: "السابق", en: "Previous" },
+  next: { ar: "التالي", en: "Next" },
+  range: { ar: "{from}–{to}", en: "{from}–{to}" },
   reference: { ar: "المرجع", en: "Reference" },
 
   // The six claim states, named once here so a pill, a list row and a detail

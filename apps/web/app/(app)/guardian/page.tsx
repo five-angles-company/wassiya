@@ -1,15 +1,18 @@
-import { PageHeader } from "@/components/page-header"
-import { t } from "@/lib/i18n/locale"
-import { getLocale } from "@/lib/i18n/server"
 import { DutiesList } from "@/features/guardian/components/duties-list"
-import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
+import { GuardianHero } from "@/features/guardian/components/guardian-hero"
 
-export default async function GuardianPage() {
-  const labels = t(GUARDIAN_DUTIES, await getLocale())
-
+/**
+ * The guardian's screen.
+ *
+ * No `PageHeader`: this one gets a hero of its own, because the two figures it
+ * carries — vaults guarded, things waiting — answer the question the reader
+ * arrived with, and a shared title block cannot hold a number that comes from a
+ * subscription.
+ */
+export default function GuardianPage() {
   return (
     <>
-      <PageHeader title={labels.title} description={labels.body} />
+      <GuardianHero />
       <DutiesList />
     </>
   )
