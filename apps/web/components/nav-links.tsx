@@ -10,27 +10,29 @@ import { t } from "@/lib/i18n/locale"
 import { NAV } from "@/lib/i18n/strings/nav"
 
 /**
- * The bar's links, on one row.
+ * The bar's links, centred, on one row.
  *
  * A Client Component because the active item comes from `usePathname()`. In
  * Next 16 layouts are cached across navigation and do not re-render, so an
  * active state computed in the layout would highlight whichever route happened
  * to be first.
  *
+ * ## One flat row — the groups only decide who sees what
+ *
+ * There was a hairline between the heir's links and the guardian's, on the
+ * argument that a person who is both should see the seam. In a five-word row it
+ * was one more object in a bar that already had too many, and the labels do
+ * that work on their own: nobody reads "صندوقي" and "ما هو مطلوب" as the same
+ * kind of thing. `NAV_GROUPS` still decides *which* links exist per person —
+ * see `use-nav-groups` — but the grouping stops at the data now. The phone
+ * menu, which is a scanned list rather than a read row, keeps its section
+ * headings.
+ *
  * ## No icons here, and icons in the phone menu
  *
  * They were in both and the bar was the worse for it. Five words each wearing a
  * glyph is ten objects across the top of every screen, and none of the icons
- * earned its place — "الرئيسية" is not clarified by a house. A phone menu is
- * different: it is a vertical list scanned rather than read, and there the
- * glyph is the fastest way to find a row.
- *
- * ## The groups flatten, and the seam still shows
- *
- * A bar has no room for section labels, so the groups run together as one row —
- * but a hairline marks where the heir's links end and the guardian's begin, for
- * the person who is both. Without it, "صندوقي" and "ما هو مطلوب" sit adjacent
- * and read as one list of five unrelated things.
+ * earned its place — "الرئيسية" is not clarified by a house.
  *
  * ## Active is darker, not more colourful
  *
@@ -48,46 +50,34 @@ export function NavLinks() {
   const locale = useLocale()
   const nav = t(NAV, locale)
   const pathname = usePathname()
-  const groups = useNavGroups().filter((group) =>
-    group.items.some((item) => item.secondary !== true)
-  )
+  const items = useNavGroups()
+    .flatMap((group) => group.items)
+    .filter((item) => item.secondary !== true)
 
   return (
     // `justify-self-center` is the grid parent's middle column doing the
     // centring; this element only has to not stretch inside it.
     <nav className="hidden h-14 items-stretch justify-self-center md:flex">
-      {groups.map((group, index) => (
-        <div key={group.key} className="flex items-stretch">
-          {index > 0 && (
-            <span
-              aria-hidden
-              className="bg-border mx-3 my-auto h-4 w-px shrink-0"
-            />
-          )}
-          {group.items
-            .filter((item) => item.secondary !== true)
-            .map((item) => {
-              const active = isNavActive(pathname, item.href)
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  aria-current={active ? "page" : undefined}
-                  // The rule is an `::after` pinned to the bar's own bottom
-                  // edge, which is why each link is full bar height rather than
-                  // a floating pill.
-                  className={`relative inline-flex items-center px-3.5 text-[14.5px] whitespace-nowrap transition-colors after:absolute after:inset-x-2.5 after:bottom-0 after:h-[2px] after:rounded-t-full ${
-                    active
-                      ? "text-foreground font-bold after:bg-primary"
-                      : "text-sand-700 hover:text-foreground font-semibold after:bg-transparent"
-                  }`}
-                >
-                  {nav[item.key]}
-                </Link>
-              )
-            })}
-        </div>
-      ))}
+      {items.map((item) => {
+        const active = isNavActive(pathname, item.href)
+        return (
+          <Link
+            key={item.key}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            // The rule is an `::after` pinned to the bar's own bottom edge,
+            // which is why each link is full bar height rather than a floating
+            // pill.
+            className={`relative inline-flex items-center px-4 text-[14.5px] whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[2px] after:rounded-t-full ${
+              active
+                ? "text-foreground font-bold after:bg-primary"
+                : "text-sand-700 hover:text-foreground font-semibold after:bg-transparent"
+            }`}
+          >
+            {nav[item.key]}
+          </Link>
+        )
+      })}
     </nav>
   )
 }
