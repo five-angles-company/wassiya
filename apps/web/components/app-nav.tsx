@@ -21,19 +21,26 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * console — a different tool, for a different person, and the one thing this
  * surface should not feel like.
  *
- * ## Three columns, and the middle one is a true centre
+ * ## Three columns, full width, and the middle one is a true centre
  *
  * The first version ran brand → links → `ms-auto` → controls, which is not a
  * layout so much as the absence of one: everything piled against the start edge
  * and left a hole in the middle of every screen. With two or three short Arabic
  * words in the row, that hole was most of the bar.
  *
- * `grid-cols-[1fr_auto_1fr]` centres the links on the **page**, not on
+ * `grid-cols-[1fr_auto_1fr]` centres the links on the **viewport**, not on
  * whatever is left over after the brand and the controls have taken their
  * width. That distinction is the whole point: a flex row with `mx-auto` on the
  * nav drifts as the link set changes, and this link set changes per person —
  * an heir, a guardian, both, or neither each get a different number of links,
  * and none of them should shunt the row sideways.
+ *
+ * The bar itself is **full width** while the content below stays in its 1180px
+ * column. Two consequences, both wanted: the brand and the controls sit at the
+ * window's own edges, so the bar reads as the application frame rather than as
+ * the first row of the page; and since the content column is centred, the
+ * middle grid track lands on its centre line anyway — the links agree with the
+ * page without being tied to its width.
  *
  * `justify-self-start` / `-end` are logical, so the three columns mirror under
  * RTL without a second rule.
@@ -60,7 +67,7 @@ export async function AppNav() {
 
   return (
     <header className="bg-sand-50/90 border-border sticky top-0 z-40 border-b backdrop-blur-md">
-      <div className="mx-auto grid h-14 w-full max-w-[1180px] grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
+      <div className="grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6 lg:px-8">
         <div className="flex items-center gap-2 justify-self-start">
           <MobileNav />
           <Link href="/" className="flex shrink-0 items-center gap-2.5">

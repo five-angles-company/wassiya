@@ -27,7 +27,7 @@ export async function AuthShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-sand-50 border-border flex h-14 shrink-0 items-center gap-2.5 border-b px-4 md:px-6">
+      <header className="bg-sand-50 border-border flex h-14 shrink-0 items-center gap-2.5 border-b px-4 md:px-6 lg:px-8">
         <span
           aria-hidden
           className="bg-primary text-primary-foreground font-heading grid size-7 shrink-0 place-items-center rounded-[9px] text-[15px] font-black"
