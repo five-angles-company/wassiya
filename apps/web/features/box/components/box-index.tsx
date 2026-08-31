@@ -37,6 +37,7 @@ export function BoxIndex() {
   if (ready.length === 0) {
     return (
       <EmptyState
+        fill
         icon={PackageIcon}
         title={labels.indexEmptyTitle}
         body={labels.indexEmptyBody}

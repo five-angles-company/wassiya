@@ -8,6 +8,7 @@ import { FilePlus2Icon, FileTextIcon } from "lucide-react"
 import { ActionRow } from "@/components/action-row"
 import { ClaimStatusPill } from "@/components/claim-status-pill"
 import { EmptyState } from "@/components/empty-state"
+import { PageHeader } from "@/components/page-header"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
 import { fmtDate } from "@/lib/format"
@@ -18,16 +19,29 @@ import { CLAIMS } from "@/features/claims/strings/claims"
 /**
  * Every report this person has filed.
  *
- * `claims.mine` returns no subject name — it is the claimant's own list, keyed
- * on `claimantUserId`, and adding the deceased's name to it would put a second
- * read on a query the sidebar runs on every page. So the row is identified by
- * its short reference and its date, and the name appears on the detail page,
- * which already fetches it.
+ * ## The screen owns its own header, and that is the point
  *
- * Rows are `now` when something is actually being asked of the reader. On this
- * list that is `released` — a ready box is the one row someone should act on —
- * and nothing else, including the objection period, which by design asks
- * nothing of anybody.
+ * The route used to render `PageHeader` — title, blurb, and a "بلاغ جديد"
+ * button — and then this list underneath, which put the *same button* a second
+ * time inside the empty state. Two identical calls to action a hundred pixels
+ * apart, on a screen with nothing else on it.
+ *
+ * The header belongs to the populated case: once there are rows, a corner
+ * button is where you reach for "another one". On an empty list it is the only
+ * thing to do, so it belongs in the middle of the screen and the header has
+ * nothing left to say. Deciding that needs the row count, so the whole screen
+ * moved in here rather than the count moving out.
+ *
+ * ## Identifying a row
+ *
+ * `claims.mine` returns no subject name — it is the claimant's own list, keyed
+ * on `claimantUserId`, and adding the deceased's name would put a second read
+ * on a query the bar runs on every page. So a row is its short reference and
+ * its date, and the name appears on the detail page, which already fetches it.
+ *
+ * Rows are `now` when something is actually being asked of the reader: on this
+ * list that is `released` — a ready box is the one row to act on — and nothing
+ * else, including the objection period, which by design asks nothing of anyone.
  */
 export function ClaimsList() {
   const locale = useLocale()
@@ -40,42 +54,78 @@ export function ClaimsList() {
   if (claims.length === 0) {
     return (
       <EmptyState
+        fill
         icon={FileTextIcon}
         title={labels.emptyTitle}
         body={labels.emptyBody}
-        action={
-          <Link
-            href="/claims/new"
-            className="bg-primary text-primary-foreground hover:bg-terracotta-600 inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-[14.5px] font-semibold transition-colors"
-          >
-            <FilePlus2Icon className="size-4" strokeWidth={2.4} aria-hidden />
-            {labels.newReport}
-          </Link>
-        }
+        hint={labels.timing}
+        action={<NewReportButton label={labels.newReport} size="lg" />}
       />
     )
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {claims.map((claim) => (
-        <ActionRow
-          key={claim.id}
-          href={`/claims/${claim.id}`}
-          icon={FileTextIcon}
-          tone={claim.status === "released" ? "now" : "quiet"}
-          title={shortRef(claim.id)}
-          body={`${common.filedOn} ${fmtDate(new Date(claim.submittedAt), locale)}`}
-          meta={<ClaimStatusPill status={claim.status} locale={locale} />}
-        />
-      ))}
-    </div>
+    <>
+      <PageHeader
+        title={labels.listTitle}
+        description={labels.listBody}
+        action={<NewReportButton label={labels.newReport} size="sm" />}
+      />
+
+      <div className="flex flex-col gap-3">
+        {claims.map((claim) => (
+          <ActionRow
+            key={claim.id}
+            href={`/claims/${claim.id}`}
+            icon={FileTextIcon}
+            tone={claim.status === "released" ? "now" : "quiet"}
+            title={shortRef(claim.id)}
+            body={`${common.filedOn} ${fmtDate(new Date(claim.submittedAt), locale)}`}
+            meta={<ClaimStatusPill status={claim.status} locale={locale} />}
+          />
+        ))}
+      </div>
+    </>
+  )
+}
+
+/**
+ * One button, two sizes.
+ *
+ * `lg` is the board's 56px primary — the empty screen's single action. `sm` is
+ * the header's corner button, which sits beside a title and must not outweigh
+ * it.
+ */
+function NewReportButton({
+  label,
+  size,
+}: {
+  label: string
+  size: "sm" | "lg"
+}) {
+  return (
+    <Link
+      href="/claims/new"
+      className={`bg-primary text-primary-foreground hover:bg-terracotta-600 inline-flex items-center gap-2 rounded-full font-semibold shadow-[var(--shadow-raised)] transition-colors ${
+        size === "lg"
+          ? "font-heading h-14 px-8 text-[16.5px] font-extrabold"
+          : "h-10 px-5 text-[14px]"
+      }`}
+    >
+      <FilePlus2Icon
+        className={size === "lg" ? "size-5" : "size-4"}
+        strokeWidth={2.4}
+        aria-hidden
+      />
+      {label}
+    </Link>
   )
 }
 
 function ListSkeleton() {
   return (
     <div className="flex flex-col gap-3" aria-hidden>
+      <div className="bg-card rounded-card h-16 w-1/3 animate-pulse" />
       {[0, 1].map((row) => (
         <div key={row} className="bg-card rounded-card h-[92px] animate-pulse" />
       ))}
