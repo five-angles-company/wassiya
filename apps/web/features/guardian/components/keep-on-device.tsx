@@ -56,7 +56,7 @@ export function KeepOnDevice({ sheet }: { sheet: GuardianKeySheet }) {
 
   if (outcome === "saved") {
     return (
-      <p className="mt-6 flex items-start gap-2.5 text-[14px] leading-[1.7] opacity-90">
+      <p className="text-olive-700 mt-6 flex items-start gap-2.5 text-[14px] leading-[1.7]">
         <ShieldCheckIcon
           className="mt-0.5 size-4 shrink-0"
           strokeWidth={2.4}
@@ -68,17 +68,17 @@ export function KeepOnDevice({ sheet }: { sheet: GuardianKeySheet }) {
   }
 
   return (
-    <div className="mt-7 border-t border-[color:currentColor]/20 pt-6">
+    <div className="border-border mt-7 border-t pt-6">
       <h3 className="flex items-center gap-2.5 text-[15.5px] font-semibold">
         <FingerprintIcon className="size-[18px]" strokeWidth={2.3} aria-hidden />
         {labels.deviceKeyOfferTitle}
       </h3>
-      <p className="mt-2 max-w-[56ch] text-[14px] leading-[1.7] opacity-85">
+      <p className="text-muted-foreground mt-2 max-w-[56ch] text-[14px] leading-[1.7]">
         {labels.deviceKeyOfferBody}
       </p>
 
       <Button
-        variant="inverse"
+        variant="secondary"
         className="mt-5"
         onClick={() => void keep()}
         disabled={busy}
@@ -87,7 +87,7 @@ export function KeepOnDevice({ sheet }: { sheet: GuardianKeySheet }) {
       </Button>
 
       {outcome !== null && (
-        <p className="mt-4 flex items-start gap-2.5 text-[13.5px] leading-[1.7] opacity-80">
+        <p className="text-muted-foreground mt-4 flex items-start gap-2.5 text-[13.5px] leading-[1.7]">
           <InfoIcon
             className="mt-0.5 size-4 shrink-0"
             strokeWidth={2.3}

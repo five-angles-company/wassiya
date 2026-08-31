@@ -2,7 +2,7 @@
 
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
-import { PackageIcon } from "lucide-react"
+import { CheckIcon, PackageIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
 import { ClaimStatusPill } from "@/components/claim-status-pill"
@@ -122,16 +122,16 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
           webhook flipped the live status, and a vetoed claim must never ask for
           a certificate it will not use. */}
       {claim.status === "released" ? (
-        <Panel tone="settled" icon={PackageIcon} title={status.releasedHeading}>
-          <p className="mb-5 max-w-[62ch] text-[14.5px] leading-[1.7] opacity-90">
+        <Panel accent="secondary" icon={PackageIcon} title={status.releasedHeading}>
+          <p className="text-muted-foreground mb-5 max-w-[62ch] text-[14.5px] leading-[1.7]">
             {status.releasedBody}
           </p>
           {isMine && (
-            <ButtonLink href={`/box/${claim.id}`} variant="inverse">
+            <ButtonLink href={`/box/${claim.id}`}>
               {status.openBox}
             </ButtonLink>
           )}
-          <p className="mt-4 text-[13px] leading-[1.6] opacity-75">
+          <p className="text-muted-foreground mt-4 text-[13px] leading-[1.6]">
             {status.releasedKeyNote}
           </p>
         </Panel>
@@ -155,8 +155,8 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
       ) : isMine && !claim.certificateReceived ? (
         <CertificatePanel claimId={claim.id} />
       ) : (
-        <Panel tone="settled" title={status.nothingTitle}>
-          <p className="max-w-[62ch] text-[14.5px] leading-[1.7] opacity-90">
+        <Panel accent="secondary" icon={CheckIcon} title={status.nothingTitle}>
+          <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.7]">
             {status.nothingBody}
           </p>
           {claim.vetoDeadline !== null && claim.status === "awaiting_veto" && (

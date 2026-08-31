@@ -31,11 +31,11 @@ export function AcceptDone({
   sheet: GuardianKeySheet
 }) {
   return (
-    <Panel tone="settled" icon={CheckIcon} title={labels.doneTitle}>
-      <p className="mb-6 max-w-[62ch] text-[15px] leading-[1.72] opacity-90">
+    <Panel accent="secondary" icon={CheckIcon} title={labels.doneTitle}>
+      <p className="text-muted-foreground mb-6 max-w-[62ch] text-[15px] leading-[1.72]">
         {labels.doneBody}
       </p>
-      <ButtonLink href="/guardian" variant="inverse" size="lg">
+      <ButtonLink href="/guardian" variant="secondary" size="lg">
         {labels.doneAction}
       </ButtonLink>
 

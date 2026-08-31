@@ -100,15 +100,15 @@ export function DeviceKeyPanel({
   }
 
   return (
-    <Panel tone="settled" icon={FingerprintIcon} title={labels.deviceHeldTitle}>
-      <p className="max-w-[62ch] text-[14.5px] leading-[1.72] opacity-90">
+    <Panel accent="secondary" icon={FingerprintIcon} title={labels.deviceHeldTitle}>
+      <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.72]">
         {labels.deviceHeldBody}
       </p>
 
       {shown === null ? (
         <>
           <Button
-            variant="inverse"
+            variant="secondary"
             className="mt-6"
             onClick={() => void reveal()}
             disabled={busy}
@@ -116,7 +116,7 @@ export function DeviceKeyPanel({
             {busy ? labels.deviceUnlocking : labels.deviceShowSheet}
           </Button>
           {failed && (
-            <p className="mt-4 text-[14px] leading-[1.7] opacity-90">
+            <p className="text-terracotta-800 mt-4 text-[14px] leading-[1.7]">
               {labels.deviceUnlockFailed}
             </p>
           )}
@@ -143,7 +143,7 @@ export function DeviceKeyPanel({
           <KeySheet code={shown.code} />
 
           <Button
-            variant="inverse"
+            variant="outline"
             size="sm"
             className="mt-5"
             onClick={() => setShown(null)}
@@ -153,18 +153,18 @@ export function DeviceKeyPanel({
         </div>
       )}
 
-      <div className="mt-7 border-t border-[color:currentColor]/20 pt-5">
+      <div className="border-border mt-7 border-t pt-5">
         <button
           type="button"
           onClick={() => {
             forgetDeviceKey()
             setShown(null)
           }}
-          className="text-[13.5px] font-semibold underline underline-offset-4 opacity-80 hover:opacity-100"
+          className="text-muted-foreground hover:text-foreground text-[13.5px] font-semibold underline underline-offset-4"
         >
           {labels.deviceForget}
         </button>
-        <p className="mt-2 text-[12.5px] leading-[1.65] opacity-70">
+        <p className="text-muted-foreground mt-2 text-[12.5px] leading-[1.65]">
           {labels.deviceForgetNote}
         </p>
       </div>

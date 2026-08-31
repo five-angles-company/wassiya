@@ -64,9 +64,7 @@ export function NotificationsList() {
         return (
           <article
             key={row._id}
-            className={`rounded-card flex flex-wrap items-start gap-4 p-4 md:p-5 ${
-              unread ? "bg-accent text-accent-foreground" : "bg-card"
-            }`}
+            className="bg-card border-border rounded-card flex flex-wrap items-start gap-4 border p-4 shadow-[var(--shadow-raised)] md:p-5"
           >
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -79,11 +77,7 @@ export function NotificationsList() {
                   </span>
                 )}
               </div>
-              <p
-                className={`mt-1.5 text-[14px] leading-[1.65] ${
-                  unread ? "opacity-80" : "text-muted-foreground"
-                }`}
-              >
+              <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.65]">
                 {copy === null ? (
                   <span dir="ltr" className="font-mono text-[12.5px]">
                     {row.kind}
@@ -92,9 +86,7 @@ export function NotificationsList() {
                   labels[copy.body]
                 )}
               </p>
-              <p
-                className={`mt-2 text-[12.5px] ${unread ? "opacity-60" : "text-muted-foreground"}`}
-              >
+              <p className="text-muted-foreground mt-2 text-[12.5px]">
                 {fmtDate(new Date(row._creationTime), locale)}
               </p>
             </div>
@@ -103,7 +95,6 @@ export function NotificationsList() {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-[color:currentColor]"
                 onClick={() => {
                   void markRead({
                     notificationId: row._id as Id<"notifications">,

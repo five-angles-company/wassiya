@@ -76,8 +76,8 @@ export function IdentityPanel() {
 
   if (state === "verified") {
     return (
-      <Panel tone="settled" icon={BadgeCheckIcon} title={labels.verified}>
-        <p className="text-[14px] leading-[1.7] opacity-90">
+      <Panel accent="secondary" icon={BadgeCheckIcon} title={labels.verified}>
+        <p className="text-muted-foreground text-[14px] leading-[1.7]">
           {labels.privacyNote}
         </p>
       </Panel>
@@ -85,8 +85,8 @@ export function IdentityPanel() {
   }
 
   return (
-    <Panel tone="now" icon={ScanFaceIcon} title={labels.heading}>
-      <p className="mb-5 max-w-[62ch] text-[14.5px] leading-[1.7] opacity-80">
+    <Panel accent="primary" icon={ScanFaceIcon} title={labels.heading}>
+      <p className="text-muted-foreground mb-5 max-w-[62ch] text-[14.5px] leading-[1.7]">
         {labels.intro}
       </p>
 

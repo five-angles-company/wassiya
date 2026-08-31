@@ -77,7 +77,7 @@ export function ConfirmPanel({
 
   return (
     <Panel
-      tone={heirLinked ? "now" : "card"}
+      accent={heirLinked ? "primary" : undefined}
       icon={UserCheckIcon}
       title={labels.dutyConfirmTitle.replace("{name}", subjectName)}
     >

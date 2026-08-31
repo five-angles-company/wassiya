@@ -32,9 +32,10 @@ import { HOME } from "@/features/overview/strings/home"
  *
  * One is an action this app can take today; the other is an instruction to go
  * and find an email. Giving them equal cards said they were the same kind of
- * thing. The report door takes three of five columns, the accent ground, a
- * solid medallion and the only button on the screen; the guardian door is a
- * quiet card that explains why there is nothing to press.
+ * thing. The report door takes three of five columns, a solid terracotta
+ * medallion and the only button on the screen; the guardian door is narrower,
+ * with an olive mark and no control. Both sit on the same card colour — the
+ * hierarchy is width, mark and button, not a second surface.
  *
  * ## Depth, because the palette has it and nothing was using it
  *
@@ -67,7 +68,7 @@ export function WelcomeDoors({ name }: { name: string | null }) {
       <div className="grid gap-5 md:grid-cols-5">
         {/* The door that leads somewhere. */}
         <section
-          className="rise lift bg-accent text-accent-foreground rounded-sheet border-terracotta-200 flex flex-col border p-7 shadow-[var(--shadow-raised)] md:col-span-3 md:p-9"
+          className="rise lift bg-card rounded-sheet border-border flex flex-col border p-7 shadow-[var(--shadow-raised)] md:col-span-3 md:p-9"
           style={{ "--rise-delay": "70ms" } as React.CSSProperties}
         >
           <span
@@ -80,7 +81,7 @@ export function WelcomeDoors({ name }: { name: string | null }) {
           <h2 className="font-heading text-[22px] leading-tight font-extrabold md:text-[26px]">
             {labels.doorClaimTitle}
           </h2>
-          <p className="mt-3 max-w-[46ch] flex-1 text-[15px] leading-[1.75] opacity-80">
+          <p className="text-muted-foreground mt-3 max-w-[46ch] flex-1 text-[15px] leading-[1.75]">
             {labels.doorClaimBody}
           </p>
 
@@ -96,7 +97,7 @@ export function WelcomeDoors({ name }: { name: string | null }) {
                 aria-hidden
               />
             </Link>
-            <span className="text-[13.5px] leading-[1.5] opacity-65">
+            <span className="text-muted-foreground text-[13.5px] leading-[1.5]">
               {labels.doorClaimMeta}
             </span>
           </div>

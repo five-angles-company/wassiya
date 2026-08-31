@@ -111,8 +111,8 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
   }
 
   return (
-    <Panel tone="now" icon={FileCheck2Icon} title={labels.heading}>
-      <p className="max-w-[62ch] text-[14.5px] leading-[1.7] opacity-80">
+    <Panel accent="primary" icon={FileCheck2Icon} title={labels.heading}>
+      <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.7]">
         {labels.intro}
       </p>
 

@@ -54,7 +54,7 @@ export function AccountPanel() {
 
       <Panel
         icon={BadgeCheckIcon}
-        tone={state === "verified" ? "settled" : "card"}
+        accent={state === "verified" ? "secondary" : undefined}
         title={labels.identityTitle}
       >
         <p className="text-[15px] font-semibold">

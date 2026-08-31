@@ -24,13 +24,14 @@ import { ArrowRightIcon, type LucideIcon } from "lucide-react"
  * duties list show the *same* asks, and the second one was still rendering them
  * as the bar the first had already replaced.
  *
- * ## `tone`
+ * ## `tone` tints the mark, never the card
  *
- * `now` is the accent ground and is for asks that are actionable today.
- * `waiting` is the card tone, for an ask that is real but blocked on somebody
- * else — a claim whose heir we have not linked yet, where `guardianConfirm`
- * would throw. Rendering that in the accent would be the app demanding
- * something the reader cannot give.
+ * Every card in this app is `--card`. `now` gives the medallion the solid
+ * terracotta — an ask that is actionable today; `waiting` leaves it neutral,
+ * for an ask that is real but blocked on somebody else, like a claim whose heir
+ * we have not linked yet and where `guardianConfirm` would throw. Painting the
+ * whole surface for that distinction was three card colours on one screen, and
+ * three claims on the reader's attention.
  */
 export function ActionCard({
   href,
@@ -57,11 +58,7 @@ export function ActionCard({
     <Link
       href={href}
       style={{ "--rise-delay": `${delay}ms` } as CSSProperties}
-      className={`group rise lift rounded-sheet flex flex-col border p-6 shadow-[var(--shadow-raised)] transition-colors md:p-7 ${
-        tone === "now"
-          ? "bg-accent text-accent-foreground border-terracotta-200 hover:bg-terracotta-200"
-          : "bg-card border-border hover:bg-sand-200"
-      }`}
+      className="group rise lift bg-card border-border rounded-sheet hover:bg-sand-200 flex flex-col border p-6 shadow-[var(--shadow-raised)] transition-colors md:p-7"
     >
       <span
         aria-hidden
@@ -82,15 +79,15 @@ export function ActionCard({
           {meta}
         </p>
       )}
-      <p
-        className={`mt-2.5 flex-1 text-[14px] leading-[1.7] ${
-          tone === "now" ? "opacity-80" : "text-muted-foreground"
-        }`}
-      >
+      <p className="text-muted-foreground mt-2.5 flex-1 text-[14px] leading-[1.7]">
         {body}
       </p>
 
-      <span className="mt-5 inline-flex items-center gap-2 text-[14.5px] font-bold">
+      <span
+        className={`mt-5 inline-flex items-center gap-2 text-[14.5px] font-bold ${
+          tone === "now" ? "text-primary" : "text-muted-foreground"
+        }`}
+      >
         {action}
         <ArrowRightIcon
           className="nudge size-4 rtl:-scale-x-100"

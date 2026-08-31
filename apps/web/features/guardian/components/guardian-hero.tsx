@@ -32,6 +32,10 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  * that opened in terracotta would say the opposite before any copy loaded. The
  * one thing allowed to be terracotta here is the count of things that need
  * them, and only when it is not zero.
+ *
+ * The surface is `--card`, like every card in this app, and a decorative blur
+ * behind the mark was removed for the same reason the coloured panels were: it
+ * was the loudest thing on a page whose problem was that it was too much.
  */
 export function GuardianHero() {
   const locale = useLocale()
@@ -42,19 +46,11 @@ export function GuardianHero() {
   const asks = duties?.length ?? 0
 
   return (
-    <header className="bg-card rounded-sheet border-border relative overflow-hidden border p-6 shadow-[var(--shadow-raised)] md:p-8">
-      {/* A single wash of olive behind the mark. It is the only decoration in
-          the app and it earns its place by making the guardian's screen
-          recognisably *not* the heir's at a glance. */}
-      <span
-        aria-hidden
-        className="bg-secondary/12 pointer-events-none absolute -top-24 -end-16 size-64 rounded-full blur-2xl"
-      />
-
-      <div className="relative flex flex-wrap items-start gap-5">
+    <header className="bg-card rounded-sheet border-border border p-6 shadow-[var(--shadow-raised)] md:p-8">
+      <div className="flex flex-wrap items-start gap-5">
         <span
           aria-hidden
-          className="bg-secondary text-secondary-foreground grid size-14 shrink-0 place-items-center rounded-full shadow-[var(--shadow-raised)]"
+          className="bg-background text-secondary grid size-14 shrink-0 place-items-center rounded-full"
         >
           <ShieldCheckIcon className="size-6" strokeWidth={2.2} />
         </span>
@@ -72,7 +68,7 @@ export function GuardianHero() {
         </div>
       </div>
 
-      <dl className="border-border relative mt-6 grid grid-cols-2 gap-4 border-t pt-5 sm:max-w-md">
+      <dl className="border-border mt-6 grid grid-cols-2 gap-4 border-t pt-5 sm:max-w-md">
         <Figure
           label={labels.heroVaults}
           value={vaults === undefined ? "—" : fmtNumber(vaults.length, locale)}

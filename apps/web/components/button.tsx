@@ -28,7 +28,7 @@ import Link from "next/link"
  * not-yet. `aria-disabled` rather than only `disabled`, so the control stays
  * in the tab order and a screen reader announces *why* nothing happened.
  */
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "inverse"
+type Variant = "primary" | "secondary" | "outline" | "ghost"
 type Size = "lg" | "md" | "sm"
 
 const SIZE: Record<Size, string> = {
@@ -44,13 +44,6 @@ const VARIANT: Record<Variant, string> = {
     "bg-secondary text-secondary-foreground hover:bg-olive-600 shadow-[var(--shadow-raised)]",
   outline: "border border-border hover:bg-sand-100",
   ghost: "text-sand-700 hover:text-foreground hover:bg-sand-100",
-  // For a button sitting *on* a filled olive panel — a "settled" surface, where
-  // the page's own primary is nearly invisible and an outline in `--border`
-  // (16% ink over olive) does not resolve at all. It inverts the panel's own
-  // pair, which is why it is spelled out rather than using `currentColor`: that
-  // would paint the label in the fill.
-  inverse:
-    "bg-[color:var(--secondary-foreground)] text-[color:var(--secondary)] shadow-[var(--shadow-raised)]",
 }
 
 const BASE =

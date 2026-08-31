@@ -3,6 +3,7 @@
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 import {
+  CheckIcon,
   FileTextIcon,
   KeyRoundIcon,
   PackageIcon,
@@ -143,8 +144,8 @@ export function HomeBoard() {
         </div>
 
         {asks.length === 0 ? (
-          <Panel tone="settled" title={labels.nothingTitle}>
-            <p className="max-w-[62ch] text-[14.5px] leading-[1.7] opacity-90">
+          <Panel accent="secondary" icon={CheckIcon} title={labels.nothingTitle}>
+            <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.7]">
               {labels.nothingBody}
             </p>
           </Panel>

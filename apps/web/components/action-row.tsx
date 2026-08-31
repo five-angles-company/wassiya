@@ -10,9 +10,11 @@ import { ChevronLeftIcon, type LucideIcon } from "lucide-react"
  * same shape, so they are all this component. A list that changes proportions
  * between screens reads as four half-finished products.
  *
- * `tone` says whether the row is asking for something. `now` gives it the
- * terracotta accent ground; everything else sits on the card tone. At most one
- * kind of row per screen should be `now`, or the accent stops meaning anything.
+ * `tone` says whether the row is asking for something, and it tints the
+ * **mark** — every card in this app is `--card`, so a row that painted its
+ * whole surface terracotta was a third card colour competing with the two that
+ * already existed. At most one kind of row per screen should be `now`, or the
+ * accent stops meaning anything wherever it lands.
  *
  * The chevron points along the reading direction — `rtl:` is the exception here
  * because Arabic is the default, so the LTR case is the one that rotates.
@@ -36,11 +38,7 @@ export function ActionRow({
   return (
     <Link
       href={href}
-      className={`group lift rounded-card flex items-start gap-4 p-4 transition-colors md:p-5 ${
-        tone === "now"
-          ? "bg-accent text-accent-foreground hover:bg-terracotta-200"
-          : "bg-card hover:bg-sand-200"
-      }`}
+      className="group lift bg-card border-border rounded-card hover:bg-sand-200 flex items-start gap-4 border p-4 shadow-[var(--shadow-raised)] transition-colors md:p-5"
     >
       <span
         aria-hidden
@@ -56,11 +54,7 @@ export function ActionRow({
       <div className="min-w-0 flex-1">
         <div className="font-heading text-[16px] font-extrabold">{title}</div>
         {body !== undefined && (
-          <p
-            className={`mt-1.5 text-[14px] leading-[1.65] ${
-              tone === "now" ? "opacity-80" : "text-muted-foreground"
-            }`}
-          >
+          <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.65]">
             {body}
           </p>
         )}

@@ -52,7 +52,6 @@ export function BoxIndex() {
           key={claim.id}
           href={`/box/${claim.id}`}
           icon={PackageIcon}
-          tone="now"
           // `claims.mine` is keyed on the claimant and carries no subject name;
           // the reference is what identifies the row, and the box page itself
           // names the vault once it has been opened.

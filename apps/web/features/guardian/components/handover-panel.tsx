@@ -98,14 +98,14 @@ export function HandoverPanel({
 
   if (share !== null) {
     return (
-      <Panel tone="settled" icon={KeyRoundIcon} title={labels.handoverResultTitle}>
-        <p className="mb-5 max-w-[62ch] text-[14.5px] leading-[1.72] opacity-90">
+      <Panel accent="secondary" icon={KeyRoundIcon} title={labels.handoverResultTitle}>
+        <p className="text-muted-foreground mb-5 max-w-[62ch] text-[14.5px] leading-[1.72]">
           {labels.handoverResultBody}
         </p>
 
         <p
           dir="ltr"
-          className="rounded-card bg-[color:rgba(32,30,29,.22)] px-5 py-4 font-mono text-[14px] leading-[1.9] font-semibold break-all"
+          className="rounded-card bg-background border-border border px-5 py-4 font-mono text-[14px] leading-[1.9] font-semibold break-all"
         >
           {share}
         </p>
@@ -113,11 +113,11 @@ export function HandoverPanel({
         <div className="mt-4">
           <CopyButton
             value={share}
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border border-[color:currentColor] px-4 text-[13.5px] font-semibold transition-colors"
+            className="border-border hover:bg-sand-100 inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border px-4 text-[13.5px] font-semibold transition-colors"
           />
         </div>
 
-        <p className="mt-5 flex items-start gap-2.5 text-[13.5px] leading-[1.7] opacity-85">
+        <p className="text-terracotta-800 mt-5 flex items-start gap-2.5 text-[13.5px] leading-[1.7]">
           <TriangleAlertIcon
             className="mt-0.5 size-4 shrink-0"
             strokeWidth={2.4}
@@ -131,11 +131,11 @@ export function HandoverPanel({
 
   return (
     <Panel
-      tone="now"
+      accent="primary"
       icon={KeyRoundIcon}
       title={labels.dutyHandoverTitle.replace("{name}", subjectName)}
     >
-      <p className="max-w-[62ch] text-[14.5px] leading-[1.72] opacity-80">
+      <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.72]">
         {labels.handoverBody}
       </p>
 

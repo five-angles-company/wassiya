@@ -19,16 +19,18 @@ import { HEIR_BOX } from "@/features/box/strings/heir-box"
  * front of the exact gate it explains. Everywhere else, the same diagram would
  * be a lecture.
  *
- * Drawn on ink rather than sand. It is the only dark surface in the app, and it
- * earns that by being the only thing on screen that is *about* the encryption
- * rather than about the reader's own situation.
+ * It was drawn on ink, as the one dark surface in the app. Every card here is
+ * `--card` now — a second surface colour for a single block is exactly the
+ * noise that made these pages loud — so what marks it out is the two coloured
+ * halves inside it, which is the diagram itself rather than decoration around
+ * it.
  */
 export function HowItOpens() {
   const labels = t(HEIR_BOX, useLocale())
 
   return (
-    <aside className="rounded-sheet bg-[#201e1d] px-7 pt-8 pb-9 text-[#f5ead8]">
-      <div className="mb-6 text-[12px] font-semibold tracking-[.14em] uppercase opacity-50">
+    <aside className="bg-card border-border rounded-sheet border px-7 pt-8 pb-9 shadow-[var(--shadow-raised)]">
+      <div className="text-muted-foreground mb-6 text-[12px] font-semibold tracking-[.14em] uppercase">
         {labels.howTitle}
       </div>
 
@@ -41,7 +43,7 @@ export function HowItOpens() {
         />
         <span
           aria-hidden
-          className="font-heading flex-none text-[22px] font-black opacity-40"
+          className="font-heading text-muted-foreground flex-none text-[22px] font-black"
         >
           +
         </span>
@@ -54,20 +56,20 @@ export function HowItOpens() {
       </div>
 
       <div className="mb-5 flex justify-center">
-        <ArrowDownIcon className="size-5 opacity-40" strokeWidth={2.4} aria-hidden />
+        <ArrowDownIcon className="text-muted-foreground size-5" strokeWidth={2.4} aria-hidden />
       </div>
 
-      <div className="mb-5 rounded-[22px] border-2 border-[color:rgba(245,234,216,.28)] px-5 py-6 text-center">
+      <div className="border-border bg-background mb-5 rounded-[22px] border px-5 py-6 text-center">
         <LaptopIcon className="mx-auto mb-2 size-5" strokeWidth={2.4} aria-hidden />
         <div className="font-heading mb-1.5 text-[16px] font-extrabold">
           {labels.opensHere}
         </div>
-        <div className="text-[12.5px] leading-[1.6] opacity-60">
+        <div className="text-muted-foreground text-[12.5px] leading-[1.6]">
           {labels.opensHereMeta}
         </div>
       </div>
 
-      <p className="text-[13px] leading-[1.75] opacity-60">{labels.twoNotOne}</p>
+      <p className="text-muted-foreground text-[13px] leading-[1.75]">{labels.twoNotOne}</p>
     </aside>
   )
 }

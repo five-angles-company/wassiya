@@ -4,23 +4,23 @@ import type { LucideIcon } from "lucide-react"
 /**
  * An object on the page: something to act on, or a state that has happened.
  *
- * ## A border means something now
+ * ## One surface, everywhere
  *
- * There were four tones and ten of the thirty uses were `plain` — a note, a
- * caveat, a list, a second fact, each in a bordered box. Stacking three or four
- * of those is what made a page read as busy however carefully each one was set,
- * because the border stopped carrying any information: everything had one.
+ * There were three: sand `#ebddc5` for ordinary content, a peach `#ffe1d0` for
+ * the thing being asked for, and olive for a completed state. Three card
+ * colours on one screen is three claims on the reader's attention, and a page
+ * that alternates between them reads as loud however carefully each block is
+ * set. Every card in this app is now `--card`, `#ebddc5`.
  *
- * So `plain` is gone and the quiet half of the system is `Section`, which has
- * no box at all. What is left here is genuinely object-shaped, and a border
- * around it now means what it says.
+ * ## So emphasis moved to the mark
  *
- * ## The three tones mean the same thing on every screen
+ * `accent` tints the heading's icon and nothing else — terracotta for the one
+ * thing a screen is asking for, olive for something finished. A 18px glyph is
+ * enough to carry that: the reader is scanning for *which* block, and colour
+ * over a whole surface answers a question they were not asking.
  *
- * `card` is a thing. `now` is the one thing the screen is asking for. `settled`
- * is a state that has completed. Nothing but `now` may carry the accent — a
- * screen with two terracotta panels has told the reader nothing about which one
- * to look at.
+ * It also means a screen can hold four blocks without shouting, which the
+ * three-fill system could not.
  *
  * ## Why the shadow is not decoration
  *
@@ -32,29 +32,28 @@ import type { LucideIcon } from "lucide-react"
 export function Panel({
   title,
   icon: Icon,
-  tone = "card",
+  accent,
   children,
 }: {
   title?: string
   icon?: LucideIcon
-  tone?: "card" | "now" | "settled"
+  /** Tints the heading icon only. The surface never changes. */
+  accent?: "primary" | "secondary"
   children: ReactNode
 }) {
   return (
-    <section
-      className={`rounded-sheet border p-6 shadow-[var(--shadow-raised)] md:p-7 ${
-        tone === "now"
-          ? "bg-accent text-accent-foreground border-terracotta-200"
-          : tone === "settled"
-            ? "bg-secondary text-secondary-foreground border-olive-600"
-            : "bg-card border-border"
-      }`}
-    >
+    <section className="bg-card border-border rounded-sheet border p-6 shadow-[var(--shadow-raised)] md:p-7">
       {title !== undefined && (
         <h2 className="font-heading mb-3 flex items-center gap-2.5 text-[17px] font-extrabold">
           {Icon !== undefined && (
             <Icon
-              className="size-[18px] shrink-0"
+              className={`size-[18px] shrink-0 ${
+                accent === "primary"
+                  ? "text-primary"
+                  : accent === "secondary"
+                    ? "text-secondary"
+                    : "text-muted-foreground"
+              }`}
               strokeWidth={2.4}
               aria-hidden
             />

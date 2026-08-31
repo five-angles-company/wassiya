@@ -26,11 +26,11 @@ export function ConfirmDone() {
   const labels = t(GUARDIAN_DUTIES, useLocale())
 
   return (
-    <Panel tone="settled" icon={CheckIcon} title={labels.confirmDone}>
-      <p className="mb-6 max-w-[62ch] text-[14.5px] leading-[1.72] opacity-90">
+    <Panel accent="secondary" icon={CheckIcon} title={labels.confirmDone}>
+      <p className="text-muted-foreground mb-6 max-w-[62ch] text-[14.5px] leading-[1.72]">
         {labels.confirmWhatHappens}
       </p>
-      <ButtonLink href="/guardian" variant="inverse">
+      <ButtonLink href="/guardian" variant="outline">
         {labels.title}
       </ButtonLink>
     </Panel>
