@@ -3,6 +3,7 @@
 import type { GuardianKeySheet } from "@workspace/crypto/guardianKey"
 import { ArrowRightIcon, PrinterIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { CopyButton } from "@/components/copy-button"
 import type { Resolved } from "@/lib/i18n/locale"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
@@ -78,18 +79,18 @@ export function AcceptSheet({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            className="flex-1"
             onClick={() => window.print()}
-            className="bg-secondary text-secondary-foreground hover:bg-olive-600 inline-flex h-[54px] flex-1 items-center justify-center gap-2.5 rounded-full text-[15px] font-bold transition-colors"
           >
             <PrinterIcon className="size-5" strokeWidth={2.4} aria-hidden />
             {labels.print}
-          </button>
+          </Button>
           <CopyButton
             value={sheet.code}
             label={labels.copy}
-            className="border-border hover:bg-muted inline-flex h-[54px] items-center justify-center gap-2 rounded-full border-[1.5px] px-7 text-[15px] font-bold transition-colors"
+            className="border-border hover:bg-sand-100 inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-6 text-[14.5px] font-semibold transition-colors"
           />
         </div>
 

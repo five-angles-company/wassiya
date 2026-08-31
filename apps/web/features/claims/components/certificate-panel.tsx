@@ -6,6 +6,7 @@ import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
 import { FileCheck2Icon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
@@ -134,14 +135,15 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
         >
           <p className="text-[15.5px] font-semibold">{labels.dropHere}</p>
           <p className="text-[13px] opacity-60">{labels.dropHint}</p>
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
             onClick={() => inputRef.current?.click()}
             disabled={busy}
-            className="border-border hover:bg-background mt-3 rounded-full border px-5 py-2.5 text-[14px] font-semibold transition-colors disabled:opacity-50"
           >
             {busy ? labels.uploading : labels.pickFile}
-          </button>
+          </Button>
           <input
             ref={inputRef}
             type="file"
@@ -197,14 +199,13 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
         {labels.matchNote}
       </p>
 
-      <button
-        type="button"
+      <Button
+        className="mt-5"
         onClick={() => void send()}
         disabled={busy || storageId === null || deceasedName.trim().length === 0}
-        className="bg-primary text-primary-foreground hover:bg-terracotta-600 mt-5 rounded-full px-7 py-3 text-[15px] font-semibold transition-colors disabled:opacity-50"
       >
         {busy ? labels.submitting : labels.submit}
-      </button>
+      </Button>
       <p className="mt-2 text-[12.5px] opacity-60">{labels.submitNote}</p>
 
       {error !== null && <p className="mt-4 text-[14px]">{error}</p>}

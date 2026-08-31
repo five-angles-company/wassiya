@@ -1,8 +1,8 @@
 "use client"
 
-import Link from "next/link"
 import { CheckIcon } from "lucide-react"
 
+import { ButtonLink } from "@/components/button"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
@@ -30,12 +30,9 @@ export function ConfirmDone() {
       <p className="mb-6 max-w-[62ch] text-[14.5px] leading-[1.72] opacity-90">
         {labels.confirmWhatHappens}
       </p>
-      <Link
-        href="/guardian"
-        className="text-secondary inline-flex rounded-full bg-[color:var(--secondary-foreground)] px-7 py-3 text-[15px] font-bold"
-      >
+      <ButtonLink href="/guardian" variant="inverse">
         {labels.title}
-      </Link>
+      </ButtonLink>
     </Panel>
   )
 }

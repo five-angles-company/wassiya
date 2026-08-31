@@ -6,6 +6,7 @@ import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
 import { UserCheckIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
@@ -114,14 +115,14 @@ export function ConfirmPanel({
             {labels.confirmWhatHappens}
           </p>
 
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            className="mt-6"
             onClick={() => void act()}
             disabled={busy}
-            className="bg-secondary text-secondary-foreground hover:bg-olive-600 mt-6 rounded-full px-8 py-3.5 text-[15px] font-bold transition-colors disabled:opacity-50"
           >
             {busy ? labels.confirmBusy : labels.confirmAction}
-          </button>
+          </Button>
 
           {error !== null && (
             <p className="mt-4 text-[14px] leading-[1.7]">{error}</p>

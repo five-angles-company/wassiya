@@ -1,10 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 import { PackageIcon } from "lucide-react"
 
+import { ButtonLink } from "@/components/button"
 import { ClaimStatusPill } from "@/components/claim-status-pill"
 import { Panel } from "@/components/panel"
 import { RecordNotFound } from "@/components/record-not-found"
@@ -126,12 +126,9 @@ export function ClaimDetail({ claimId }: { claimId: string }) {
             {status.releasedBody}
           </p>
           {isMine && (
-            <Link
-              href={`/box/${claim.id}`}
-              className="text-secondary inline-flex rounded-full bg-[color:var(--secondary-foreground)] px-7 py-3 text-[15px] font-bold"
-            >
+            <ButtonLink href={`/box/${claim.id}`} variant="inverse">
               {status.openBox}
-            </Link>
+            </ButtonLink>
           )}
           <p className="mt-4 text-[13px] leading-[1.6] opacity-75">
             {status.releasedKeyNote}

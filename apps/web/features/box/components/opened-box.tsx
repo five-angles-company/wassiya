@@ -84,7 +84,7 @@ export function OpenedBox({
         <p className="max-w-[62ch] text-[14.5px] leading-[1.72] opacity-90">
           {labels.openBody}
         </p>
-        <p className="mt-5 inline-flex rounded-full bg-[color:var(--secondary-foreground)] px-6 py-3 text-[15px] font-bold text-[color:var(--secondary)]">
+        <p className="mt-5 inline-flex h-11 items-center rounded-full bg-[color:var(--secondary-foreground)] px-6 text-[14.5px] font-bold text-[color:var(--secondary)]">
           {labels.itemCount.replace("{n}", fmtNumber(items.length, locale))}
         </p>
         <p className="mt-5 text-[13px] leading-[1.65] opacity-75">

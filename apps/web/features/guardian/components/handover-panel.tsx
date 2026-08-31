@@ -9,7 +9,9 @@ import { decodeGuardianKey } from "@workspace/crypto/guardianKey"
 import { useMutation } from "convex/react"
 import { KeyRoundIcon, TriangleAlertIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { CopyButton } from "@/components/copy-button"
+import { TextInput } from "@/components/text-input"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
@@ -111,7 +113,7 @@ export function HandoverPanel({
         <div className="mt-4">
           <CopyButton
             value={share}
-            className="inline-flex items-center gap-2 rounded-full border border-[color:currentColor] px-5 py-2.5 text-[13.5px] font-semibold"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border border-[color:currentColor] px-4 text-[13.5px] font-semibold transition-colors"
           />
         </div>
 
@@ -140,32 +142,30 @@ export function HandoverPanel({
       <label className="mt-6 mb-2.5 block text-[14px] font-semibold">
         {labels.handoverKeyLabel}
       </label>
-      <input
-        dir="ltr"
+      <TextInput
+        mono
         value={typed}
         onChange={(event) => {
           setTyped(event.target.value)
           if (error !== null) setError(null)
         }}
-        spellCheck={false}
-        autoComplete="off"
-        autoCapitalize="characters"
         placeholder="WSYG1-…"
-        className="bg-background border-secondary h-[62px] w-full max-w-[560px] rounded-full border-2 px-6 font-mono text-[15px] font-semibold tracking-[.06em] outline-none"
+        invalid={error !== null}
+        className="max-w-[560px]"
       />
 
       {error !== null && (
         <p className="mt-3 max-w-[62ch] text-[14px] leading-[1.65]">{error}</p>
       )}
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        className="mt-6"
         onClick={() => void unwrap()}
         disabled={busy || typed.trim().length === 0}
-        className="bg-secondary text-secondary-foreground hover:bg-olive-600 mt-6 rounded-full px-8 py-3.5 text-[15px] font-bold transition-colors disabled:opacity-50"
       >
         {busy ? labels.handoverBusy : labels.handoverAction}
-      </button>
+      </Button>
     </Panel>
   )
 }

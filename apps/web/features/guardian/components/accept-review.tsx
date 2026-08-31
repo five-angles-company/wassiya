@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { ArrowRightIcon, CheckIcon, XIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import type { Resolved } from "@/lib/i18n/locale"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
 
@@ -83,18 +84,14 @@ export function AcceptReview({
       </div>
 
       <div className="flex flex-wrap items-center gap-5">
-        <button
-          type="button"
-          onClick={onAccept}
-          className="bg-secondary text-secondary-foreground hover:bg-olive-600 font-heading inline-flex h-[58px] items-center gap-2.5 rounded-full px-9 text-[17px] font-extrabold transition-colors"
-        >
+        <Button variant="secondary" size="lg" onClick={onAccept}>
           {labels.accept}
           <ArrowRightIcon
             className="size-5 rtl:-scale-x-100"
             strokeWidth={2.75}
             aria-hidden
           />
-        </button>
+        </Button>
         <Link
           href="/"
           className="text-[14.5px] font-semibold opacity-60 hover:opacity-100"

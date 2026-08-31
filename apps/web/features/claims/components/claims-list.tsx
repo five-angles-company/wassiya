@@ -1,11 +1,11 @@
 "use client"
 
-import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 import { FilePlus2Icon, FileTextIcon } from "lucide-react"
 
 import { ActionRow } from "@/components/action-row"
+import { ButtonLink } from "@/components/button"
 import { ClaimStatusPill } from "@/components/claim-status-pill"
 import { EmptyState } from "@/components/empty-state"
 import { PageHeader } from "@/components/page-header"
@@ -104,21 +104,14 @@ function NewReportButton({
   size: "sm" | "lg"
 }) {
   return (
-    <Link
-      href="/claims/new"
-      className={`bg-primary text-primary-foreground hover:bg-terracotta-600 inline-flex items-center gap-2 rounded-full font-semibold shadow-[var(--shadow-raised)] transition-colors ${
-        size === "lg"
-          ? "font-heading h-14 px-8 text-[16.5px] font-extrabold"
-          : "h-10 px-5 text-[14px]"
-      }`}
-    >
+    <ButtonLink href="/claims/new" size={size}>
       <FilePlus2Icon
         className={size === "lg" ? "size-5" : "size-4"}
         strokeWidth={2.4}
         aria-hidden
       />
       {label}
-    </Link>
+    </ButtonLink>
   )
 }
 

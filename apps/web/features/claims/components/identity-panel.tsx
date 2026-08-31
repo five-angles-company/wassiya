@@ -5,6 +5,7 @@ import { api } from "@workspace/backend/api"
 import { useAction, useQuery } from "convex/react"
 import { BadgeCheckIcon, ScanFaceIcon } from "lucide-react"
 
+import { Button, ButtonLink } from "@/components/button"
 import { CopyButton } from "@/components/copy-button"
 import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
@@ -111,14 +112,9 @@ export function IdentityPanel() {
         </p>
       ) : (
         <>
-          <button
-            type="button"
-            onClick={() => void begin()}
-            disabled={busy}
-            className="bg-primary text-primary-foreground hover:bg-terracotta-600 rounded-full px-7 py-3 text-[15px] font-semibold transition-colors disabled:opacity-50"
-          >
+          <Button onClick={() => void begin()} disabled={busy}>
             {busy ? labels.starting : labels.startVerify}
-          </button>
+          </Button>
           <p className="mt-2 text-[12.5px] opacity-60">{labels.popupNote}</p>
           {state === "rejected" && status !== null && status !== undefined && (
             <p className="mt-3 text-[14px] leading-[1.7]">
@@ -141,14 +137,15 @@ export function IdentityPanel() {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <CopyButton value={providerUrl} label={labels.copyLink} />
-            <a
+            <ButtonLink
               href={providerUrl}
+              variant="outline"
+              size="sm"
               target="_blank"
               rel="noreferrer"
-              className="border-border hover:bg-muted inline-flex items-center rounded-full border px-4 py-2 text-[13.5px] font-semibold transition-colors"
             >
               {labels.openInTab}
-            </a>
+            </ButtonLink>
           </div>
         </div>
       )}

@@ -2,7 +2,9 @@
 
 import { ArrowRightIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
+import { TextInput } from "@/components/text-input"
 import { t } from "@/lib/i18n/locale"
 import { HowItOpens } from "@/features/box/components/how-it-opens"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
@@ -52,15 +54,13 @@ export function BoxGate({
         </label>
         {/* Bordered in terracotta rather than the usual hairline: it is the
             only input on the screen and the only thing being asked for. */}
-        <input
-          dir="ltr"
+        <TextInput
+          mono
           value={share}
           onChange={(event) => onShareChange(event.target.value)}
           placeholder={labels.sharePlaceholder}
-          spellCheck={false}
-          autoComplete="off"
-          autoCapitalize="characters"
-          className="bg-card border-primary h-[62px] w-full max-w-[560px] rounded-full border-2 px-6 font-mono text-[15px] font-semibold tracking-[.06em] outline-none focus-visible:border-[color:var(--accent-foreground)]"
+          invalid={error !== undefined}
+          className="max-w-[560px]"
         />
         {error !== undefined && (
           <p className="text-terracotta-800 mt-3 max-w-[62ch] text-[14px] leading-[1.65]">
@@ -69,11 +69,10 @@ export function BoxGate({
         )}
 
         <div className="mt-5 flex flex-wrap items-center gap-5">
-          <button
-            type="button"
+          <Button
+            size="lg"
             onClick={onUnlock}
             disabled={busy || share.trim().length === 0}
-            className="bg-primary text-primary-foreground hover:bg-terracotta-600 font-heading inline-flex h-[58px] items-center gap-2.5 rounded-full px-9 text-[17px] font-extrabold transition-colors disabled:opacity-50"
           >
             {busy ? labels.unlocking : labels.unlock}
             <ArrowRightIcon
@@ -81,7 +80,7 @@ export function BoxGate({
               strokeWidth={2.75}
               aria-hidden
             />
-          </button>
+          </Button>
           <span className="text-muted-foreground max-w-[220px] text-[13.5px] leading-[1.55]">
             {labels.onDevice}
           </span>

@@ -1,5 +1,7 @@
 "use client"
 
+import { TextInput } from "@/components/text-input"
+
 export type FieldProps = {
   label: string
   value: string
@@ -13,35 +15,20 @@ export type FieldProps = {
 }
 
 /**
- * A labelled field.
+ * A label, an input, and the line under it.
  *
- * ## Why it stopped being a pill
+ * The input itself is `TextInput` — this component owns only the three-part
+ * arrangement around it. It used to own the input too, which is how the claim
+ * form's fields and the four code inputs on the guardian and box screens ended
+ * up as five different controls; a reader meets several of them minutes apart.
  *
- * It was a 62px full-width capsule on the card tone with a 16%-ink hairline —
- * the funnel's grammar, where one question owned a screen. Stacked three deep
- * in a form it read as three empty beige sausages: nothing about the shape said
- * "type here", and the border was too faint on that ground to draw an edge at
- * all.
+ * `dir="ltr"` maps to the input's `mono` treatment, because those two always
+ * travel together here: every LTR field in this app is a machine string, and a
+ * Latin run left to inherit RTL reorders under the bidi algorithm until it
+ * cannot be read back or copied accurately.
  *
- * Three changes and each is doing one job. **The ground is `sand-50`**, lighter
- * than every surface around it, because a field being the brightest thing in a
- * form is the oldest and most reliable signal that it is where the text goes.
- * **The border is `sand-300`**, which actually resolves against both the page
- * and a card. And **the radius is 16px, not a pill** — a fully rounded input in
- * a stacked form reads as a search box, and there is nothing to search here.
- *
- * ## Focus is a ring, not a colour swap
- *
- * A border that merely changes hue is invisible to anyone who was not watching
- * that edge. The 4px terracotta halo is visible in peripheral vision, which is
- * what a keyboard user needs when tab moves them somewhere they were not
- * looking.
- *
- * ## `dir` is not cosmetic
- *
- * An email address and a phone number are Latin machine strings sitting in an
- * Arabic form. Left to inherit RTL, the caret jumps, the `@` lands in the wrong
- * place visually, and people mistype their own address.
+ * The message slot shows the error when there is one and the hint otherwise —
+ * never both. Two lines under a field is where a reader stops reading.
  */
 export function Field({
   label,
@@ -59,16 +46,13 @@ export function Field({
     <label className="flex flex-col gap-2">
       <span className="text-[13.5px] font-semibold">{label}</span>
 
-      <input
+      <TextInput
         type={type}
-        dir={dir}
+        mono={dir === "ltr"}
         value={value}
         placeholder={placeholder}
+        invalid={error !== undefined}
         onChange={(event) => onChange(event.target.value)}
-        aria-invalid={error !== undefined}
-        className={`bg-sand-50 placeholder:text-sand-500 h-[52px] rounded-2xl border-[1.5px] px-4 text-[15.5px] outline-none transition-[border-color,box-shadow] focus-visible:border-[color:var(--primary)] focus-visible:ring-4 focus-visible:ring-[color:var(--color-terracotta-200)] ${
-          error === undefined ? "border-sand-300" : "border-terracotta-700"
-        } ${dir === "ltr" ? "font-mono text-[14.5px] font-medium" : ""}`}
       />
 
       {message !== undefined && (

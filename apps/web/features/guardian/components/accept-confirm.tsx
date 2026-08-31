@@ -1,5 +1,7 @@
 "use client"
 
+import { Button } from "@/components/button"
+import { TextInput } from "@/components/text-input"
 import type { Resolved } from "@/lib/i18n/locale"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
 
@@ -38,15 +40,12 @@ export function AcceptConfirm({
       <label className="mb-2.5 block text-[14px] font-semibold">
         {labels.confirmLabel}
       </label>
-      <input
-        dir="ltr"
+      <TextInput
+        mono
         value={typed}
         onChange={(event) => onType(event.target.value)}
-        spellCheck={false}
-        autoComplete="off"
-        autoCapitalize="characters"
         placeholder="WSYG1-…"
-        className="bg-card border-secondary h-[62px] w-full rounded-full border-2 px-6 font-mono text-[15px] font-semibold tracking-[.06em] outline-none"
+        invalid={error !== undefined}
       />
       {error !== undefined && (
         <p className="text-terracotta-800 mt-3 text-[14px] leading-[1.65]">
@@ -54,14 +53,15 @@ export function AcceptConfirm({
         </p>
       )}
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="lg"
+        className="mt-6"
         onClick={onConfirm}
         disabled={busy || typed.trim().length === 0}
-        className="bg-secondary text-secondary-foreground hover:bg-olive-600 font-heading mt-6 inline-flex h-[58px] items-center rounded-full px-9 text-[17px] font-extrabold transition-colors disabled:opacity-50"
       >
         {busy ? labels.confirmBusy : labels.confirmAction}
-      </button>
+      </Button>
     </div>
   )
 }

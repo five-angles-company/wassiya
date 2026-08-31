@@ -1,8 +1,8 @@
 "use client"
 
-import Link from "next/link"
 import { CheckIcon } from "lucide-react"
 
+import { ButtonLink } from "@/components/button"
 import { Panel } from "@/components/panel"
 import type { Resolved } from "@/lib/i18n/locale"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
@@ -21,12 +21,9 @@ export function AcceptDone({ labels }: { labels: Resolved<typeof GUARDIAN> }) {
       <p className="mb-6 max-w-[62ch] text-[15px] leading-[1.72] opacity-90">
         {labels.doneBody}
       </p>
-      <Link
-        href="/guardian"
-        className="text-secondary font-heading inline-flex h-[54px] items-center rounded-full bg-[color:var(--secondary-foreground)] px-8 text-[16px] font-extrabold"
-      >
+      <ButtonLink href="/guardian" variant="inverse" size="lg">
         {labels.doneAction}
-      </Link>
+      </ButtonLink>
     </Panel>
   )
 }

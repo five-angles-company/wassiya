@@ -12,6 +12,7 @@ import {
   ShieldIcon,
 } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
 import { t, type Resolved } from "@/lib/i18n/locale"
 import { Field } from "@/features/claims/components/field"
@@ -108,18 +109,14 @@ export function FileClaimForm() {
         </div>
 
         <div className="border-border mt-7 border-t pt-6">
-          <button
-            type="button"
+          <Button
+            size="lg"
+            className="w-full sm:w-auto"
             onClick={() => void file()}
             disabled={busy || !ready}
-            className={`font-heading inline-flex h-14 w-full items-center justify-center rounded-full px-8 text-[16.5px] font-extrabold transition-colors sm:w-auto ${
-              ready && !busy
-                ? "bg-primary text-primary-foreground hover:bg-terracotta-600 shadow-[var(--shadow-raised)]"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            }`}
           >
             {busy ? labels.filing : labels.fileClaim}
-          </button>
+          </Button>
 
           {error !== null && (
             <p className="text-terracotta-800 mt-4 text-[14px] leading-[1.7]">

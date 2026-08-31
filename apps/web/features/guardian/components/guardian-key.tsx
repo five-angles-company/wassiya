@@ -6,8 +6,10 @@ import { guardianKeyMatches } from "@workspace/crypto/guardianKey"
 import { useQuery } from "convex/react"
 import { KeyRoundIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { EmptyState } from "@/components/empty-state"
 import { Panel } from "@/components/panel"
+import { TextInput } from "@/components/text-input"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
@@ -100,27 +102,25 @@ export function GuardianKey() {
           <p className="mt-4 text-[14px] leading-[1.7]">{labels.keyNoPublished}</p>
         ) : (
           <>
-            <input
-              dir="ltr"
+            <TextInput
+              mono
               value={typed}
               onChange={(event) => {
                 setTyped(event.target.value)
                 setVerdict("unchecked")
               }}
-              spellCheck={false}
-              autoComplete="off"
-              autoCapitalize="characters"
               placeholder="WSYG1-…"
-              className="bg-card border-border mt-4 h-[58px] w-full max-w-[560px] rounded-full border-[1.5px] px-6 font-mono text-[15px] font-semibold tracking-[.06em] outline-none focus-visible:border-[color:var(--secondary)]"
+              invalid={verdict === "bad"}
+              className="mt-4 max-w-[560px]"
             />
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              className="mt-4"
               onClick={check}
               disabled={typed.trim().length === 0}
-              className="bg-secondary text-secondary-foreground hover:bg-olive-600 mt-4 rounded-full px-7 py-3 text-[14.5px] font-bold transition-colors disabled:opacity-50"
             >
               {labels.keyCheckAction}
-            </button>
+            </Button>
 
             {verdict === "ok" && (
               <p className="bg-olive-100 text-olive-700 rounded-card mt-4 max-w-[62ch] p-4 text-[14px] leading-[1.7]">

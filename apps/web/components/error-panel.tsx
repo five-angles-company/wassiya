@@ -1,5 +1,6 @@
 "use client"
 
+import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
@@ -44,13 +45,9 @@ export function ErrorPanel({
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={reset}
-          className="border-border hover:bg-sand-200 mt-6 rounded-full border px-6 py-2.5 text-[14.5px] transition-colors"
-        >
+        <Button variant="outline" className="mt-6" onClick={reset}>
           {labels.retry}
-        </button>
+        </Button>
       </div>
     </div>
   )

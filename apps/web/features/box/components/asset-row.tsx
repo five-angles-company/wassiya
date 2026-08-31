@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { fetchAndDecrypt } from "@/features/box/lib/open-box"
@@ -145,15 +146,10 @@ export function AssetRow({ item }: { item: BoxItem }) {
       </div>
 
       {downloadable ? (
-        <button
-          type="button"
-          onClick={() => void download()}
-          disabled={busy}
-          className="bg-primary text-primary-foreground hover:bg-terracotta-600 inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 text-[13.5px] font-semibold transition-colors disabled:opacity-50"
-        >
+        <Button size="sm" onClick={() => void download()} disabled={busy}>
           <DownloadIcon className="size-4" strokeWidth={2.4} aria-hidden />
           {busy ? labels.downloading : labels.download}
-        </button>
+        </Button>
       ) : item.title !== null ? (
         <span className="text-muted-foreground shrink-0 self-center text-[13px]">
           {labels.noContent}

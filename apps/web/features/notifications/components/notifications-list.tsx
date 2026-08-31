@@ -5,6 +5,7 @@ import type { Id } from "@workspace/backend/dataModel"
 import { usePaginatedQuery, useMutation } from "convex/react"
 import { BellIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { EmptyState } from "@/components/empty-state"
 import { useLocale } from "@/components/locale-provider"
 import { fmtDate } from "@/lib/format"
@@ -99,30 +100,31 @@ export function NotificationsList() {
             </div>
 
             {unread && (
-              <button
-                type="button"
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[color:currentColor]"
                 onClick={() => {
                   void markRead({
                     notificationId: row._id as Id<"notifications">,
                   })
                 }}
-                className="shrink-0 rounded-full border border-[color:currentColor] px-4 py-2 text-[13px] font-semibold"
               >
                 {labels.markRead}
-              </button>
+              </Button>
             )}
           </article>
         )
       })}
 
       {status === "CanLoadMore" && (
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          className="self-start"
           onClick={() => loadMore(PAGE)}
-          className="border-border hover:bg-muted self-start rounded-full border px-6 py-2.5 text-[14px] font-semibold transition-colors"
         >
           {labels.loadMore}
-        </button>
+        </Button>
       )}
     </div>
   )
