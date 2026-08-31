@@ -27,14 +27,14 @@ export async function AuthShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-sand-50 border-border flex h-16 shrink-0 items-center gap-3 border-b px-4 md:px-6">
+      <header className="bg-sand-50 border-border flex h-14 shrink-0 items-center gap-2.5 border-b px-4 md:px-6">
         <span
           aria-hidden
-          className="bg-primary text-primary-foreground font-heading grid size-8 shrink-0 place-items-center rounded-[10px] text-[17px] font-black"
+          className="bg-primary text-primary-foreground font-heading grid size-7 shrink-0 place-items-center rounded-[9px] text-[15px] font-black"
         >
           و
         </span>
-        <span className="font-heading text-[16px] font-extrabold">
+        <span className="font-heading text-[15.5px] font-extrabold">
           {nav.appName}
         </span>
         <div className="ms-auto flex items-center gap-2">

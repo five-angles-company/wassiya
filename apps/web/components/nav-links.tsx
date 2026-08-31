@@ -17,29 +17,32 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * active state computed in the layout would highlight whichever route happened
  * to be first.
  *
- * ## The groups flatten here, and the seam still shows
+ * ## No icons here, and icons in the phone menu
  *
- * A bar has no room for section labels, so the three groups run together as one
- * row — but a hairline divider marks where the heir's links end and the
- * guardian's begin, for the person who is both. Without it, "صندوقي" and "ما هو
- * مطلوب" sit adjacent and read as one list of five unrelated things.
+ * They were in both and the bar was the worse for it. Five words each wearing a
+ * glyph is ten objects across the top of every screen, and none of the icons
+ * earned its place — "الرئيسية" is not clarified by a house. A phone menu is
+ * different: it is a vertical list scanned rather than read, and there the
+ * glyph is the fastest way to find a row.
  *
- * ## Why the active item is not a filled pill
+ * ## The groups flatten, and the seam still shows
  *
- * It was, twice, and both fills are unusable on a near-white bar. Measured
- * against `sand-50`: the sand ground is a 4% step, and `accent` — the palette's
- * soft terracotta tint — comes out at **1.19:1**, well under the 3:1 a shape
- * needs to read as a shape. A pill nobody can see is worse than no pill,
- * because the row then has an invisible fourth state in it.
+ * A bar has no room for section labels, so the groups run together as one row —
+ * but a hairline marks where the heir's links end and the guardian's begin, for
+ * the person who is both. Without it, "صندوقي" and "ما هو مطلوب" sit adjacent
+ * and read as one list of five unrelated things.
  *
- * So the state is carried by ink and a rule: `terracotta-800` at 6.5:1 against
- * the bar, over a 2.5px underline at 3.5:1. That is the top-bar idiom for a
- * reason — on a light chrome it is the only treatment with contrast to spare,
- * and it leaves the solid accent unspent for the one action a screen is asking
- * for.
+ * ## Active is darker, not more colourful
  *
- * Inactive is `sand-700` (6.3:1), not `--muted-foreground` (4.1:1, under AA at
- * this size). Nav labels are the last place to spend a shortfall.
+ * A filled pill was tried twice and both fills are unusable on a near-white
+ * bar: measured against `sand-50`, the ground tone is a 4% step and `accent`
+ * comes out at **1.19:1**, well under the 3:1 a shape needs to read as a shape.
+ *
+ * What replaced it went the other way and coloured the label terracotta, which
+ * put a second warm hue in a bar that already has one in the mark. So the
+ * hierarchy is weight and darkness — `foreground` at 16:1 against `sand-700` at
+ * 6.3:1 — and the hue lives in the 2px rule underneath, where one accent is
+ * plenty and the solid primary stays unspent for a screen's real action.
  */
 export function NavLinks() {
   const locale = useLocale()
@@ -50,13 +53,13 @@ export function NavLinks() {
   )
 
   return (
-    <nav className="hidden h-16 items-stretch md:flex">
+    <nav className="hidden h-14 items-stretch md:flex">
       {groups.map((group, index) => (
         <div key={group.key} className="flex items-stretch">
           {index > 0 && (
             <span
               aria-hidden
-              className="bg-border mx-3 my-auto h-5 w-px shrink-0"
+              className="bg-border mx-3 my-auto h-4 w-px shrink-0"
             />
           )}
           {group.items
@@ -68,20 +71,15 @@ export function NavLinks() {
                   key={item.key}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  // The underline is an `::after` pinned to the bar's own
-                  // bottom edge, which is why each link is full bar height
-                  // rather than a floating pill.
-                  className={`relative inline-flex items-center gap-2 px-3.5 text-[14px] font-semibold whitespace-nowrap transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-[2.5px] after:rounded-t-full ${
+                  // The rule is an `::after` pinned to the bar's own bottom
+                  // edge, which is why each link is full bar height rather than
+                  // a floating pill.
+                  className={`relative inline-flex items-center px-3.5 text-[14.5px] whitespace-nowrap transition-colors after:absolute after:inset-x-2.5 after:bottom-0 after:h-[2px] after:rounded-t-full ${
                     active
-                      ? "text-terracotta-800 after:bg-primary"
-                      : "text-sand-700 hover:text-foreground after:bg-transparent"
+                      ? "text-foreground font-bold after:bg-primary"
+                      : "text-sand-700 hover:text-foreground font-semibold after:bg-transparent"
                   }`}
                 >
-                  <item.icon
-                    className="size-4 shrink-0"
-                    strokeWidth={2.3}
-                    aria-hidden
-                  />
                   {nav[item.key]}
                 </Link>
               )

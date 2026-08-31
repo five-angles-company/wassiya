@@ -120,6 +120,28 @@ export default async function RootLayout({
             elements: {
               card: "shadow-none border border-[color-mix(in_srgb,#201e1d_16%,transparent)]",
               formButtonPrimary: "rounded-full text-[15px] font-semibold",
+
+              // The avatar generates its own gradient from the user id — which
+              // came out green, beside a terracotta mark on a sand ground.
+              // Three unrelated hues in a 56px bar is most of what made it look
+              // assembled from parts. Flattened to the brand colour; the
+              // initial stays, and a real profile photo still wins because
+              // `avatarImage` sits on top of this box.
+              avatarBox:
+                "bg-primary! text-primary-foreground! [background-image:none]!",
+              userButtonAvatarBox: "size-8!",
+
+              // The menu it opens is Clerk's, and shipped square-cornered with
+              // a hard shadow. These are the same radius and hairline every
+              // other surface in this app uses.
+              userButtonPopoverCard:
+                "rounded-2xl! border! border-[color-mix(in_srgb,#201e1d_16%,transparent)]! shadow-[0_8px_24px_-8px_color-mix(in_srgb,#201e1d_18%,transparent)]!",
+              userButtonPopoverActionButton: "rounded-full!",
+              userButtonPopoverCustomItemButton: "rounded-full!",
+              // Clerk's "Secured by Clerk" footer. Nothing in this product's
+              // chrome is another company's, least of all on the surface whose
+              // entire argument is who can and cannot read your data.
+              userButtonPopoverFooter: "hidden!",
             },
           }}
         >
