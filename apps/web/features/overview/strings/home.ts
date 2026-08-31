@@ -63,19 +63,39 @@ export const HOME = {
     en: "A vault can't be opened in a browser and we don't hold its key. This site is for heirs and guardians only.",
   },
 
-  // Summary rows.
+  // The doors: a place to go with a count on it. The figure carries the
+  // weight, so the label and the unit are separate — "٢" and "بلاغ" are set at
+  // different sizes and cannot come from one interpolated string.
   yourReports: { ar: "بلاغاتك", en: "Your reports" },
-  yourReportsMeta: { ar: "{n} بلاغ", en: "{n} reports" },
-  yourBoxes: { ar: "صناديقك الجاهزة", en: "Your ready boxes" },
-  yourBoxesMeta: { ar: "{n} جاهز", en: "{n} ready" },
   yourVaults: { ar: "الخزائن التي توصي عليها", en: "Vaults you guard" },
-  yourVaultsMeta: { ar: "{n} خزنة", en: "{n} vaults" },
+  unitReports: { ar: "بلاغ", en: "filed" },
+  unitVaults: { ar: "خزنة", en: "vaults" },
 
-  // Duty rows, phrased as an ask rather than as a status.
+  // The asks, phrased as asks. Each carries a sentence about what happens if
+  // the reader acts — without one the card was a title alone in a wide box,
+  // which is what made the old row look empty rather than calm.
   dutyConfirm: { ar: "تأكيد وفاة {name}", en: "Confirm {name}'s death" },
-  dutyHandover: { ar: "تسليم نصف مفتاحك — خزنة {name}", en: "Hand over your key half — {name}'s vault" },
-  claimNeedsIdentity: { ar: "أكمل التحقق من هويتك", en: "Finish verifying your identity" },
-  claimNeedsCertificate: { ar: "ارفع شهادة الوفاة", en: "Upload the death certificate" },
-  claimReady: { ar: "صندوقك جاهز — افتحه", en: "Your box is ready — open it" },
-  open: { ar: "افتح", en: "Open" },
+  dutyConfirmBody: {
+    ar: "تحقّق وارث من هويته ورفع شهادة رسمية. تأكيدك يبدأ مدة اعتراض من ثلاثين يوماً — ولا يسلّم شيئاً اليوم.",
+    en: "An heir has verified their identity and uploaded an official certificate. Your confirmation starts a thirty-day objection period — it delivers nothing today.",
+  },
+  dutyHandover: {
+    ar: "تسليم نصف مفتاحك — خزنة {name}",
+    en: "Hand over your key half — {name}'s vault",
+  },
+  dutyHandoverBody: {
+    ar: "انتهت المدة وصار الصندوق جاهزاً. لا يُفتح إلا بنصفنا ونصفك معاً.",
+    en: "The period has ended and the box is ready. It opens only with our half and yours together.",
+  },
+  dutyBlockedBody: {
+    ar: "نربط الوارث بالبلاغ يدوياً قبل أن نطلب تأكيدك. لا شيء مطلوب منك حتى ذلك.",
+    en: "We link the heir to the report by hand before asking you to confirm. Nothing is needed from you until then.",
+  },
+  claimReady: { ar: "صندوقك جاهز", en: "Your box is ready" },
+  claimReadyBody: {
+    ar: "انتهت مدة الاعتراض وأكّد الوصي. يبقى الصندوق متاحاً ٩٠ يوماً — حمّل ما يهمّك قبل ذلك.",
+    en: "The objection period ended and the guardian confirmed. The box stays open for 90 days — download what matters before then.",
+  },
+  review: { ar: "راجع", en: "Review" },
+  open: { ar: "افتح الصندوق", en: "Open the box" },
 } as const satisfies Dictionary
