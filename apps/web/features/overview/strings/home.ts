@@ -28,7 +28,6 @@ export const HOME = {
   },
 
   // The two-door state.
-  chooseTitle: { ar: "بم نبدأ؟", en: "Where would you like to start?" },
   chooseBody: {
     ar: "حسابك جاهز ولا يوجد عليه شيء بعد. هذان البابان الوحيدان من هنا.",
     en: "Your account is ready and there's nothing on it yet. These are the only two doors from here.",
@@ -39,10 +38,21 @@ export const HOME = {
     en: "If they kept their digital legacy in Wassiya, you start with a death report. About ten minutes, and you can stop and come back.",
   },
   doorClaimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
-  doorGuardianTitle: { ar: "وصلتني دعوة وصاية", en: "I was invited as a guardian" },
+  doorClaimMeta: {
+    ar: "نحو عشر دقائق · يمكنك التوقّف والعودة",
+    en: "About ten minutes · you can stop and come back",
+  },
+  doorGuardianTitle: {
+    ar: "وصلتني دعوة وصاية",
+    en: "I was invited as a guardian",
+  },
   doorGuardianBody: {
     ar: "افتح الرابط الكامل من بريد الدعوة. لا نستطيع فتح الوصاية لك من هنا — الدعوة نفسها هي ما يثبت أنك المقصود.",
     en: "Open the full link from your invitation email. We can't start a guardianship for you from here — the invitation itself is what proves it was meant for you.",
+  },
+  doorGuardianMeta: {
+    ar: "ابحث عن بريد باسم وصيّة",
+    en: "Look for an email from Wassiya",
   },
 
   // The owner, who has arrived at the wrong app. Said plainly, because the
