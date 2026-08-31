@@ -79,6 +79,11 @@ export const CLAIMS = {
     ar: "اسمك الكامل كما في هويتك",
     en: "Your full name as it appears on your ID",
   },
+  // Placeholders, not repeated hints: both fields are Latin machine strings
+  // in an Arabic form, and a shape to match is worth more than another
+  // sentence.
+  subjectPlaceholder: { ar: "name@example.com", en: "name@example.com" },
+  contactPlaceholder: { ar: "05x xxx xxxx", en: "05x xxx xxxx" },
   contactLabel: { ar: "رقم جوالك", en: "Your mobile number" },
   contactHint: {
     ar: "سنستخدمه للتواصل بشأن البلاغ",
