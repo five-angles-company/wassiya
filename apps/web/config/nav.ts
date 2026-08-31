@@ -14,20 +14,33 @@ import type { NAV } from "@/lib/i18n/strings/nav"
 
 type NavKey = keyof typeof NAV
 
+export type Audience = "heir" | "guardian" | "everyone"
+
 export type NavItem = {
   /** Key into the `NAV` dictionary — the label is never hardcoded here. */
   key: NavKey
   icon: LucideIcon
   href: string
   /**
+   * Overrides the group's audience for this one item.
+   *
+   * The heir group needed it. "بلاغاتي" and "بلاغ جديد" belong to *everyone*
+   * who is signed in — filing a report is the one thing any reader can do from
+   * a standing start, and gating the link on already having filed one is a
+   * doorway that only opens from inside. "صندوقي" genuinely does belong to the
+   * group: a box exists after a release and not before.
+   */
+  audience?: Audience
+  /**
    * Kept out of the desktop bar.
    *
-   * A rail can hold eight links without cost; a bar cannot. Two items earn
+   * A rail can hold eight links without cost; a bar cannot. Three items earn
    * their place elsewhere instead: "بلاغ جديد" is an action, and lives as a
-   * button on the reports list where someone is already looking for it; the
-   * account and the notifications sit in the bar's own controls cluster, as an
-   * avatar and a bell, which is where every reader has been trained to find
-   * them. All of them are still in the mobile menu, in full.
+   * button on the reports list where someone is already looking for it;
+   * notifications are the bell; and the account is a row inside the avatar's
+   * own menu — see `user-menu.tsx`, which exists because "secondary" briefly
+   * meant "unreachable" for it. All of them are still in the mobile menu, in
+   * full and named.
    */
   secondary?: boolean
 }
@@ -44,7 +57,7 @@ export type NavGroup = {
    * empty guardian section, and a guardian who has never lost anyone should not
    * be shown a reports list they will never file into.
    */
-  audience: "heir" | "guardian" | "everyone"
+  audience: Audience
 }
 
 /**
@@ -69,9 +82,15 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     key: "groupHeir",
     audience: "heir",
     items: [
-      { key: "claims", icon: FileTextIcon, href: "/claims" },
+      { key: "claims", icon: FileTextIcon, href: "/claims", audience: "everyone" },
       { key: "box", icon: PackageIcon, href: "/box" },
-      { key: "newClaim", icon: FilePlus2Icon, href: "/claims/new", secondary: true },
+      {
+        key: "newClaim",
+        icon: FilePlus2Icon,
+        href: "/claims/new",
+        audience: "everyone",
+        secondary: true,
+      },
     ],
   },
   {

@@ -1,11 +1,11 @@
 import Link from "next/link"
-import { UserButton } from "@clerk/nextjs"
 import { Separator } from "@workspace/ui/components/separator"
 
 import { LanguageToggle } from "@/components/language-toggle"
 import { MobileNav } from "@/components/mobile-nav"
 import { NavLinks } from "@/components/nav-links"
 import { NotificationBell } from "@/components/notification-bell"
+import { UserMenu } from "@/components/user-menu"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { NAV } from "@/lib/i18n/strings/nav"
@@ -80,7 +80,7 @@ export async function AppNav() {
             orientation="vertical"
             className="mx-1 data-[orientation=vertical]:h-5"
           />
-          <UserButton />
+          <UserMenu />
         </div>
       </div>
     </header>
