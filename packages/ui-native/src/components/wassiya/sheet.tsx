@@ -61,31 +61,23 @@ export type SheetProps = {
 /**
  * The app's bottom sheet — a real native one.
  *
- * ## Why native rather than a `Modal` or a portal
+ * Native rather than a `Modal` or a portal, and both alternatives are in this
+ * repo with costs the board's sheets cannot pay. `Select` teleports through
+ * `PortalHost`, which breaks when the screen underneath is replaced
+ * mid-interaction (see `country-picker.tsx`). A `Modal` is a full-screen
+ * overlay: it cannot be dragged, cannot rest at a detent, and dismisses with a
+ * back press that unwinds whatever is behind it — where the board asks for a
+ * sheet that "dismisses without losing the list scroll".
  *
- * Both alternatives are already in this repo and both have a cost the board's
- * sheets cannot pay. `Select` teleports through `PortalHost`, which breaks when
- * the screen underneath is replaced mid-interaction — `country-picker.tsx`
- * documents exactly that, and drops to a plain `Modal` to avoid it. A `Modal`
- * in turn is a full-screen overlay: it cannot be dragged, cannot rest at a
- * detent, and dismisses with a back press that also unwinds whatever is behind
- * it. The board asks for a sheet that "dismisses without losing the list
- * scroll", which is a native sheet's defining behaviour, not a modal's.
+ * **Sizing: prefer `'auto'`, and never wrap short content in a scroller.** The
+ * default is a single `'auto'` detent that hugs the content. Handing the library
+ * a `ScrollView` and a fractional detent reliably produces a sheet sized to the
+ * fraction with the content stranded at the top. Reach for a fractional or
+ * `'peek'` detent only when the content genuinely scrolls, and bound a long
+ * `'auto'` sheet with `maxContentHeight` instead.
  *
- * ## Sizing: prefer `'auto'`, and never wrap short content in a scroller
- *
- * The default is a single `'auto'` detent, which hugs the content. The
- * temptation with a sheet library is to hand it a `ScrollView` and a fractional
- * detent; that reliably produces a sheet sized to the *fraction* with the
- * content stranded at the top and dead space beneath it. Reach for a
- * fractional or `'peek'` detent only when the content genuinely scrolls, and
- * use `maxContentHeight` to bound a long `'auto'` sheet instead.
- *
- * ## RTL
- *
- * The sheet chrome is drawn natively and mirrors with the OS, so the grabber
- * and corners need no handling here. The content is an ordinary RN tree and
- * follows the same logical-utility rule as everything else in this package.
+ * The sheet chrome is drawn natively and mirrors with the OS, so RTL needs no
+ * handling here.
  *
  * @example
  * const sheet = useRef<TrueSheet>(null)

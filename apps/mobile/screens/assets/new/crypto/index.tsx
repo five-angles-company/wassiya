@@ -1,29 +1,17 @@
 /**
  * ٤.٣ — a crypto wallet. The highest-stakes input in the product.
  *
- * ## The seed grid is the only enclosed thing on the screen
+ * The seed grid is the only enclosed thing on the screen, so the one 24px
+ * surface reads as the vault-within-the-vault without copy saying so. Word
+ * pills keep their index because an heir reads the phrase back in order into a
+ * wallet that rejects the lot if any position is wrong.
  *
- * Everything else is a label-over-value row on a hairline, so the one 24px
- * surface reads as the vault-within-the-vault without a word of copy saying so.
- * Word pills keep their index because an heir reads the phrase back **in
- * order** into a wallet that rejects the lot if any position is wrong.
+ * The checksum is verified on device on every change, and an invalid phrase
+ * cannot be saved: a phrase that reaches storage broken is unrecoverable, and
+ * the owner is the only person who can still fix it at this moment.
  *
- * ## The checksum is verified on device, on every change
- *
- * An invalid phrase cannot be saved — the button goes surface-toned and the
- * line above it says which words are wrong. A phrase that reaches storage
- * broken is unrecoverable, and the owner is the only person who can still fix
- * it at this moment.
- *
- * ## The three protections are one line, not three chips
- *
- * They reassure; they do not need to shout. Chips would make the screen look
- * like it is defending itself.
- *
- * ## An exchange has no phrase
- *
- * The account *is* the custody, so picking "منصة" swaps the grid for login
- * fields rather than asking for twelve words nobody can produce.
+ * An exchange has no phrase — the account is the custody — so "منصة" swaps the
+ * grid for login fields.
  */
 import { useMemo, useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"

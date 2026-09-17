@@ -7,31 +7,20 @@ import { ArrowRightIcon, type LucideIcon } from "lucide-react"
 /**
  * One thing that needs the reader, as a card.
  *
- * ## Why not the row it used to be
- *
- * `ActionRow` is right where a row carries something at both ends — the reports
- * list puts a status pill there, the box list a date. An *ask* has neither, so
- * a full-width bar held a 40px medallion, one line of type, and then eight
- * hundred pixels of nothing before a stranded chevron. The emptiness was not
- * the layout's fault so much as the content's: the row was never given
- * anything to say.
- *
- * So it says something now — every ask carries a sentence explaining what
- * happens if the reader acts — and it sits in a card two to a row, which is a
- * shape that sentence actually fills.
+ * A card rather than `ActionRow`, which is right only where a row carries
+ * something at both ends — a status pill, a date. An *ask* has neither, so the
+ * bar held a medallion, one line of type, and eight hundred pixels of nothing
+ * before a stranded chevron. Every ask now carries a sentence explaining what
+ * happens if the reader acts, and sits two to a row, which is a shape that
+ * sentence fills.
  *
  * Shared rather than owned by a feature: the home screen and the guardian's
- * duties list show the *same* asks, and the second one was still rendering them
- * as the bar the first had already replaced.
+ * duties list show the same asks.
  *
- * ## `tone` tints the mark, never the card
- *
- * Every card in this app is `--card`. `now` gives the medallion the solid
- * terracotta — an ask that is actionable today; `waiting` leaves it neutral,
- * for an ask that is real but blocked on somebody else, like a claim whose heir
- * we have not linked yet and where `guardianConfirm` would throw. Painting the
- * whole surface for that distinction was three card colours on one screen, and
- * three claims on the reader's attention.
+ * **`tone` tints the mark, never the card** — every card in this app is
+ * `--card`. `now` gives the medallion solid terracotta for an ask actionable
+ * today; `waiting` leaves it neutral for one blocked on somebody else, like a
+ * claim whose heir is unlinked and where `guardianConfirm` would throw.
  */
 export function ActionCard({
   href,

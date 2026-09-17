@@ -5,19 +5,14 @@
  * and the label format below are copied from it verbatim and **must stay in
  * step** until it moves onto {@link toBankPayload}.
  *
- * ## The IBAN is held as typed and stored normalised
+ * The IBAN is held as typed and stored normalised: the field displays
+ * `groupIban(...)` because that is how one is printed on a statement and checked
+ * against paper, storage gets `normalizeIban(...)` because that is what an heir
+ * pastes into a bank form. The form holds raw keystrokes so the cursor does not
+ * jump while the grouping recomputes.
  *
- * The field displays `groupIban(...)` — four-character groups — because that is
- * how an IBAN is printed on a statement and how a person checks one against
- * paper. Storage gets `normalizeIban(...)`, spaces and dashes stripped, because
- * that is what an heir will paste into a bank form. The form holds the raw
- * keystrokes so a cursor does not jump while the grouping recomputes.
- *
- * ## The currency is derived, never typed
- *
- * It comes from the chosen country (`lib/countries.ts`), which is why changing
- * the country rewrites it. An owner cannot be asked to keep a country and its
- * currency consistent by hand.
+ * The currency is derived from the chosen country (`lib/countries.ts`), never
+ * typed, which is why changing the country rewrites it.
  */
 import { normalizeIban } from "@/lib/iban"
 import { findCountry } from "@/lib/countries"

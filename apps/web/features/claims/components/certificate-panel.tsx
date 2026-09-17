@@ -17,34 +17,21 @@ const MAX_BYTES = 20 * 1024 * 1024
 const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "image/heic"]
 
 /**
- * ٧.٣ — the death certificate.
+ * ٧.٣ — the death certificate. Drag-and-drop because the certificate usually
+ * arrives as a PDF already on the laptop; the camera path exists for families
+ * who only have paper.
  *
- * ## Drag-and-drop is the web's actual advantage here
+ * **A name mismatch is never a rejection here.** Matching is *"fuzzy on
+ * transliteration, strict on identity, and a mismatch routes to manual review
+ * rather than blocking — an inconsistent transliteration is far commoner than a
+ * forgery."* So this panel makes no matching judgement at all: it uploads,
+ * records the name as written, and submits. `claims.adminSetNameMatch` is a
+ * human's judgement by design, and the note under the field says so.
  *
- * *"a real file picker is the web's advantage since most families already have
- * a scan."* Not a novelty: the certificate usually arrives as a PDF in a
- * WhatsApp thread or an email, already on the laptop. The phone-camera path
- * exists for families who only have paper; the desktop path exists so the rest
- * are not forced through a camera they do not need.
- *
- * ## A name mismatch is never a rejection
- *
- * The board is emphatic: matching is *"fuzzy on transliteration, strict on
- * identity, and a mismatch routes to manual review rather than blocking — an
- * inconsistent transliteration is far commoner than a forgery."* So this panel
- * makes **no** matching judgement at all. It uploads, records the name as
- * written, and submits. `claims.adminSetNameMatch` is a human's judgement by
- * design, and the note under the field says so, so that someone whose
- * grandmother's name is spelled three ways across three documents is not left
- * thinking they have failed.
- *
- * ## What is uploaded, and what that costs
- *
- * The certificate is the one piece of **plaintext third-party personal data**
- * this product holds — a reviewer has to read it, and the claimant has no key a
- * reviewer could also open. `claims.generateCertificateUploadUrl` exists
- * separately from the asset upload path precisely so retention rules can find
- * it later.
+ * The certificate is the one piece of plaintext third-party personal data this
+ * product holds — a reviewer has to read it, and the claimant has no key a
+ * reviewer could also open. `claims.generateCertificateUploadUrl` is separate
+ * from the asset upload path precisely so retention rules can find it later.
  */
 export function CertificatePanel({ claimId }: { claimId: string }) {
   const locale = useLocale()

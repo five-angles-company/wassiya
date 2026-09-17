@@ -17,20 +17,13 @@ import { useStrings } from "@/i18n/use-strings"
  * The sheet names **the people who lose access**, because the cost of deleting
  * an asset is never the asset. An owner who has forgotten that this wallet is
  * the one routed to their daughter finds out here, at the only moment the
- * information can still change anything.
- *
- * Those names are hairline rows, exactly as everywhere else in the vault: two
+ * information can still change anything. Those names are hairline rows: two
  * people who lose something are a list, not a warning box.
  *
- * ## Destructive is outlined, safe is filled
- *
- * The inversion is deliberate and it is the board's own rule: in this system a
- * solid button means *proceed calmly*, and keeping the asset is the calm path.
- * The filled control is therefore "إبقاء", and destruction is the outlined one
- * you have to aim at.
- *
- * No red. Terracotta already carries the weight here, and red would be the only
- * alien colour in the product.
+ * **Destructive is outlined, safe is filled.** The board's own rule — a solid
+ * button in this system means *proceed calmly*, and keeping the asset is the
+ * calm path. No red; terracotta already carries the weight, and red would be the
+ * only alien colour in the product.
  */
 export type DeleteAssetSheetProps = {
   assetId: Id<"assets">

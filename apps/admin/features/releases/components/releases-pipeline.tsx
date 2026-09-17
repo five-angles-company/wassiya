@@ -28,21 +28,14 @@ import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
  * `release.saveBundles` have no caller in any app. What exists is a pipeline,
  * and this screen shows where it stops.
  *
- * ## Two panels, stacked, in the console's own shape
+ * Two panels stacked rather than side by side — one is a countdown and the other
+ * a history, with different columns and different questions, and side-by-side
+ * implies they are comparable. Both are `TableCard` + a compact `DataTable`,
+ * compact because each band is bounded: a countdown an operator pages through
+ * has stopped being a countdown, and the cap is stated in the footnote.
  *
- * This was a pair of hand-rolled card lists side by side, which was wrong twice
- * over. Side-by-side implies the two are comparable — they are not; one is a
- * countdown and the other a history, with different columns and different
- * questions. And a bespoke row of *name → blob* has no headers, so the numbers
- * that matter had nothing naming them.
- *
- * Both are now `TableCard` + a compact `DataTable`, the same panel the
- * dashboard uses. Compact rather than a full table because each band is
- * bounded: a countdown an operator pages through has stopped being a countdown,
- * and the cap is stated in the footnote when it is reached.
- *
- * Expect the released panel to read as failures. That is the honest state of
- * the product, and this is the only screen where it is visible.
+ * Expect the released panel to read as failures. That is the honest state of the
+ * product, and this is the only screen where it is visible.
  */
 export function ReleasesPipeline() {
   const locale = useLocale()

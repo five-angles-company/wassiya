@@ -6,26 +6,19 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react-native"
 import { Image, Pressable, View } from "react-native"
 
 /**
- * One page of a scanned document.
+ * One page of a scanned document. ٤.٥ assembles pages into a single PDF, so
+ * until Save they exist only as images — which is what makes the grid possible.
+ * A deed is rarely one sheet, and a screen showing "1 file, 2.1 MB" cannot tell
+ * you the scanner caught page three twice and missed page two.
  *
- * ٤.٥ assembles pages into a single PDF, so until Save they exist only as
- * images — which is what makes the grid possible at all. **A deed is rarely one
- * sheet**, and a screen that shows "1 file, 2.1 MB" cannot tell you that the
- * scanner caught page three twice and missed page two.
+ * The mono index is the point: pages assemble in the order shown and a scanner
+ * hands them over in whatever order they were fed, so the number is how someone
+ * checks that before the order is baked into a PDF nobody can reopen.
  *
- * ## The number is the point
- *
- * Pages assemble in the order shown, and a scanner hands them over in whatever
- * order they were fed. The mono index is how someone checks that before the
- * order is baked into a PDF nobody can reopen.
- *
- * ## Reordering is arrows, not drag
- *
- * The board draws these as draggable. Arrows do the same job here, and they do
- * it in a way that can be verified: a drag gesture cannot be exercised over
- * adb, and a reorder that silently drops a page is worse than one that takes
- * two taps. The arrows point *forward* and *back* in reading order, so under
- * RTL they mirror with everything else.
+ * Reordering is arrows rather than the board's drag, because a drag gesture
+ * cannot be exercised over adb and a reorder that silently drops a page is worse
+ * than one that takes two taps. The arrows point forward and back in reading
+ * order, so they mirror under RTL with everything else.
  */
 export type PageTileProps = {
   uri: string

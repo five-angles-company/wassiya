@@ -8,30 +8,20 @@ import { Pressable, View } from 'react-native';
 /**
  * One square of the home grid: a number, or a state, and what it's about.
  *
- * ## The layout, after seeing it on glass
+ * The icon and the value share the top row — icon on the start edge, value on
+ * the end — with the label underneath. Stacking them down the start edge left
+ * most of a ~150dp tile empty and made every tile twice as tall as its content.
+ * This way the values line up in a column down the grid, which is what makes a
+ * set of numbers scannable rather than merely present.
  *
- * The first version stacked icon → label → value down the start edge. On a
- * ~150dp tile that left most of the width empty and made every tile twice as
- * tall as its content, so five of them filled a screen and said very little.
+ * One component covers counts and states because they must share a silhouette or
+ * the grid stops reading as a set, and a grid works here only because the eye
+ * can sweep it. `emphasis` decides just how loudly the value is drawn: `count`
+ * for numerals, `state` for words.
  *
- * The icon and the value now share the top row — icon on the start edge, value
- * on the end — with the label underneath. The tile uses its width, halves its
- * height, and the values line up in a column down the grid, which is what makes
- * a set of numbers scannable rather than merely present.
- *
- * ## Why one component covers counts and states
- *
- * Half these tiles report a quantity ("١") and half a condition ("غير مفعّل").
- * They must share a silhouette or the grid stops reading as a set — and the
- * whole reason a grid works here is that the eye can sweep it. `emphasis`
- * decides only how loudly the value is drawn: `count` for numerals, which are
- * short and deserve the size, `state` for words, which are not.
- *
- * ## Tone is the message
- *
- * Terracotta means "this needs you", olive means done, sand is just a number.
- * The gaps are findable by colour before a single word is read, which is what
- * lets the labels stay this short.
+ * Tone is the message — terracotta means "this needs you", olive means done,
+ * sand is just a number. The gaps are findable by colour before a word is read,
+ * which is what lets the labels stay this short.
  */
 export type StatTileProps = {
   icon: LucideIcon;

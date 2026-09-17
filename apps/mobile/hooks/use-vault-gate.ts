@@ -1,18 +1,16 @@
 /**
- * The screen-facing half of the vault session: what a screen needs to decide
- * between "ask for a fingerprint", "render", and "this device is finished".
+ * The screen-facing half of the vault session: whether to ask for a fingerprint,
+ * render, or leave because this device is finished.
  *
- * Unlocking is **user-initiated**, never automatic. Section ٤.١ on the board
- * shows an assets list, not a lock screen, and a biometric sheet that fires on
- * tab focus would ambush anyone who tapped الأصول to check a count. The screen
- * renders its own affordance and calls `unlock` from a press handler; this hook
- * only supplies it, already carrying the localised prompt.
+ * Unlocking is **user-initiated, never automatic**. ٤.١ shows an assets list,
+ * not a lock screen, and a biometric sheet firing on tab focus would ambush
+ * anyone who tapped الأصول to check a count. The screen renders its own
+ * affordance and calls `unlock` from a press handler.
  *
- * The one thing it *does* do on its own is leave. `status: "lost"` means the
- * keystore invalidated MK — the device's enrolled biometrics changed — and no
- * amount of retrying inside section ٤ will produce a key again. The recovery
- * ceremony is the only destination, so the redirect belongs here rather than in
- * each screen that might be the first to notice.
+ * The one thing this hook does on its own is leave. `status: "lost"` means the
+ * keystore invalidated MK, and no amount of retrying inside section ٤ produces a
+ * key again — so the redirect to recovery belongs here rather than in each
+ * screen that might be first to notice.
  */
 import { useCallback, useEffect } from "react"
 import { router } from "expo-router"

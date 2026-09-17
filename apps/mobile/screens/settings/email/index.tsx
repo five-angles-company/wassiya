@@ -1,38 +1,21 @@
 /**
- * ٩.١c — changing the email.
+ * ٩.١c — changing the email, which is the sign-in identity for the vault
+ * (`signIn.emailCode.sendCode`), not a contact detail on a profile.
  *
- * ## This changes how you sign in
+ * Five calls, not a save: `createEmailAddress` → `prepareVerification` →
+ * `attemptVerification` → `update({ primaryEmailAddressId })` → old `destroy()`.
+ * The old address is destroyed because a verified address stays a usable
+ * sign-in identifier, so leaving it would mean two ways into the vault where the
+ * owner believes there is one. Convex follows on its own via `upsertFromClerk`.
  *
- * Sign-in is `signIn.emailCode.sendCode({ emailAddress })`, so the email is not
- * a contact detail on a profile — it is the **login identity for the vault**.
- * That is why the warning sits on the first step, before the address is typed,
- * and why the old address is removed rather than left behind: a verified
- * address on a Clerk account is a usable sign-in identifier, so leaving it
- * would mean two ways into the vault when the owner believes there is one.
+ * `createEmailAddress` writes to the account immediately, so an abandoned run
+ * leaves an unverified address behind and the next attempt at it fails as a
+ * duplicate. Both the cancel path and unmount destroy it.
  *
- * ## Five calls, not a save
- *
- * `createEmailAddress` → `prepareVerification` → `attemptVerification` →
- * `update({ primaryEmailAddressId })` → old `destroy()`. Nothing here can be a
- * text field with a Save button, which is why it is its own screen.
- *
- * Convex needs no part of this: `upsertFromClerk` sets `email` from the user
- * webhook, so the deployment follows on its own once the primary changes.
- *
- * ## The address exists before the code does
- *
- * `createEmailAddress` writes to the account immediately, so an owner who
- * abandons the flow at the code step leaves an unverified address behind — and
- * their *next* attempt at the same address fails as a duplicate. Both the
- * cancel path and unmount destroy it.
- *
- * ## Deliberately not behind a fingerprint
- *
- * The owner chose this. The code goes to the *new* address, which proves
- * whoever typed it controls that inbox but not that they are the owner — so
- * this does not defend against an unlocked phone in the wrong hands. That is
- * the same trade `LOCK_WHILE_OPEN` already makes for reading the vault, made
- * knowingly. Do not add a gate here without asking.
+ * Deliberately not behind a fingerprint: the code goes to the *new* address, so
+ * it proves control of that inbox, not ownership — a gate here would defend
+ * nothing an unlocked phone does not already give away. The owner chose this;
+ * do not add one without asking.
  */
 import { useEffect, useRef, useState } from "react"
 import { isClerkAPIResponseError, useUser } from "@clerk/expo"

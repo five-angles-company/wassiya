@@ -1,19 +1,12 @@
 /**
- * Which language the app renders in.
+ * Which language the app renders in — copy only, never layout direction.
+ * `app.json` sets `forcesRTL: true` on the expo-localization plugin, so the tree
+ * is mirrored on every launch regardless of locale; making direction follow the
+ * locale is a native-config change plus a full reload.
  *
- * Note this decides *copy only*, not layout direction. `app.json` sets
- * `forcesRTL: true` on the expo-localization plugin, so the tree is mirrored on
- * every launch regardless of locale — the English pass is a translation shown
- * inside an Arabic-first layout, which is what the design board itself
- * describes ("the English pass is still my translation, not a localisation").
- * Making direction follow locale is a native-config change plus a full reload,
- * not something this module can or should do.
- *
- * **The device language is deliberately not consulted.** This module used to
- * read `getLocales()` and hand back English whenever the handset was set to
- * English. That is the wrong default for this product twice over: it put
- * English copy inside a layout that is force-mirrored either way, and it let a
- * phone setting decide the identity of an Arabic-first vault. Wassiya is
+ * **The device language is deliberately not consulted.** Reading `getLocales()`
+ * let a phone setting decide the identity of an Arabic-first vault, and put
+ * English copy inside a layout that is force-mirrored either way. Wassiya is
  * Arabic until its owner says otherwise, and the handset is not its owner.
  */
 import type { Locale } from "@workspace/ui-native/lib/labels"

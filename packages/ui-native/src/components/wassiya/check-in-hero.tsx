@@ -9,28 +9,21 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 
 /**
  * The heartbeat — the top of Home, and the only thing on it that is a *verb*
- * rather than a number.
+ * rather than a number. `PulsingHeart` carries the rhythm and honours
+ * reduced-motion; it is the one animation in the product, and it earns its place
+ * because the whole screen asks whether you are alive.
  *
- * The heart beats. It is the one animation in the product and it earns its
- * place: the whole screen asks whether you are alive, and a still icon answers
- * that less well than a pulse does. `PulsingHeart` carries the rhythm — a real
- * lub-dub, not a scale loop — and honours reduced-motion.
+ * ⚠️ **`onConfirm` must run a biometric and resolve `false` on anything else.**
+ * This component records nothing itself, so a tap alone can never say "still
+ * alive" — an unlocked phone in the wrong hands must not be able to suppress
+ * delivery forever, and it is the fingerprint that provides that, not the route
+ * or the size of the button. The affordance lives here and nowhere else;
+ * `screens/protection/checkin` is cadence settings and status only.
  *
- * ## ⚠️ The gate, which has not moved
- *
- * `onConfirm` must run a biometric and resolve `false` on anything else. This
- * component records nothing itself, so a tap alone can never say "still alive".
- * That is the property AGENTS.md protects — an unlocked phone in the wrong
- * hands must not be able to suppress delivery forever — and it is the
- * fingerprint that provides it, not the route or the size of the button. The
- * affordance lives here and nowhere else; `screens/protection/checkin` is
- * cadence settings and status only.
- *
- * ## Why the button is here even when nothing is due
- *
- * Confirming early is harmless — it resets the clock, which is the mechanism —
- * and someone about to travel or go into hospital has a real reason to reach
- * for it unprompted. Urgency is carried by tone, not by hiding the control.
+ * The button is present even when nothing is due. Confirming early is harmless —
+ * it resets the clock, which is the mechanism — and someone about to travel or
+ * go into hospital has a real reason to reach for it. Urgency is carried by
+ * tone, not by hiding the control.
  */
 export type CheckInHeroState = 'off' | 'confirmed' | 'due' | 'overdue';
 

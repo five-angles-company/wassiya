@@ -7,30 +7,18 @@ import type { LucideIcon } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 /**
- * One asset in the vault list — a full-width `StatTile`.
+ * One asset in the vault list — a full-width `StatTile`, on the surface Home
+ * already uses: `rounded-card bg-card px-4 py-3.5`, a 36px round tone disc, a
+ * name over a quiet second line. Home is a 2-up grid of those and the vault a
+ * single column, which is what makes the two screens read as one app.
  *
- * ## Why this is a card again
+ * The consequence is that there are **no hairlines**: cards separate themselves,
+ * and a rule between two card edges is a third thing doing a job neither needs.
  *
- * A card per asset was tried and rejected once. What was rejected was an
- * *invented* card; this is the surface Home already uses and the owner already
- * approved — `rounded-card bg-card px-4 py-3.5`, a 36px round tone disc, a name
- * over a quiet second line. Home is a 2-up grid of those and the vault is a
- * single column of them, which is the whole of what makes the two screens read
- * as one app.
- *
- * The consequence is that there are **no hairlines**. Cards separate themselves;
- * a rule between two card edges is a third thing doing a job neither needs.
- *
- * ## The disc's colour is routing, never type
- *
- * `ASSET_TYPE_TONE` exists and is the obvious thing to reach for, and it is the
- * wrong one: its own doc says terracotta there means *"this one contains a
- * secret"*, not *"this one needs attention"* — the opposite of what the same
- * colour means on Home. Colouring by type would put a legend on the screen and
- * break the one thing worth keeping consistent.
- *
- * So the disc says what Home's discs say: **terracotta when it reaches nobody**,
- * sand otherwise. One colour, one meaning, both screens.
+ * **The disc's colour is routing, never type.** `ASSET_TYPE_TONE` is the obvious
+ * thing to reach for and the wrong one — terracotta there means "this contains a
+ * secret", the opposite of what the same colour means on Home. So the disc says
+ * what Home's discs say: terracotta when it reaches nobody, sand otherwise.
  */
 export type VaultRowProps = {
   icon: LucideIcon;

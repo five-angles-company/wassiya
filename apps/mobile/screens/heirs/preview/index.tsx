@@ -2,19 +2,18 @@
  * ٥.٤ — معاينة الوارث. Exactly what one heir would receive, and nothing else.
  *
  * The disclaimer is the screen, not decoration: *"هذا كل ما ستراه سارة بعد
- * الإفراج — لا أكثر."* It is a statement about the **ceiling**. An owner who
- * cannot see what an heir gets has to trust the routing blind, and the whole
- * point of silent heirs is that nobody else can check it for them.
+ * الإفراج — لا أكثر."* An owner who cannot see what an heir gets has to trust
+ * the routing blind, and the point of silent heirs is that nobody else can check
+ * it for them.
  *
- * Titles are decrypted here the same way 4.1 decrypts them — the preview is
- * rendered from the owner's own keys, on the owner's device. Nothing about this
- * screen gives the heir early access, and nothing about it asks the server what
- * an asset is called.
+ * Titles are decrypted from the owner's own keys on the owner's device, exactly
+ * as ٤.١ does. Nothing here gives the heir early access, and nothing asks the
+ * server what an asset is called.
  *
- * **The board's spec for this screen is truncated.** The 256 KiB `get_file` cap
- * cuts off mid-5.4, so what is built here is what was legible: the heir
- * switcher, the disclaimer, and the routed-asset list with its "كاملة" marker.
- * The personal-message surface it shares with ٥.٥ was never readable.
+ * **The board's spec for this screen is truncated** by the 256 KiB `get_file`
+ * cap, so what is built is what was legible: the heir switcher, the disclaimer,
+ * and the routed-asset list with its "كاملة" marker. The personal-message
+ * surface it shares with ٥.٥ was never readable.
  */
 import { useState } from "react"
 import { useQuery } from "convex/react"

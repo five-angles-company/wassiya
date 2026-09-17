@@ -1,21 +1,16 @@
 /**
  * ٩.٤ — الخطة والتخزين.
  *
- * ## The lapse rule, which is a product promise and not a billing detail
- *
- * AGENTS.md: *"Subscription lapse: vault stays readable and heir delivery keeps
- * working; only adding assets is blocked."* The backend enforces exactly that —
- * `assertCanAddAssets` is called in `assets.create` and **nowhere else**, and
- * `assets.ts` says so in its own header: *"Reads, updates and the entire release
- * path never consult the plan, because a lapsed card must not cost anyone their
- * inheritance."*
+ * The lapse rule is a product promise, not a billing detail: a lapsed vault
+ * stays readable and heir delivery keeps working; only adding assets is blocked.
+ * `assertCanAddAssets` is called in `assets.create` and nowhere else.
  *
  * So the lapse banner leads with what still works. A dunning notice that made
  * someone fear for their heirs' access would be both untrue and cruel, and this
  * is the screen where that temptation is strongest.
  *
- * The banner uses `notice`, not `info` — the ui-native README records that
- * decision and why the two tints could not be collapsed into one name.
+ * The banner uses `notice`, not `info` — see the ui-native README for why the
+ * two tints could not be collapsed into one name.
  */
 import { useMemo, useState } from "react"
 import { useQuery } from "convex/react"

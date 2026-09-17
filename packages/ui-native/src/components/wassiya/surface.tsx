@@ -4,28 +4,19 @@ import type * as React from 'react';
 import { View } from 'react-native';
 
 /**
- * The one filled, rounded block this product draws.
+ * The one filled, rounded block this product draws — it replaced 15 distinct
+ * `rounded-card bg-card …` strings and 12 distinct `rounded-row …` strings
+ * describing about four actual shapes.
  *
- * It replaced 15 distinct `rounded-card bg-card …` strings and 12 distinct
- * `rounded-row …` strings, which between them described about four actual
- * shapes. The variance wasn't design intent — it was 42 screens each retyping
- * the same idea and landing on a slightly different `gap-`.
+ * **The radius is a role, not a number.** A list `row` is 24px, a content `card`
+ * 26px, a `summary` block 28px — near enough to look like sloppiness in a diff
+ * and far enough to read as hierarchy on glass, which is exactly why they are
+ * named. `as="row"` states the role so nobody has to remember the two pixels.
  *
- * ## Why the radius is a role, not a number
- *
- * The board's geometry is role-based: a list **row** is 24px, a content
- * **card** is 26px, a **summary** block is 28px. Those three are near enough
- * to look like sloppiness in a diff and far enough to read as hierarchy on
- * glass, which is exactly why they have to be named. `as="row"` states the
- * role; nobody has to remember that rows are two pixels tighter than cards.
- *
- * ## Not a revival of `ui/card.tsx`
- *
- * That file exists and has zero imports, and it stays that way. It's upstream
- * shadcn kept byte-diffable against the registry, its Header/Title/Content/
- * Footer split doesn't match how anything here is actually built, and it has
- * no notion of these role radii. Reviving it would mean editing a file whose
- * whole value is being unedited.
+ * This is **not** a revival of `ui/card.tsx`, which has zero imports and stays
+ * that way: it is upstream shadcn kept byte-diffable against the registry, its
+ * Header/Title/Content/Footer split does not match how anything here is built,
+ * and it has no notion of these role radii.
  */
 export type SurfaceProps = {
   children?: React.ReactNode;

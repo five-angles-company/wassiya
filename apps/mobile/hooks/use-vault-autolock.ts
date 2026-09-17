@@ -2,28 +2,19 @@
  * Drives the events that close an unlocked vault: the app leaving the
  * foreground, and the session cap elapsing.
  *
- * **Both are off under the default policy.** ٩.٢ now offers
- * `LOCK_WHILE_OPEN`, and under it neither event fires — the session ends with
- * the process instead, which needs no code here: MK is process memory and
- * `useVault` has no `persist`, so a cold start is always locked. Choosing a
- * duration instead restores both events exactly as they were.
+ * **Both are off under the default `LOCK_WHILE_OPEN` policy** (٩.٢). The
+ * session ends with the process instead, which needs no code here — MK is
+ * process memory and `useVault` has no `persist`. Choosing a duration restores
+ * both events; it is a cap measured from the unlock, not an inactivity timer
+ * (see `isExpired` in `stores/vault`).
  *
- * A duration is a cap measured from the unlock and nothing extends it — see
- * `isExpired` in `stores/vault`, which explains why this is not the inactivity
- * timer it might look like.
+ * Mounted once, from the tabs layout — per-screen would run one timer per route.
  *
- * Mounted **once**, from the tabs layout — the vault is only reachable from
- * there, and mounting it per screen would run one timer per mounted route.
- *
- * ## The iOS trap this encodes
- *
- * A biometric prompt puts the app in `inactive`, not `background`. Locking on
- * anything other than `background` therefore tears the session down *during*
- * the very Face ID sheet that was opening it — the unlock resolves into a
- * store that has already been cleared, and the vault appears to reject a
- * fingerprint the OS accepted. The control-centre shade and an incoming call
- * produce the same `inactive` state, so this is not a rare race. Lock on
- * `background` only.
+ * **Lock on `background` only.** A biometric prompt puts the app in `inactive`,
+ * so locking on that tears the session down during the very Face ID sheet that
+ * was opening it: the unlock resolves into a cleared store and the vault appears
+ * to reject a fingerprint the OS accepted. The control-centre shade and an
+ * incoming call produce the same state, so this is not a rare race.
  */
 import { useEffect } from "react"
 import { AppState, type AppStateStatus } from "react-native"

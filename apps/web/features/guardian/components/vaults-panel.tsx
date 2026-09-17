@@ -24,29 +24,15 @@ const PAGE = 8
 /**
  * The vaults this person guards, as a table that never grows.
  *
- * ## Next and previous, not "load more"
+ * Next and previous rather than "load more": `usePaginatedQuery` only appends,
+ * so every click makes the page taller and pushes the duty card — the thing the
+ * reader came for — further off screen. Cursors go both ways; only the helper is
+ * one-directional. So this holds the cursor for every page visited plus a
+ * position in that stack, and asks `guardianForPage` for one page at a time.
  *
- * `usePaginatedQuery` only appends: every click makes the page taller and
- * pushes the duty card — the thing the reader actually came for — further off
- * screen. On a list that sits *below* the ask, that is exactly backwards.
- *
- * Cursors go both ways; only the helper was one-directional. So this holds the
- * cursor for every page it has visited and a position in that stack, and asks
- * `guardianForPage` for one page at a time with a plain `useQuery`. Going back
- * is free — the cursor is already in hand — and the table is the same height on
- * page five as on page one.
- *
- * The previous page's rows are held while the next loads, which is what stops
- * the table blinking white between pages: a new cursor is a new query, so
- * `useQuery` returns `undefined` for a beat, and without that the rows — and
- * then the whole card — would collapse and reflow.
- *
- * ## It is a card again, and it should be
- *
- * It was briefly a bare list on the reasoning that a list is not an object. A
- * *table* is: it has a header, a body and a footer that pages it, and stripping
- * the container left it flat on the ground with nothing holding the three
- * together.
+ * The previous page's rows are held while the next loads. A new cursor is a new
+ * query, so `useQuery` returns `undefined` for a beat, and without this the rows
+ * — and then the whole card — would collapse and reflow.
  */
 export function VaultsPanel() {
   const locale = useLocale()

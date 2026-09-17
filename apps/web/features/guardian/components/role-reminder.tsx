@@ -10,33 +10,19 @@ import { GUARDIAN } from "@/features/guardian/strings/guardian"
 import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 
 /**
- * What a guardian is for, at the foot of the screen they land on years later.
+ * What a guardian is for, at the foot of the screen they land on years later. A
+ * guardian may not open this app between accepting and the one day it matters,
+ * so a person arriving after that gap read the invitation once, a long time ago.
  *
- * ## Why it is not filler
- *
- * The product's own design says a guardian may not open this app between
- * accepting and the one day it matters — the accept screen sets that
- * expectation, and the duties list says "possibly years apart". A person
- * arriving after that gap read the invitation once, a long time ago, and the
- * screen otherwise tells them only that nothing needs them right now.
- *
- * The two jobs are restated in the invitation's own words. Reusing `GUARDIAN`
- * rather than paraphrasing into `GUARDIAN_DUTIES` is the point: a guardian who
- * reads a *different* description of their role than the one they agreed to has
+ * The two jobs are restated in the invitation's own words. **Reusing `GUARDIAN`
+ * rather than paraphrasing into `GUARDIAN_DUTIES` is the point**: a guardian who
+ * reads a different description of their role than the one they agreed to has
  * been told, quietly, that the terms moved.
  *
- * ## What was messy, and what each fix was for
- *
- * Three ticks in one card — the heading carried a `CheckIcon` and each job
- * carried another in a circle — plus a divider, prose wrapping under a button,
- * and a circle size used nowhere else. Six kinds of thing in a box this small
- * is noise whatever the spacing.
- *
- * So: no heading icon, and the circles become the olive eyebrow rule the accept
- * screen already uses above *its* headings. That is one mark instead of three,
- * and it ties this block to the invitation it is quoting rather than inventing
- * a motif for it. Titles drop to the row scale, because two short labels beside
- * each other are a pair to scan, not two headings to read.
+ * One mark, not three — the circles are the olive eyebrow rule the accept screen
+ * already uses above its headings, which ties this block to the invitation it is
+ * quoting. Titles sit at the row scale, because two short labels beside each
+ * other are a pair to scan rather than two headings to read.
  */
 export function RoleReminder() {
   const locale = useLocale()

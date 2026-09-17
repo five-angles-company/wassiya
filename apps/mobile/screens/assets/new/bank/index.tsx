@@ -1,26 +1,14 @@
 /**
  * ٤.٤ — a bank account.
  *
- * ## Country first, because it parameterises everything under it
+ * Country comes first because it parameterises everything under it: IBAN length
+ * and mask, the currency, and which checksum rules apply. The currency is
+ * derived and never typed — an owner cannot be made responsible for keeping a
+ * country and its currency consistent by hand.
  *
- * IBAN length and mask, the currency, and which checksum rules apply. It is not
- * a preference tucked at the bottom; it is the thing that decides whether the
- * number below it is valid at all. The currency is **derived and never typed**:
- * an owner cannot be made responsible for keeping a country and its currency
- * consistent by hand.
- *
- * ## Short is a counter, not an error
- *
- * While the number is still being written the line counts characters; only once
- * it is long enough does it become a verdict, and only then in terracotta.
- * Telling someone their IBAN is invalid at eight of twenty-four digits is not
- * validation, it is nagging.
- *
- * ## Three short values share one row
- *
- * Type, currency and branch are two words each. Three full-width rows for six
- * words is what makes a form feel like paperwork, and the branch stays visibly
- * optional instead of hiding behind an "advanced" disclosure.
+ * A short IBAN is a counter, not an error. The line counts characters while the
+ * number is still being written and only becomes a terracotta verdict once it is
+ * long enough to judge.
  */
 import { useState } from "react"
 import { Icon } from "@workspace/ui-native/components/ui/icon"

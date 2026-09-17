@@ -12,29 +12,18 @@ import { useStrings } from "@/i18n/use-strings"
 /**
  * The top of every screen: back affordance, title, optional supporting line.
  *
- * `variant="screenTitle"` is a 26px token that was being inline-overridden to
- * render at **eight** different sizes (26/27/28/29/30/31) across 16 distinct
- * className strings on 43 call sites. Half of those sizes — 27, 29, 30 — exist
- * nowhere in the type scale at all. Nobody decided that; it accumulated.
+ * Two levels, because there are two kinds of screen. A tab root is the top of a
+ * section and gets `--text-screen` (26px); a pushed route is a detail within one
+ * and gets `--text-page` (19px). Levelled titles are most of what makes a stack
+ * feel navigable rather than flat — before this, `screenTitle` was being
+ * inline-overridden to eight different sizes across 43 call sites, three of
+ * which exist nowhere in the type scale.
  *
- * ## Two levels, because there are two kinds of screen
- *
- * A tab root is the top of a section and gets `--text-screen` (26px). A pushed
- * route is a detail *within* one and gets `--text-page` (19px) — a size that
- * already existed in the scale and was used three times in the whole app while
- * pushed routes rendered 26–31px instead. Levelled titles are most of what
- * makes a stack feel navigable rather than flat.
- *
- * ## On the ten screens with no way back
- *
- * Ten pushed routes render no back affordance, and `headerShown: false` is
- * global, so there is no navigation-bar fallback — they are genuinely
- * one-directional. Nearly all are the setup flow, where that's deliberate: you
- * cannot un-verify an identity or un-generate a key, so offering "back" would
- * promise something the security model can't honour.
- *
- * `back="none"` states that intent, so a screen without a back button is a
- * decision on the page rather than an omission you have to notice.
+ * **`back="none"` is a statement of intent, not an omission.** Ten pushed routes
+ * render no back affordance and `headerShown: false` is global, so there is no
+ * navigation-bar fallback — they are genuinely one-directional. Nearly all are
+ * the setup flow, where you cannot un-verify an identity or un-generate a key,
+ * so offering "back" would promise something the security model cannot honour.
  */
 export type ScreenHeaderProps = {
   title: string

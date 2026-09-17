@@ -5,28 +5,22 @@ import { t, type Locale } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 
 /**
- * The language switch — a form, not a button with an `onClick`.
- *
- * A Server Component on purpose. The previous version was a Client Component
- * calling `router.refresh()`, which dragged a hydration boundary into the bar
- * and cost the sign-in page the property its own doc comment promised: that it
- * works with JavaScript disabled, on an old browser, in the worst week of
- * someone's life.
+ * The language switch — a form, not a button with an `onClick`, and a Server
+ * Component on purpose. The previous version called `router.refresh()`, which
+ * dragged a hydration boundary into the bar and cost the sign-in page the
+ * property its own doc comment promises: that it works with JavaScript
+ * disabled, on an old browser, in the worst week of someone's life.
  *
  * Posting to `/api/locale` sets the cookie and 303s back, so the next document
- * arrives with `dir` and `lang` already right. No flash, no client state,
- * nothing to hydrate.
+ * arrives with `dir` and `lang` already right. No flash, no client state.
  *
- * ## It looks like a control now
+ * It is a ghost pill at the same height as the bell beside it, with a globe —
+ * as a bare word it read as leftover text rather than something pressable, and
+ * matching footprints are most of what makes a controls cluster look
+ * deliberate.
  *
- * It rendered as a bare word in the bar — no border, no icon, no hit area —
- * which read as leftover text rather than something you could press. It is a
- * ghost pill at the same height as the bell beside it, with the globe that
- * makes it legible before the word is read; matching footprints are most of
- * what makes a controls cluster look deliberate rather than assembled.
- *
- * Each language is written in its own script, always. Someone who has landed on
- * the wrong one cannot be expected to recognise "الإنجليزية".
+ * **Each language is written in its own script, always.** Someone who has landed
+ * on the wrong one cannot be expected to recognise "الإنجليزية".
  */
 export async function LanguageToggle({ locale }: { locale: Locale }) {
   const labels = t(COMMON, locale)

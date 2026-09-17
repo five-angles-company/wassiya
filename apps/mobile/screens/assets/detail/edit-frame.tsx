@@ -1,26 +1,18 @@
 /**
  * ٤.٩ — one asset. The page every type fills in.
  *
- * ## The asset screen *is* the edit screen
+ * The asset screen *is* the edit screen: no view mode, no pencil, no edit route.
+ * Save appears only once something has changed, and Cancel takes the overflow
+ * menu's place, so the two ways out are always in the same two positions.
  *
- * There is no view mode, no pencil, no edit route. Tap a value and you are
- * editing it. Save appears only once something has changed, and Cancel takes
- * the overflow menu's place in the header — so the two ways out are always in
- * the same two positions and neither has to be hunted for.
+ * Labels and values on hairlines, no cards. The **recipient card is the one
+ * enclosed thing**, because it is the one thing on the screen that leaves this
+ * device — the fields are the owner's own record, that card is the instruction
+ * that outlives them.
  *
- * ## No cards around fields
- *
- * Labels and values on hairlines, so the screen reads as a page rather than a
- * stack of panels. The **recipient card is the one enclosed thing**, because it
- * is the one thing on the screen that leaves this device: the fields are the
- * owner's own record, and that card is the instruction that outlives them.
- *
- * ## Three levels of protection, three sizes of control
- *
- * The seed phrase gets a filled Reveal button behind a fingerprint, a password
- * gets a plain eye, a storage location gets nothing at all. No copy explains
- * the difference because the controls already do — which is why each type's
- * fields decide their own, and this frame only holds them.
+ * Three levels of protection, three sizes of control: a seed phrase gets a
+ * filled Reveal behind a fingerprint, a password a plain eye, a storage location
+ * nothing. Each type's fields decide their own; this frame only holds them.
  */
 import { useState, type ReactNode } from "react"
 import { useQuery } from "convex/react"

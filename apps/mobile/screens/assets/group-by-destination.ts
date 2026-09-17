@@ -1,27 +1,14 @@
 /**
- * The vault, grouped by where things go.
+ * The vault, grouped by where things go rather than by type. The question an
+ * owner actually has is "did I forget to route something?", and a flat list
+ * sorted unrouted-first answers it while making you count; a pinned group with
+ * a number on it does not. Type stays available as a filter, which is a way to
+ * *find* a thing — a different job from seeing whether the vault is complete.
  *
- * ## Why destination rather than type
- *
- * Type-grouping answers "where are my crypto assets", which nobody opens this
- * app worried about. The question an owner actually has is **"did I forget to
- * route something?"** — and a flat list sorted unrouted-first technically
- * answers it while making you count. A pinned group with a number on it does
- * not.
- *
- * Type stays available as a filter. It is a way to *find* a thing, which is a
- * different job from seeing whether the vault is complete.
- *
- * ## Why kind, and not the recipient's name
- *
- * `assets.list` returns `recipientRule` and `recipientCount` — how many people
- * receive a thing, never which. Grouping under "Fahmini" would need that query
- * to return recipient ids, and the backend is out of scope for this pass.
- *
- * The loss is smaller than it looks: "does Fahmini actually receive anything?"
- * is answered on the plan tab, where every heir card carries its routed count.
- * What only the vault can answer is the inverse — *which assets reach nobody* —
- * and that needs no names at all.
+ * Grouped by kind, not by recipient name: `assets.list` returns `recipientRule`
+ * and `recipientCount`, never which people. "Does Fahmini receive anything?" is
+ * answered on the plan tab; the inverse — which assets reach nobody — is what
+ * only the vault can answer, and it needs no names.
  */
 import type { AssetListRow } from "@/screens/assets/use-asset-list"
 

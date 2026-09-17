@@ -1,20 +1,12 @@
 /**
- * The 4.1 data path: fetch, decrypt, filter, sort.
+ * The ٤.١ data path: fetch, decrypt, filter, sort.
  *
- * ## Why every label is decrypted at once
- *
- * The board's 4.1 note says "decrypt lazily per visible row, never the whole
- * list", and the same screen has a search field over those labels. Both cannot
- * be literally true — you cannot match text you have not decrypted — so the
- * note is read here as the **rendering** rule it was written as: no row waits
- * on another row's blob, and nothing decrypts asset *content*.
- *
- * The labels themselves are opened in one pass. `assets.list` is capped at 500
- * rows and a label is two XChaCha operations over a few dozen bytes, so the
- * worst case is ~1000 operations in a `useMemo` — under a millisecond, once per
- * unlock, against a network round trip that already cost far more. Decrypting
- * them per visible row instead would mean a search that only finds what has
- * been scrolled past, which is worse than useless: it is wrong quietly.
+ * Every **label** is decrypted in one pass, and the board's "decrypt lazily per
+ * visible row" is read as the rendering rule it was written as — no row waits on
+ * another row's blob. You cannot match text you have not decrypted, and a search
+ * that only finds what has been scrolled past is wrong quietly. `assets.list` is
+ * capped at 500 rows and a label is two XChaCha operations over a few dozen
+ * bytes, so the worst case is ~1000 operations in a `useMemo`, once per unlock.
  *
  * Content blobs are the opposite case and stay lazy — they are megabytes, and
  * nothing on this screen shows them.

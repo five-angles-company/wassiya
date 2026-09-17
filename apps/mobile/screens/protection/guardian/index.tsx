@@ -1,29 +1,20 @@
 /**
- * ٦.٢ — the guardian, owner side. The **only** guardian screen left in this
- * app, because it is the only one an owner performs.
+ * ٦.٢ — the guardian, owner side. The only guardian screen in this app, because
+ * it is the only one an owner performs.
  *
- * ## What a guardian is for now
+ * A guardian is not for recovery — `K_rec = S_paper`, so the sheet rebuilds the
+ * vault alone. They are for *delivery*: they hold half of every heir's `K_h`
+ * and they file the death claim. A vault with heirs and no guardian releases a
+ * box nobody can open.
  *
- * Not recovery. `K_rec = S_paper`: the printed sheet rebuilds the vault on its
- * own, and an owner with no guardian recovers exactly as well as one with a
- * guardian. What a guardian does is *delivery* — they hold half of every heir's
- * `K_h`, and they are the person who files the death claim and supplies the
- * certificate. An owner with heirs and no guardian is leaving a vault that
- * releases a box nobody can open.
+ * Two states, and the second is a wait the owner cannot end: accepting happens
+ * in the web app, where the invited person mints their own key. The screen says
+ * so plainly, and `use-protection-score` marks the item blocked so it never
+ * becomes Home's one amber row.
  *
- * ## Two states, and the second one is a wait the owner cannot end
- *
- * No guardian, and invited-and-waiting. The seal ceremony that used to sit here
- * is gone with the share it sealed. What replaced it is a genuine wait:
- * *accepting* an invitation happens in the web app, which has not shipped, so
- * an owner who invites today will sit at "invited" for a while. The screen says
- * so plainly rather than showing a step they could be forgiven for thinking
- * they had failed to complete — and `use-protection-score` marks the item
- * blocked so it never becomes the home screen's one amber row.
- *
- * The invite token deliberately travels **out of band**: the server issues it
- * once and never sees the channel it is sent over, which is what stops the
- * deployment from being able to enrol a guardian of its own choosing.
+ * The invite token travels **out of band** — the server issues it once and
+ * never sees the channel — which is what stops the deployment from enrolling a
+ * guardian of its own choosing.
  */
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"

@@ -2,29 +2,20 @@
  * The site's locale, and the one place that decides what "Arabic" means for
  * layout.
  *
- * Read from a cookie rather than from the signed-in profile, and the reason is
- * sharper here than in the console: **most people who open this site are not
- * signed in.** The claim funnel's whole first screen is for someone who has
- * just been bereaved and has no account yet, and a guardian follows an emailed
- * invitation link. There is no profile to read a preference from.
+ * Read from a cookie rather than the signed-in profile, because **most people
+ * who open this site are not signed in**: the claim funnel's first screen is
+ * for someone just bereaved with no account, and a guardian arrives on an
+ * emailed link. It also has to be known before render — `dir` belongs on
+ * `<html>`, which a Server Component emits, and a cookie is readable there
+ * where `localStorage` is not.
  *
- * It also has to be known before render. `dir` belongs on `<html>`, which a
- * Server Component emits; a cookie is readable there, `localStorage` is not,
- * and reading one after hydration lays the first paint out the wrong way round
- * and then jumps.
+ * The cost, stated: `cookies()` is a Request API, so every route under the root
+ * layout renders dynamically, including `/claim`. That is a public page correct
+ * in the first byte over one cached and briefly backwards; `apps/landing` is
+ * the static marketing site.
  *
- * ## The cost, stated
- *
- * `cookies()` is a Request API, so every route under the root layout renders
- * dynamically — including `/claim`, which was statically generated and is the
- * one indexable page here. That is the trade: a public page that is correct in
- * the first byte over one that is cached and briefly backwards. `apps/landing`
- * is the static marketing site; this is a utility, and its readers arrive from
- * a link rather than from search.
- *
- * There is still no i18n library. This is the same thin catalogue the console
- * and the mobile app use, so if one ever lands the swap is mechanical in all
- * three at once.
+ * Still no i18n library — the same thin catalogue the console and mobile app
+ * use, so a swap stays mechanical in all three at once.
  */
 export type Locale = "ar" | "en"
 

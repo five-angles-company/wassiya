@@ -23,51 +23,29 @@ import { CLAIMS } from "@/features/claims/strings/claims"
 
 /**
  * One report: what is being asked of the reader, then where the report stands.
+ * The outstanding step is the panel at the top — identity, then certificate,
+ * then nothing at all — so someone returning a week later need not remember
+ * which step they reached.
  *
- * ## The next step is at the top, and there is only ever one
- *
- * The funnel this replaces was three routes deep, which meant someone coming
- * back a week later had to remember which step they had reached. Here the
- * report *is* the screen and the outstanding step is the panel at the top of it
- * — identity, then certificate, then nothing at all. Once both are done the
- * page has no ask on it, and says so out loud rather than leaving a gap where
- * the reader looks for one.
- *
- * ## Which "identity verified" decides the step (this bit is load-bearing)
- *
- * There are two, and they are allowed to disagree.
- * `claims.claimantIdentityStatus` is a **snapshot taken at submit**, refreshed
- * only as a side effect of an admin's `adminSetNameMatch`;
+ * **Which "identity verified" decides the step is load-bearing.** There are two
+ * and they may disagree: `claims.claimantIdentityStatus` is a snapshot taken at
+ * submit, refreshed only as a side effect of `adminSetNameMatch`, while
  * `users.identityStatus` is what the Didit webhook writes and is live. Someone
  * who files first and verifies afterwards — the ordinary case — sits between
- * the two for as long as review takes.
+ * them. Branching on the snapshot deadlocks exactly that person: the page
+ * renders `IdentityPanel`, which reads the live value and reports "verified", an
+ * ask that answers itself with the certificate step never appearing behind it.
+ * So the step is chosen on the live value, and `attachCertificate` gates on
+ * ownership and an open claim rather than on identity.
  *
- * Branching on the snapshot would deadlock exactly that person: the page would
- * decide identity is outstanding and render `IdentityPanel`, which reads the
- * live value and reports "verified" — an ask that answers itself, with the
- * certificate step never appearing behind it.
+ * The actions are gated on ownership; the reading is not. `claims.publicStatus`
+ * has no claimant check on purpose — the URL is a capability and a forwarded
+ * relative is meant to read the status — but a Didit session started against
+ * someone else's claim is a billed verification of the wrong person.
  *
- * So the step is chosen on the **live** value, which is also the one the reader
- * can act on. `attachCertificate` gates on ownership and an open claim, not on
- * identity, so proceeding is genuinely correct and the snapshot catches up at
- * review.
- *
- * ## The actions are gated on ownership; the reading is not
- *
- * `claims.publicStatus` deliberately has no claimant check — the URL is a
- * capability, and a relative who was forwarded the link is meant to be able to
- * read the status. Hanging the panels off it would be a different thing: a
- * Didit session started against someone else's claim is a billed verification
- * of the wrong person, and an upload would be taken by the browser and refused
- * by the server. `claims.mine` is already in flight for the rail, so checking
- * membership costs nothing.
- *
- * ## The countdown is a component, not a number
- *
- * A Convex query does not re-run because time passed, so a `daysLeft` computed
- * server-side would freeze at whatever it was when the query last ran. Reading
- * the clock during render is not the fix either — it is impure, and React is
- * entitled to render twice. `VetoCountdown` owns both problems.
+ * The countdown is a component, not a number: a Convex query does not re-run
+ * because time passed, and reading the clock during render is impure.
+ * `VetoCountdown` owns both problems.
  */
 export function ClaimDetail({ claimId }: { claimId: string }) {
   const locale = useLocale()

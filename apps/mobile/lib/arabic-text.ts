@@ -1,24 +1,18 @@
 /**
- * Text folding for search over Arabic.
- *
- * A user hunting for "صك ملكية" types what is on their keyboard, not what the
- * asset was named. Three differences make a raw `includes` miss almost every
- * time, and none of them are typos:
+ * Text folding for search over Arabic. Three differences make a raw `includes`
+ * miss almost every time, and none of them are typos:
  *
  *  - **Hamza carriers.** أ إ آ ٱ are all typed as ا by most people most of the
  *    time; the bare form is what a phone keyboard offers first.
- *  - **Tashkeel.** Short-vowel marks are invisible in a glance but are real
- *    code points, so "مُستند" and "مستند" are different strings.
- *  - **Tatweel.** U+0640 stretches a word for justification and carries no
- *    meaning at all.
+ *  - **Tashkeel.** Short-vowel marks are invisible at a glance but are real code
+ *    points, so "مُستند" and "مستند" are different strings.
+ *  - **Tatweel.** U+0640 stretches a word for justification and means nothing.
  *
- * Also folds ى→ي and ة→ه, the two other pairs users treat as interchangeable.
- * Latin is lowercased, so a vault mixing "Ledger" and "ledger" behaves too.
+ * Also folds ى→ي and ة→ه, and lowercases Latin.
  *
  * This is a *search* fold, never a display transform — it destroys information
  * and its output must not be rendered.
  */
-
 /** Combining marks U+064B–U+0652 (tashkeel) plus U+0670 (superscript alef). */
 const TASHKEEL = /[ً-ْٰ]/g
 const TATWEEL = /ـ/g

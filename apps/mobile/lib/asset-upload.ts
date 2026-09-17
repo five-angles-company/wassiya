@@ -1,28 +1,17 @@
 /**
- * Getting already-encrypted bytes to Convex file storage.
+ * Getting already-encrypted bytes to Convex file storage, via a file rather
+ * than `fetch(url, { body })`.
  *
- * ## Why this goes through a file instead of `fetch(url, { body })`
+ * React Native's `Blob` cannot be constructed from a typed array — a
+ * `Uint8Array` silently stringifies to `"[object Uint8Array]"`, uploading 22
+ * bytes of ASCII in place of the ciphertext and reporting success. That is the
+ * worst shape a vault bug can take: a real row, a real storage id, no content.
+ * expo-file-system's `File` implements `Blob` natively, so writing to a real
+ * file avoids the conversion entirely — and keeps tens-of-megabyte albums off
+ * the JS heap.
  *
- * React Native's `Blob` cannot be constructed from a typed array — the
- * constructor accepts strings and other Blobs, and a `Uint8Array` silently
- * stringifies to `"[object Uint8Array]"`. That failure uploads 22 bytes of
- * ASCII in place of the ciphertext and reports success, which is the worst
- * possible shape for a bug in a vault: the asset row is created, the storage id
- * is real, and the content is gone. Writing to a real file and handing that to
- * `File.upload` avoids the conversion entirely, and expo-file-system's `File`
- * implements `Blob` natively.
- *
- * It also keeps large uploads off the JS heap: 4.6 allows albums in the tens of
- * megabytes, and streaming from disk is the only version of that which does not
- * hold the whole payload in memory twice.
- *
- * ## What touches the disk
- *
- * **Ciphertext only, ever.** The temp file holds the output of
- * `encryptAsset`, never a plaintext seed phrase, password or photo. It lives in
- * the cache directory and is deleted in a `finally`, so a failed upload cannot
- * leave it behind — but even if the OS kept it, it is opaque without the DEK,
- * which itself never leaves the device unwrapped.
+ * **Ciphertext only ever touches the disk.** The temp file holds the output of
+ * `encryptAsset`, lives in the cache directory, and is deleted in a `finally`.
  */
 import { randomUUID } from "expo-crypto"
 import { File, Paths, UploadType } from "expo-file-system"

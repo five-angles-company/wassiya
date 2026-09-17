@@ -1,26 +1,16 @@
 /**
- * The unsaved letter, so ٤.٨ can be left and come back to.
+ * The unsaved letter, so ٤.٨ can be left and come back to. A note is written
+ * over minutes, and losing a half-written letter to a phone call is the one
+ * thing that must not happen.
  *
- * The board shows "حُفظت قبل ٤ ثوانٍ" under the title — a note is written over
- * minutes, not filled in like a form, and the one thing that must never happen
- * is losing a half-written letter to a phone call. This is that draft.
+ * It is the only draft the app persists: `stores/onboarding.ts` deliberately
+ * does not, because losing that costs one tap, where this costs a page of
+ * writing that existed nowhere else.
  *
- * ## Why this is the one draft the app persists
- *
- * `stores/onboarding.ts` deliberately does **not** persist its draft, and gives
- * the reason: losing it costs one tap. This is the opposite case — losing it
- * costs a page of writing that only existed here.
- *
- * ## What it is safe to keep, and what it is not
- *
- * AsyncStorage is **not** encrypted. That is acceptable for exactly this and
- * nothing else: a note in progress is text the user is composing, not key
- * material, and it is unreachable without the device unlock. A seed phrase or a
- * password draft would not be acceptable here, which is why 4.3 and 4.7 have no
- * equivalent and must not grow one.
- *
- * The draft is cleared the moment the note is encrypted and saved, so the
- * plaintext copy does not outlive its ciphertext.
+ * **AsyncStorage is not encrypted.** That is acceptable for composing text and
+ * nothing else — ٤.٣ and ٤.٧ have no equivalent and must not grow one. The
+ * draft is cleared the moment the note is encrypted and saved, so the plaintext
+ * copy never outlives its ciphertext.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { create } from "zustand"

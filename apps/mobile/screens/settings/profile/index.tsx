@@ -1,41 +1,16 @@
 /**
- * ٩.١b — الملف الشخصي.
+ * ٩.١b — الملف الشخصي. Name and country are edited here; the email is Clerk's
+ * sign-in identity and pushes to ٩.١c instead.
  *
- * ## What an owner is actually allowed to change
+ * The display name is cosmetic — the app never sends it anywhere, and Didit
+ * reads the name off the document. `claims.ts` matches a death certificate
+ * against `identityVerifiedName`, never against this field, which is what makes
+ * editing it safe; both are shown here so the difference is visible in one
+ * place.
  *
- * Two things are edited **here**: their **name** and their **country**.
- *
- * The **email** is edited too, but on ٩.١c rather than in this form. It is
- * Clerk's, it is the identity sign-in uses, and moving it is five calls and a
- * code to the new address — so this screen shows it and pushes, which is the
- * honest shape for something that cannot be a Save button.
- *
- * The **identity name** is whatever Didit read off the document. It exists so
- * that nothing the owner types can move it: `claims.ts` shows a reviewer the
- * death certificate's name against `identityVerifiedName`, never against this
- * screen's name field. That separation is the whole reason editing the display
- * name is safe, and it is why both are shown here — so the difference between
- * "what I am called" and "what my ID says" is visible in one place.
- *
- * ## The name is cosmetic, and the notice is still true
- *
- * The app never sends this name anywhere. The Didit session carries
- * `{ workflow_id, vendor_data, callback }` and no name at all; the provider
- * reads the name from the document. So a typo here cannot fail a verification
- * or a claim.
- *
- * The signup warning is carried onto the field anyway. The *advice* — make your
- * name match your ID — is still good, and having the one screen that lets you
- * change it be the one screen that stops giving it would be a strange place to
- * go quiet.
- *
- * ## The country warning is not decoration
- *
- * `useHeirForm` validates every heir's phone against the owner's country. A
- * number stored as `+213…` under `SA` fails `checkPhone` outright, so the heir's
- * edit form opens with Save lit and an "invalid number" error on a number that
- * was correct yesterday. The count of affected heirs is computed live and shown
- * *before* the change, not discovered afterwards.
+ * Changing the country re-validates every heir's phone against it, so a number
+ * stored under the old one starts failing `checkPhone`. The affected count is
+ * shown before the change, not discovered afterwards.
  */
 import { useState } from "react"
 import { useUser } from "@clerk/expo"

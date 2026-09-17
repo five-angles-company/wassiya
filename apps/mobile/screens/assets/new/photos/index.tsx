@@ -1,28 +1,21 @@
 /**
  * ٤.٦ — an encrypted album.
  *
- * Uses the **system Photo Picker**, which is the board's own requirement
- * ("no `READ_MEDIA_IMAGES` permission"): the OS shows the grid, the app
- * receives only what was chosen, and no gallery permission is ever requested.
- * `expo-image-picker` routes to the platform picker on Android 13+ and to
- * `PHPicker` on iOS, so that property holds on both.
+ * Uses the system Photo Picker, so no `READ_MEDIA_IMAGES` permission is ever
+ * requested: the OS shows the grid and the app receives only what was chosen.
  *
  * Each photo is encrypted separately under the asset's DEK and uploaded as its
- * own object, with per-file progress. **Thumbnails are encrypted too**, which
- * is the board's actual requirement and the reason 4.9's grid will need
- * decryption to draw: uploading plaintext thumbnails so our own grid rendered
- * faster would hand the server a legible index of every photo the vault holds.
+ * own object. **Thumbnails are encrypted too** — uploading plaintext ones so our
+ * own grid drew faster would hand the server a legible index of every photo the
+ * vault holds — which is why ٤.٩'s grid needs decryption to render.
  *
- * Layout of `storageIds`: all originals, then all thumbnails, with
- * `meta.itemCount` as the split. A reader takes `slice(itemCount)` for the
- * grid and indexes originals directly.
+ * `storageIds` is all originals then all thumbnails, split at `meta.itemCount`.
  *
- * Still missing, and it needs native work rather than more JS: a foreground
- * service with **resumable** upload. `expo-file-system`'s `UploadTask` has no
- * pause/resume — only `DownloadTask` does — so a backgrounded album can be
- * killed mid-upload. The count is capped low enough that the window is short,
- * and the failure leaves orphaned ciphertext rather than a broken asset (see
- * `useCreateAsset` on why uploads precede the row).
+ * Still missing and needing native work: a foreground service with resumable
+ * upload. `expo-file-system`'s `UploadTask` has no pause/resume, so a
+ * backgrounded album can be killed mid-upload. The count is capped low enough
+ * that the window is short, and the failure leaves orphaned ciphertext rather
+ * than a broken asset.
  */
 import { useState } from "react"
 import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"

@@ -43,28 +43,19 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 })
 
 /**
- * The site shell.
- *
- * ## Why this is `async`
- *
- * `dir` and `lang` have to be right in the very first byte of HTML. Reading the
- * locale cookie here — rather than in a client effect — is what buys that: a
- * page that renders LTR and then flips is worse than one that is simply
- * English. The funnel's readers arrive in the worst week of their lives; the
- * layout jumping under them is not a cost worth paying for a cached response.
+ * The site shell, and `async` because `dir` and `lang` have to be right in the
+ * very first byte of HTML. Reading the locale cookie here rather than in a
+ * client effect is what buys that: a page that renders LTR and then flips is
+ * worse than one that is simply English, and the funnel's readers arrive in the
+ * worst week of their lives.
  *
  * The price is that `cookies()` is a Request API, so every route renders
- * dynamically — `/claim` included, which was statically generated. It stays
- * indexable, and `apps/landing` is the static marketing site; this one is a
- * utility reached from a link.
+ * dynamically, `/claim` included. It stays indexable, and `apps/landing` is the
+ * static marketing site.
  *
- * ## `dir` moved up from the claim group
- *
- * It used to sit on a nested `<div dir="rtl">`, because the root was
- * English-only and the funnel was the exception. Now that the locale is a
- * site-wide fact, `dir` belongs where the browser expects it — on `<html>`,
- * where it also reaches portals, scrollbars and form controls that a nested
- * subtree never touched.
+ * `dir` belongs on `<html>` rather than a nested `<div dir="rtl">`, where it
+ * also reaches portals, scrollbars and form controls that a nested subtree never
+ * touched.
  */
 export default async function RootLayout({
   children,

@@ -1,20 +1,17 @@
 /**
- * ٦.٤ — the life check-in.
+ * ٦.٤ — the life check-in: cadence settings and status only.
  *
- * ⚠️ **The load-bearing product rule, and where it now lives:** confirming life
- * is ALWAYS biometric-gated and exists in exactly ONE place. That place is now
- * **Home's `CheckInHero`** — the affordance moved there at the owner's
- * request, it was not duplicated, and this screen no longer offers a confirm.
- * The reason for the rule is unchanged and specific: an unlocked phone in the
- * wrong hands must not be able to suppress delivery forever, which is the one
- * failure this whole product exists to prevent. It is the fingerprint that
- * provides that, not the route — see `hooks/use-confirm-alive.ts`, which is the
- * single implementation of the gate.
+ * ⚠️ **Confirming life is always biometric-gated and exists in exactly one
+ * place — Home's `CheckInHero`.** The affordance moved there at the owner's
+ * request and was not duplicated, so this screen offers no confirm and no
+ * second one may ever be added here. An unlocked phone in the wrong hands must
+ * not be able to suppress delivery forever, and it is the fingerprint that
+ * provides that, not the route. `hooks/use-confirm-alive.ts` is the single
+ * implementation of the gate.
  *
- * The screen has two halves because the switch has two states: not configured
- * (a cadence to choose) and running (a question to answer). They are one route
- * rather than two because "turn it on" and "confirm you're well" are the same
- * decision at different times.
+ * Two halves — a cadence to choose, a status to read — on one route, because
+ * "turn it on" and "confirm you're well" are the same decision at different
+ * times.
  */
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"

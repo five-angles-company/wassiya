@@ -3,26 +3,20 @@ import { cn } from '@workspace/ui-native/lib/utils';
 import { View } from 'react-native';
 
 /**
- * Who receives this — as faces, at the end of a row.
+ * Who receives this — as faces, at the end of a row. The board carries status
+ * with faces and one line of text: no badges, no bars, no scores. In an
+ * inheritance vault the only status worth showing is *who gets this*, and a name
+ * answers it better than any pill. The discs overlap by 9px, so four recipients
+ * cost the same width as two.
  *
- * The board carries status with faces and one line of text: no badges, no bars,
- * no scores. That works because in an inheritance vault the only status worth
- * showing is *who gets this*, and a name answers it better than any pill. The
- * discs overlap by 9px, so four recipients cost the same width as two.
+ * The empty state is a dashed ring rather than a missing element, so the gap is
+ * visible in the same place the answer would be — which is what lets the list
+ * say "this reaches no one" without a badge system.
  *
- * ## The empty state is a dashed ring, not a missing element
- *
- * An asset that reaches nobody keeps the slot and shows an open ring. The gap
- * is then visible in the same place the answer would be, which is what lets the
- * list say "this reaches no one" without a badge system — and it matches the
- * dashed ring the recipient picker uses for an unticked heir.
- *
- * ## Why the ring colour is a prop
- *
- * Each disc is cut out of whatever is behind it with a 2px border in the
- * *ground* colour. On the vault list that ground is the page; inside the
- * recipient card it is the card. Getting it wrong leaves a hairline of the
- * wrong colour around every face.
+ * **The ring colour is a prop** because each disc is cut out of whatever is
+ * behind it with a 2px border in the *ground* colour: the page on the vault
+ * list, the card inside the recipient card. Getting it wrong leaves a hairline
+ * of the wrong colour around every face.
  */
 export type AvatarStackProps = {
   /** Display names. Only the first letter of each is drawn. */

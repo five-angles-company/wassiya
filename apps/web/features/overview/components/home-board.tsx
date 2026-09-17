@@ -37,32 +37,21 @@ type Ask = {
 }
 
 /**
- * The front door, once you are through the sign-in wall.
+ * The front door, once you are through the sign-in wall. It answers one
+ * question — **is anything waiting for me?** — and when the answer is nothing it
+ * says so in words rather than rendering an empty container.
  *
- * It answers one question and refuses to answer it in the abstract: **is
- * anything waiting for me?** So the top of the page is what needs the reader,
- * and when that is empty it says so in words rather than rendering an empty
- * container.
+ * Two kinds of thing, two shapes: asks are cards two to a row carrying a
+ * sentence about what happens if you act, doors are compact tiles with the
+ * figure doing the work. As one full-width row they read as four equal things,
+ * which they are not.
  *
- * ## Two kinds of thing, two shapes
+ * Four states, all ordinary — heir, guardian, both, or neither. The fourth is
+ * the one products forget: a person with no report and no guardianship is not
+ * broken and not lost, and gets `WelcomeDoors`.
  *
- * The asks and the doors were the same full-width row, which said the four
- * items were one list of four equal things. They are not — two of them need the
- * reader today and two are places to go with a count on them. Asks are cards
- * two to a row, carrying a sentence about what happens if you act; doors are
- * compact tiles with the figure doing the work.
- *
- * ## Four states, all of them ordinary
- *
- * Heir, guardian, both, or neither. The fourth is the one products forget: a
- * person who signs in with no report and no guardianship is not broken and not
- * lost — they get `WelcomeDoors`, which owns the whole viewport and carries its
- * own greeting.
- *
- * ## The asks are phrased as asks
- *
- * "تأكيد وفاة فاطمة" rather than "1 pending approval". A guardian opens this app
- * once every few years, having been emailed that something needs them; a count
+ * The asks are phrased as asks — "تأكيد وفاة فاطمة", not "1 pending approval". A
+ * guardian arrives having been emailed that something needs them, and a count
  * tells them nothing they can act on.
  */
 export function HomeBoard() {

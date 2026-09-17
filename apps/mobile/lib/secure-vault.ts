@@ -1,31 +1,22 @@
 /**
  * The device leg, and the only module in this app that touches key material at
- * rest.
+ * rest. MK lives in the OS keystore behind `requireAuthentication`; it is the
+ * only secret here, since K_rec is the printed sheet alone and the guardian
+ * keypair left with the guardian screens (guardians are web users).
  *
- * MK lives in the OS keystore behind `requireAuthentication`, which is what
- * makes "your fingerprint unlocks the key sealed inside this device" true
- * rather than decorative. It is the only secret here now: the guardian's
- * recovery share is gone with the 2-of-3 (K_rec is the printed sheet alone),
- * and the guardian *role's* keypair left with the guardian screens, because
- * guardians are web users and this is the owner's app. Two consequences shape
- * everything that remains:
+ * Two consequences shape everything:
  *
- *  1. **Reading an authenticated item prompts.** So the splash screen cannot
- *     use MK's presence as its routing probe — it would greet every cold start
- *     with a biometric sheet. `readEnrolment` exists for that: a small
- *     *unauthenticated* marker written alongside the key, carrying no secret.
+ *  1. **Reading an authenticated item prompts.** The splash screen therefore
+ *     cannot probe for MK's presence — it would greet every cold start with a
+ *     biometric sheet. `readEnrolment` is the unauthenticated marker written
+ *     alongside the key, carrying no secret.
+ *  2. **Authenticated items are invalidated when enrolled biometrics change.**
+ *     `getItemAsync` then returns `null` with the marker still in place, so a
+ *     `null` from `readMk` is not a bug to swallow — this device has lost its
+ *     key and the caller must route to recovery. `VaultKeyLostError` names that
+ *     case so it cannot be confused with "not enrolled yet".
  *
- *  2. **Authenticated items are invalidated when the enrolled biometrics
- *     change.** Adding a fingerprint or re-enrolling a face makes MK
- *     permanently unreadable and `getItemAsync` starts returning `null` — with
- *     the marker still in place. So a `null` from `readMk` is not a bug to
- *     swallow: it means this device has lost its key and the caller must route
- *     to recovery. `VaultKeyLostError` names that case so a caller cannot
- *     confuse it with "not enrolled yet".
- *
- * Nothing here ever returns key material to a Convex function. The only bytes
- * that leave the device are produced by `@workspace/crypto` and are already
- * wrapped — see `screens/setup/recovery-kit`.
+ * Nothing here returns key material to a Convex function.
  */
 import * as Crypto from "expo-crypto"
 import * as SecureStore from "expo-secure-store"

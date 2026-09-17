@@ -15,27 +15,21 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 /**
  * The guardian confirms a death.
  *
- * ## What this button actually does, said plainly
+ * The copy says plainly that this starts a thirty-day veto window, delivers
+ * nothing today, and is not a legal declaration — because a guardian who
+ * believes they are handing over an estate will hesitate, and one who believes
+ * it is a formality will tap without thinking.
  *
- * It starts a thirty-day veto window. It delivers nothing today, and it is not
- * a legal declaration — the copy says both, because a guardian who believes
- * they are handing over an estate will hesitate, and a guardian who believes it
- * is a formality will tap without thinking. Neither is what the ceremony needs.
+ * Success is reported upward rather than held here: `guardianConfirm` moves the
+ * claim out of `guardian_review`, one of the two states `pendingApprovals`
+ * queries, so this component's own row vanishes the moment it succeeds.
+ * `onConfirmed` hands the fact to a parent that outlives the query.
  *
- * ## Success is reported upward, not held here
- *
- * `guardianConfirm` moves the claim out of `guardian_review`, which is one of
- * the two states `pendingApprovals` queries — so this component's own row
- * vanishes the moment it succeeds. `onConfirmed` hands the fact to a parent
- * that outlives the query; see `confirm-done.tsx`.
- *
- * ## There is deliberately no self-signing check
- *
- * AGENTS.md is explicit: refusing a confirmation when the confirmer is also the
- * claimant would block every claim once the guardian *is* the claimant, which
- * is a supported case (a guardian may be an heir). What holds the heir-guardian
- * case is the certificate, the staff name-match, the veto window and the heir's
- * own identity verification — not a check here.
+ * ⚠️ **There is deliberately no self-signing check.** Refusing a confirmation
+ * when the confirmer is also the claimant would block every claim once the
+ * guardian *is* the claimant, which is a supported case. What holds the
+ * heir-guardian case is the certificate, the staff name-match, the veto window
+ * and the heir's own identity verification.
  */
 export function ConfirmPanel({
   claimId,

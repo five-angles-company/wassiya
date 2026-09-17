@@ -1,33 +1,21 @@
 /**
  * ٤.٥ — a document.
  *
- * ## Pages, not a file
+ * The screen holds **pages** and assembles them into one PDF at Save. That is
+ * what lets the grid exist: a screen saying "1 file · 2.1 MB" cannot tell you
+ * the scanner caught page three twice and missed page two, and once it is a PDF
+ * nobody can look inside again.
  *
- * A scanned deed is rarely one sheet, so the screen holds **pages** and
- * assembles them into a single PDF at Save. That is what lets the grid exist:
- * a screen that says "1 file · 2.1 MB" cannot tell you the scanner caught page
- * three twice and missed page two, and by the time it is a PDF nobody can look
- * inside it again.
+ * One branch the board does not have: a **picked PDF** cannot be paginated
+ * without a renderer this app does not carry, so it is stored as-is and shown
+ * as a single opaque file rather than pretending to be pages. Picking replaces
+ * scanned pages and scanning replaces a picked PDF — the screen always
+ * describes exactly one document.
  *
- * The dashed tile adds another page through the same scanner, so a document
- * grows a sheet at a time instead of being re-scanned from the top.
- *
- * ## One place where the model does branch
- *
- * The board says scanned and picked land in the same multi-page PDF, with no
- * branch. That holds for images — a picked photo of a certificate is a page
- * like any other. It cannot hold for a **picked PDF**: paginating one needs a
- * PDF renderer this app does not carry, so a chosen PDF is stored as it is and
- * shown as a single opaque file rather than pretending to be pages. Choosing
- * one replaces any pages, and scanning replaces a chosen PDF; the screen is
- * always describing exactly one document.
- *
- * ## The plaintext trail
- *
- * Scanner output is images in the cache, and the assembled PDF is another. Both
- * are deleted on every path that abandons them — a page removed, a PDF picked
- * over a scan, leaving the screen, and after a successful save. They are the
- * only artefacts on this screen the vault does not otherwise control.
+ * Scanner output and the assembled PDF are plaintext in the cache, and are the
+ * only artefacts here the vault does not otherwise control. Both are deleted on
+ * every path that abandons them: a page removed, a PDF picked over a scan,
+ * leaving the screen, and after a successful save.
  */
 import { useEffect, useRef, useState } from "react"
 import { Icon } from "@workspace/ui-native/components/ui/icon"

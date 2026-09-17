@@ -1,33 +1,18 @@
 /**
- * Form state for an asset edit: prefill once, patch, and know when it changed.
+ * Form state for an asset edit: prefill once, patch, and know when it changed —
+ * shared so six screens cannot each forget to re-baseline after a save and
+ * leave a screen permanently claiming unsaved changes.
  *
- * Every type repeats the same four moves — parse the decrypted payload into a
- * form, patch fields as they are typed, compare against what was loaded to
- * decide whether saving is even offered, and re-baseline after a successful
- * write. Six copies of that is six chances to forget the re-baseline and leave
- * a screen permanently claiming unsaved changes.
+ * The prefill happens **during render and exactly once**, not in an effect. An
+ * effect fills one frame after the first paint, flashing empty fields over an
+ * asset that has already decrypted; and re-running it whenever the payload
+ * changes would race the owner's typing, because saving makes Convex re-emit
+ * the row and anything typed in between would be overwritten by the value
+ * saved a heartbeat earlier.
  *
- * ## Prefilled during render, and exactly once
- *
- * This is React's "adjusting state when a prop changes" pattern rather than an
- * effect. Two reasons, and both are visible to the owner:
- *
- * - An effect fills the form one frame *after* the first paint, so the screen
- *   flashes empty fields over an asset that has already decrypted.
- * - Re-running the prefill whenever the payload changes would race the owner's
- *   own typing. Saving makes Convex re-emit the row, which re-decrypts to the
- *   just-saved payload; anything typed in the moment between the two would be
- *   overwritten by the thing that was saved a heartbeat earlier.
- *
- * So it fills from the first payload that arrives and never again. The screen
- * unmounts when the owner leaves, so reopening re-reads from storage.
- *
- * ## `null` is "could not read", not "empty"
- *
- * When the parser refuses — a rotated format, a hand-edited row — the form
- * stays `null` and the screen must say so rather than rendering blank fields.
- * An empty form over an unreadable payload is an offer to overwrite a password
- * with nothing, made by a screen that never showed the owner what was there.
+ * `null` means "could not read", not "empty". When the parser refuses the
+ * screen must say so — an empty form over an unreadable payload is an offer to
+ * overwrite a password with nothing.
  */
 import { useCallback, useState } from "react"
 

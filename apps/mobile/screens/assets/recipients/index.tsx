@@ -1,24 +1,20 @@
 /**
- * ٥.٣b — who receives one asset.
+ * ٥.٣b — who receives one asset, and the screen that makes every "بلا مستلم"
+ * badge actionable.
  *
- * This is the screen that makes every "بلا مستلم" badge in the product
- * actionable, and the board is precise about what it is modelling:
+ * A multi-select with no numbers anywhere: *"cryptographically this is
+ * per-recipient key wrapping, one wrapped copy per selected heir — so the
+ * picker's real output is a list of key envelopes, not a ratio."* Every selected
+ * recipient receives the asset whole, because a seed phrase cannot be divided
+ * and neither can a deed. How the value is later split is the fara'id's
+ * business.
  *
- * > *"Cryptographically this is per-recipient key wrapping, one wrapped copy
- * > per selected heir — so the picker's real output is a list of key envelopes,
- * > not a ratio."*
+ * The executor is a distinct capability, not another heir: instructions and
+ * handover steps without the payload. A key envelope would hand the person
+ * administering the estate the contents of it.
  *
- * Hence a multi-select and no numbers anywhere. Every selected recipient
- * receives the asset **whole**, because a seed phrase cannot be divided and
- * neither can a deed. How the value is later split is the fara'id's business.
- *
- * The executor is a **distinct capability**, not another heir: instructions and
- * handover steps without the payload. That is what an executor actually needs,
- * and giving them a key envelope would hand the person administering the estate
- * the contents of it.
- *
- * Zero recipients is allowed and is never silently accepted — it surfaces amber
- * on 4.1, 4.9 and 5.1, which is exactly what those screens are for.
+ * Zero recipients is allowed and never silently accepted — it surfaces amber on
+ * 4.1, 4.9 and 5.1.
  */
 import { useMemo, useState } from "react"
 import { useMutation, useQuery } from "convex/react"

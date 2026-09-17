@@ -1,25 +1,14 @@
 /**
- * The document "payload", which is not a payload at all.
+ * The document "payload", which is not a payload at all: ٤.٥ stores a file, and
+ * everything readable about it lives in the row's plaintext `meta` with the name
+ * in the sealed label. So this codec reads `EditSource.meta`, and the edit
+ * screen never downloads the document to render its own form.
  *
- * ٤.٥ stores a file and no secret blob. Everything readable about it — the
- * count, the size, the mime type — is in the row's plaintext `meta`, and the
- * name is in the sealed label. So this codec reads `EditSource.meta` where the
- * others read `EditSource.secret`, and the edit screen never downloads the
- * document to render its own form.
- *
- * ## `kind` now has somewhere to live
- *
- * ٤.٥ rendered a deed/marriage/certificate/other chooser and **never submitted
- * it** — the value went into local state and died there. The board draws those
- * chips, so rather than dropping the control or dropping the input, documents
- * gained a small payload blob holding `{kind}`, stored ahead of the file the
- * way every other type stores its secret.
- *
- * That makes `storageIds` `[kind, file]` on anything saved from now on, and
- * plain `[file]` on everything saved before. Both are read here: one blob means
- * a legacy row whose kind was never recorded, and the chips say so rather than
- * asserting "deed" — the same rule the crypto phrase follows, for the same
- * reason.
+ * `kind` is stored in a small blob ahead of the file, making `storageIds`
+ * `[kind, file]` on anything saved from now on and plain `[file]` on everything
+ * saved before. Both are read here, and one blob means a legacy row whose kind
+ * was never recorded — the chips say so rather than asserting "deed", the same
+ * rule the crypto phrase follows and for the same reason.
  */
 import type { EditPayload, EditSource } from "@/screens/assets/detail/forms/source"
 

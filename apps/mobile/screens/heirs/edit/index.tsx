@@ -1,19 +1,15 @@
 /**
  * ٥.٢b — editing an heir, and the only place one can be deleted.
  *
- * ## Why the load and the form are two components
+ * The load and the form are two components because `useHeirForm` seeds its state
+ * with `useState`, which reads its argument once: mounting the form before
+ * `heirs.list` resolves would latch it onto an empty heir and never recover —
+ * every field blank over a record that is fine. This screen owns the wait so
+ * `HeirEditForm` only ever mounts with real values.
  *
- * `useHeirForm` seeds its state with `useState`, which reads its argument
- * **once**. Mounting the form before `heirs.list` resolves would latch it onto
- * an empty heir and never recover — every field blank, over a record that is
- * fine. So this screen owns the wait and `HeirEditForm` only ever mounts with
- * real values.
- *
- * ## Reached by the pencil, not by the card
- *
- * The card opens ٥.٤ — what this person receives. That is the question an owner
- * actually has about an heir, so it keeps the big target; correcting a spelling
- * is the rarer errand and gets the small one. The owner chose that split.
+ * Reached by the pencil, not the card. The card opens ٥.٤ — what this person
+ * receives — which is the question an owner actually has, so it keeps the big
+ * target; correcting a spelling is the rarer errand.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"

@@ -17,31 +17,21 @@ import { COMMON } from "@/lib/i18n/strings/common"
 import { CLAIMS } from "@/features/claims/strings/claims"
 
 /**
- * Every report this person has filed.
- *
- * ## The screen owns its own header, and that is the point
- *
- * The route used to render `PageHeader` — title, blurb, and a "بلاغ جديد"
- * button — and then this list underneath, which put the *same button* a second
- * time inside the empty state. Two identical calls to action a hundred pixels
- * apart, on a screen with nothing else on it.
- *
- * The header belongs to the populated case: once there are rows, a corner
- * button is where you reach for "another one". On an empty list it is the only
- * thing to do, so it belongs in the middle of the screen and the header has
- * nothing left to say. Deciding that needs the row count, so the whole screen
- * moved in here rather than the count moving out.
- *
- * ## Identifying a row
+ * Every report this person has filed. The screen owns its own header, which is
+ * the point: the route used to render `PageHeader` with a "بلاغ جديد" button and
+ * then this list, which put the same button a second time inside the empty
+ * state. The header belongs to the populated case — on an empty list the button
+ * is the only thing to do, so it belongs in the middle of the screen. Deciding
+ * that needs the row count, so the whole screen moved in here.
  *
  * `claims.mine` returns no subject name — it is the claimant's own list, keyed
- * on `claimantUserId`, and adding the deceased's name would put a second read
- * on a query the bar runs on every page. So a row is its short reference and
- * its date, and the name appears on the detail page, which already fetches it.
+ * on `claimantUserId`, and adding the deceased's name would put a second read on
+ * a query the bar runs on every page. So a row is its short reference and its
+ * date, and the name appears on the detail page.
  *
- * Rows are `now` when something is actually being asked of the reader: on this
- * list that is `released` — a ready box is the one row to act on — and nothing
- * else, including the objection period, which by design asks nothing of anyone.
+ * Rows are `now` only when something is actually being asked of the reader: on
+ * this list that is `released`, and nothing else — not the objection period,
+ * which by design asks nothing of anyone.
  */
 export function ClaimsList() {
   const locale = useLocale()

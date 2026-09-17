@@ -23,32 +23,23 @@ import {
 } from "@tanstack/react-table"
 
 /**
- * The table's capabilities, stitched together once at module scope.
+ * The table's capabilities, stitched together once at module scope. TanStack
+ * Table v9 is feature-opt-in: nothing is bundled unless it is named here.
  *
- * TanStack Table v9 is feature-opt-in: nothing is bundled unless it is named
- * here, which is why this file exists at all. Note that this is **not** the v8
- * API — there is no `useReactTable`, no `getCoreRowModel()`, no `flexRender`
- * import. Most examples in the wild are still v8 and will not compile against
- * the installed 9.2.3. Verified against `node_modules/@tanstack/table-core`
- * rather than recalled.
+ * This is **not** the v8 API — no `useReactTable`, no `getCoreRowModel()`, no
+ * `flexRender`. Most examples in the wild are still v8 and will not compile
+ * against the installed 9.2.3; verified against `node_modules/@tanstack/
+ * table-core` rather than recalled. Row-model factories are slots and each
+ * belongs *after* the feature that consumes it — `facetedRowModel` does nothing
+ * without `columnFacetingFeature`.
  *
- * Row-model factories are slots, and each one belongs *after* the feature that
- * consumes it — `facetedRowModel` does nothing without `columnFacetingFeature`.
- *
- * ## On row selection, which used to be deliberately absent
- *
- * This file previously excluded selection on the grounds that "a death claim is
- * reviewed one at a time, by a person, on purpose". Half of that still holds and
- * the other half was too strong: selection is also how an operator exports a
- * slice or copies a set of ids, neither of which touches a claim.
- *
- * So selection exists, and the rule moved to where it belongs — the actions
- * themselves. **No verdict on a claim may ever be a bulk action.** That is not
- * taste: `adminSetNameMatch` routes a rejected claim to `locked` with a 90-day
- * bar, and `nameMatchBlockedReason` then answers `"past-review"` for every
- * later call, so there is no admin path back. A mis-aimed bulk reject would
- * permanently lock legitimate heirs out of an inheritance. Bulk operations here
- * are read-only by construction; see `data-table-bulk-bar.tsx`.
+ * Row selection exists, because it is how an operator exports a slice or copies
+ * a set of ids. **No verdict on a claim may ever be a bulk action**, though:
+ * `adminSetNameMatch` routes a rejected claim to `locked` with a 90-day bar and
+ * `nameMatchBlockedReason` then answers `"past-review"` for every later call, so
+ * there is no admin path back and a mis-aimed bulk reject would permanently lock
+ * legitimate heirs out of an inheritance. Bulk operations here are read-only by
+ * construction; see `data-table-bulk-bar.tsx`.
  */
 export const features = tableFeatures({
   columnFacetingFeature,

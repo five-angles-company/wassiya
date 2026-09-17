@@ -4,46 +4,27 @@ import { open, seal } from "@workspace/crypto/wrap"
 
 /**
  * A guardian's key, kept on the device they accepted on — sealed, and openable
- * only by that device's own authenticator.
+ * only by that device's own authenticator. A guardian is asked to produce a
+ * printed code at one ceremony, possibly years later; this keeps a copy so the
+ * sheet can be re-shown without typing fifty-six characters off a page.
  *
- * ## What this is for, and what it is not
+ * **The paper is still the durable copy and everything here fails closed** — no
+ * passkey, a wiped device, a browser with no PRF all land the reader back on
+ * typing the sheet. Nothing in the release ceremony depends on this existing.
  *
- * A guardian is asked to produce a printed code at one ceremony, possibly years
- * after they filed it away. Until now the app could not help at all: the secret
- * existed in the accept page's memory and on paper, and then it was gone. This
- * keeps a copy so the sheet can be re-shown and re-printed on demand, and so
- * "is my key still the registered one?" can be answered without typing
- * fifty-six characters off a page.
+ * A passkey rather than plain storage: storing the secret in the clear would
+ * make the browser a second copy of the sheet, so any XSS on this origin would
+ * hold the guardian's half of every K_h. WebAuthn's `prf` extension yields a
+ * 32-byte value only that authenticator can reproduce and only after user
+ * verification, so what sits at rest is ciphertext and "access to the device" is
+ * literally the check. The PRF output is HMAC-derived and uniform, so it is used
+ * as the key directly; the stored salt separates this use from any other the
+ * credential serves, and the AAD binds the blob to its own credential id.
  *
- * **The paper is still the durable copy.** Everything here fails closed: no
- * passkey, a wiped device, a browser with no PRF — all of them land the reader
- * back on typing the sheet, which is exactly where they are today. Nothing in
- * the release ceremony depends on this existing.
- *
- * ## Why a passkey rather than plain storage
- *
- * Storing the secret in the clear would make the browser a second copy of the
- * sheet: any XSS on this origin, or anyone at an unlocked machine, would hold
- * the guardian's half of every K_h. Today that attacker gets nothing at all,
- * and that is worth keeping.
- *
- * WebAuthn's `prf` extension gives a 32-byte value that only that authenticator
- * can reproduce, and only after the user verifies — a fingerprint, a face, a
- * device PIN. So what sits at rest is ciphertext, and "access to the device" is
- * literally the check rather than a proxy for it.
- *
- * The PRF output is HMAC-derived and uniform, so it is used as the key
- * directly. The stored salt is what separates this use from any other the same
- * credential might serve, and the AAD binds the blob to its own credential id —
- * a sealed key copied into another record will not open.
- *
- * ## Two WebAuthn calls to register, and that is not a mistake
- *
- * `create()` reports whether PRF is *available* (`enabled`) but implementations
- * are not required to return its output, and Chrome does not. The reliable
- * shape is therefore: create, check `enabled`, then `get()` once to actually
- * obtain the value. The second prompt is the same verification the reader just
- * did, so it costs a tap and buys a path that works on every implementation.
+ * Registering takes **two** WebAuthn calls and that is not a mistake: `create()`
+ * reports whether PRF is available but implementations need not return its
+ * output, and Chrome does not. Create, check `enabled`, then `get()` once to
+ * obtain the value.
  */
 
 const STORE_KEY = "wassiya.guardian-key.v1"

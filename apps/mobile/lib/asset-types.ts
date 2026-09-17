@@ -1,19 +1,13 @@
 /**
- * The six kinds of thing a vault holds, and the glyph each one wears.
- *
- * The order is the board's own, from the 4.2 picker — it is also the order the
- * 4.1 filter chips appear in, so both read the same way round.
- *
- * ## About the icons
+ * The six kinds of thing a vault holds, and the glyph each one wears. The order
+ * is the board's own, from the ٤.٢ picker, and is also the ٤.١ filter-chip order.
  *
  * The board draws its own outline glyphs rather than naming lucide icons, so
- * these are the closest lucide equivalents and are collected here — one table,
- * one edit — rather than being inlined at each call site. Two are deliberate
- * departures from the drawn shape: `bank` is a `Landmark` where the board draws
- * a house outline, and `digital` is an `AtSign` where it draws a bare rounded
- * rectangle. Both were chosen because the drawn glyph is a stand-in that would
- * be misread at 18px in a real list — a house next to "مصرف الراجحي" reads as
- * property, not banking.
+ * these are the closest equivalents, collected here for one edit rather than
+ * inlined per call site. Two depart from the drawn shape on purpose: `bank` is a
+ * `Landmark` and `digital` an `AtSign`, because the drawn stand-ins would be
+ * misread at 18px — a house next to "مصرف الراجحي" reads as property, not
+ * banking.
  */
 import {
   AtSign,

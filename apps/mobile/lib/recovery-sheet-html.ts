@@ -1,25 +1,20 @@
 /**
- * The printed recovery document, as HTML for `expo-print`.
+ * The printed recovery document, as HTML for `expo-print`. It is a legal
+ * artefact people keep with a notarised will for decades, so three things
+ * matter more than they would on a screen:
  *
- * This is a legal artefact people keep with a notarised will for decades, so
- * three things matter more than they would on a screen:
- *
- *  - **Fonts have to travel with it.** `expo-print` renders in a WebView that
- *    knows nothing about the app's `expo-font` registrations and may have no
- *    network. Cairo — the brand heading voice — is therefore read out of the
- *    bundle and inlined as a data URI. Body copy falls back to the platform's
- *    Arabic face on purpose: it is legible everywhere, and embedding a second
- *    226 KB face to match the app exactly is not worth the memory on a page
- *    that is mostly a monospace code.
- *
- *  - **The code must never be reflowed or reshaped.** It renders Latin, in a
- *    monospace face, inside an explicit `dir="ltr"` block — Arabic-Indic
- *    digits or bidi reordering here would make a sheet that cannot be typed
- *    back in.
- *
+ *  - **Fonts travel with it.** `expo-print` renders in a WebView that knows
+ *    nothing about the app's `expo-font` registrations and may have no network,
+ *    so Cairo is read out of the bundle and inlined as a data URI. Body copy
+ *    falls back to the platform Arabic face on purpose — legible everywhere,
+ *    and a second 226 KB face is not worth the memory on a page that is mostly
+ *    a monospace code.
+ *  - **The code must never be reflowed or reshaped.** Latin, monospace, inside
+ *    an explicit `dir="ltr"` block; Arabic-Indic digits or bidi reordering would
+ *    make a sheet that cannot be typed back in.
  *  - **Owner-supplied text is escaped.** The name and email come from a person
- *    and land in markup; `escapeHtml` is what stops a stray `<` from silently
- *    eating the rest of the document.
+ *    and land in markup, and `escapeHtml` is what stops a stray `<` from
+ *    silently eating the rest of the document.
  */
 import { Asset } from "expo-asset"
 import { File } from "expo-file-system"

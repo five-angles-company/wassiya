@@ -1,49 +1,16 @@
 /**
- * The one protection model, rendered three ways.
+ * The one protection model, read by both Home (as a summary) and 6.1 (as a
+ * to-do list) — computed once here so the two can never disagree about how safe
+ * the vault is.
  *
- * The board is explicit: *"The 4/5 ring is the same protection-score object
- * built in 2.6 — Home renders it as a summary, 6.1 as a to-do list."* If the
- * two computed it separately they would eventually disagree about how safe the
- * vault is, which is the one thing a security summary may never do. So it is
- * computed here and both screens read it.
+ * The array order below is the ranking: exactly one `needed` item is promoted
+ * to amber and the rest fall to `later`, because a screen where six things are
+ * urgent ranks nothing. A `blocked` item is waiting on somebody else — a
+ * guardian accepts on the web, where they mint their own key — so it stays
+ * `later` and is skipped for `topGap`, never accusing the owner of a step that
+ * is not theirs. It still counts against the score.
  *
- * ## Why seven items rather than the board's five
- *
- * 3.1 draws five chips — الهوية، المفتاح، الوثيقة، الورثة، التحقق من الحياة —
- * and `protection-score.tsx` says "five, **at time of writing**", which
- * anticipates exactly this. Two have been added since that drawing, and both
- * are load-bearing rather than cosmetic:
- *
- *  - **الوصي.** Not for recovery any more — `K_rec = S_paper`, so the printed
- *    sheet recovers the vault on its own. The guardian is what makes *delivery*
- *    work: `K_h = S_server_h ⊕ S_guardian_h`, so a vault with heirs, routing
- *    and no guardian releases a box nobody can open. Still load-bearing, but
- *    it now ranks below the sheet rather than above it.
- *  - **التوجيه.** A vault with heirs but no routing delivers nothing to any of
- *    them. "Has heirs" and "reaches someone" are different facts.
- *
- * ## Ranking, and the one-amber rule
- *
- * `protection-score-list` allows exactly one `needed` item at a time; the rest
- * fall to `later`. A screen where six things are urgent ranks nothing. The
- * array order below **is** the ranking.
- *
- * ## An item the owner cannot close is never the amber one
- *
- * `blocked` marks an outstanding item that is waiting on somebody else. The
- * guardian is the live case: the owner sends an invitation from this app, but
- * *accepting* happens on the web, where the invited person mints their own key.
- * Promoting that to the single amber row would accuse the owner, every time
- * they open the app, of a step only somebody else can take — so a blocked item
- * stays `later`, wears the waiting pill, and is skipped for `topGap`. It still
- * counts against the score, because the vault really is incomplete.
- *
- * ## This hook never needs the vault unlocked
- *
- * Every input is server metadata — a status, a row's existence, a count. That
- * matters because 3.1's own spec says the home screen *"renders before any
- * decryption"*, and a protection summary that demanded a fingerprint to draw
- * would defeat the point of being the resting state.
+ * Every input is server metadata, so this renders before any decryption.
  */
 import { useMemo } from "react"
 import { useQuery } from "convex/react"

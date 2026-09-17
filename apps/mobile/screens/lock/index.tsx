@@ -1,40 +1,19 @@
 /**
  * ٣.٢ — شاشة القفل.
  *
- * ## The blur is a real render, never a screenshot
+ * The blur is a live render behind a 55% scrim, never a cached screenshot: a
+ * screenshot of a vault screen is plaintext secret material sitting in app
+ * storage. `useSecureScreen` keeps it out of the recents thumbnail.
  *
- * The board is specific: *"Blur is a real render of the last screen behind a
- * 55% ground scrim — never a stale screenshot, and FLAG_SECURE keeps it out of
- * the recents thumbnail."* That distinction is a security property, not a
- * fidelity one. A cached screenshot of a vault screen is a plaintext image of
- * secret material sitting in app storage; a live render behind a scrim is the
- * same tree that was already on screen, drawn dimmer.
+ * It is an overlay the tabs layout draws over a mounted page — not a `/lock`
+ * route, and not built on `Screen`. Navigating to a route would unmount the
+ * screen behind it, leaving nothing to blur.
  *
- * It is one of only two screens not built on `Screen`, and deliberately so:
- * `Screen` is a page shell — a root View, a scroll area, a gutter — and this is
- * an `absolute inset-0 z-50` sheet drawn *over* a mounted page. Putting it on
- * the shell would give it a second background and a second gutter, and would
- * make the thing it exists to cover part of its own layout.
- *
- * This screen therefore renders **as an overlay over whatever was already
- * mounted** rather than as a route that replaces it — which is why it is a
- * component the tabs layout draws on top, not a `/lock` page. Navigating to a
- * lock route would unmount the screen behind it and there would be nothing left
- * to blur.
- *
- * `useSecureScreen` covers the recents thumbnail while it is up.
- *
- * ## Two exits, and only two
- *
- * A fingerprint, or the recovery sheet. There is deliberately no passcode
- * fallback: the device passcode is something a person holding the phone may
- * also know, and the vault key is bound to biometrics in the keystore anyway —
- * offering a passcode would promise an unlock the keystore cannot perform.
- *
- * `VaultKeyLostError` is the third outcome and is not a failure to retry:
- * changed biometrics invalidate the key permanently, and only the recovery
- * ceremony helps. `useVaultGate` already routes that case, so this screen only
- * has to say so.
+ * Two exits, and only two: a fingerprint, or the recovery sheet. No passcode
+ * fallback — the device passcode is something a person holding the phone may
+ * also know, and the vault key is bound to biometrics in the keystore anyway.
+ * `VaultKeyLostError` is permanent rather than retryable; `useVaultGate`
+ * already routes that case, so this screen only has to say so.
  */
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"

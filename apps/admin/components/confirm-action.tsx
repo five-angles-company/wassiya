@@ -20,22 +20,17 @@ import { cn } from "@workspace/ui/lib/utils"
  *
  * Every admin action on a claim is confirmed, which carries a known cost:
  * identical dialogs everywhere train people to click through without reading,
- * and that is how the irreversible one eventually gets approved by reflex. The
- * mitigation is that `tone` makes the two non-interchangeable on sight —
- * different title, different body, different verb, and a destructive button that
- * does not look like the neutral one.
+ * and that is how the irreversible one eventually gets approved by reflex. So
+ * `tone` makes the two non-interchangeable on sight — different title, body,
+ * verb, and a destructive button that does not look like the neutral one.
+ * `destructive` means genuinely irreversible: nothing anywhere moves a claim out
+ * of `locked`. Linking an heir is reversible until release.
  *
- * `destructive` here means genuinely irreversible: nothing anywhere moves a
- * claim out of `locked`. Linking an heir is reversible until release, so it gets
- * the neutral treatment.
- *
- * ## Why the open state is controlled
- *
- * The action is async and can fail. Left uncontrolled, the dialog would dismiss
- * itself the instant the button is pressed, and a rejected mutation would report
- * into a component that had already unmounted — the operator would see the
- * dialog vanish and assume it worked. Here it stays open, and disabled, until
- * the promise settles, and only a success closes it.
+ * **The open state is controlled** because the action is async and can fail.
+ * Uncontrolled, the dialog would dismiss the instant the button is pressed and a
+ * rejected mutation would report into an unmounted component — the operator
+ * would see it vanish and assume it worked. It stays open and disabled until the
+ * promise settles, and only a success closes it.
  */
 export function ConfirmAction({
   trigger,

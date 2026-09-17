@@ -1,22 +1,16 @@
 /**
- * Paste a secret in, then take it back out of the clipboard.
+ * Paste a secret in, then take it back out of the clipboard — ٤.٣'s
+ * "تُمحى الحافظة بعد اللصق". A seed phrase copied out of a wallet app sits in
+ * the system clipboard indefinitely where any app can read it, Android shows it
+ * in the keyboard's clipboard strip, and both platforms sync it across devices.
  *
- * 4.3's third safety chip is "تُمحى الحافظة بعد اللصق" — the clipboard is wiped
- * after pasting — and it is the one that most needs to be true. A seed phrase
- * copied out of a wallet app sits in the system clipboard indefinitely, where
- * *any* app can read it, Android shows it in the keyboard's clipboard strip,
- * and both platforms sync it to other devices. Reading the phrase without
- * clearing it would leave the app's own convenience feature as the largest hole
- * in the screen.
+ * Wiping is best-effort, and the limits are worth being precise about:
  *
- * Wiping is best-effort and worth being precise about:
- *
- *  - It clears the clipboard, not the keyboard's *history* strip, which is a
- *    separate store the OS owns. `IME_FLAG_NO_PERSONALIZED_LEARNING` on the
- *    input is what covers that, and it is set on the field, not here.
- *  - iOS 16+ shows a paste-permission prompt on read. A user who declines gets
- *    an empty string back, which reads here as "nothing to paste" — not an
- *    error, because it is a choice.
+ *  - It clears the clipboard, not the keyboard's history strip, which is a
+ *    separate OS-owned store. `IME_FLAG_NO_PERSONALIZED_LEARNING` covers that,
+ *    and it is set on the field, not here.
+ *  - iOS 16+ prompts on read. A declined prompt returns an empty string, which
+ *    reads here as "nothing to paste" — not an error, because it is a choice.
  *  - Another app can re-copy at any moment. This narrows a permanent exposure
  *    to a brief one; it does not close it.
  */

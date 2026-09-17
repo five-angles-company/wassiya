@@ -9,26 +9,18 @@ import { AppHeader } from "@/components/app-header"
 import { AppSidebar } from "@/components/app-sidebar"
 
 /**
- * The console shell: everything behind the sign-in wall.
+ * The console shell: everything behind the sign-in wall. A route group, so
+ * `/sign-in` and `/sign-up` sit outside it and stay bare centred cards.
  *
- * A route group so `/sign-in` and `/sign-up` keep rendering as bare centred
- * cards — they sit outside this folder and inherit only the root layout.
+ * Three gates, answering different questions. `await auth()` answers "is anyone
+ * signed in?" — a Clerk fact available on the server, and the cheapest way to
+ * bounce an anonymous visitor before any markup is generated. It cannot answer
+ * "is this an admin?", because `role` lives in the Convex `users` table and
+ * never enters the JWT; `AdminGate` does that client-side off Convex's own auth
+ * state. **`requireAdmin`, which throws inside every admin function, is the only
+ * one of the three that is load-bearing.**
  *
- * ## Two gates, because they answer different questions
- *
- * `await auth()` answers *"is anyone signed in?"* — a Clerk fact, available on
- * the server, and the cheapest way to bounce an anonymous visitor before any
- * console markup is generated. This is the repo's first use of the pattern
- * `AGENTS.md` prescribes ("protect the resource... in the page, layout, or
- * route handler"), and `isAuthenticated` is the discriminant the installed
- * `@clerk/backend` actually exposes.
- *
- * It cannot answer *"is this an admin?"*, because `role` lives in the Convex
- * `users` table and never enters the JWT. `AdminGate` does that, client-side,
- * off Convex's own auth state. And behind both, `requireAdmin` throws inside
- * every admin function — which is the only one of the three that is load-bearing.
- *
- * `TooltipProvider` is required here rather than optional: `SidebarMenuButton`
+ * `TooltipProvider` is required rather than optional: `SidebarMenuButton`
  * renders a `Tooltip` whenever the rail is collapsed, and this package's
  * `Tooltip` is a bare Radix root with no provider of its own.
  */

@@ -1,21 +1,17 @@
 /**
- * Screen copy, in the active locale.
- *
- * There is still no i18n library here; this is the thin catalogue layer the
- * `@workspace/ui-native` README anticipates. Primitives keep their `labels`
- * prop and screens feed them from these dictionaries, so the day a real
- * library lands the swap is mechanical.
+ * Screen copy, in the active locale. No i18n library yet — this is the thin
+ * catalogue layer the `@workspace/ui-native` README anticipates, so primitives
+ * keep their `labels` prop and the eventual swap stays mechanical.
  *
  * ```ts
  * const { t, locale } = useStrings("setup/explainer")
  * <Text variant="screenTitle">{t.title}</Text>
  * ```
  *
- * Numerals are deliberately *not* handled here. Arabic renders Eastern
+ * Numerals are deliberately not handled here. Arabic renders Eastern
  * Arabic-Indic digits, but OTP codes, recovery codes and email addresses stay
- * Latin inside an LTR isolate — a per-value decision, not a per-string one.
- * Use `fmtNum` / `fmtDate` / `isolateLtr` from `@workspace/ui-native/lib` at
- * the call site.
+ * Latin inside an LTR isolate — a per-value decision, not a per-string one. Use
+ * `fmtNum` / `fmtDate` / `isolateLtr` at the call site.
  */
 import { useMemo } from "react"
 import { useQuery } from "convex/react"

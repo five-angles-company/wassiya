@@ -20,29 +20,18 @@ import type { BankForm } from "@/screens/assets/detail/forms/bank"
 /**
  * ٤.٤'s fields, as the board draws them on ١٥.
  *
- * ## Nothing here is masked, and the IBAN can be copied
+ * **Nothing here is masked, and the IBAN can be copied.** A bank account has no
+ * password; the IBAN is printed on statements and handed out to receive money,
+ * so masking it would make the one value an heir has to transcribe the hardest
+ * one to read — and buy nothing, since its tail already shows unmasked in the
+ * vault list. It gets a copy affordance instead, mono, LTR, in four-character
+ * groups: the form it has to be transcribed in.
  *
- * A bank account has no password. The IBAN is printed on statements and handed
- * out to receive money, so masking it would make the one value an heir has to
- * transcribe the hardest one to read — and buy nothing, since its tail already
- * shows unmasked in the vault list.
+ * The currency is derived from the country and reads at 55%, so nobody taps it
+ * expecting a keyboard.
  *
- * It gets a **copy** affordance instead, because it is the one value an owner
- * reads aloud down the phone to a bank. Mono, LTR, in four-character groups:
- * the form it has to be transcribed in.
- *
- * ## Three short values share one row
- *
- * Type, currency and branch are two words each. Three full-width rows for six
- * words is what makes a form feel like paperwork. The currency is derived from
- * the country and reads at 55%, so nobody taps it expecting a keyboard.
- *
- * ## Short is a counter, not an error
- *
- * While the number is still being typed the line counts characters; only once
- * it is long enough does it become a verdict. Telling someone their IBAN is
- * invalid when they have typed eight of twenty-four digits is not validation,
- * it is nagging.
+ * A short IBAN is a counter, not an error — the line counts characters while the
+ * number is being typed and only becomes a verdict once it is long enough.
  */
 export type BankFieldsProps = {
   value: BankForm

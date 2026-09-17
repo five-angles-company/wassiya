@@ -1,45 +1,19 @@
 /**
  * Opening an asset for editing: both tiers of decryption, and the way back.
  *
- * ## The second gate moved, it did not disappear
+ * The payload decrypts when the screen does — a form cannot prefill from a blob
+ * it has not opened. What replaces ٤.٩'s second gate is per-field masking, so
+ * revealing a password does not put the 2FA note on screen beside it; the seed
+ * phrase keeps a fingerprint on top because its disclosure is unrecoverable.
  *
- * ٤.٩ used to decrypt the label on open and hold the payload behind a fresh
- * biometric on a ten-second timer. That shape only works for a screen that
- * *displays* a secret. This screen edits one, and a form cannot be prefilled
- * from a blob it has not opened — so the payload decrypts when the screen does.
+ * `noteReveal` is wired to the eye, not to the screen opening. The screen
+ * renders آخر فتح from `lastRevealedAt`, so recording on open would make that
+ * row read "now" every time anyone checked it — destroying the only signal it
+ * carries, that somebody *else* opened this asset. A ref collapses one visit
+ * into one line.
  *
- * What replaces the gate is per-field masking: `EditableRow` renders every
- * secret masked, with its own eye, so revealing a password does not put the
- * two-factor note and the recovery codes on screen beside it. The owner asks
- * for exactly the value they need, and the screenshot guard still covers all of
- * it. The seed phrase is the one value that keeps a fingerprint on top, because
- * it is the one whose disclosure is unrecoverable.
- *
- * ## The reveal is recorded when a secret is actually looked at
- *
- * `noteReveal` is wired to the eye, not to the screen opening. Recording on
- * open was the obvious first move and it is wrong: the screen renders *آخر فتح*
- * from `lastRevealedAt`, so a line written by opening makes that row read "now"
- * every single time anyone looks at it. The row exists to tell an owner that
- * somebody **else** opened this asset, and evidence that fires on the act of
- * checking it carries no information at all.
- *
- * The line drawn instead: decrypting a payload into a masked field is not a
- * disclosure, and a human tapping an eye is. Guarded by a ref, so three secrets
- * revealed on one visit write one line rather than three.
- *
- * ## Only the decryption is state
- *
- * "Still loading" and "the vault is locked" are facts about the query and the
- * key store, derived on every render. Mirroring them into state would mean an
- * effect that writes state synchronously — a cascading render, and a window in
- * which the hook reports a stale answer to a question it could have answered
- * directly.
- *
- * ## Saving does not rotate the DEK
- *
- * See `use-update-asset.ts`. Heir bundles carry the routed DEKs, so an edit
- * reuses the asset's own key rather than minting one.
+ * Saving reuses the asset's DEK rather than rotating it, because heir bundles
+ * carry the routed DEKs. See `use-update-asset.ts`.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation, useQuery } from "convex/react"

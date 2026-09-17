@@ -51,31 +51,20 @@ export type SheetSelectProps = {
 /**
  * A single-choice field that opens a native bottom sheet.
  *
- * ## Why this exists next to `ui/select.tsx`
+ * It exists next to `ui/select.tsx` because the upstream React Native Reusables
+ * `Select` teleports through `PortalHost`, which breaks when the screen
+ * underneath is replaced while the menu is open — `country-picker.tsx` hit that
+ * during setup and hand-rolled a `Modal` to escape it. This replaces the
+ * workaround, not the upstream component: `ui/select.tsx` stays verbatim from
+ * the registry so it keeps diffing cleanly against future releases.
  *
- * The upstream React Native Reusables `Select` teleports its content through
- * `PortalHost`, which breaks when the screen underneath is replaced while the
- * menu is open — `country-picker.tsx` hit exactly that during the setup flow and
- * hand-rolled a `Modal` to escape it. That workaround then had to redraw the
- * whole sheet in JS: a black scrim, a rounded top, a fake grabber pill, a
- * `max-h-[70%]` guess, and no drag-to-dismiss.
- *
- * This replaces the workaround, not the upstream component. `ui/select.tsx`
- * stays verbatim from the registry so it keeps diffing cleanly against future
- * releases; anything in this app that wants the board's sheet grammar uses this
- * instead.
- *
- * ## Sizing
- *
- * `'auto'`, and `scrollable` **only past six options**. A scroller inside a
- * TrueSheet stops it hugging its content and inflates it to most of the screen,
- * so a two-option list — ٩.١'s language row — arrived as a full panel holding
- * two rows and a paragraph of air. Past six the scroller earns that cost,
- * because `'auto'` clamps to the container on a small handset and the last
- * option would otherwise be unreachable.
- *
- * Deliberately not a fractional detent either way: that is what produces a
- * half-height sheet with the options stranded at the top.
+ * **Sizing: `'auto'`, and `scrollable` only past six options.** A scroller
+ * inside a TrueSheet stops it hugging its content and inflates it to most of the
+ * screen, so a two-option list arrived as a full panel holding two rows and a
+ * paragraph of air. Past six the scroller earns that cost, because `'auto'`
+ * clamps to the container on a small handset and the last option would be
+ * unreachable. Deliberately not a fractional detent either way — that is what
+ * strands the options at the top of a half-height sheet.
  */
 export function SheetSelect({
   label,

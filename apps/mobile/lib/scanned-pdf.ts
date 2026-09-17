@@ -1,21 +1,13 @@
 /**
- * Scanned pages → one PDF, entirely on the device.
- *
- * 4.5: *"pages are encrypted individually and assembled into one PDF
- * client-side. No OCR to any server."* The assembly is the part that has to
- * happen here rather than anywhere else — a deed photographed in three parts is
- * one document, and shipping three loose images would leave an heir to work out
- * the order.
- *
- * `expo-print` is the tool, and it is already how this app makes its recovery
- * sheet: HTML rendered to a PDF in a local WebView. Nothing is fetched, so
- * nothing leaves the device.
+ * Scanned pages → one PDF, entirely on the device — ٤.٥: *"pages are encrypted
+ * individually and assembled into one PDF client-side. No OCR to any server."*
+ * A deed photographed in three parts is one document, and shipping three loose
+ * images would leave an heir to work out the order.
  *
  * **Pages are embedded as base64 data URIs, not `file://` paths.** The print
- * WebView resolves relative to its own origin, and a `file://` src fails
- * silently — producing a PDF of the right page count with every page blank.
- * The recovery sheet hit the same wall with its QR and its font; this follows
- * that established shape.
+ * WebView resolves relative to its own origin and a `file://` src fails
+ * silently, producing a PDF of the right page count with every page blank. The
+ * recovery sheet hit the same wall with its QR and its font.
  */
 import { File } from "expo-file-system"
 import { printToFileAsync } from "expo-print"

@@ -37,24 +37,21 @@ const domainsParser = parseAsArrayOf(
 const NO_SORTING = [] as const
 
 /**
- * ٩.٣ from the console's side — the append-only record.
+ * ٩.٣ from the console's side — the append-only record of who did what, to whom
+ * and when.
  *
- * The compliance backbone of a product that hands over estates: who did what,
- * to whom, and when. Until `auditLog.by_at` existed it could only be read one
- * account at a time, so *"what happened recently"* had no answer at all.
- *
- * Read-only in the strongest sense available here. `verify-invariants.mjs`
- * fails the build on any `patch`, `replace` or `delete` against this table, so
- * there is no mutation for this screen to call even if someone wanted one — and
- * the screen says so above the table rather than leaving it to be assumed.
+ * Read-only in the strongest sense available here: `verify-invariants.mjs` fails
+ * the build on any `patch`, `replace` or `delete` against this table, so there
+ * is no mutation for this screen to call. The screen says so above the table
+ * rather than leaving it to be assumed.
  *
  * Faceted by **domain**, not by event: thirty-five event names live on the
- * deployment today and the code can write more, so a dropdown of every one is
- * a filter nobody uses. The server resolves a domain to a prefix range, which
- * means a new `claim.*` event is filterable the day it is written with nothing
- * to keep in sync.
+ * deployment today and the code can write more, so a dropdown of every one is a
+ * filter nobody uses. The server resolves a domain to a prefix range, so a new
+ * `claim.*` event is filterable the day it is written with nothing to keep in
+ * sync.
  *
- * Newest first, and no column sorts. A log with one meaningful order should not
+ * Newest first, and no column sorts — a log with one meaningful order should not
  * offer a sort that silently reorders only the page in front of you.
  */
 export function AuditLog() {

@@ -1,22 +1,17 @@
 /**
- * ٧.٥ — the owner's veto interrupt.
+ * ٧.٥ — the owner's veto interrupt, and the one screen of section ٧ that is not
+ * in the web funnel: *"it must reach a person who is alive, on their own phone,
+ * with a biometric to cancel."*
  *
- * The one screen of section ٧ that is **not** in the web funnel, and the claim
- * board says exactly why: *"it must reach a person who is alive, on their own
- * phone, with a biometric to cancel."*
+ * A veto asserts "I am not dead". A tap on an unlocked handset would let anyone
+ * holding the phone suppress a legitimate claim, and a web link would let anyone
+ * who intercepted an email do the same. The biometric is what makes the
+ * assertion belong to a person rather than a device — the same reason 6.4's
+ * check-in is gated.
  *
- * A veto is the assertion "I am not dead". If a tap on an unlocked handset
- * could make it, then anyone holding the owner's phone could suppress a
- * legitimate claim — and if a web link could make it, anyone who intercepted an
- * email could. The biometric is what makes the assertion belong to a person
- * rather than to a device, and it is the same reason 6.4's check-in is gated.
- *
- * ## Doing nothing is also stated
- *
- * The screen says what happens if the owner ignores it. Most claims are
- * genuine — the owner really has died and a relative really is waiting — and a
- * screen that only offered "stop this" would read as though objecting were the
- * expected response. It is not.
+ * The screen also states what happens if the owner ignores it. Most claims are
+ * genuine, and a screen that only offered "stop this" would read as though
+ * objecting were the expected response.
  */
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"

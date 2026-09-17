@@ -20,27 +20,20 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 /**
  * The guardian hands over their half of K_h.
  *
- * ## The unwrap happens here, in the browser, and nowhere else
+ * **The unwrap happens here, in the browser, and nowhere else.** The server
+ * stores `S_guardian_h` sealed to the guardian's X25519 public key and has never
+ * been able to open it: `release.guardianShareForClaim` returns the sealed blob,
+ * and `openFromGuardian` opens it with the secret typed off the printed sheet.
+ * Both exist only in this tab.
  *
- * The server stores `S_guardian_h` **sealed to the guardian's X25519 public
- * key** and has never been able to open it. `release.guardianShareForClaim`
- * returns that sealed blob; `openFromGuardian` opens it with the secret the
- * guardian just typed off their printed sheet. Both the secret and the opened
- * share exist only in this tab.
- *
- * ## Why the plaintext is shown rather than sent
- *
- * The whole construction is worth nothing if this service can put both halves
- * in one place. So the app does not message the heir, does not email the share,
- * and does not store it: it shows the guardian a string and asks them to hand
- * it over themselves. The warning under it is not boilerplate — whoever holds
- * both halves opens the box.
- *
- * ## Bytes across the wire
+ * The plaintext is **shown rather than sent**. The whole construction is worth
+ * nothing if this service can put both halves in one place, so the app does not
+ * message the heir, does not email the share, and does not store it. The warning
+ * under it is not boilerplate — whoever holds both halves opens the box.
  *
  * `v.bytes()` arrives as an `ArrayBuffer` and `@workspace/crypto` asserts on
- * `Uint8Array`. The wrap is explicit below, because a missed one fails inside
- * `open()` with a tag error that is indistinguishable from a wrong key.
+ * `Uint8Array`; the wrap below is explicit because a missed one fails inside
+ * `open()` with a tag error indistinguishable from a wrong key.
  */
 export function HandoverPanel({
   claimId,

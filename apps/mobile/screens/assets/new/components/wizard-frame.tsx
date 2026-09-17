@@ -1,25 +1,17 @@
 /**
  * The shell every ٤.٣–٤.٨ wizard fills in.
  *
- * ## The step count is text, not a meter
+ * The step count is text at 12px, not a meter: a progress bar across a two-step
+ * flow is chrome pretending to be information, and it competes with the one
+ * thing on the screen that should be loud.
  *
- * "١ من ٢" sits at 12px in the header's trailing slot. Two steps do not need a
- * progress bar — a meter across the top of a two-step flow is chrome pretending
- * to be information, and it competes with the one thing on the screen that
- * should be loud.
+ * No boxed inputs — label-over-value rows on hairlines, the same grammar as the
+ * asset screen. On ٤.٣ that is what leaves the seed grid as the only enclosed
+ * thing on the page.
  *
- * ## No boxed inputs
- *
- * Same grammar as the asset screen: label-over-value rows on hairlines. On ٤.٣
- * that is what leaves the seed grid as the only enclosed thing on the page, so
- * it reads as the vault-within-the-vault without any copy saying so.
- *
- * ## A disabled CTA is surface-toned and says why
- *
- * Never a faded terracotta — a greyed accent reads as a broken button. Pass
- * `disabledLabel` wherever the blocker is nameable ("اختر واحداً للمتابعة"), so
- * the control explains its own refusal instead of leaving someone to hunt for
- * the empty field.
+ * A disabled CTA is surface-toned and says why, never a faded terracotta, which
+ * reads as a broken button. Pass `disabledLabel` wherever the blocker is
+ * nameable so the control explains its own refusal.
  */
 import type { ReactNode } from "react"
 import { Text } from "@workspace/ui-native/components/ui/text"

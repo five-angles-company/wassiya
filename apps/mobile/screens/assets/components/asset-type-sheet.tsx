@@ -9,37 +9,23 @@ import { ASSET_TYPES, ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
 /**
  * ٤.٢ — "ماذا تضيف؟"
  *
- * ## A sheet, not a route
+ * A sheet, not a route: back dismisses it without unwinding ٤.١'s scroll
+ * position, and what to add is usually decided *after* scrolling.
  *
- * Back dismisses it without unwinding ٤.١'s scroll position, which matters more
- * here than anywhere else in the vault: what you want to add is usually decided
- * *after* scrolling, and a pushed screen sends you back to the top. It is also
- * the cheaper gesture for the commonest outcome — opening the picker and
- * changing your mind.
+ * A 2×3 grid of `AssetTypeTile`, which carries `StatTile`'s metrics exactly — a
+ * type tile, a Home tile and a vault card are one object at three sizes. Six
+ * close the grid cleanly; an odd count would stretch the last across the full
+ * width and read as a different kind of thing.
  *
- * ## A 2×3 grid of the same tile Home uses
+ * **Every disc is sand, deliberately.** `ASSET_TYPE_TONE` exists and is not used
+ * here for the same reason the vault list does not use it: terracotta means
+ * "needs you" on Home and in the list, and a terracotta "محفظة رقمية" would read
+ * as urgent when nothing on this screen is. The icons tell the six apart; colour
+ * stays free to mean one thing.
  *
- * `AssetTypeTile` now carries `StatTile`'s metrics exactly, so a type tile, a
- * Home tile and a vault card are one object at three sizes. Six of them close
- * the grid cleanly; an odd count would leave the last one stretched across the
- * full width, reading as a different kind of thing rather than the last of a
- * set.
- *
- * ## Every disc is sand, deliberately
- *
- * `ASSET_TYPE_TONE` exists and groups these by what they hold — secrets
- * terracotta, files olive. It is not used, for the same reason the vault list
- * does not use it: terracotta means **"needs you"** on Home and in the list, and
- * a terracotta "محفظة رقمية" here would read as urgent when nothing on this
- * screen is. The icons already tell the six apart; colour stays free to mean
- * one thing.
- *
- * ## Sizing
- *
- * Three content-hugging rows on the default single `'auto'` detent, and
- * deliberately **not** `scrollable`: a scroller here inflates the sheet to
- * roughly nine-tenths of the screen and strands the tiles at the top. See
- * `Sheet`'s own sizing note.
+ * Three content-hugging rows on the default `'auto'` detent, and deliberately
+ * **not** `scrollable` — a scroller inflates the sheet to roughly nine-tenths of
+ * the screen and strands the tiles at the top. See `Sheet`'s own sizing note.
  */
 export type AssetTypeSheetProps = {
   ref?: React.Ref<TrueSheet>

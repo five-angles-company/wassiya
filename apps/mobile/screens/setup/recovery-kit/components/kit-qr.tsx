@@ -11,32 +11,22 @@ export type KitQrProps = {
 }
 
 /**
- * The QR on the recovery sheet.
+ * The QR on the recovery sheet. It encodes the **wrapped key blob, not the
+ * recovery code**: the code carries S_paper for a human to retype, the QR
+ * carries `Enc(K_rec, MK)` for a machine to read, and putting the code in both
+ * would add only a second way to leak it.
  *
- * It encodes the **wrapped key blob, not the recovery code**. That is a
- * deliberate split: the code carries S_paper for a human to retype and the QR
- * carries `Enc(K_rec, MK)` for a machine to read. Putting the code in the QR as
- * well would add nothing but a second way to leak it.
+ * Since `K_rec = S_paper`, the two halves printed here are the complete recovery
+ * input — so what stands between a photograph and an open vault is the AAD. The
+ * wrapper is sealed under the owner's **user id** and the paper version; the
+ * version is printed, the id is not, and it is not derivable from the name or
+ * email on the page. Opening this offline is therefore infeasible, and the sheet
+ * is a bearer token *within* the account rather than outside it.
  *
- * ## What stops this page being the whole vault
- *
- * It used to be "neither is any use without the guardian's share". That is no
- * longer true — K_rec is S_paper alone — so the two halves printed here are
- * now the complete recovery input, and it is worth being exact about what
- * still stands between a photograph and an open vault.
- *
- * The wrapper is sealed under an AAD of the owner's **user id** and the paper
- * version. The version is printed; the id is not, and it is not derivable from
- * the name or the email on the page. So opening this offline is infeasible:
- * the id comes from the account, and reaching the account means signing in as
- * the owner. The sheet is a bearer token *within* that account, not outside it.
- *
- * That property is load-bearing rather than incidental. **Do not print the user
- * id on this sheet**, and do not put it in the QR.
+ * ⚠️ **Do not print the user id on this sheet, and do not put it in the QR.**
  *
  * The PNG is captured for the print document because `expo-print` renders in a
- * WebView that cannot reach this component tree; a data URI is the only way the
- * image travels with the HTML.
+ * WebView that cannot reach this component tree.
  */
 export function KitQr({ value, size = 128, onCaptured }: KitQrProps) {
   const svgRef = useRef<{ toDataURL: (cb: (data: string) => void) => void }>(

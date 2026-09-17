@@ -1,27 +1,18 @@
 /**
- * ٣.٣ — الإشعارات.
+ * ٣.٣ — الإشعارات. Two bands, never one flat feed: actionable security events
+ * pin to the top with inline actions, the rest is history. A single
+ * reverse-chronological list buries a recovery attempt under "your guardian
+ * accepted" within a day.
  *
- * ## Two bands, never one flat feed
+ * `NEEDS_ACTION` events stay in the top band whether or not they carry a
+ * `readAt`. Marking read is a *reading* gesture and must not dismiss something
+ * the owner still has to act on.
  *
- * *"actionable security events pin to the top with inline actions and survive
- * 'mark all read'; the rest is history."* The split is the design. A recovery
- * attempt from an unknown device and "your guardian accepted" are not the same
- * kind of object, and a single reverse-chronological list buries the first
- * under the second within a day.
- *
- * "Survive mark-all-read" is the part that is easy to get wrong: marking read
- * is a *reading* gesture, and it must not dismiss something the owner still has
- * to act on. So `NEEDS_ACTION` events stay in the top band whether or not they
- * carry a `readAt`.
- *
- * ## What must never appear here
- *
- * A death claim. *"A death claim (7.5) escalates past this screen to a
- * full-screen interrupt — it must not arrive as a list row."* The claim events
- * are therefore mapped to history copy only; the interrupt itself is
- * `/protection/claim`, and 6.1 carries the banner. If a claim ever renders as a
- * row here, it has been demoted from an interrupt to a notification, which is
- * the failure that loses someone their veto window.
+ * **A death claim must never appear here as a row.** ٧.٥ escalates past this
+ * screen to a full-screen interrupt at `/protection/claim`, with 6.1 carrying
+ * the banner; claim events map to history copy only. A claim rendered as a row
+ * has been demoted from an interrupt, which is the failure that loses someone
+ * their veto window.
  */
 import { useMemo } from "react"
 import { usePaginatedQuery, useMutation } from "convex/react"

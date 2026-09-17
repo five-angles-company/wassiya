@@ -16,31 +16,20 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 /**
  * One claim, from the guardian's side.
  *
- * ## Why this reads `pendingApprovals` rather than the claim
+ * Reads `pendingApprovals` rather than the claim: there is no guardian-facing
+ * single-claim query, and adding one would mean a second place deciding what a
+ * guardian may see about a vault they do not own. `pendingApprovals` already
+ * gates on an accepted guardianship and carries the four fields needed.
  *
- * There is no guardian-facing query for a single claim, and adding one would
- * mean a second place that decides what a guardian may see about a vault they
- * do not own. `pendingApprovals` already answers exactly that question, already
- * gates on an accepted guardianship, and already carries the four fields this
- * screen needs. Finding the row in it costs one filter over a list that is
- * almost always length 0 or 1.
+ * **`confirmed` is held above the subscription, and that is load-bearing.**
+ * `guardianConfirm` moves the claim from `guardian_review` to `awaiting_veto`,
+ * and `pendingApprovals` queries only `guardian_review` and `released` — so the
+ * duty row disappears the instant the mutation lands and the `find` below
+ * returns `undefined`. Without it the guardian would tap "أؤكّد الوفاة" and be
+ * shown "لم نجد هذا". A claim that is no longer a duty and was not just
+ * confirmed here is genuinely not found, and that case is correct.
  *
- * ## The confirmed state has to outlive the query
- *
- * That choice has one sharp edge, and it is on the single action this whole
- * role exists for. `guardianConfirm` moves the claim from `guardian_review` to
- * `awaiting_veto`; `pendingApprovals` queries only `guardian_review` and
- * `released`. So the duty row disappears the instant the mutation lands, the
- * `find` below returns `undefined`, and without `confirmed` the guardian would
- * tap "أؤكّد الوفاة" and be shown **"لم نجد هذا"**.
- *
- * `confirmed` is held here, above the subscription, so the receipt survives the
- * row that produced it. A claim that is no longer a duty and was *not* just
- * confirmed here is genuinely not found — that case is correct, and the row
- * leaving the list is its own receipt on a return visit.
- *
- * Handover has no equivalent edge: a `released` claim stays `released`, so its
- * row is still there afterwards.
+ * Handover has no equivalent edge: a `released` claim stays `released`.
  */
 export function GuardianClaim({ claimId }: { claimId: string }) {
   const locale = useLocale()

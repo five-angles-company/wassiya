@@ -6,31 +6,23 @@ import { useQuery } from "convex/react"
 import { NAV_GROUPS, type Audience, type NavGroup } from "@/config/nav"
 
 /**
- * Which parts of the nav exist for the person looking.
+ * Which parts of the nav exist for the person looking. `guardianFor` and
+ * `claims.mine` decide; both, either, or neither are all normal. A link rendered
+ * dead would be the worse answer, because an empty "what was left to you" reads
+ * as a bereavement rather than a state.
  *
- * `guardianFor` and `claims.mine` decide. Someone who guards a vault but has
- * never filed sees no box; someone who filed but guards nothing sees no
- * guardianship. Both, either, or neither are all normal — and a link rendered
- * dead would be the worse answer, because on this product an empty "what was
- * left to you" reads as a bereavement, not a state.
- *
- * ## The filter is per item, not per group
- *
- * It was per group, and that produced a bar with **one link** on it for a
- * brand-new account — which reads as a broken app rather than as an empty one.
- * The fault was treating "heir" as a property of the whole section: filing a
+ * **The filter is per item, not per group.** Per group produced a bar with one
+ * link on it for a brand-new account, which reads as a broken app: filing a
  * report is the one thing any signed-in reader can do from a standing start, so
- * "بلاغاتي" and "بلاغ جديد" are marked `everyone` and only "صندوقي" still waits
- * for a claim to exist. A group with nothing left in it drops out entirely.
+ * "بلاغاتي" and "بلاغ جديد" are `everyone` and only "صندوقي" waits for a claim.
+ * A group with nothing left in it drops out entirely.
  *
  * **While either query is in flight, both sections are returned.** A bar whose
  * links appear one at a time as subscriptions land reads as broken, and the
  * links it briefly shows are all real routes that gate themselves server-side.
- * Erring toward showing is the cheaper mistake.
  *
- * A hook rather than a prop, because the bar and the mobile menu are separate
- * components that must never disagree about who is looking. Convex dedupes the
- * two subscriptions, so asking twice costs one of each.
+ * A hook rather than a prop, because the bar and the mobile menu must never
+ * disagree about who is looking. Convex dedupes the two subscriptions.
  */
 export function useNavGroups(): readonly NavGroup[] {
   const guardianships = useQuery(api.guardians.guardianFor, {})

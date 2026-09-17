@@ -1,18 +1,15 @@
 /**
- * Section ٢ · تهيئة الخزنة — copy for screens 2.1 to 2.6.
+ * Section ٢ · تهيئة الخزنة — board copy for screens 2.1 to 2.6, verbatim. Three
+ * constraints it has to honour:
  *
- * Board copy, verbatim. Three constraints the board states in prose and this
- * file has to honour:
- *
- *  - **Two keys, two jobs — and they are not interchangeable.** 2.2 used to
- *    teach a 2-of-3 where any two keys opened the vault. That is no longer the
- *    model: the device key opens it daily, the printed sheet opens it when the
- *    device is gone, and the guardian is not a key to *your* vault at all —
- *    they hold half of what each heir receives. Copy that implies "any two of
- *    three" now contradicts the security model rather than merely its tone.
+ *  - **Two keys, two jobs, not interchangeable.** The device key opens the vault
+ *    daily, the printed sheet opens it when the device is gone, and the guardian
+ *    is not a key to *your* vault at all — they hold half of what each heir
+ *    receives. Copy implying "any two of three" contradicts the security model,
+ *    not merely its tone.
  *  - `kyc.blockingNotice` is the promise that no vault exists before identity
- *    passes. `keyring.save` enforces it server-side; this string is how the
- *    user learns it, and it must stay true.
+ *    passes. `keyring.save` enforces it server-side; this string is how the user
+ *    learns it, and it must stay true.
  *  - `recoveryKit.shownOnce` is a commitment, not a warning: after the print
  *    intent the code is wiped from memory and cannot be re-derived.
  */

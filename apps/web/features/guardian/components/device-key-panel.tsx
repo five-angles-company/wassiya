@@ -23,33 +23,24 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
 type Shown = { code: string; matches: boolean }
 
 /**
- * The key page's answer when this device is the one that accepted.
+ * The key page's answer when this device is the one that accepted: see whether
+ * the key here is still the registered one, and get the sheet back to print
+ * again — both for a fingerprint rather than fifty-six typed characters.
  *
- * Two things the reader can always do, which is what this whole feature is
- * for: **see whether the key here is still the registered one**, and **get the
- * sheet back** to print again. Both cost a fingerprint and nothing else — no
- * fifty-six characters typed off a page they may not have to hand.
+ * **The match is computed, not asserted.** The stored record carries the public
+ * key it was saved with, but that is our own note and proves nothing, so the
+ * check derives the public key from the secret that actually came out of the
+ * authenticator and compares it against what the server has published. A stored
+ * copy that no longer matches means the owner re-appointed this guardian, and
+ * the reader needs to know before the ceremony rather than during it.
  *
- * ## The match is computed here, not asserted
+ * Nothing renders until the reader asks: a key page opened on a laptop in an
+ * office must not paint a printable secret onto the screen because someone
+ * clicked a nav item — the unlock is the consent.
  *
- * The stored record carries the public key it was saved with, but that is our
- * own note and proves nothing. So the check derives the public key from the
- * secret that actually came out of the authenticator and compares it against
- * what the *server* has published for these vaults. A stored copy that no
- * longer matches means the owner re-appointed this guardian, and the reader
- * needs to know before the ceremony, not during it.
- *
- * ## Nothing renders until the reader asks
- *
- * The sheet is not shown on load. A key page opened on a laptop in an office
- * should not paint a printable secret onto the screen because someone clicked a
- * nav item — the unlock is the consent.
- *
- * ## Forgetting does not need the authenticator
- *
- * Someone on a borrowed or shared machine must be able to remove the copy
- * without first proving they can open it. The paper is unaffected, and the copy
- * here was never the durable one.
+ * Forgetting does not need the authenticator. Someone on a borrowed machine must
+ * be able to remove the copy without first proving they can open it, and the
+ * paper is unaffected.
  */
 export function DeviceKeyPanel({
   published,

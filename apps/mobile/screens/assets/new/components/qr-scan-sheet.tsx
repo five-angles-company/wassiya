@@ -17,26 +17,18 @@ export type QrScanSheetProps = {
 /**
  * ٤.٣'s "مسح QR" — reading a recovery phrase off a backup card.
  *
- * ## Why the camera lives in a sheet and not a screen
+ * A sheet rather than a route, because the phrase being scanned into is
+ * half-typed on the form behind it: a pushed route would unmount that state on
+ * some navigation paths and make "cancel" feel like leaving the wizard.
  *
- * The phrase being scanned into is half-typed on the form behind it. A pushed
- * route would unmount that state on some navigation paths and, worse, would
- * make "cancel" feel like leaving the wizard. A sheet keeps the form alive and
- * visible underneath.
+ * **The camera is mounted only while the sheet is open.** `CameraView` holds the
+ * hardware for as long as it is rendered, so mounting it with the screen would
+ * keep the lens live behind a seed phrase for the whole time the wizard is open
+ * — a permission granted for one scan turned into a session-long open camera.
  *
- * ## The camera is mounted only while the sheet is open
- *
- * `CameraView` holds the hardware for as long as it is rendered. Mounting it
- * with the screen would keep the camera live behind a seed phrase for the whole
- * time the wizard is open — a permission the user granted for one scan turned
- * into a session-long open lens. It mounts on present and unmounts on dismiss.
- *
- * ## One scan, then stop
- *
- * `onBarcodeScanned` fires continuously once a code is in frame — several times
- * a second. Without the latch, a single QR would call back a dozen times and
- * overwrite the field on each, which looks like flicker and defeats the paste
- * guard. The latch resets when the sheet is presented again.
+ * One scan, then stop. `onBarcodeScanned` fires several times a second once a
+ * code is in frame, so without the latch a single QR would overwrite the field a
+ * dozen times. The latch resets when the sheet is presented again.
  */
 export function QrScanSheet({
   ref,

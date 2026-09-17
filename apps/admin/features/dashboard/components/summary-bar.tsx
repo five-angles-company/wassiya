@@ -17,30 +17,21 @@ import { DASHBOARD } from "@/features/dashboard/strings/dashboard"
 import { fmtDate, fmtNumber, fmtTally } from "@/lib/format"
 
 /**
- * The four numbers that change what someone does today.
- *
- * Four, not eleven. The earlier version carried a card for every count the
- * backend could produce, which put a wall of boxes above the page's actual
- * content and — because everything was highlighted — highlighted nothing.
- *
- * What survived is the set with a consequence attached: a claim nobody has ruled
- * on, a veto window running down toward an automatic release, an owner the
+ * The four numbers that change what someone does today — a claim nobody has
+ * ruled on, a veto window running down toward an automatic release, an owner the
  * product has begun escalating against, and heirs who would receive nothing
- * tonight. The rest were counts of things, and counts of things belong in the
- * table or the chart that already shows them.
+ * tonight. An earlier version carried a card for every count the backend could
+ * produce, and because everything was highlighted, nothing was.
  *
- * ## Three of the four open the rows they count
- *
- * Each `href` reproduces its own number exactly — `?status=submitted` is the
- * claims workspace's own facet, `?state=day7,day14,countdown` is the same three
- * rungs this file sums below. Clicking a tile and counting the rows on arrival
- * is the acceptance test, and it is the reason the filters moved into the URL.
+ * Three of the four open the rows they count, and each `href` reproduces its own
+ * number exactly. Clicking a tile and counting the rows on arrival is the
+ * acceptance test, and the reason the filters moved into the URL.
  *
  * **The fourth stays unlinked, deliberately.** `heirsAtRisk` is heirs whose
- * bundle is missing or older than their routing, summed across owners — and
- * `/heirs` filters on `unroutedOnly`, which is a different predicate. There is
- * no URL that reproduces the number, so there is no link. Its detail is the
- * risk table further down this same page, which names the owners one by one.
+ * bundle is missing or older than their routing, summed across owners, while
+ * `/heirs` filters on `unroutedOnly` — a different predicate. There is no URL
+ * that reproduces the number, so there is no link; its detail is the risk table
+ * further down this same page.
  */
 export function SummaryBar() {
   const locale = useLocale()

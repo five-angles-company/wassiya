@@ -1,9 +1,7 @@
 /**
- * Where a half-finished onboarding run resumes, written out before it is used.
- *
- * Users kill apps. Every screen in sections ١–٢ therefore has to be reachable
- * from a cold start with nothing but three pieces of evidence, and no screen
- * may re-run a side effect a previous run already completed. The evidence:
+ * Where a half-finished onboarding run resumes. Users kill apps, so every screen
+ * in ١–٢ must be reachable from a cold start on three pieces of evidence, and no
+ * screen may re-run a side effect a previous run already completed.
  *
  *   server  `users.me().identityStatus`  — webhook-written, never client-set
  *   server  `keyring.get()`              — null, or the row and its milestones
@@ -22,22 +20,15 @@
  * verified · keyring · MK · not printed                recoveryKit      rotate and reprint
  * verified · keyring · MK · printed                    done             the vault is live
  *
- * Two rules the table encodes and nothing may soften:
+ * `keyring.save` is the hard gate, `markPaperPrinted` is not. "MK exists,
+ * wrapper never saved" is the one forbidden resting state and routes forward
+ * into the ceremony; an unprinted sheet is a normal state Home re-prompts about
+ * and must never lock the app. A keyring row with no local key is never fixable
+ * by retrying setup — it is a new device, or one whose keystore invalidated MK —
+ * and needs the recovery ceremony.
  *
- *  - **`keyring.save` is the hard gate, `markPaperPrinted` is not.** Row
- *    "MK exists, wrapper never saved" is the one forbidden resting state — 2.3b
- *    says the run is not safe to abandon there — so it routes forward into the
- *    ceremony rather than to the tabs. An unprinted sheet, by contrast, is a
- *    normal state the Home screen re-prompts about; it must never lock the app.
- *
- *  - **A keyring row with no local key is not recoverable by retrying.** It is
- *    a new device, or one whose keystore invalidated MK when its biometrics
- *    changed. Both need the recovery ceremony, not the setup ceremony.
- *
- * Guards are pure functions of the evidence so they can be reasoned about
- * without a device, mirroring `convex/model/claimFlow.ts`.
+ * Guards are pure functions of the evidence, mirroring `convex/model/claimFlow.ts`.
  */
-
 /** The subset of `users.me()` that decides routing. */
 export type IdentityEvidence =
   | "unverified"

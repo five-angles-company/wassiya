@@ -26,24 +26,17 @@ type Phase =
 /**
  * `/guardian/accept` — the invitation, the key, and the one confirmation.
  *
- * ## The ordering is load-bearing: mint → display → confirm → accept
- *
+ * **The ordering is load-bearing: mint → display → confirm → accept.**
  * `guardians.accept` publishes the guardian's X25519 public key and spends the
- * invitation. If it ran before the guardian had seen and typed back their code,
- * a public key would exist whose private half nobody holds — and nothing would
- * notice: the owner's protection score would turn green, every heir bundle
- * would seal to that key, and the failure would surface years later at the one
- * ceremony that cannot be retried.
+ * invitation. Run before the guardian has seen and typed back their code, it
+ * would leave a public key whose private half nobody holds — and nothing would
+ * notice: the owner's protection score would turn green, every heir bundle would
+ * seal to that key, and the failure would surface years later at the one
+ * ceremony that cannot be retried. The invitation survives an abandoned attempt;
+ * a key nobody holds would not survive anything.
  *
- * So the key is minted here in the browser, shown, and only accepted once
- * `guardianKeyMatches` confirms the guardian can reproduce it. The invitation
- * survives an abandoned attempt; a key nobody holds would not survive anything.
- *
- * ## Nothing leaves this component but a public key
- *
- * `mintGuardianKeySheet` runs client-side. The secret exists as the printed
- * code and in this page's memory; `guardians.accept` receives the public half
- * and nothing else.
+ * `mintGuardianKeySheet` runs client-side. The secret exists as the printed code
+ * and in this page's memory; `guardians.accept` receives the public half only.
  */
 export function AcceptFlow({
   token,

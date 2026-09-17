@@ -26,22 +26,17 @@ type ClaimSort = "newest" | "oldest" | "nameAsc" | "nameDesc"
  * Every argument the claims workspace sends to the server, and the cursor
  * bookkeeping that goes with paging one.
  *
- * A hook rather than state scattered through the component, because these
- * pieces are not independent: **any change to a filter, the search or the sort
- * invalidates the cursor.** A cursor is a position in one particular ordered,
- * filtered stream — carry it across a filter change and the next page is a
- * position in a stream that no longer exists.
+ * A hook rather than scattered state, because these pieces are not independent:
+ * **any change to a filter, the search or the sort invalidates the cursor.** A
+ * cursor is a position in one particular ordered, filtered stream.
  *
- * The filters live in the URL so the dashboard can link straight at them —
- * `/claims?status=submitted` is the "awaiting review" tile's destination. The
- * cursor stack stays local, and rewinds whenever the URL changes; see
+ * The filters live in the URL so the dashboard can link straight at them; the
+ * cursor stack stays local and rewinds whenever the URL changes. See
  * `use-table-url-state` for why both halves are that way round.
  *
- * **No status is preselected.** The workspace used to open on `submitted`,
- * which meant the screen's own answer to "how many claims are there" was four
- * when there are ten, and the six it hid were the ones nobody was looking for.
- * A console opens on its data; narrowing is the operator's move, and the
- * dashboard tile is there for whoever wants to arrive already narrowed.
+ * **No status is preselected.** The workspace used to open on `submitted`, which
+ * meant the screen's own answer to "how many claims are there" was four when
+ * there are ten. A console opens on its data; narrowing is the operator's move.
  */
 export function useClaimQueryState() {
   const [facets, setFacets] = useQueryStates(

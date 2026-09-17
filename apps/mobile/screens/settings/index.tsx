@@ -1,20 +1,15 @@
 /**
  * ٩.١ — الإعدادات.
  *
- * ## The language control is the interesting part
+ * The language control writes `users.me().locale`, which nothing had ever
+ * written before: `resolveLocale` falls back to Arabic, so the complete English
+ * string set shipped live, typechecked and unreachable.
  *
- * `resolveLocale` reads `users.me().locale` and falls back to Arabic, and the
- * app has shipped a complete English string set from the beginning — but
- * **nothing has ever written that field**, so every session has rendered
- * Arabic and the English pass has been live, typechecked and unreachable.
- * `i18n/locale.ts` says as much and names this screen as where it gets fixed.
- * So it is fixed here.
- *
- * What it does *not* do is change direction. `app.json` sets `forcesRTL: true`
- * on the expo-localization plugin, so the tree is mirrored natively before the
- * first view exists; direction cannot follow a runtime setting without a
- * rebuild. The note under the control says that rather than letting someone
- * pick English and wonder why the layout did not flip.
+ * It does **not** change direction. `app.json` sets `forcesRTL: true` on the
+ * expo-localization plugin, so the tree is mirrored natively before the first
+ * view exists and direction cannot follow a runtime setting without a rebuild.
+ * The note under the control says so, rather than letting someone pick English
+ * and wonder why the layout did not flip.
  */
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"

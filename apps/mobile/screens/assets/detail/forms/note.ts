@@ -1,20 +1,14 @@
 /**
  * The encrypted-note payload, in both directions.
  *
- * ## ⚠️ This must never touch `stores/note-draft.ts`
+ * ⚠️ **This must never touch `stores/note-draft.ts`.** That store is persisted
+ * to AsyncStorage in the clear and is scoped to a draft being typed; prefilling
+ * it from an edit would write a decrypted note body to unencrypted device
+ * storage. It is also one module-level singleton, so an edit would clobber a
+ * half-written new note and either screen's `clear()` would wipe the other.
  *
- * The wizard keeps a note-in-progress in a **persisted Zustand store**, backed
- * by AsyncStorage in the clear. That store's own header scopes it to a draft
- * being typed and says so plainly: *"A seed phrase or a password draft would
- * not be acceptable here."*
- *
- * Prefilling it from an edit would write a **decrypted note body to unencrypted
- * device storage** — the exact thing it excludes. It would also collide: it is
- * one module-level singleton, so opening an edit would clobber a half-written
- * new note, and either screen's `clear()` on save would wipe the other.
- *
- * So the edit screen holds its note in local component state, and this module
- * has no import of that store and must never gain one.
+ * The edit screen holds its note in local component state, and this module has
+ * no import of that store and must never gain one.
  */
 import type { EditPayload, EditSource } from "@/screens/assets/detail/forms/source"
 

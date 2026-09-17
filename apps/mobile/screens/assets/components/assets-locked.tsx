@@ -8,38 +8,19 @@ import { View } from "react-native"
 /**
  * ٤.١ before the vault is open.
  *
- * ## A locked vault should feel intact, not withheld
+ * A locked vault should feel intact, not withheld — so no padlock and no blurred
+ * list behind a scrim. The screen states what is in there and that it still
+ * works: the count, the heirs, and the fact that delivery is unaffected. Someone
+ * who opens the app to reassure themselves gets that without unlocking anything.
  *
- * So there is no padlock and no blurred list behind a scrim. Instead the screen
- * states what is in there and that it still works: the count, the heirs, and
- * the fact that delivery is unaffected. Someone who opens the app to reassure
- * themselves gets the reassurance without unlocking anything.
+ * **Nothing here decrypts.** The count and the heirs' initials come from
+ * unencrypted metadata the deployment already holds, which is why this paints
+ * instantly on a cold start. The figure is the same one the list's own header
+ * carries, so the two screens agree.
  *
- * ## One card, the shape Home already uses
- *
- * This used to be a bare composition — a status dot pinned to the top by
- * `mb-auto`, then roughly six hundred pixels of nothing, then an 80px numeral
- * sitting low in the frame. It was the only screen in the product with no
- * header block and no card, which made the one screen you meet on a cold start
- * look like a different app.
- *
- * It is now `check-in-hero`'s shape — `rounded-summary px-5 pb-5 pt-6`, centred,
- * with the action inside the card — under ٤.١'s own header. The count keeps its
- * weight because it is still the screen's one idea; it just sits in something.
- *
- * ## Nothing here decrypts
- *
- * The count and the heirs' initials come from unencrypted metadata the
- * deployment already holds, which is why this paints instantly on a cold start
- * — the one screen in the vault that never waits on a key. The figure is the
- * same one the list's own header carries, so the two screens agree.
- *
- * ## No password fallback
- *
- * A failed fingerprint falls through to the device credential, and that is the
- * end of the ladder. There is no Wassiya password to offer, because MK is bound
- * to the keystore: a password would promise an unlock the keystore cannot
- * perform.
+ * No password fallback: a failed fingerprint falls through to the device
+ * credential and that is the end of the ladder. MK is bound to the keystore, so
+ * a Wassiya password would promise an unlock the keystore cannot perform.
  */
 export type AssetsLockedProps = {
   /** "خزنتك" — the same name the open list carries. */

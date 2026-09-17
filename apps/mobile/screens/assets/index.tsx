@@ -1,30 +1,18 @@
 /**
  * ٤.١ — the vault list.
  *
- * ## What this screen deliberately does not have
- *
  * No filter chips, no permanent search field, no group headings, no type
- * sections, no badges, no protection bar, no per-row chevrons, no cards. All of
- * it went, because *"a vault is a place you visit rarely and calmly — it should
- * be almost empty."* A heading for every three rows is what made the last
- * version feel heavy.
+ * sections, no badges, no protection bar, no per-row chevrons, no cards:
+ * *"a vault is a place you visit rarely and calmly — it should be almost
+ * empty."* Search is an icon, and the design note expects it to become a
+ * permanent field only past a hundred items.
  *
- * Search is an **icon**. At forty-three items you scroll; a field standing open
- * on the screen would imply otherwise. It surfaces on tap, and the design note
- * expects it to become permanent only past a hundred items.
- *
- * ## One flat list, irreplaceable first
- *
- * A seed phrase, then a deed, then a password. Nothing labels the order — the
- * order simply *is* that, so the top of the list is always what matters most.
- * Type lives in the small tile and never in a heading.
- *
- * ## One alarm
+ * One flat list, irreplaceable first — a seed phrase, then a deed, then a
+ * password. Nothing labels the order; the order simply is that, and type lives
+ * in the small tile rather than a heading.
  *
  * The terracotta line at the top is the only urgent thing on the screen, and it
  * vanishes at zero rather than turning olive: "everything is fine" is not news.
- * Individual unrouted rows say so in their own recipient slot, so the gap reads
- * both in summary and in place.
  */
 import { useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"

@@ -1,30 +1,21 @@
 /**
  * Produces the paper share for 2.4, and persists the only piece of it the
- * server is ever allowed to see.
- *
- * The ordering here is the security-critical part:
+ * server is ever allowed to see. The ordering is the security-critical part:
  *
  *  1. `S_paper` is **never persisted anywhere**. It lives in this hook's return
- *     value for the life of one screen and is dropped once the sheet is out.
- *     That is what makes "we keep no copy" literally true.
- *  2. Only `mkWrappedByRecovery` crosses the wire. It is MK under
- *     K_rec = S_paper, and the deployment holds neither operand.
+ *     value for the life of one screen — that is what makes "we keep no copy"
+ *     literally true.
+ *  2. Only `mkWrappedByRecovery` crosses the wire: MK under K_rec = S_paper,
+ *     and the deployment holds neither operand.
  *  3. The wrapper is sealed under an AAD of the owner's id and the paper
- *     version it is *about to become*, so the version has to be decided here,
- *     before the ciphertext exists — which is why `save` is told the number
- *     rather than choosing it. It refuses a version that does not follow from
- *     the stored row, so the two can never drift apart.
+ *     version it is about to become, so the version is decided here, before the
+ *     ciphertext exists — which is why `save` is told the number rather than
+ *     choosing it, and refuses one that does not follow from the stored row.
  *
- * ## One path, where there used to be two
- *
- * Issuing and reissuing used to differ: a reissue had to read `S_guardian` out
- * of the keystore to re-derive K_rec. With the guardian gone from recovery,
- * both are the same act — mint a fresh share, wrap, save — and the only thing
- * that varies is the version number.
- *
- * Re-entering after abandoning an unprinted sheet therefore still **rotates**
- * rather than reprints: `S_paper` is gone, so the honest move is a new paper
- * version. The abandoned code stops working the moment the new wrapper lands.
+ * Issuing and reissuing are the same act now that the guardian is out of
+ * recovery; only the version number varies. Re-entering after abandoning an
+ * unprinted sheet therefore **rotates** rather than reprints — `S_paper` is
+ * gone — and the abandoned code stops working once the new wrapper lands.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "convex/react"

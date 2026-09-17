@@ -1,18 +1,15 @@
 /**
- * Arabic counted nouns.
- *
- * Arabic does not have English's one/other split. It has six CLDR categories,
- * and the four that matter for anything this app counts are:
+ * Arabic counted nouns. Four CLDR categories matter for anything this app
+ * counts:
  *
  *   1        singular       مستلم        · أصل
  *   2        dual           مستلمان      · أصلان
  *   3–10     plural         ٣ مستلمين    · ٣ أصول
  *   11+      singular again ٤٣ مستلماً   · ٤٣ أصلاً   (accusative)
  *
- * The board writes "٤٣ أصلاً", which is the 11+ form — so getting this wrong is
- * visible on the very first screen that counts anything. A naive
- * `${n} ${n === 1 ? one : many}` produces "٤٣ أصول", which reads to an Arabic
- * speaker exactly the way "43 asset" reads in English.
+ * A naive `${n} ${n === 1 ? one : many}` produces "٤٣ أصول", which reads to an
+ * Arabic speaker exactly the way "43 asset" reads in English — and the board
+ * writes "٤٣ أصلاً" on the first screen that counts anything.
  *
  * `zero` is separate from the grammar: Arabic would say "٠ أصول", but every
  * place this app counts something has a better sentence for none of it

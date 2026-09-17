@@ -1,38 +1,25 @@
 /**
- * ٨.١ — استعادة الخزنة. One sheet, one person, no second party.
- *
- * Two states route here and neither can be resolved by retrying setup: a phone
- * the owner has never enrolled, and one whose keystore invalidated MK because
- * its biometrics changed. `lib/setup-flow.ts` has always sent both here.
- *
- * ## What actually happens
+ * ٨.١ — استعادة الخزنة. One sheet, one person, no second party. Two states route
+ * here and neither is fixable by retrying setup: a phone the owner never
+ * enrolled, and one whose keystore invalidated MK when its biometrics changed.
  *
  *   K_rec = S_paper          MK = unwrap(mkWrappedByRecovery, K_rec, aad)
  *
- * The paper share is typed in from the printed sheet, and that is the whole
- * ceremony. It used to need a guardian's half handed over by a person; it no
- * longer does, which is what makes this screen reachable at all for the many
- * owners who never appointed one. See `packages/crypto/src/recovery.ts`.
- *
  * `aad` binds the wrapper to this account and this sheet generation, so a
- * photographed sheet cannot be replayed against another vault or against a
- * sheet that has since been reprinted. Both halves of it come from the server
- * row, never from local state — a stale `paperVersion` would fail identically
- * to a wrong sheet, and that is the one error message nobody could debug.
+ * photographed sheet cannot be replayed against another vault or against one
+ * that has since been reprinted. Both halves come from the server row, never
+ * local state — a stale `paperVersion` fails identically to a wrong sheet, and
+ * that is the one error nobody could debug.
  *
- * ## The ordering, which is not interchangeable
- *
- *  1. **MK is sealed into the keystore before anything is marked used.** A
- *     crash between them leaves a working device and a sheet the server still
- *     believes is unused — harmless. The reverse burns the sheet without
- *     recovering anything.
- *  2. **`markPaperUsed` last.** It is also what tells the owner: it writes the
- *     in-app alert *and* sends the mail. With no guardian in the loop there is
- *     no longer a second human who notices a recovery, so this message is the
- *     only thing standing between a stolen sheet and a silent theft.
- *  3. **The success screen pushes at reprinting, and says why.** The sheet is
- *     now the entire recovery path and this one has been out in the world.
- *     Marking it used does not invalidate it — only printing a new one does.
+ * The ordering is not interchangeable:
+ *  1. MK is sealed into the keystore before anything is marked used. A crash
+ *     between them leaves a working device and a sheet the server still believes
+ *     is unused; the reverse burns the sheet without recovering anything.
+ *  2. `markPaperUsed` last — it writes the in-app alert *and* sends the mail.
+ *     With no guardian in the loop it is the only thing standing between a
+ *     stolen sheet and a silent theft.
+ *  3. Marking a sheet used does not invalidate it. Only printing a new one does,
+ *     which is why the success screen pushes at reprinting.
  */
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"

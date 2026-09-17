@@ -1,18 +1,15 @@
 /**
  * ٦ — الحماية.
  *
- * ⚠️ **This section's board design has never been readable.** The
- * `DesignSync` `get_file` cap is 256 KiB and the onboarding board is roughly
- * twice that, so every read stops inside section ٥. What is built here is
- * derived from sources that *are* authoritative — `AGENTS.md`'s locked security
- * model and section map (6.1 Centre, 6.2 guardian, 6.4 check-in), the backend's
- * own documented rules in `convex/checkin.ts` and `convex/guardians.ts`, and
- * the `@workspace/ui-native` primitives that a previous session built directly
- * from this section (`check-in-prompt` names 6.4 as its screen, and
- * `protection-score-list` names the Protection Centre).
+ * ⚠️ **This section's board design has never been readable** — `get_file` caps
+ * at 256 KiB and the onboarding board is roughly twice that, so every read stops
+ * inside section ٥. What is built here derives from sources that are
+ * authoritative: AGENTS.md's locked security model and section map (6.1 Centre,
+ * 6.2 guardian, 6.4 check-in), `convex/checkin.ts` and `convex/guardians.ts`,
+ * and the `@workspace/ui-native` primitives built directly from this section.
  *
- * So the behaviour is sourced; the visual arrangement is inferred. When the
- * board is split into sub-256 KiB files, this copy is what to check first.
+ * Behaviour is sourced; the visual arrangement is inferred. Check this copy
+ * first when the board is split.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 

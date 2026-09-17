@@ -1,23 +1,15 @@
 /**
  * ٨ — الأمان: the recovery ceremony.
  *
- * ⚠️ **Design-blind**, like ٦ and ٩ — the board's reads all stop inside section
- * ٥. What is known precisely is the screen's identity and job: the stub this
- * replaces recorded it as *"8.1 — recovery on a device with no key"*, ٣.٢'s
- * spec routes "biometrics removed → 8.1", and the ceremony itself is fully
- * specified by AGENTS.md's model and `@workspace/crypto`.
+ * ⚠️ Design-blind, like ٦ and ٩ — the board's reads all stop inside section ٥.
+ * The steps are not guesswork even though the layout is: the paper share **is**
+ * K_rec, and K_rec unwraps MK. Nothing else can.
  *
- * So the *steps* are not guesswork even though the layout is: the paper share
- * **is** K_rec, and K_rec unwraps MK. Nothing else can.
- *
- * ## The copy carries a warning it did not used to need
- *
- * This screen once described two halves and said *"neither is enough alone —
- * which is what keeps your vault safe if one of them is lost."* That sentence
- * is now false in both directions, and leaving it would be the most dangerous
- * kind of stale copy: it would tell an owner the sheet is safe to be careless
- * with. One share means the sheet is a bearer token, and the strings here say
- * so — on the way in, and again on the way out.
+ * This screen once described two halves and said *"neither is enough alone"*.
+ * That is now false in both directions, and it is the most dangerous kind of
+ * stale copy — it would tell an owner the sheet is safe to be careless with. One
+ * share means the sheet is a bearer token, and these strings say so on the way
+ * in and again on the way out.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 

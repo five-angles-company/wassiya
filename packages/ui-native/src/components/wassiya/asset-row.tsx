@@ -17,28 +17,19 @@ import Animated, {
 /**
  * One asset, as a row.
  *
- * ## The leading mark is a cover, not an icon
+ * The leading mark is a cover, not an icon: a 52px tinted square carrying the
+ * glyph in that tone's dark step. The old 36px disc of the page's own colour
+ * made every row identical at a glance; this gives a list of mixed assets colour
+ * and rhythm down its leading edge, which is what makes a long vault scannable.
  *
- * The old row put a 36px disc of the page's own colour at the start, which made
- * every row identical at a glance: same shape, same weight, the type readable
- * only by squinting at a small glyph. The mark is now a **52px tinted square**
- * carrying the glyph in that tone's dark step — the same "cover" idea the grid
- * experiment used, kept at row scale. It gives a list of mixed assets colour
- * and rhythm down its leading edge, which is what makes a long vault scannable
- * rather than uniform.
+ * `bg-sand-100` is lighter than the #f5ead8 ground, and that ordering matters
+ * more than any shadow value — a surface darker than its background reads as a
+ * hole punched in the page, and no amount of blur fixes it.
  *
- * ## The card sits above the page
- *
- * `bg-sand-100` is lighter than the #f5ead8 ground. That ordering matters more
- * than any shadow value: a surface darker than its background reads as a hole
- * punched in the page, and no amount of blur fixes it.
- *
- * ## The trailing slot earns its place or yields
- *
- * A row shows its recipient state only when the caller passes one. In a list
- * already grouped by destination every row in a group shares an answer, so
- * repeating it per row is noise; on 5.3 routing and the heir preview it is the
- * whole point. No status means a chevron, which at least says "this opens".
+ * The trailing slot earns its place or yields. A row shows its recipient state
+ * only when the caller passes one: in a list already grouped by destination every
+ * row in a group shares an answer, so repeating it per row is noise. No status
+ * means a chevron, which at least says "this opens".
  */
 export type AssetRowProps = {
   icon: LucideIcon;

@@ -4,28 +4,18 @@ import { cn } from "@workspace/ui/lib/utils"
 import { ArrowLeftIcon, type LucideIcon } from "lucide-react"
 
 /**
- * One number in a card: icon, label, figure.
+ * One number in a card: icon, label, figure. Deliberately short — there were
+ * once eleven of these carrying a full sentence each, which put a wall of text
+ * between the top of the page and its first real row. The sentence moved to
+ * `title`, so it is a hover away and costs no height. `footer` is for a second
+ * *fact* (the next release date), never a second sentence.
  *
- * Deliberately short. There were once eleven of these carrying a full sentence
- * each, which put a wall of text between the top of the page and its first real
- * row. Four remain and the sentence moved to `title`, so it is a hover away and
- * costs no height — the number genuinely does not say what it means without it.
- *
- * `footer` is for a second *fact* (the next release date), never a second
- * sentence.
- *
- * ## `href` is the whole card, and it is optional on purpose
- *
- * A number with a screen behind it links to that screen **already filtered to
- * the rows it counts** — `/checkins?state=day7,day14,countdown` is the
- * escalation tile, exactly. That is what the search-param work bought: before
- * it, the destination existed but could not be pointed at, so the console kept
- * announcing totals nobody could open.
- *
- * A card with no such destination stays unlinked rather than getting a link to
- * an unfiltered list. Landing on a table whose row count does not match the
- * number that was clicked is worse than no link — it reads as a broken filter
- * rather than as a missing screen.
+ * **`href` is the whole card, and it is optional on purpose.** A number with a
+ * screen behind it links to that screen already filtered to the rows it counts —
+ * `/checkins?state=day7,day14,countdown` is the escalation tile exactly. A card
+ * with no such destination stays unlinked rather than linking to an unfiltered
+ * list: landing on a table whose row count does not match the number that was
+ * clicked reads as a broken filter rather than a missing screen.
  */
 export function StatCard({
   label,

@@ -1,39 +1,23 @@
 /**
- * الرئيسية — a grid of what you have and what's missing.
+ * الرئيسية — a check-in bar, then tiles, each a number or a state and each one
+ * tap from the thing it describes.
  *
- * ## The shape, and why
+ * Colour is the message: terracotta means "this needs you", olive means done,
+ * sand is just a count. The gaps are findable by sweeping the grid before
+ * reading a word, which is what lets the labels stay this short. One line above
+ * the grid names the gap, so the screen answers "what's missing?" in three
+ * words rather than making anyone decode five tiles.
  *
- * Home was a dashboard of seven stacked blocks, then a tall hero over long
- * explanatory sentences. Neither worked. It is now what the owner asked for:
- * a check-in bar, then tiles — each a number or a state, each one tap from the
- * thing it describes.
+ * **There is no `useVault` in this file and nothing waits on a fingerprint to
+ * draw.** Category counts come from encrypted metadata — count and type are
+ * plaintext, titles and payloads are not — so this screen renders before any
+ * decryption, which is what lets Home be the screen you land on rather than a
+ * wall in front of one.
  *
- * **Colour is the message.** Terracotta means "this needs you", olive means
- * done, sand is just a count. The gaps are findable by sweeping the grid,
- * before reading a single word — which is what lets the labels stay as short
- * as they are. A paragraph explaining the same thing was the previous version,
- * and it did not survive contact with its reader.
- *
- * **One line above the grid names the gap**, so the screen answers "what's
- * missing?" in three words rather than making anyone decode five tiles.
- *
- * ## The constraint that still shapes everything here
- *
- * *"Category counts come from encrypted metadata (count + type are plaintext;
- * titles and payloads are not), so this screen renders before any decryption."*
- *
- * There is still **no `useVault` in this file** and nothing waits on a
- * fingerprint to draw. Every figure is server metadata the deployment already
- * sees. That's what lets Home be the screen you land on rather than a wall in
- * front of one.
- *
- * ## ⚠️ The check-in confirms HERE, behind a fingerprint
- *
- * The affordance moved to this screen rather than being added alongside the old
- * one, so there is still exactly one. `useConfirmAlive` runs
- * `LocalAuthentication` with `disableDeviceFallback` and only then records; a
- * tap alone can never say "still alive". An unlocked phone in the wrong hands
- * must not be able to suppress delivery forever.
+ * ⚠️ **The check-in confirms here, behind a fingerprint, and nowhere else.**
+ * `useConfirmAlive` runs `LocalAuthentication` with `disableDeviceFallback` and
+ * only then records, so a tap alone can never say "still alive" — an unlocked
+ * phone in the wrong hands must not be able to suppress delivery forever.
  */
 import { useRef } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"

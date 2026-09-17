@@ -2,28 +2,18 @@ import type { ReactNode } from "react"
 
 /**
  * The top of a screen: a title, a sentence, and whatever action belongs beside
- * them.
- *
- * ## One page title, at one size
- *
- * There were ten `h1` treatments across the app — 22, 24, 26, 28, 30, 32, 34,
- * 36 — because most screens wrote their own instead of using this. The guardian
- * page had gone furthest, wrapping its title in a hero card with a medallion
- * and a bespoke pair of figures, so it no longer looked like the home screen it
- * sits one click from. Every app screen uses this now, at 26/30.
+ * them. Every app screen uses this, at 26/30 — there were ten `h1` treatments
+ * across the app (22 through 36) because most screens wrote their own.
  *
  * The exception is deliberate and small: the accept ceremony and the box gate
  * are one-time, full-screen moments rather than screens someone returns to, and
  * they carry a display scale of their own. Two scales, both written down, is a
  * system; ten is not.
  *
- * ## Application sizes, not the funnel's
- *
- * The old surface set headings at 40–66px because each of those pages was
- * opened once, as an argument. A screen here is opened repeatedly by someone
- * checking on something, and a headline filling a third of the viewport on
- * every visit stops reading as confidence and starts reading as an obstacle
- * between them and the answer.
+ * Application sizes, not the funnel's 40–66px. Those pages were opened once, as
+ * an argument; a screen here is opened repeatedly by someone checking on
+ * something, and a headline filling a third of the viewport every visit reads as
+ * an obstacle rather than as confidence.
  *
  * `description` is one sentence. If a screen needs two, the second belongs next
  * to the thing it describes.

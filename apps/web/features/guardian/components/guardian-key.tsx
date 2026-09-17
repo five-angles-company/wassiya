@@ -22,23 +22,17 @@ type Verdict = "unchecked" | "ok" | "bad"
  * The guardian's key sheet: what it is, and whether the one they hold still
  * works.
  *
- * ## The check this page exists for
- *
  * A guardian is asked to produce a printed code at one ceremony, possibly years
- * after they filed it away. Until now there was no way to find out whether the
- * sheet in the drawer was the right one *before* that day — and the day it
- * fails is the day it cannot be fixed. `guardians.guardianFor` returns the
- * published **public** key, so this page can compare locally and say yes or no.
+ * later — and the day it fails is the day it cannot be fixed. So
+ * `guardians.guardianFor` returns the published **public** key and this page
+ * compares locally. The typed secret is never sent anywhere;
+ * `guardianKeyMatches` derives the public half and compares that.
  *
- * The comparison runs in the browser. The typed secret is never sent anywhere,
- * and `guardianKeyMatches` derives the public half and compares that.
- *
- * ## Why "it doesn't match" leads with transcription
- *
- * The code drops the ambiguous glyphs (0/O, 1/I) for exactly this reason, and a
- * mis-read character is still far commoner than a lost sheet. Telling someone
- * their key is gone when they have simply typed a letter wrong turns a
- * two-minute correction into a re-appointment.
+ * "It doesn't match" leads with transcription, because the code drops the
+ * ambiguous glyphs (0/O, 1/I) for exactly this reason and a mis-read character
+ * is still far commoner than a lost sheet. Telling someone their key is gone
+ * when they typed a letter wrong turns a two-minute correction into a
+ * re-appointment.
  */
 export function GuardianKey() {
   const locale = useLocale()

@@ -1,37 +1,22 @@
 /**
- * The one path from a filled-in wizard to a row in `assets`.
+ * The one path from a filled-in wizard to a row in `assets`. All six wizards
+ * (٤.٣–٤.٨) end here, because everything that makes an asset safe happens once
+ * in this file:
  *
- * All six wizards (٤.٣–٤.٨) end here, because everything that makes an asset
- * *safe* happens in this file and none of it should be re-derived per screen:
- *
- *   1. a fresh DEK per asset — never reused, so one compromised asset is one
- *      compromised asset;
- *   2. the label sealed under that DEK, so the server cannot read what the
- *      thing is called (see `@workspace/crypto/label`);
+ *   1. a fresh DEK per asset — never reused, so one compromised asset is one;
+ *   2. the label sealed under that DEK (see `@workspace/crypto/label`);
  *   3. the payload encrypted under the same DEK before a byte leaves the
- *      device, in the chunked `WSYA` frame `4.9` will later decrypt;
- *   4. the DEK wrapped under MK, which is the only thing that ties the asset to
- *      this owner;
+ *      device, in the chunked `WSYA` frame ٤.٩ later decrypts;
+ *   4. the DEK wrapped under MK;
  *   5. the DEK zeroed, whatever happened.
  *
- * ## Ordering: uploads before `assets.create`
+ * Blobs upload before `assets.create`, and the asymmetry is the point: a crash
+ * between them leaves orphaned ciphertext nobody can open, where the reverse
+ * order would leave a row whose `storageIds` point at nothing — an asset the
+ * vault claims to hold and cannot produce.
  *
- * Blobs are uploaded first and the row is written last. The failure modes are
- * not symmetrical. A crash after upload but before `create` leaves orphaned
- * ciphertext in storage — invisible, unreferenced, and openable by nobody,
- * because the only DEK that could decrypt it died with the function call. The
- * reverse order would leave a *row* whose `storageIds` point at nothing, which
- * is an asset the vault claims to hold and cannot produce. An heir discovering
- * that is the failure this product exists to prevent, so the cost falls on the
- * side of wasted bytes.
- *
- * ## Everything lands unrouted
- *
- * `recipientRule: "default"` — always, for now. Step 2 of every wizard on the
- * board is heir assignment (5.3), which does not exist yet. That is not a
- * silent gap: 4.1 already renders an unrouted asset with the terracotta
- * "بلا مستلم" badge and sorts it to the top, so a vault filled by these wizards
- * reads as exactly what it is — saved, encrypted, and not yet going anywhere.
+ * Everything lands `recipientRule: "default"` until 5.3 exists; ٤.١ renders
+ * that as the terracotta "بلا مستلم" badge and sorts it to the top.
  */
 import { useCallback } from "react"
 import { useMutation } from "convex/react"

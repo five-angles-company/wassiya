@@ -1,21 +1,16 @@
 /**
- * Mobile-number validation, per country.
+ * Mobile-number validation, per country. ٥.٢: *"Contact is what the release
+ * chain uses; validate it hard."* A wrong digit is discovered at the one moment
+ * nobody can ask the owner to correct it.
  *
- * 5.2: *"Contact is what the release chain uses; validate it hard."* This is
- * the number the app will try when an heir has to be told that a claim has
- * opened, and a wrong digit is discovered at the one moment nobody can ask the
- * owner to correct it. Same family of promise as the IBAN checksum in 4.4 and
- * the BIP-39 check in 4.3.
- *
- * Length-and-prefix only, deliberately. There is no way to confirm a number is
+ * Length-and-prefix only, deliberately: there is no way to confirm a number is
  * *reachable* without sending to it, and full E.164 parsing would mean a
- * metadata library an order of magnitude larger than this file. What it does
- * catch is the whole class of errors people actually make: a local 0 left on
- * the front, a country code typed twice, too few or too many digits.
+ * metadata library an order of magnitude larger than this file. What it catches
+ * is the class of errors people actually make — a local 0 left on the front, a
+ * country code typed twice, too few or too many digits.
  *
  * Country is a parameter, never a branch — the same rule as the IBAN table.
  */
-
 /** National-number length and valid first digits, after any trunk 0. */
 const RULES: Record<string, { dial: string; length: number; prefixes: string[] }> = {
   SA: { dial: "966", length: 9, prefixes: ["5"] },

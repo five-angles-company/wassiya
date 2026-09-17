@@ -14,27 +14,17 @@ import { useStrings } from "@/i18n/use-strings"
 /**
  * Deleting an heir — consequence before confirmation.
  *
- * ## What the copy has to say out loud
+ * `heirs.remove` cascades further than "delete" suggests: it drops every
+ * `assetRecipients` row pointing at this heir and destroys their release bundle
+ * and its blob. So removing an heir who receives four assets silently leaves
+ * **four assets with no recipient** and voids their share of K_h. An owner only
+ * trying to fix a mistake needs to learn that here, at the last moment it can
+ * still change anything — hence the count, by name, rather than "are you sure?".
  *
- * `heirs.remove` cascades further than the word "delete" suggests: it drops
- * every `assetRecipients` row pointing at this heir, and it destroys their
- * release bundle and its blob. So removing an heir who receives four assets
- * silently leaves **four assets with no recipient**, and voids their share of
- * K_h. An owner who is only trying to fix a mistake needs to learn that here,
- * at the last moment it can still change anything — hence the count, by name,
- * rather than a generic "are you sure?".
- *
- * Destroying the bundle is correct and not a side effect worth avoiding: a
- * bundle for a deleted heir is a share nobody should still be able to claim
- * against. It is simply not something the owner can be expected to infer.
- *
- * ## Destructive is outlined, safe is filled
- *
- * The inversion is the board's own rule and it is deliberate: a solid button in
- * this product means *proceed calmly*, and keeping the heir is the calm path.
- * The filled control is "إبقاؤها"; destruction is the outlined one you have to
- * aim at. No red — terracotta already carries the weight, and red would be the
- * only alien colour in the product.
+ * **Destructive is outlined, safe is filled.** The inversion is the board's own
+ * rule: a solid button in this product means *proceed calmly*, and keeping the
+ * heir is the calm path. No red — terracotta already carries the weight, and red
+ * would be the only alien colour in the product.
  */
 export type DeleteHeirSheetProps = {
   heirId: Id<"heirs">

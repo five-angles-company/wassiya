@@ -10,23 +10,16 @@ import { COMMON } from "@/lib/i18n/strings/common"
 /**
  * Next and previous, for a table that must not grow.
  *
- * ## Why not "load more"
- *
  * `usePaginatedQuery` only ever appends, so the page gets taller with every
- * click and the thing the reader came for slides further off the screen. On a
- * list that sits *below* the one item asking for attention, that is exactly
- * backwards. Cursors go both ways; only the helper was one-directional.
+ * click and the thing the reader came for slides off the screen — exactly
+ * backwards on a list that sits below the one item asking for attention. Cursors
+ * go both ways; only the helper is one-directional. So the caller holds a stack
+ * of cursors and a position in it, and this renders the two ends.
  *
- * So the caller holds a stack of cursors and a position in it, and this renders
- * the two ends of it. The table replaces its rows rather than accumulating
- * them, and the page is the same height on page five as on page one.
- *
- * ## The chevrons follow the reading direction
- *
- * "Next" points the way the eye travels — left in Arabic, right in English —
- * so the icons swap with the locale rather than being mirrored by a transform.
- * A transform would also flip the chevron's optical weight, and these are small
- * enough that it shows.
+ * The chevrons follow the reading direction — "next" points the way the eye
+ * travels, left in Arabic and right in English — so the icons swap with the
+ * locale rather than being mirrored by a transform, which would also flip their
+ * optical weight.
  */
 export function Pager({
   from,

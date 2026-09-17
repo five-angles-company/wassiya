@@ -17,37 +17,24 @@ import Animated, {
 /**
  * The beating heart at the centre of the check-in.
  *
- * ## It is a real heartbeat, not a scale loop
+ * A real heartbeat, not a scale loop: a single sine pulse reads as a
+ * notification badge demanding a tap, where **lub-dub** — a strong contraction,
+ * a quick lighter second, then a rest about twice as long as the two together —
+ * reads as *alive* rather than *urgent*, which is the entire question of the
+ * screen. ~1.4s per cycle, roughly 43bpm, deliberately slower than a resting
+ * pulse so it reads as calm.
  *
- * A single sine pulse reads as a notification badge demanding a tap. A heart
- * does **lub-dub**: a strong contraction, a quick lighter second one, then a
- * rest about twice as long as the two beats together. That rhythm is what the
- * eye recognises as *alive* rather than *urgent*, which matters on a screen
- * whose entire question is whether you still are. ~1.4s per cycle — roughly
- * 43bpm, deliberately slower than a resting pulse so it reads as calm.
+ * The disc and one expanding ring, nothing else. The ring is motion, and it is
+ * gone from the frame most of the time.
  *
- * ## Nothing here is decoration
- *
- * An earlier version sat the heart inside a static halo, inside a washed
- * accent circle bleeding off the card corner. Three concentric pale shapes
- * around one icon is a bubble bath, not a design, and it made the disc read as
- * far bigger than it was. What remains is the disc and one ring that expands
- * out of it and fades on each beat — the ring is *motion*, and it is gone from
- * the frame most of the time.
- *
- * ## Animated transforms and colour are kept apart
- *
- * Uniwind styles components it has been taught about; `Animated.View` is not
- * one of them, so a `className` on it is silently dropped — the failure mode
- * being an invisible or uncoloured shape with no error anywhere. Every animated
- * wrapper here carries **only** `style` (transform, opacity) and holds a plain
+ * **Animated transforms and colour are kept apart.** Uniwind styles components
+ * it has been taught about, and `Animated.View` is not one — a `className` on it
+ * is silently dropped, giving an invisible or uncoloured shape with no error
+ * anywhere. Every animated wrapper carries only `style`, and holds a plain
  * `View` that carries the colour classes.
  *
- * ## Reduced motion
- *
- * Honoured: the heart is drawn still when the OS asks for less motion. An
- * animation someone cannot tolerate is worse than none, and this one is
- * decorative — nothing it conveys is unavailable from the tone and the label.
+ * Reduced motion is honoured: the heart is drawn still, and nothing it conveys
+ * is unavailable from the tone and the label.
  */
 export type PulsingHeartProps = {
   /** Olive when the clock is healthy, terracotta when an answer is wanted. */

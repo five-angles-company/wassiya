@@ -1,36 +1,22 @@
 /**
- * The one path from an edited asset back to its row.
+ * The one path from an edited asset back to its row — the mirror of
+ * `use-create-asset.ts`, with one difference that is the whole reason it is a
+ * separate hook.
  *
- * The mirror of `use-create-asset.ts`, and deliberately shaped like it — same
- * ordering, same zeroing, same `VaultLockedError`. One difference matters, and
- * it is the whole reason this is a separate hook:
+ * **The DEK is reused, never regenerated.** Heir release bundles carry the
+ * routed DEKs, so minting a new one on an ordinary rename would silently
+ * invalidate every bundle already built for this asset, and nothing would
+ * surface it until a claim years later. The existing DEK is unwrapped from the
+ * row, used to re-seal the label and re-encrypt the payload, and never sent
+ * back; `assets.update` still accepts `dekWrappedByMk` for the one genuine
+ * rotation, MK itself changing, which this hook is not.
  *
- * ## The DEK is reused, never regenerated
+ * Reusing it across two encryptions is safe because the primitives derive fresh
+ * randomness per call — `seal` mints a nonce, `encryptAsset` a salt.
  *
- * `useCreateAsset` mints a fresh DEK per asset. An **edit must not**. Heir
- * release bundles carry the routed DEKs — that is how an heir opens an asset
- * without ever holding MK — so minting a new DEK on an ordinary rename would
- * silently invalidate every bundle already built for this asset. Nothing would
- * surface it: the owner would see a saved asset, and the failure would appear
- * years later, at a claim, to someone who cannot fix it.
- *
- * So the existing DEK is unwrapped from the row, used to re-seal the label and
- * re-encrypt the payload, and never sent back. `assets.update` still accepts
- * `dekWrappedByMk` for the one case that genuinely is a rotation — MK itself
- * changing — and this hook is not it.
- *
- * Reusing a DEK across two encryptions is safe here because the primitives
- * derive fresh randomness per call: `seal` mints a new nonce, and
- * `encryptAsset` a new salt whose own doc says it exists so that "each
- * encryption's nonce stream [is] unique even when the DEK is deliberately
- * reused". That is this call site.
- *
- * ## Ordering: uploads before the patch
- *
- * Same trade as `create`, for the same reason. New blobs go up first and the
- * row is patched last, so a crash between them leaves orphaned ciphertext
- * nobody can open — never a row whose `storageIds` point at nothing. The
- * mutation deletes the superseded blobs only after its own patch succeeds.
+ * Uploads precede the patch for the same reason as `create`: orphaned
+ * ciphertext over a row pointing at nothing. Superseded blobs are deleted only
+ * after the patch succeeds.
  */
 import { useCallback } from "react"
 import { useMutation } from "convex/react"

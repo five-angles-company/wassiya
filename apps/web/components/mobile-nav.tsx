@@ -22,36 +22,24 @@ import { NAV } from "@/lib/i18n/strings/nav"
 /**
  * The whole nav, for a narrow screen.
  *
- * Unlike the bar, this shows **every** item including the secondary ones — the
- * new-report action, the account, the notifications. The bar can afford to move
- * those into an avatar and a bell because there is room beside them for the
- * reader to notice; a phone has neither the room nor the hover that makes an
- * icon self-explanatory, so here they are named.
- *
- * The section labels come back too. They are what tell a person who is both an
- * heir and a guardian that these are two different jobs.
+ * Unlike the bar, this names **every** item including the secondary ones. The
+ * bar can move those into an avatar and a bell because there is room beside them
+ * to notice; a phone has neither the room nor the hover that makes an icon
+ * self-explanatory. The section labels come back too — they are what tell a
+ * person who is both an heir and a guardian that these are two different jobs.
  *
  * The active row is ink plus a rule at the start edge, for the reason
- * `nav-links` measures out: against the near-white sheet no tint in this
- * palette reaches the 3:1 a shape needs, so a filled row would be invisible.
+ * `nav-links` measures out: against the near-white sheet no tint in this palette
+ * reaches 3:1, so a filled row would be invisible.
  *
- * ## Two details that only bite in Arabic
+ * Two details that only bite in Arabic. `side` comes from the locale rather than
+ * the stylesheet, because the RTL transform rewrites left/right classNames but
+ * `side` drives `data-[side=left]:left-0`, which no class rewrite reaches — and
+ * a menu must open from the edge its trigger sits on. And the close button is
+ * ours, because `SheetContent`'s ships a hardcoded English `sr-only` "Close".
  *
- * `side` comes from the locale rather than the stylesheet: the RTL transform
- * rewrites left/right classNames, but `side` drives `data-[side=left]:left-0`,
- * which no class rewrite reaches. The menu has to open from the edge its
- * trigger sits on, or it flies in across the reader's thumb.
- *
- * And the close button is ours rather than the primitive's. `SheetContent`
- * ships one whose only text is a hardcoded English `sr-only` "Close" — fine in
- * the console, wrong on an Arabic-first surface, and not worth editing a shared
- * shadcn file over.
- *
- * ## Closing on navigation is explicit
- *
- * The sheet is a Radix root with its own open state; a `<Link>` inside it
- * changes the route without Radix ever hearing, so without this the menu would
- * sit open over the page it had just loaded.
+ * Closing on navigation is explicit: the sheet is a Radix root with its own open
+ * state, and a `<Link>` inside it changes the route without Radix ever hearing.
  */
 export function MobileNav() {
   const locale = useLocale()

@@ -37,6 +37,44 @@ Turborepo + pnpm template that bootstraps full-stack apps. Knowledge here is dur
 - Next.js apps must list shared workspace packages in `transpilePackages` (`next.config.ts`).
 - Add a shadcn component with `pnpm dlx shadcn@latest add <component> -c apps/<app>` — it lands in `@workspace/ui`.
 
+## Code style (durable)
+
+**Comments earn their place or go.** A comment is justified only when deleting
+it would let someone break something — an invariant, a trap, a decision whose
+reasoning is not recoverable from the code. Four categories, and only the first
+survives:
+
+1. **Invariants and traps** — *keep, always.* "A tap alone can never say still
+   alive"; "`wrapperVersion` absent means the pre-AAD v1"; "these two writers
+   must stay in step". These are what stop a future session from undoing a
+   locked decision. `packages/crypto` and `packages/backend` are deliberately
+   comment-heavy for this reason and are **exempt from the budget below**: a
+   comment that prevents a security regression is cheap at any length.
+2. **Design or refactor history** — *delete.* "This was a hero card, then a
+   grid, neither worked." Git has it, and it becomes a lie the day the code
+   changes. State what the code does now and why; never what it used to be.
+3. **Restating the code** — *delete*, and rename until the code reads. If a
+   comment is needed to explain *what* a block does, that is the bug.
+4. **Rhetoric and voice** — *delete.* "It did not survive contact with its
+   reader." Nothing is lost.
+
+**File headers** carry only category 1, and only what is load-bearing for
+*this* file. Keep them short — a few sentences, or a short list of rules where a
+file really does encode several. A header longer than about twenty lines is an
+architecture note: put it in this file or in a `docs/` note and leave a one-line
+pointer. Prose formatting inside comments (`##` headings, essay sections) is a
+sign the budget has already been blown.
+
+**File size.** One exported component or hook per file, except compound
+families (`Card`/`CardHeader`/…) and vendored shadcn primitives, which belong
+together. Split a module when it has **more than one reason to change**, not
+when it crosses a line count — a 300-line cohesive table component is fine, a
+2,500-line module serving seventeen unrelated screens is not. Convex modules
+mirror the API path, so grow a directory (`convex/admin/devices.ts` →
+`api.admin.devices.page`) rather than one module. Note that adding or moving a
+Convex module needs `npx convex codegen`, which contacts the deployment — so
+call-site renames and codegen land together or not at all.
+
 ## ⚠️ The #1 trap: three separate env stores
 A Clerk/Convex var can live in three unrelated places, and putting it in the wrong one fails **silently** (`getUserIdentity()` returns null while the client looks signed in):
 1. **Convex deployment env** — where `convex/auth.config.ts` and `convex/http.ts` read `process.env.*` (`CLERK_FRONTEND_API_URL`, `CLERK_WEBHOOK_SIGNING_SECRET`). Separate from any `.env.local`; `convex dev` does **not** push `.env.local` into it. Set with `npx convex env set`; verify with `npx convex env list`.

@@ -1,20 +1,14 @@
 /**
- * IBAN validation — length by country, then the ISO 13616 mod-97 checksum.
+ * IBAN validation — length by country, then the ISO 13616 mod-97 checksum. ٤.٤:
+ * *"a wrong IBAN discovered by an heir is unrecoverable"*, and the person who
+ * would notice the mistake will not be around to be asked. mod-97 is what makes
+ * a single mistyped or transposed digit detectable, and both are what people
+ * actually do copying 24 characters off a statement.
  *
- * 4.4: *"Validate mod-97 locally and show the sage confirmation inline — a
- * wrong IBAN discovered by an heir is unrecoverable."* Same shape of promise as
- * 4.3's BIP-39 check, and the same reason: the person who would notice the
- * mistake is not going to be around to be asked.
- *
- * mod-97 is what makes a single mistyped or transposed digit detectable. Both
- * are the errors people actually make copying 24 characters off a bank
- * statement, and both are invisible without it.
- *
- * **Country is a parameter, never a branch.** The lengths below are data; there
- * is no Saudi code path and no rest-of-world code path, which is what lets the
- * same form serve every launch market. Adding a country is one row here.
+ * **Country is a parameter, never a branch.** The lengths below are data — no
+ * Saudi code path, no rest-of-world code path — which is what lets one form
+ * serve every launch market. Adding a country is one row here.
  */
-
 /** IBAN length per ISO 13616, for the markets `lib/countries.ts` lists. */
 export const IBAN_LENGTH: Record<string, number> = {
   SA: 24,

@@ -2,14 +2,11 @@
  * ٩ — الإعدادات.
  *
  * ⚠️ **Design-blind, like ٦.** The board's `get_file` caps at 256 KiB and every
- * read stops inside section ٥, so this section has never been legible. What it
- * is built from instead: AGENTS.md's section map (9.2 auto-lock, 9.3 audit log,
- * 9.4 subscription/storage, 9.5 legal), the backend's own documented rules, and
- * the `@workspace/ui-native` primitives a previous session built directly
- * against this section — `settings-row` says "all of section ٩",
- * `storage-meter` says "**9.4** subscription", and the README records two
- * pixel-level decisions about 9.4's lapse banner that could only have come from
- * reading it.
+ * read stops inside section ٥, so this section has never been legible. It is
+ * built instead from AGENTS.md's section map (9.2 auto-lock, 9.3 audit log, 9.4
+ * subscription/storage, 9.5 legal), the backend's documented rules, and the
+ * `@workspace/ui-native` primitives a previous session built directly against
+ * this section.
  *
  * Behaviour is sourced; arrangement is inferred. Check this copy first when the
  * board is split.

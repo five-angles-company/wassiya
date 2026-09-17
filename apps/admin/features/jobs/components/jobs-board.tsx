@@ -189,18 +189,11 @@ function JobPanel({
  * switch failing means no estate is ever delivered, that is the wrong thing to
  * be unable to check. `jobRuns` separates them.
  *
- * ## What the redesign changed
- *
- * This was two bespoke cards whose run history was a stack of `8 / 1` with no
- * headers — a pair of numbers nobody could read without being told which was
- * which. Each job is now a `TableCard` with a real column-headed table, the
- * same panel the dashboard uses, and the summary moved into the card's own
- * slots: the health verdict as the action badge, the age as the hint, the last
- * change as the footnote.
- *
- * The verdict is a word rather than a timestamp on purpose. "Ran at 20:38"
- * requires the reader to know the schedule before it means anything; "Running"
- * against an hourly job does not.
+ * Each job is a `TableCard` with a column-headed table, the same panel the
+ * dashboard uses, with the health verdict as the action badge, the age as the
+ * hint and the last change as the footnote. The verdict is a word rather than a
+ * timestamp on purpose: "Ran at 20:38" requires the reader to know the schedule
+ * before it means anything; "Running" against an hourly job does not.
  */
 export function JobsBoard() {
   const locale = useLocale()

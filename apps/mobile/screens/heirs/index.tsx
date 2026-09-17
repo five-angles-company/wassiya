@@ -1,37 +1,15 @@
 /**
- * ٥.١ — الورثة. The people, and only the people.
+ * ٥.١ — الورثة. The people, and only the people: no coverage strip, no routing
+ * CTA, no guardian row — "not asset division just heirs management". Routing
+ * stays one tap away on Home's التوجيه tile and the vault's unrouted banner; the
+ * guardian is on Home's الوصي tile.
  *
- * ## What left, and why it is not missing
+ * The per-heir "لا تستلم شيئاً بعد" line stayed, because it is not division — it
+ * is the one fact about an heir that can be silently wrong, and the exact mirror
+ * of "بلا مستلم" on an asset.
  *
- * This screen used to carry a coverage strip ("٣٥ من ٤٣ أصلاً لها مستلم"), an
- * unrouted warning naming an asset, a "من يستلم ماذا؟" CTA, and the guardian
- * row. All four went at the owner's direction: *"not asset division just heirs
- * management"*.
- *
- * Nothing was orphaned by that. Routing is still one tap from Home's التوجيه
- * tile and from the vault's own unrouted banner — the two places that were
- * already answering it. The guardian is on Home's الوصي tile. What this screen
- * gained is a single subject: a list of people you can add, correct and remove.
- *
- * The one thing that stayed is the per-heir **"لا تستلم شيئاً بعد"** line, and
- * it stayed because it is not division — it is the single fact about an *heir*
- * that can be silently wrong, and it is the exact mirror of "بلا مستلم" on an
- * asset. Terracotta there means what terracotta means everywhere in this app:
- * needs you.
- *
- * ## One card, one target
- *
- * The whole card opens ٥.٤ — what this person actually receives. Editing lives
- * a level down, on that screen, and deliberately not here: a pencil per row
- * puts a second target on every card for the rarer errand, and the owner asked
- * for it on the detail screen instead.
- *
- * ## Home's language
- *
- * `Screen` with `gap-header`, a `metaSm` count over a `pageTitle`, `gap-row`
- * between cards, and the add button in the `float` slot — the same shell and
- * the same rhythm as ٤.١. `HeirCard` already sat on `rounded-card bg-card`, so
- * consistency here cost a padding change, not a new component.
+ * The whole card opens ٥.٤; editing lives there rather than behind a per-row
+ * pencil, which would put a second target on every card for the rarer errand.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"

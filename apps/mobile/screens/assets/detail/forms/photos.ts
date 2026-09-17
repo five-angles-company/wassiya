@@ -1,25 +1,17 @@
 /**
- * The photo-album "payload", which is a layout rather than a blob.
+ * The photo-album "payload", which is a layout rather than a blob: ٤.٦ stores
+ * `[...originals, ...thumbnails]` in one array, split at `meta.itemCount`, so
+ * this codec reads the shape of `storageIds` where other types read a decrypted
+ * string.
  *
- * ٤.٦ stores every original and then a small JPEG of each, in one array:
- * `[...originals, ...thumbnails]`, split at `meta.itemCount`. Nothing about an
- * album is encrypted text, so this codec reads the *shape* of `storageIds`
- * where the other types read a decrypted string.
+ * **The split index is load-bearing** — get it wrong and an heir opens the album
+ * to a gallery of thumbnails. Removing a photo must drop two ids, and adding
+ * photos cannot simply append: new originals belong with the old originals,
+ * ahead of every thumbnail. `toPhotosArrangement` is where that ordering lives.
  *
- * ## The split index is load-bearing
- *
- * Get it wrong and an heir opens the album to a gallery of thumbnails. That is
- * why removing a photo has to drop **two** ids — its original and its
- * thumbnail — and why adding photos cannot simply append: new originals belong
- * with the old originals, ahead of every thumbnail. `toPhotosArrangement`
- * exists so that ordering is written once, next to the reasoning.
- *
- * ## Thumbnails are best-effort, and may not exist
- *
- * The wizard treats a failed resize as acceptable — *"a thumbnail is a
- * convenience; the album is not"* — so `storageIds.length` may be `itemCount`
- * rather than twice it. Every read here tolerates a short or missing second
- * half rather than assuming the pair.
+ * Thumbnails are best-effort and may not exist, so `storageIds.length` may be
+ * `itemCount` rather than twice it. Every read here tolerates a short or missing
+ * second half rather than assuming the pair.
  */
 import type { EditPayload, EditSource } from "@/screens/assets/detail/forms/source"
 

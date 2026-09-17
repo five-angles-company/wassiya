@@ -2,31 +2,19 @@ import type { ComponentProps, ReactNode } from "react"
 import Link from "next/link"
 
 /**
- * The app's one button.
+ * The app's one button — primary actions had shipped at `h-14`, `h-[58px]`,
+ * `h-[54px]`, `py-3` and `py-3.5` across nine screens before it existed.
  *
- * ## Why this exists
+ * Sizes are roles, not measurements. `lg` is the board's 56px primary: the
+ * single action a screen exists for, and a screen has at most one. `md` is
+ * everything else that commits — a submit inside a panel, a confirm. `sm` is
+ * chrome. The heading face is on `lg` alone, because at 44px and below Cairo 800
+ * reads as shouting.
  *
- * It did not, and the cost was measurable: primary actions had shipped at
- * `h-14`, `h-[58px]`, `h-[54px]`, `py-3` and `py-3.5` across nine screens,
- * because every screen invented its own. A shared primitive is the only thing
- * that keeps them equal — a rule written down is a rule the next screen breaks.
- *
- * ## Sizes are roles, not measurements
- *
- * `lg` is the board's 56px primary: the single action a screen exists for, and
- * a screen has at most one. `md` is everything else that commits — a submit
- * inside a panel, a confirm. `sm` is chrome: a corner button beside a heading,
- * a "load more".
- *
- * The heading face is on `lg` alone. At 44px and below Cairo 800 reads as
- * shouting, and the label is doing a different job there anyway.
- *
- * ## Disabled is surface-toned, never a faded primary
- *
- * AGENTS.md says so directly, and the reason is visible: terracotta at half
- * opacity over sand is a muddy peach that reads as broken rather than as
- * not-yet. `aria-disabled` rather than only `disabled`, so the control stays
- * in the tab order and a screen reader announces *why* nothing happened.
+ * **Disabled is surface-toned, never a faded primary**: terracotta at half
+ * opacity over sand is a muddy peach that reads as broken rather than not-yet.
+ * `aria-disabled` rather than only `disabled`, so the control stays in the tab
+ * order and a screen reader announces why nothing happened.
  */
 type Variant = "primary" | "secondary" | "outline" | "ghost"
 type Size = "lg" | "md" | "sm"

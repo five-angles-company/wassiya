@@ -1,33 +1,24 @@
 /**
  * The unlocked vault session — MK held in memory, for as long as the auto-lock
- * policy allows and not a second longer.
+ * policy allows and not a second longer. `secure-vault.readMk` prompts on every
+ * call, so without this store a list of forty assets would raise forty Face ID
+ * sheets.
  *
- * `secure-vault.readMk` raises a biometric prompt on **every** call, which was
- * fine while exactly one screen used it (the 2.4 ceremony, once). Section ٤
- * changes that: every asset row's label is sealed under its own DEK, which is
- * wrapped under MK, so rendering a list of forty assets would mean forty Face
- * ID sheets. This store exists so the prompt happens once and the key is then
- * reused — which is the same trade every vault app makes, and the reason
- * auto-lock is part of the same file rather than a later nicety.
- *
- * ## Rules this store is the enforcement point for
+ * This store is the enforcement point for three rules:
  *
  * - **MK is never persisted.** Not through `persist`, not to AsyncStorage, not
- *   to SecureStore — the keystore already holds the only at-rest copy, behind
- *   biometrics. This is process memory that dies with the app, and `lock()`
- *   zeroes the buffer after publishing the lock (see the ordering note there,
- *   which is load-bearing).
- * - **`VaultKeyLostError` is a route, not an error to swallow.** Changing the
- *   device's enrolled biometrics invalidates MK permanently; the only honest
- *   destination is the recovery ceremony. `status: "lost"` says so, and
- *   `useVaultGate` turns it into a redirect.
- * - **One prompt at a time.** Two components mounting together and both
- *   calling `unlock()` would otherwise stack two biometric sheets, the second
- *   of which the OS may simply reject. In-flight calls share one promise.
+ *   to SecureStore — the keystore holds the only at-rest copy, behind
+ *   biometrics. `lock()` zeroes the buffer after publishing the lock; that
+ *   ordering is load-bearing.
+ * - **`VaultKeyLostError` is a route, not an error to swallow.** Changed
+ *   biometrics invalidate MK permanently, so `status: "lost"` exists and
+ *   `useVaultGate` turns it into a redirect to recovery.
+ * - **One prompt at a time.** Two components calling `unlock()` together would
+ *   stack two biometric sheets, the second of which the OS may reject.
+ *   In-flight calls share one promise.
  *
- * Server state still belongs to Convex — this holds a *key*, which is the one
- * thing Convex must never see, so the usual "don't mirror server state into
- * Zustand" rule does not apply to it.
+ * Server state still belongs to Convex; this holds a key, which is the one
+ * thing Convex must never see.
  */
 import { create } from "zustand"
 

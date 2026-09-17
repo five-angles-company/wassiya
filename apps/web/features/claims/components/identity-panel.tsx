@@ -16,27 +16,18 @@ import { CLAIM_IDENTITY } from "@/features/claims/strings/claim-identity"
 /**
  * ٧.٢ — the identity check, as a panel on the report rather than a wizard step.
  *
- * ## The popup, and what happens when it is blocked
+ * The board wants the provider *"in a secure window"*: a redirect would lose the
+ * page the reader is on, and an iframe cannot host a camera permission prompt
+ * reliably. So `window.open`, with a **visible fallback** when the browser blocks
+ * it — a blocked popup with no explanation is a dead end on the first real step.
  *
- * The board wants the provider *"in a secure window"* rather than an iframe or
- * a redirect. A redirect would lose the page the reader is on; an iframe cannot
- * host a camera permission prompt reliably. So `window.open`, with a **visible
- * fallback** when the browser blocks it — a blocked popup with no explanation
- * is one of the board's own listed states and is otherwise a dead end on the
- * first real step.
+ * The provider URL is a normal link and is copyable, because *"laptop webcams
+ * fail document capture, and asking the user to start over on a phone loses
+ * them."* Opening it on a phone continues the same session. A QR would need a
+ * client library; a copy button needs none.
  *
- * ## The phone hand-off
- *
- * *"laptop webcams fail document capture, and asking the user to start over on
- * a phone loses them."* The provider URL is a normal link, so the fix is to
- * make it copyable: open it on a phone and the same session continues. A QR
- * would need a client library; a copy button needs none and works when a camera
- * is the thing you are trying to avoid using.
- *
- * ## Nothing polls
- *
- * `identity.status` is a Convex query, so the Didit webhook's write pushes the
- * verdict here on its own. The reader can close the popup and watch this panel.
+ * Nothing polls. `identity.status` is a Convex query, so the Didit webhook's
+ * write pushes the verdict here on its own.
  */
 export function IdentityPanel() {
   const locale = useLocale()

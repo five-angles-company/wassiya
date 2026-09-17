@@ -1,20 +1,13 @@
 /**
  * ٩.٢ — القفل التلقائي.
  *
- * The screen `stores/vault.ts` has been pointing at since it was written: the
- * window was a hard-coded five minutes with a comment saying this section owned
- * it. Now it does.
- *
- * ## The note under the chips changes with the choice
- *
- * The two policies are true about different things, and one note covering both
- * would have to be vague enough to describe neither. Under a duration the
- * useful sentence is what the timer measures — it is a **cap from unlock**, not
- * an idle timer, and a settings screen that let someone choose "1 hour" while
- * believing it meant "an hour after I stop using it" would be selling a
- * different product. Under "while open" there is no timer to describe at all;
- * the useful sentence is what an unlocked phone in someone else's hand can now
- * reach. So the screen says whichever one applies.
+ * The note under the chips changes with the choice, because the two policies are
+ * true about different things. Under a duration the useful sentence is what the
+ * timer measures — a **cap from unlock**, not an idle timer, and a screen that
+ * let someone choose "1 hour" believing it meant "an hour after I stop using it"
+ * would be selling a different product. Under "while open" there is no timer to
+ * describe; the useful sentence is what an unlocked phone in someone else's hand
+ * can now reach.
  */
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { View } from "react-native"

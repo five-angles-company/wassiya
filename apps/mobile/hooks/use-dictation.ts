@@ -1,21 +1,15 @@
 /**
- * On-device dictation for ٤.٨.
+ * On-device dictation for ٤.٨, where the qualifier is the requirement. The
+ * default speech path on both platforms streams audio to the vendor's servers,
+ * which for an app promising we cannot read what you write would route the
+ * plaintext straight past every guarantee the screen makes two lines below the
+ * text box.
  *
- * The board is specific — *"voice dictation (device STT, on-device only)"* —
- * and the qualifier is the requirement, not a detail. The default speech path
- * on both platforms streams audio to the vendor's servers. For an app whose
- * whole promise is that we cannot read what you write, dictating a letter to
- * Google or Apple would route the plaintext straight past every guarantee the
- * screen makes two lines below the text box.
- *
- * So `requiresOnDeviceRecognition` is set, and where the device cannot do it
- * the button is **hidden rather than degraded**: `available` comes back false
- * and 4.8 renders no microphone. A dictation button that silently uploads is
- * worse than no dictation button.
- *
- * Arabic on-device recognition is not universal — it depends on the installed
- * language pack — so this is expected to be absent on plenty of handsets. That
- * is the correct outcome, not a bug to work around.
+ * `requiresOnDeviceRecognition` is set, and where the device cannot do it the
+ * button is **hidden rather than degraded** — a dictation button that silently
+ * uploads is worse than no dictation button. Arabic on-device recognition
+ * depends on the installed language pack, so absence is the expected outcome on
+ * plenty of handsets, not a bug to work around.
  */
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {

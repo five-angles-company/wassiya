@@ -18,20 +18,14 @@ export type NoteToolbarProps = {
 /**
  * ٤.٨'s toolbar: bold, italic, list, the sage wish block, and dictation.
  *
- * ## Markdown, not a rich-text editor
- *
- * The board draws a formatting toolbar. The usual way to get one is a WebView
- * editor with its own document model — a large dependency, a second text
- * pipeline, and a stored format nothing else in this app can read. Instead the
- * buttons wrap the selection in markdown markers and the note stays plain text:
- * `**bold**`, `_italic_`, `- item`, `> wish`.
- *
- * That choice earns two things worth more than a live preview. The stored
- * payload remains a UTF-8 string, so it encrypts, round-trips and renders in an
- * heir's browser with no editor at either end. And an heir reading the raw text
- * with no renderer at all still reads a legible letter — asterisks and dashes
- * do not obscure a sentence, where a serialised editor document would be
- * unreadable without the tool that wrote it.
+ * **Markdown markers in plain text, not a rich-text editor.** A WebView editor
+ * would bring its own document model — a large dependency, a second text
+ * pipeline, and a stored format nothing else in this app can read. The buttons
+ * wrap the selection in `**bold**`, `_italic_`, `- item`, `> wish` and the note
+ * stays a UTF-8 string, so it encrypts, round-trips and renders in an heir's
+ * browser with no editor at either end. An heir reading the raw text with no
+ * renderer at all still reads a legible letter, where a serialised editor
+ * document would be unreadable without the tool that wrote it.
  *
  * With no selection, a marker pair is inserted and the caret placed between
  * them, so tapping **B** and typing does what it looks like it should.

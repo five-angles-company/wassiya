@@ -13,30 +13,20 @@ import { useStrings } from "@/i18n/use-strings"
 import { OptionChips } from "@/screens/assets/new/components/option-chips"
 
 /**
- * ٦.٤'s cadence, as a sheet over Home.
+ * ٦.٤'s cadence, as a sheet over Home. A sheet rather than a route because
+ * pushing a whole screen to change one of two numbers takes you off the screen
+ * you were reassuring yourself on.
  *
- * ## A sheet rather than a route
+ * ⚠️ **Settings only — there is no confirm here.** The life check-in may be
+ * recorded in exactly one place: Home's `CheckInHero`, behind `useConfirmAlive`'s
+ * fingerprint. This sheet changes *when* you will be asked and never answers the
+ * question. Do not add an "أنا بخير" here, however convenient it looks — the
+ * protected property is that a tap alone can never say "still alive", and a
+ * second affordance is how that gets lost.
  *
- * "إعدادات النبض" sits at the bottom of Home's heartbeat card, and pushing a
- * whole screen to change one of two numbers takes you off the screen you were
- * reassuring yourself on. The sheet keeps the card behind it, which is the
- * point: you are adjusting the thing you are looking at.
- *
- * ## ⚠️ Settings only — there is no confirm here
- *
- * The life check-in may be recorded in exactly one place in this product:
- * Home's `CheckInHero`, behind `useConfirmAlive`'s fingerprint. This sheet
- * changes *when* you will be asked and never answers the question. Do not add
- * an "أنا بخير" here, however convenient it looks — the protected property is
- * that a tap alone can never say "still alive", and a second affordance is how
- * that gets lost.
- *
- * ## It configures and re-configures
- *
- * `checkin.configure` upserts: it keeps `lastConfirmedAt` and recomputes
- * `nextDueAt` from the new cadence. So the same sheet serves the first setup
- * and every change after it, which is why Home's "off" state opens this too
- * rather than pushing a different screen for the same decision.
+ * `checkin.configure` upserts, keeping `lastConfirmedAt` and recomputing
+ * `nextDueAt`, so the same sheet serves the first setup and every change after
+ * it — which is why Home's "off" state opens this too.
  */
 export type CheckInSettingsSheetProps = {
   ref?: React.Ref<TrueSheet>

@@ -1,20 +1,15 @@
 /**
- * Thumbnails for an encrypted album.
+ * Thumbnails for an encrypted album — generated here, encrypted under the same
+ * DEK as their photo, stored as their own blob.
  *
- * 4.6: *"thumbnails are generated locally then encrypted too, so the grid in
- * 4.9 needs decryption to render."* The second half is the point. A vault that
- * uploaded plaintext thumbnails so its own grid could render quickly would have
- * handed the server a legible, searchable index of every photo it holds —
- * smaller pictures of exactly the thing the originals are encrypted to hide.
+ * ٤.٦: *"thumbnails are generated locally then encrypted too, so the grid in 4.9
+ * needs decryption to render."* The second half is the point: uploading
+ * plaintext thumbnails so our own grid drew quickly would hand the server a
+ * legible, searchable index of every photo the vault holds — smaller pictures of
+ * exactly the thing the originals are encrypted to hide.
  *
- * So a thumbnail is just another payload: generated here, encrypted under the
- * same DEK as its photo, stored as its own blob. It costs one extra object per
- * photo and buys a grid that can be drawn without pulling multi-megabyte
- * originals over the network.
- *
- * The resize happens before the encrypt, obviously — and the intermediate JPEG
- * that `expo-image-manipulator` writes to the cache is plaintext, so callers
- * must delete it once the ciphertext exists.
+ * The intermediate JPEG `expo-image-manipulator` writes to the cache is
+ * plaintext, so callers must delete it once the ciphertext exists.
  */
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
 

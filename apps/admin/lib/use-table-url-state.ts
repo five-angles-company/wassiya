@@ -52,27 +52,22 @@ function sortingParser(ids: readonly string[]) {
  * Search, sort, page size and the cursor stack — the part every server-driven
  * table in this console holds identically.
  *
- * ## Why the cursor stack is *not* in the URL
+ * **The cursor stack is deliberately not in the URL.** A Convex cursor is an
+ * opaque position inside one particular ordered, filtered stream; pasted into a
+ * link it is either stale or a position in someone else's result set. So the URL
+ * carries the *question* — filters, search, sort, page size — and the answer
+ * starts at page one, which is also what a shared link means to the person
+ * receiving it.
  *
- * A Convex cursor is an opaque position inside one particular ordered, filtered
- * stream. Pasted into a link it is either stale or a position in someone else's
- * result set, and the row it lands on would be neither the first nor the one
- * that was shared. So the URL carries the *question* — filters, search, sort,
- * page size — and the answer starts at page one. That is also what a shared
- * link means to the person receiving it.
+ * The reset is derived rather than called. Once the params live in the URL,
+ * setters are no longer the only way filters change: back/forward and a
+ * dashboard link landing on an already-mounted screen both bypass them, leaving
+ * a cursor from the previous stream in place. The stack carries the key it
+ * belongs to and resets during render when they disagree — the same shape as
+ * `use-last-loaded.ts`.
  *
- * ## Why the reset is derived rather than called
- *
- * Every setter used to call `resetPaging()` by hand. Once the params live in
- * the URL that is no longer enough: back/forward and a dashboard link landing
- * on a screen that is already mounted both change the filters without passing
- * through a setter, leaving a cursor from the previous stream in place. The
- * stack therefore carries the key it belongs to and resets during render when
- * they disagree — the same shape as `use-last-loaded.ts`.
- *
- * `facetKey` is how a screen's own filters join that key. It is the one thing
- * this hook cannot know, because the filters are the part that genuinely
- * differs between the ten screens.
+ * `facetKey` is how a screen's own filters join that key, and is the one thing
+ * this hook cannot know.
  */
 export function useTableUrlState({
   defaultSorting,

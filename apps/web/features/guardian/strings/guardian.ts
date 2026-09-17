@@ -1,28 +1,22 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The guardian's invitation and key ceremony.
- *
- * ## The line this whole screen is built around
+ * The guardian's invitation and key ceremony, built around one line:
  *
  * *"It was never sent to us, we hold no copy, and we cannot issue it again —
  * because if we could, we could open the heirs' boxes on our own."*
  *
- * Every product says "we can't recover this for you" as an apology. Said this
- * way it is a proof: the inability *is* the guarantee. That sentence is why the
- * screen can ask someone to keep a piece of paper for a decade without sounding
- * negligent.
+ * Said that way the inability *is* the guarantee rather than an apology, which
+ * is why the screen can ask someone to keep a piece of paper for a decade
+ * without sounding negligent.
  *
- * ## Olive, not terracotta
- *
- * The guardian's whole surface is olive. In this product olive already means
- * settled and safe — it is the colour of a completed step and a released box —
- * and a guardian is not being asked to act urgently. Terracotta would make an
+ * Olive, not terracotta. Olive already means settled and safe in this product,
+ * and a guardian is not being asked to act urgently — terracotta would make an
  * invitation look like an alarm.
  *
- * There is no sign-in copy here. The app sits entirely behind the wall, so a
- * reader of this screen is authenticated by construction; the invitation link
- * bounces through `/sign-in` and lands back on the token it was carrying.
+ * No sign-in copy: the app sits entirely behind the wall, so a reader here is
+ * authenticated by construction and the invitation link bounces through
+ * `/sign-in` back onto the token it was carrying.
  */
 export const GUARDIAN = {
   eyebrow: { ar: "دعوة وصي", en: "Guardian invitation" },

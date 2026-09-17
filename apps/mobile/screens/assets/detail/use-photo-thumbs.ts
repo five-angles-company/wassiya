@@ -1,27 +1,18 @@
 /**
- * The stored thumbnails of a photo album, decrypted for display.
+ * The stored thumbnails of a photo album, decrypted for display — the second
+ * half of `storageIds`, split at `meta.itemCount`. Removing "photo 3" from a
+ * list of counts is not a decision anyone can make, which is what makes the
+ * edit grid depend on this.
  *
- * ٤.٦ uploads every original and then a small JPEG of each, so an album's
- * `storageIds` is `[...originals, ...thumbnails]` split at `meta.itemCount`.
- * This turns the second half into something `<Image>` can render, which is what
- * makes the edit grid usable at all: removing "photo 3" from a list of counts
- * is not a decision anyone can make.
+ * **Nothing decrypted is written to disk.** Decrypting to a cache file and
+ * pointing `<Image>` at `file://` would leave the owner's photographs in
+ * plaintext in the cache directory, so these become `data:` URIs that live in JS
+ * memory and die with the screen. Thumbnails are small by construction, which is
+ * what makes that affordable; originals are never fetched.
  *
- * ## Nothing decrypted is written to disk
- *
- * The obvious route — decrypt to a cache file, point `<Image>` at `file://` —
- * would leave the owner's photographs sitting in plaintext in the cache
- * directory, which is the exact artefact `discardLocalFile` exists to sweep up.
- * These become `data:` URIs instead, so they live in JS memory and die with the
- * screen. Thumbnails are small by construction, which is what makes that
- * affordable; the originals are never fetched.
- *
- * ## Best-effort, exactly like the thumbnails themselves
- *
- * The wizard treats a failed resize as acceptable — *"a thumbnail is a
- * convenience; the album is not"* — so an album may carry fewer thumbnails than
- * photos, or none. Every failure here resolves to `null` for that slot and the
- * grid shows a placeholder, rather than one bad blob emptying the whole grid.
+ * Best-effort, like the thumbnails themselves — an album may carry fewer than it
+ * has photos, or none. Each failure resolves to `null` for that slot so one bad
+ * blob cannot empty the grid.
  */
 import { useEffect, useRef, useState } from "react"
 import { decryptAsset } from "@workspace/crypto/asset"

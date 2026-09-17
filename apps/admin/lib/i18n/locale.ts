@@ -1,22 +1,17 @@
 /**
  * The console's locale, and the one place that decides what "Arabic" means for
- * layout.
- *
- * Unlike the mobile app — where the locale rides on the signed-in profile
- * (`users.me().locale`) — the console reads it from a cookie. Two reasons, and
- * both are about who is looking at the screen:
+ * layout. Read from a cookie rather than the signed-in profile, unlike mobile:
  *
  *  1. **The operator is not the owner.** A reviewer's reading language has
  *     nothing to do with any vault owner's stored preference, and the console
  *     shows many owners at once.
  *  2. **The server has to know before it renders.** `dir` belongs on `<html>`,
- *     which is emitted by a Server Component. A cookie is readable there; a
- *     `localStorage` value is not, and reading one after hydration means the
- *     first paint is laid out the wrong way round and then jumps.
+ *     emitted by a Server Component, where a cookie is readable and
+ *     `localStorage` is not — reading one after hydration lays the first paint
+ *     out the wrong way round and then jumps.
  *
- * There is still no i18n library here. This is the same thin catalogue the
- * mobile app uses (`apps/mobile/i18n/`), so if one ever lands the swap is
- * mechanical in both places at once.
+ * Still no i18n library — the same thin catalogue as `apps/mobile/i18n/`, so a
+ * swap stays mechanical in both places at once.
  */
 export type Locale = "ar" | "en"
 

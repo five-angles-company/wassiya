@@ -1,30 +1,20 @@
 /**
- * The crypto-wallet payload, in both directions — and the one format in this
- * app that cannot be round-tripped cleanly, because of how it was first
- * written.
+ * The crypto-wallet payload in both directions, and the one format here that
+ * cannot be round-tripped cleanly.
  *
- * ## The legacy phrase, and why nothing here guesses
+ * ٤.٣'s phrase path stores `words.join(" ")` — a bare phrase, no JSON. The
+ * network survives only inside the localised sealed subtitle, and the kind
+ * (hardware vs software) is stored nowhere. **Nothing here guesses at them.**
+ * Defaulting the chips to Bitcoin/hardware would let an owner editing an
+ * unrelated field save a subtitle claiming an Ethereum wallet is a Bitcoin one,
+ * and no heir could catch it. A legacy row loads with both empty; setting them
+ * upgrades the payload to JSON on the next save. {@link toCryptoPayload}
+ * carries the subtitle forward byte-for-byte for the same reason.
  *
- * ٤.٣'s phrase path stores `words.join(" ")` — the bare phrase, no JSON. The
- * **network** survives only inside the *localised* sealed subtitle, and the
- * **kind** (hardware vs software) is stored nowhere at all.
- *
- * The tempting fix is to show chips defaulted to Bitcoin/hardware. That is the
- * one thing this file must never do: an owner editing an unrelated field would
- * then save a subtitle claiming an Ethereum wallet is a Bitcoin one, and no
- * heir could catch it. So a legacy row loads with both **empty** — an honest
- * "not recorded" — and the owner may set them, which upgrades the payload to
- * JSON on the next save.
- *
- * The subtitle follows the same rule, in {@link toCryptoPayload}: it is carried
- * forward byte-for-byte while there is nothing better to say, and only rebuilt
- * from values that are actually known.
- *
- * ## Three shapes, one form
- *
- * - `{kind: "exchange", network, account, password, twoFactor}` — an exchange
- *   wallet has no phrase; the account *is* the custody.
- * - `{kind, network, phrase}` — what this file writes for a phrase wallet.
+ * Three shapes, one form:
+ * - `{kind: "exchange", network, account, password, twoFactor}` — no phrase;
+ *   the account *is* the custody.
+ * - `{kind, network, phrase}` — what this file writes.
  * - a bare phrase — everything ٤.٣ has written so far.
  */
 import { checkMnemonic } from "@workspace/crypto/mnemonic"

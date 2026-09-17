@@ -1,19 +1,14 @@
 /**
  * The eight relationships an heir can have, and how to read one back.
  *
- * ## Why the stored value is English
+ * The stored value is English — `heirs.add` writes `"daughter"`, not `"ابنة"` —
+ * because the will document renders from this same table, and a record whose
+ * meaning changes with the reader's locale is not a record. The consequence is
+ * that **anything displaying `heir.relation` has to translate it**, and
+ * `heirs.list` deliberately does not: the deployment has no locale.
  *
- * `heirs.add` writes whatever the chip's `value` is, so the record holds
- * `"daughter"`, not `"ابنة"`. That is deliberate — the will document renders
- * from this same table, and a record whose meaning changes with the reader's
- * locale is not a record. The consequence is that **anything displaying
- * `heir.relation` has to translate it**, and `heirs.list` deliberately does not:
- * the deployment has no locale.
- *
- * That consequence used to be unhandled. ٥.١ interpolated `heir.relation`
- * straight into the card, so an Arabic-first RTL screen read "daughter · +966
- * 55 ••• 2210". This table is exported so the list and the form share one
- * definition rather than the list growing a second, partial copy.
+ * Exported so the list and the form share one definition rather than the list
+ * growing a second, partial copy.
  */
 export const RELATIONS = [
   ["daughter", "relDaughter"],

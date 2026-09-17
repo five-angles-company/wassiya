@@ -12,26 +12,14 @@ import { DASHBOARD } from "@/features/dashboard/strings/dashboard"
 /**
  * The operations console. One page, full-width panels, four numbers at the top.
  *
- * ## What this went through, so it does not get re-litigated
- *
- * It started as four stacked sections of tiles and tables and ran to about four
- * screens. Tabs cut the length by hiding three-quarters of it — worse, because
- * the point of an operations board is seeing the shape of things at once. A
- * two-column grid was tried next and squeezed five-column tables into half a
- * laptop's width.
- *
- * What was actually wrong was never the arrangement: it was the volume. Eleven
- * stat cards, a title and a subtitle on every panel, and tables with no row
- * limit. So the fix is subtraction — four numbers in a plain row instead of
- * eleven boxes, bare panel titles with no descriptions, five rows per table, and
- * every panel full width where it has room to be read.
- *
- * ## Server shell, client leaves
+ * The length problem was never the arrangement — tabs and a two-column grid were
+ * both tried — it was the volume. Four numbers in a plain row instead of eleven
+ * boxes, bare panel titles with no descriptions, five rows per table, and every
+ * panel full width where it has room to be read.
  *
  * A Server Component for the heading, with every live region a client leaf
- * holding its own Convex subscription — the repo's established shape, and what
- * keeps the two scanning queries (`risk`, `storage`) from delaying the indexed
- * one the page opens with.
+ * holding its own Convex subscription — which is what keeps the two scanning
+ * queries (`risk`, `storage`) from delaying the indexed one the page opens with.
  */
 export default async function DashboardPage() {
   const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)

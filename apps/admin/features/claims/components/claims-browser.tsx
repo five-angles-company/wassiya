@@ -32,25 +32,18 @@ import { useLastLoaded } from "@/lib/use-last-loaded"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 
 /**
- * The claims workspace: every status, not just the reviewable one.
+ * The claims workspace: every status, not just the reviewable one. The
+ * dashboard's preview reads `claims.pendingReview`, which is `submitted`-only,
+ * so an admin who ruled on a claim watched it leave the only admin query that
+ * returns a claim id with no way back to it.
  *
- * The dashboard's preview reads `claims.pendingReview`, which is
- * `submitted`-only — and that single fact is what made review unusable. An
- * admin who ruled on a claim watched it leave the only admin query that returns
- * a claim id, with no way back to it. This browser exists so acting on a claim
- * does not lose it.
- *
- * ## Everything narrows on the server
- *
- * Search, the three filters, the sort and the paging are all query arguments —
- * so the workspace is not limited to a window the server picked in advance, and
+ * Search, the three filters, the sort and the paging are all query arguments, so
  * a search reaches every claim rather than the hundred that happened to load.
- *
- * Two consequences the UI carries rather than hides. Cursor pagination has no
- * total, so the pager says "page 3" and takes a **bounded** count from
- * `claimsTally` — `500+` past the cap. And a Convex search ranks its results,
- * an order that cannot be replaced, so while a term is live the sort headers go
- * inert and the toolbar says why.
+ * Two consequences the UI carries rather than hides: cursor pagination has no
+ * total, so the pager says "page 3" and takes a bounded count from `claimsTally`
+ * (`500+` past the cap); and a Convex search ranks its results in an order that
+ * cannot be replaced, so while a term is live the sort headers go inert and the
+ * toolbar says why.
  */
 export function ClaimsBrowser() {
   const locale = useLocale()

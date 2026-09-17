@@ -21,32 +21,18 @@ import { CLAIMS } from "@/features/claims/strings/claims"
 /**
  * Filing a report: three fields and a button.
  *
- * ## Why it cannot navigate to the claim it just created
+ * **It cannot navigate to the claim it just created, and must not become able
+ * to.** `claims.submit` returns `{ received: true }` and nothing else, so it
+ * cannot be used to enumerate which email addresses have vaults. The form lands
+ * on `/claims`, where the new row appears if one was created and does not if the
+ * email matched nothing, and the confirmation copy is worded not to promise
+ * either way. That is also why there is no inline "we couldn't find that vault"
+ * error — the mutation is not an oracle.
  *
- * `claims.submit` returns `{ received: true }` and nothing else — deliberately,
- * so it cannot be used to enumerate which email addresses have vaults. There is
- * no id to push to. So the form lands on `/claims`, where the new row appears
- * if one was created and does not if the email matched nothing, and the
- * confirmation copy is worded not to promise either way.
- *
- * That is also why there is no inline "we couldn't find that vault" error. The
- * mutation is not an oracle and this screen must not become one.
- *
- * ## The form is a card, and the checklist is not
- *
- * Both were loose on the page ground and the whole screen was beige on beige,
- * with three input capsules floating in the middle of it. The form takes a
- * surface, a border and `--shadow-raised`, so it reads as one object with a
- * beginning and an end; the checklist beside it stays quieter and gains
- * hairlines, which is what turns three stacked pairs of lines into a list.
- *
- * ## The disabled button is surface-toned
- *
- * It was a faded primary, which AGENTS.md names directly: *"a disabled CTA is
- * surface-toned, never a faded primary."* Terracotta at half opacity over sand
- * is a muddy peach that reads as broken rather than as not-yet — and on this
- * screen the reader is three empty fields away from thinking the site is
- * broken anyway.
+ * The form takes a surface, a border and `--shadow-raised` so it reads as one
+ * object; the checklist beside it stays quieter and gains hairlines. The
+ * disabled button is surface-toned, never a faded primary: terracotta at half
+ * opacity over sand is a muddy peach that reads as broken rather than not-yet.
  */
 export function FileClaimForm() {
   const locale = useLocale()

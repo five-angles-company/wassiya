@@ -4,29 +4,18 @@ import type { LucideIcon } from "lucide-react"
 /**
  * A list with nothing in it.
  *
- * Every empty state in this app is a *good* state and the copy has to say so.
+ * Every empty state in this app is a *good* state and the copy has to say so —
  * "No reports yet" on a bereavement service reads as failure unless the body
- * explains that nothing is missing — so `body` is required, not optional.
+ * explains that nothing is missing. So `body` is required, not optional.
  *
- * ## What it looked like before, and why each part was wrong
+ * A card sized to its content and centred, rather than the full-width dashed box
+ * it was: dashes read as a drop target rather than a state, and start-aligned
+ * content in a stretched container made the void beside it look like a mistake.
  *
- * A full-width dashed box with its content pinned to the start edge. The dashes
- * read as a drop target rather than as a state; the full width left a metre of
- * void beside three lines of text; and start-aligned content inside a
- * stretched container is what made the void look like a mistake rather than
- * margin.
- *
- * Now: a card, sized to its content and centred, with the type centred inside
- * it. Solid hairline, the card tone, `--shadow-raised` and the sheet radius —
- * the same depth every other surface in the app has and this one never took.
- *
- * ## `fill`
- *
- * `60svh` and centred, for a screen whose empty state *is* the screen. Without
- * it the composition sits in the top third and the rest of the viewport is
- * bare, which is the single most common way an otherwise fine empty state
- * reads as broken. `svh` rather than `vh` because mobile chrome shrinks the
- * visual viewport, and the difference is a button below the fold.
+ * `fill` gives `60svh` and centres, for a screen whose empty state *is* the
+ * screen — without it the composition sits in the top third and the rest of the
+ * viewport is bare. `svh` rather than `vh`, because mobile chrome shrinks the
+ * visual viewport and the difference is a button below the fold.
  */
 export function EmptyState({
   icon: Icon,

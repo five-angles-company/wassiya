@@ -1,25 +1,17 @@
 /**
- * The digital-account payload, in both directions.
+ * The digital-account payload, in both directions — read and write in one file,
+ * because a format with its halves in different files drifts. The crypto wizard
+ * is the proof: its phrase path writes `network` into a localised subtitle and
+ * `kind` nowhere at all, which no decoder can undo.
  *
- * ## Why read and write live in one file
- *
- * `secret-fields.ts` could only decode. Every wizard encoded its own payload
- * inline, so the two halves of each format sat in different files with nothing
- * tying them together — and the crypto wizard proves what that costs: its
- * phrase path writes `network` into a localised subtitle and `kind` nowhere at
- * all, which no decoder can undo. A format needs one home, and this is it.
- *
- * `screens/assets/new/account/index.tsx` is still the other writer. Until it is
- * moved onto {@link toDigitalPayload}, **these two must agree** — the JSON keys
+ * `screens/assets/new/account/index.tsx` is still the other writer. Until it
+ * moves onto {@link toDigitalPayload}, **these two must agree** — the JSON keys
  * below and the label format are copied from it verbatim, and changing one
  * without the other means creating and editing produce different rows.
  *
- * ## The round trip that is not symmetric
- *
- * The form holds recovery codes as one newline-delimited string, because that
- * is what a multi-line field edits. The payload stores them as a filtered
- * array, because that is what an heir reads. The join and the split are here so
- * neither side has to remember which shape it is holding.
+ * The round trip is deliberately asymmetric: the form holds recovery codes as
+ * one newline-delimited string because that is what a multi-line field edits,
+ * the payload stores a filtered array because that is what an heir reads.
  */
 import type { AssetLabel } from "@workspace/crypto/label"
 

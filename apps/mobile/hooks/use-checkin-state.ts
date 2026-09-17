@@ -1,25 +1,19 @@
 /**
  * The check-in, reduced to what Home needs to draw.
  *
- * ## Why this reads `escalationState` and never the clock
- *
- * `convex/checkin.ts` is explicit about it: a Convex query is not re-run
- * because time passed. So `Date.now() >= nextDueAt` evaluated in a component
- * is only as fresh as the last render — and it goes stale *precisely* at the
- * moment it matters, on a screen someone left open. `escalationState` is the
- * server's own materialised answer, advanced by the sweep cron, and it changes
- * through the subscription like any other field.
- *
- * The five server states collapse to four display states:
+ * Reads `escalationState`, never the clock. A Convex query is not re-run because
+ * time passed, so `Date.now() >= nextDueAt` in a component is only as fresh as
+ * the last render — and goes stale precisely at the moment it matters, on a
+ * screen someone left open. `escalationState` is the server's materialised
+ * answer, advanced by the sweep cron and delivered through the subscription.
  *
  *   idle                      → confirmed   nothing is due
  *   day0                      → due         the first prompt has fired
  *   day7 · day14 · countdown  → overdue     escalation is under way
  *
- * `overdue` deliberately does not distinguish day 7 from the release
- * countdown. Home is not the place to explain the ladder — 6.3 is — and an
- * owner who sees "overdue" needs to do exactly one thing regardless of which
- * rung they're on.
+ * `overdue` deliberately does not distinguish day 7 from the release countdown.
+ * 6.3 explains the ladder; an owner who sees "overdue" needs to do exactly one
+ * thing regardless of which rung they are on.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"

@@ -1,28 +1,17 @@
 /**
- * The single confirmation path in the product.
+ * The single confirmation path in the product, and the one gate it runs behind.
  *
- * ## Why this is a hook and not two copies
+ * The affordance lives in exactly one place — Home's `CheckInHero`. It moved
+ * there from the check-in prompt and was not duplicated;
+ * `screens/protection/checkin` configures cadence and reports state only. The
+ * gate is a hook rather than inline code so a second copy cannot quietly lose
+ * its `disableDeviceFallback`.
  *
- * Confirming life is the one action in Wassiya that must never be possible
- * without a fingerprint. Previously the gate lived inline in the check-in
- * screen; the owner has since asked for the confirm to live on Home, where the
- * action actually belongs. Rather than write the gate twice — which is exactly
- * how one copy eventually loses its `disableDeviceFallback` — it moves here and
- * the screen calls it.
- *
- * **The affordance is still in exactly one place.** It moved from the prompt
- * screen to the Home hero; it was not added alongside it. `screens/protection/
- * checkin` now configures the switch and reports its state, and no longer
- * offers a confirm.
- *
- * ## The contract
- *
- * Returns `false` for anything other than a successful biometric, and the
- * mutation only runs after `auth.success`. There is no code path where a tap
- * alone says "still alive" — which is the whole point: an unlocked phone in the
- * wrong hands must not be able to suppress delivery. Presence is what's being
- * proven, so `disableDeviceFallback` stays true: a device passcode is something
- * a person who has the phone may well also have.
+ * Returns `false` for anything but a successful biometric, and the mutation runs
+ * only after `auth.success`: there is no path where a tap alone says "still
+ * alive", because an unlocked phone in the wrong hands must not be able to
+ * suppress delivery. `disableDeviceFallback` stays true — a device passcode is
+ * something a person holding the phone may also know.
  */
 import { useState } from "react"
 import { useMutation } from "convex/react"

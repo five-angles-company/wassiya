@@ -13,41 +13,23 @@ import { t } from "@/lib/i18n/locale"
 import { HOME } from "@/features/overview/strings/home"
 
 /**
- * The screen for someone who has just arrived and has nothing yet.
+ * The screen for someone who has just arrived and has nothing yet — not a
+ * dashboard with zero rows but a fork with exactly two ways forward.
  *
- * ## Why it is its own screen and not an empty list
+ * The composition owns the viewport, centring in the space the bar leaves, with
+ * the greeting part of it rather than a heading floating above. `100svh` rather
+ * than `100vh`, because mobile browsers shrink the visual viewport when their
+ * chrome appears and `vh` would put the second door under the address bar.
  *
- * A person with no report and no guardianship is not a dashboard with zero
- * rows — they are at a fork, and there are exactly two ways forward. Rendering
- * that as a stack of cards under a greeting, top-aligned, left three quarters
- * of the viewport empty and made the fork look like leftovers.
+ * The two doors are not peers: one is an action this app can take today, the
+ * other an instruction to go and find an email. The report door takes three of
+ * five columns, a solid terracotta medallion and the only button on the screen.
+ * The hierarchy is width, mark and button — both sit on the same card colour.
  *
- * So this composition **owns the viewport**: it centres in the space the bar
- * leaves, and the greeting is part of it rather than a heading floating above
- * it. `100svh` rather than `100vh` because mobile browsers shrink the visual
- * viewport when their own chrome appears, and `vh` would put the second door
- * under the address bar.
- *
- * ## The two doors are not peers
- *
- * One is an action this app can take today; the other is an instruction to go
- * and find an email. Giving them equal cards said they were the same kind of
- * thing. The report door takes three of five columns, a solid terracotta
- * medallion and the only button on the screen; the guardian door is narrower,
- * with an olive mark and no control. Both sit on the same card colour — the
- * hierarchy is width, mark and button, not a second surface.
- *
- * ## Depth, because the palette has it and nothing was using it
- *
- * The Organic ground and its surface are four percent of lightness apart, which
- * is why flat fills on it read as discoloured patches rather than as cards.
- * `--shadow-raised` exists for exactly this — a deep brown rather than black,
- * so it stays in the same family as the ink — and `.lift` answers the pointer.
- * Both were added to the stylesheet and then never reached for.
- *
- * `.rise` staggers the three blocks on load. One motion, used everywhere, is
- * what keeps a page feeling composed rather than twitchy — and it is CSS, so
- * the screen still renders with JavaScript off.
+ * `--shadow-raised` and `.lift` carry the depth, because the Organic ground and
+ * its surface are four percent of lightness apart and flat fills on it read as
+ * discoloured patches. `.rise` staggers the three blocks on load, and being CSS
+ * it still renders with JavaScript off.
  */
 export function WelcomeDoors({ name }: { name: string | null }) {
   const labels = t(HOME, useLocale())
