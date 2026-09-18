@@ -19,7 +19,7 @@ import {
 } from "@/screens/assets/detail/forms/crypto"
 
 /**
- * ٤.٣'s fields, as the board draws them on ٢.
+ * ٤.٣'s fields.
  *
  * ## Three levels of protection, three sizes of control
  *

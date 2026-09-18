@@ -23,7 +23,7 @@ export const GUARDIAN = {
   /**
    * Stands in for the owner's name.
    *
-   * The board writes "فاطمة اختارتك" — but naming them before acceptance would
+   * An earlier draft read "فاطمة اختارتك" — but naming them before acceptance would
    * need a public query keyed on the invite token, which is a lookup oracle for
    * anyone guessing tokens. The invitation email carries the name; this page
    * does not need it to explain the role.
@@ -92,6 +92,37 @@ export const GUARDIAN = {
   // so the key page could render the same block.
 
   // ---- confirm ------------------------------------------------------------
+  // The key screen ends on this; the sealing step is the screen after it. One
+  // decision per screen — see `accept-sheet.tsx`.
+  sheetNext: { ar: "حفظته — تابع", en: "Saved it — continue" },
+  sealTitle: { ar: "الآن احتفظ بنسخة هنا", en: "Now keep a copy here" },
+  // The sealing screen carries one action, so it has to carry the reasoning
+  // too — a reader being asked for a fingerprint is owed what it buys and what
+  // it does not replace. Read against each other, like the invitation's two
+  // lists.
+  sealGainsTitle: { ar: "ما يضيفه", en: "What it adds" },
+  sealGainOne: {
+    ar: "لن تحتاج كتابة الرمز على هذا المتصفّح مرة أخرى",
+    en: "You will not have to type the code on this browser again",
+  },
+  sealGainTwo: {
+    ar: "لا يفتحها إلا من يستطيع فتح هذا الجهاز",
+    en: "Only someone who can unlock this device can open it",
+  },
+  sealLimitsTitle: { ar: "ما لا يغني عنه", en: "What it does not replace" },
+  sealLimitOne: {
+    ar: "الورقة تبقى النسخة الدائمة",
+    en: "The printed sheet stays the durable copy",
+  },
+  sealLimitTwo: {
+    ar: "إن ضاع الجهاز أو مُسح، فالورقة وحدها ما يعيد المفتاح",
+    en: "If the device is lost or wiped, only the paper brings the key back",
+  },
+  sealPaperKept: {
+    ar: "حفظت ورقتك في الخطوة السابقة. هذه نسخة إضافية، لا بديل عنها.",
+    en: "You saved your sheet in the previous step. This is an extra copy, not a substitute for it.",
+  },
+
   confirmTitle: { ar: "اكتبه مرة واحدة", en: "Type it back once" },
   confirmBody: {
     ar: "لنتأكّد أنك حفظته فعلاً قبل أن نُنهي الدعوة. لن نطلبه منك بعد ذلك.",
@@ -117,7 +148,16 @@ export const GUARDIAN = {
   doneAction: { ar: "افتح لوحتك", en: "Open your dashboard" },
 
   noToken: {
-    ar: "هذا الرابط غير مكتمل. افتح الرابط الكامل الذي وصلك في الدعوة.",
-    en: "This link is incomplete. Open the full link from your invitation.",
+    ar: "هذا الرابط غير مكتمل. افتح الرابط الكامل الذي وصلك في الدعوة، أو ألصق رمز الدعوة هنا.",
+    en: "This link is incomplete. Open the full link from your invitation, or paste the invitation code here.",
+  },
+  // The way through when a messaging app has eaten the query string — which is
+  // the ordinary case, not the exotic one: the owner sends this by hand over
+  // whatever channel they trust, and long links do not survive all of them.
+  tokenLabel: { ar: "رمز الدعوة", en: "Invitation code" },
+  tokenAction: { ar: "متابعة", en: "Continue" },
+  tokenHint: {
+    ar: "يمكنك لصق الرابط كاملاً — سنأخذ الرمز منه.",
+    en: "You can paste the whole link — we will take the code out of it.",
   },
 } as const satisfies Dictionary

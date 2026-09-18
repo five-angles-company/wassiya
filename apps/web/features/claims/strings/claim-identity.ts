@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
 /**
  * ٧.٢ — proving the claimant is who they say.
  *
- * `intro` is the board's own line and does the work of not making a grieving
+ * `intro` does the work of not making a grieving
  * relative feel accused at the first gate. `whyNumberBody` explains the one
  * genuinely unusual thing about this check — the code goes to a number the
  * *deceased* registered, not one the claimant types — because an unexplained
@@ -64,9 +64,16 @@ export const CLAIM_IDENTITY = {
 
   verified: { ar: "تم التحقق من هويتك", en: "Your identity is verified" },
   pending: {
-    ar: "التحقق قيد المعالجة. تصل النتيجة إلى هذه الصفحة وحدها — لا حاجة لتحديثها.",
-    en: "Verification is being processed. The result lands on this page on its own — no need to refresh.",
+    ar: "بدأتَ التحقق بالفعل. إن أُغلقت النافذة أو لم تُكمل الخطوات، افتحها من جديد — لا تُحسب عليك محاولة.",
+    en: "You have already started. If the window closed or you did not finish, open it again — this does not cost you an attempt.",
   },
+  // The reader stares at this while nothing moves, so it has to say who is
+  // acting and that they need not.
+  pendingWait: {
+    ar: "إن أكملت الخطوات فالنتيجة تصل إلى هذه الصفحة وحدها — لا حاجة لتحديثها.",
+    en: "If you finished the steps, the result lands on this page on its own — no need to refresh.",
+  },
+  resume: { ar: "افتح نافذة التحقق", en: "Reopen the verification window" },
   rejected: {
     ar: "لم يكتمل التحقق. يمكنك المحاولة مرة أخرى — {n} محاولة متبقية.",
     en: "Verification did not complete. You can try again — {n} attempts left.",

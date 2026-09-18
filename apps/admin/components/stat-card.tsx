@@ -10,6 +10,13 @@ import { ArrowLeftIcon, type LucideIcon } from "lucide-react"
  * `title`, so it is a hover away and costs no height. `footer` is for a second
  * *fact* (the next release date), never a second sentence.
  *
+ * ⚠️ **Both branches carry `h-full`, and the row falls apart without it.**
+ * These sit in a grid, whose items stretch to the tallest in the row — but when
+ * `href` is set the grid item is the `<Link>`, not the `Card` inside it. The
+ * link stretched and the card kept its content height, so a linked tile came up
+ * short against an unlinked one, and shorter still beside any tile carrying a
+ * `footer`. One tile with a second fact was enough to leave the row ragged.
+ *
  * **`href` is the whole card, and it is optional on purpose.** A number with a
  * screen behind it links to that screen already filtered to the rows it counts —
  * `/checkins?state=day7,day14,countdown` is the escalation tile exactly. A card
@@ -60,7 +67,7 @@ export function StatCard({
       size="sm"
       title={hint}
       className={cn(
-        "group gap-0",
+        "group h-full gap-0",
         // A card only draws attention when its number is non-zero. A row where
         // every card has an accent border has no accent at all.
         emphasis && "border-primary/50",
@@ -74,7 +81,7 @@ export function StatCard({
   if (href === undefined) return card
 
   return (
-    <Link href={href} className="rounded-xl focus-visible:ring-[3px]">
+    <Link href={href} className="block h-full rounded-xl focus-visible:ring-[3px]">
       {card}
     </Link>
   )

@@ -20,7 +20,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 /**
  * 1.3 — create an account.
  *
- * Email-code only. The board draws a جوال/بريد segmented control and a +966
+ * Email-code only. The design draws a جوال/بريد segmented control and a +966
  * dial code, but this account is identified by email: the heir-claim funnel
  * looks a deceased owner up by `users.email`, and the recovery sheet has to
  * print something that lookup can match.

@@ -26,7 +26,7 @@ import type { Doc, Id } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
-import { requireAdmin } from "./model/access"
+import { activeGuardiansFor, requireAdmin } from "./model/access"
 
 /** One day, for bucketing a trend. Matches `model/claimFlow.ts`'s `DAY_MS`. */
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -48,6 +48,7 @@ const CLAIM_STATUSES = [
   "released",
   "vetoed",
   "locked",
+  "closed",
 ] as const
 
 /** Every value `checkinConfig.escalationState` can hold, in ladder order. */
@@ -116,6 +117,7 @@ export const overview = query({
       released: { count: 0, more: false },
       vetoed: { count: 0, more: false },
       locked: { count: 0, more: false },
+      closed: { count: 0, more: false },
     }
     for (const status of CLAIM_STATUSES) {
       const rows = await ctx.db
@@ -640,7 +642,8 @@ const claimStatusValidator = v.union(
   v.literal("awaiting_veto"),
   v.literal("released"),
   v.literal("vetoed"),
-  v.literal("locked")
+  v.literal("locked"),
+  v.literal("closed")
 )
 
 /** How many claims one status page returns. */
@@ -773,6 +776,7 @@ export const claimsPage = query({
 
     const subjects = new Map<string, Doc<"users"> | null>()
     for (const row of result.page) {
+      if (row.subjectUserId === undefined) continue
       const key = row.subjectUserId as string
       if (!subjects.has(key)) {
         subjects.set(key, await ctx.db.get("users", row.subjectUserId))
@@ -1822,6 +1826,7 @@ export const releasesPipeline = query({
 
     const subjects = new Map<string, Doc<"users"> | null>()
     const subjectOf = async (row: Doc<"claims">) => {
+      if (row.subjectUserId === undefined) return null
       const key = row.subjectUserId as string
       if (!subjects.has(key)) {
         subjects.set(key, await ctx.db.get("users", row.subjectUserId))
@@ -1973,7 +1978,11 @@ export const emailLogTally = query({
 })
 
 /** The two crons, by name, in the order they appear in `crons.ts`. */
-const JOB_NAMES = ["checkin.sweep", "claims.advance"] as const
+const JOB_NAMES = [
+  "checkin.sweep",
+  "claims.advance",
+  "claims.sweepUnmatched",
+] as const
 
 /** How many recent runs one job shows. */
 const JOB_RUNS_SHOWN = 20
@@ -2367,6 +2376,44 @@ const HISTORY_SCAN = 400
  * the veto. Listing this claimant's other claims against this subject is what
  * lets a reviewer see what the backend missed.
  */
+/**
+ * Claims that matched no vault, oldest first.
+ *
+ * The queue that exists because `submit` stopped silently discarding them. The
+ * commonest entry is a mistyped address, and it is fixable — `adminLinkSubject`
+ * attaches the right vault and the claim carries on as if it had matched. What
+ * is not fixed here is closed by `sweepUnmatched` after the grace window.
+ *
+ * Oldest first, deliberately: this is a queue with a deadline attached, and the
+ * row closest to being closed automatically is the one worth a human's time.
+ */
+export const unmatchedClaims = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
+    await requireAdmin(ctx)
+    const page = await ctx.db
+      .query("claims")
+      .withIndex("by_status_and_subjectUserId", (q) =>
+        q.eq("status", "submitted").eq("subjectUserId", undefined)
+      )
+      .paginate(paginationOpts)
+
+    return {
+      ...page,
+      page: page.page.map((claim) => ({
+        id: claim._id,
+        // The address as typed. This is the whole point of the screen: a human
+        // reading it next to the real one is what spots the typo.
+        subjectEmail: claim.subjectEmail ?? null,
+        claimantName: claim.claimantName,
+        claimantContact: claim.claimantContact,
+        certificateName: claim.certificateName ?? null,
+        submittedAt: claim._creationTime,
+      })),
+    }
+  },
+})
+
 export const claimDetail = query({
   /** `v.string()` + `normalizeId` — see `ownerDetail` for why. */
   args: { claimId: v.string() },
@@ -2379,17 +2426,32 @@ export const claimDetail = query({
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) return null
 
-    const subject = await ctx.db.get("users", claim.subjectUserId)
+    // Everything below hangs off the vault, and an unmatched claim has none.
+    // The page still opens: staff need to read it in order to link or close it.
+    const subjectUserId = claim.subjectUserId
+    const subject =
+      subjectUserId === undefined
+        ? null
+        : await ctx.db.get("users", subjectUserId)
     const claimant =
       claim.claimantUserId === undefined
         ? null
         : await ctx.db.get("users", claim.claimantUserId)
     const liveIdentityStatus = claimant?.identityStatus ?? "unverified"
 
-    const heirRows = await ctx.db
-      .query("heirs")
-      .withIndex("by_userId", (q) => q.eq("userId", claim.subjectUserId))
-      .take(100)
+    // The same read `adminSetNameMatch` makes before it will approve, so the
+    // disabled button and the mutation's refusal are one decision.
+    const hasActiveGuardian =
+      subjectUserId !== undefined &&
+      (await activeGuardiansFor(ctx, subjectUserId)).length > 0
+
+    const heirRows =
+      subjectUserId === undefined
+        ? []
+        : await ctx.db
+            .query("heirs")
+            .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
+            .take(100)
 
     // Assets routed to each heir, folding in the "all heirs" bucket — the same
     // arithmetic `heirs.list` does for the owner, so the console and the app
@@ -2398,7 +2460,7 @@ export const claimDetail = query({
     const named = await ctx.db
       .query("assetRecipients")
       .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("recipientKind", "heir")
+        q.eq("userId", subjectUserId!).eq("recipientKind", "heir")
       )
       .take(2000)
     for (const row of named) {
@@ -2409,7 +2471,7 @@ export const claimDetail = query({
     const shared = await ctx.db
       .query("assetRecipients")
       .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("recipientKind", "allHeirs")
+        q.eq("userId", subjectUserId!).eq("recipientKind", "allHeirs")
       )
       .take(2000)
 
@@ -2443,7 +2505,7 @@ export const claimDetail = query({
     // rows and filter. Bounded, and scoped to one owner, so it stays cheap.
     const auditRows = await ctx.db
       .query("auditLog")
-      .withIndex("by_userId_and_at", (q) => q.eq("userId", claim.subjectUserId))
+      .withIndex("by_userId_and_at", (q) => q.eq("userId", subjectUserId!))
       .order("desc")
       .take(HISTORY_SCAN)
     const history = auditRows
@@ -2487,11 +2549,25 @@ export const claimDetail = query({
       history,
       /** Why each verdict is unavailable, or `null`. The button reads this. */
       blocked: {
-        approve: nameMatchBlockedReason(claim, true, liveIdentityStatus),
-        reject: nameMatchBlockedReason(claim, false, liveIdentityStatus),
+        approve: nameMatchBlockedReason(
+          claim,
+          true,
+          liveIdentityStatus,
+          hasActiveGuardian
+        ),
+        reject: nameMatchBlockedReason(
+          claim,
+          false,
+          liveIdentityStatus,
+          hasActiveGuardian
+        ),
       },
-      /** Stated on the page: approving parks the claim, it does not complete it. */
-      guardianStepUnbuilt: true,
+      /**
+       * Whether anyone can act on this claim once approved. The guardian route
+       * has shipped, so this is now a fact about *this vault* rather than about
+       * the product — and `blocked.approve` already refuses when it is false.
+       */
+      hasActiveGuardian,
     }
   },
 })

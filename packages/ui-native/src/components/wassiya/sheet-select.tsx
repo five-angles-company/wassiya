@@ -7,7 +7,22 @@ import { cn } from '@workspace/ui-native/lib/utils';
 import { Check } from 'lucide-react-native';
 import type * as React from 'react';
 import { useRef } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, useWindowDimensions, View } from 'react-native';
+
+/**
+ * Row and note heights as *this* component draws them — `py-3.5` twice plus a
+ * line of `text-row`, and the note's three lines plus its margin.
+ *
+ * Estimated rather than measured on purpose: the list has to be sized before
+ * the sheet opens, and an `onLayout` pass would show the reader a sheet that
+ * resizes under them. It is safe to estimate because the rows are drawn right
+ * here and are uniform by construction — if their padding changes, these change
+ * with it.
+ */
+const ROW_HEIGHT = 50;
+const NOTE_HEIGHT = 56;
+/** Past this share of the screen a sheet stops reading as a sheet. */
+const MAX_SHARE = 0.55;
 
 export type SheetSelectOption = {
   /** Stable identity — an ISO country code, an enum member. */
@@ -58,13 +73,22 @@ export type SheetSelectProps = {
  * workaround, not the upstream component: `ui/select.tsx` stays verbatim from
  * the registry so it keeps diffing cleanly against future releases.
  *
- * **Sizing: `'auto'`, and `scrollable` only past six options.** A scroller
- * inside a TrueSheet stops it hugging its content and inflates it to most of the
- * screen, so a two-option list arrived as a full panel holding two rows and a
- * paragraph of air. Past six the scroller earns that cost, because `'auto'`
- * clamps to the container on a small handset and the last option would be
- * unreachable. Deliberately not a fractional detent either way — that is what
- * strands the options at the top of a half-height sheet.
+ * ## Sizing: `'auto'`, and a scroller only when the list truly overflows
+ *
+ * A scroller inside a TrueSheet stops it hugging its content and inflates it to
+ * most of the screen. That used to be gated on `options.length > 6`, which is a
+ * guess about a height rather than a measurement of one — ten countries on a
+ * tall handset fit comfortably, tripped the count anyway, and arrived as a
+ * full-screen panel holding ten rows and a void.
+ *
+ * So the list's height is estimated, capped at `MAX_SHARE` of the window, and
+ * the scroller appears **only if the estimate exceeds the cap**. Under it the
+ * body is a plain `View` and the sheet hugs exactly; over it the scroller gets
+ * the cap as a fixed height, so the sheet is exactly as tall as it is allowed to
+ * be and the overflow scrolls.
+ *
+ * Deliberately not a fractional detent either way — that is what strands the
+ * options at the top of a half-height sheet.
  */
 export function SheetSelect({
   label,
@@ -80,6 +104,12 @@ export function SheetSelect({
   const sheet = useRef<TrueSheet>(null);
   const selected = options.find((option) => option.value === value) ?? null;
 
+  const { height: windowHeight } = useWindowDimensions();
+  const listHeight =
+    options.length * ROW_HEIGHT + (note === undefined ? 0 : NOTE_HEIGHT);
+  const capHeight = Math.round(windowHeight * MAX_SHARE);
+  const scrollable = listHeight > capHeight;
+
   const choose = async (next: string) => {
     onChange(next);
     // Dismiss after committing, so the field behind the sheet already shows the
@@ -88,9 +118,6 @@ export function SheetSelect({
   };
 
   const open = () => void sheet.current?.present();
-
-  /** Past this, a scroller is worth what it costs in sheet height. */
-  const scrollable = options.length > 6;
 
   if (trigger !== undefined) {
     return (
@@ -147,9 +174,16 @@ export function SheetSelect({
       </Sheet>
     );
 
-    // A plain View lets the sheet hug; a ScrollView never does.
+    // A plain View lets the sheet hug; a ScrollView never does, so it is given
+    // the cap as a fixed height rather than left to fill whatever it is offered.
     function Body({ children }: { children: React.ReactNode }) {
-      return scrollable ? <ScrollView>{children}</ScrollView> : <View>{children}</View>;
+      return scrollable ? (
+        <ScrollView style={{ height: capHeight }} showsVerticalScrollIndicator={false}>
+          {children}
+        </ScrollView>
+      ) : (
+        <View>{children}</View>
+      );
     }
   }
 }

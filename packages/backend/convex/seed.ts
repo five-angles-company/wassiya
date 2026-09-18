@@ -29,6 +29,7 @@
 // construction — not by a filter someone has to remember to write.
 import { v } from "convex/values"
 
+import { internal } from "./_generated/api"
 import { internalMutation } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
@@ -41,7 +42,7 @@ const OWNER_COUNT = 40
 /**
  * A tiny deterministic generator, so two runs produce the same fixture and a
  * screenshot stays comparable. Convex seeds `Math.random()` per execution, which
- * would also work, but "the same command gives the same board" is worth more
+ * would also work, but "the same command gives the same data" is worth more
  * here than variety.
  */
 function lcg(seed: number): () => number {
@@ -466,5 +467,130 @@ export const wipe = internalMutation({
     }
 
     return { owners: seeded.length, rowsDeleted: deleted, kept: users.length - seededIds.size }
+  },
+})
+
+/**
+ * Every table except `auditLog`, and every stored file. Dev only.
+ *
+ * `seed:wipe` is the surgical one — it walks out from `seed_` owners and can
+ * only ever touch rows it made. This is the blunt one, for taking a dev
+ * deployment back to empty so a real account can be walked from sign-up to a
+ * released box. **It deletes real users**, which `wipe` is built never to do.
+ *
+ * ## `auditLog` survives, and that is not an oversight
+ *
+ * The log is append-only, enforced by `scripts/verify-invariants.mjs`, which
+ * fails the build on any `.delete("auditLog")` anywhere in the tree. A purge is
+ * not a good enough reason to put a delete path into the one table whose value
+ * is that it has none. Its rows will outlive the users they name; on a dev
+ * deployment that is cosmetic.
+ *
+ * ## A purged user cannot sign in again until Clerk re-sends them
+ *
+ * `users` rows are written only by the `user.created` / `user.updated`
+ * webhook — never lazily on sign-in — so an account whose row is gone will
+ * throw from `getCurrentUserOrThrow` while its Clerk identity still exists.
+ * **Delete the matching users in the Clerk dashboard too**, or the deployment is
+ * empty but the accounts pointing at it are broken rather than fresh.
+ *
+ * Batched and self-scheduling, like `claims.advance`: a mutation has a write
+ * ceiling and a seeded deployment is a few thousand rows. Idempotent — a second
+ * call on an empty deployment returns `{ deleted: 0, done: true }`.
+ *
+ * ## Quoting, which differs by shell and fails confusingly
+ *
+ * PowerShell strips quotes on their way to a native process, so the bash form
+ * arrives as `{confirm:purge-everything}` and JSON5 rejects it at the unquoted
+ * value. `--%` does not help — it reaches `convex` as a third argument — and
+ * nor does putting the JSON in a variable.
+ *
+ * ```powershell
+ * npx convex run seed:purgeAll '{\"confirm\":\"purge-everything\"}'
+ * ```
+ * ```bash
+ * npx convex run seed:purgeAll '{"confirm":"purge-everything"}'
+ * ```
+ */
+const PURGE_TABLES = [
+  "notifications",
+  "jobRuns",
+  "releaseBundles",
+  "assetRecipients",
+  "assets",
+  "heirs",
+  "guardians",
+  "checkinConfig",
+  "keyring",
+  "devices",
+  "claims",
+  // Last: everything above is reached from a user, so a half-finished purge
+  // leaves children with an owner rather than orphans.
+  "users",
+] as const
+
+/** Rows per table per pass. Well under the mutation ceiling with room to spare. */
+const PURGE_BATCH = 400
+
+export const purgeAll = internalMutation({
+  args: { confirm: v.literal("purge-everything") },
+  handler: async (ctx) => {
+    let deleted = 0
+
+    // Stored blobs first: an asset row is the only thing that names them, so
+    // dropping the rows first would strand the files with nothing pointing at
+    // them.
+    const files = await ctx.db.system.query("_storage").take(PURGE_BATCH)
+    for (const file of files) {
+      await ctx.storage.delete(file._id)
+      deleted += 1
+    }
+
+    for (const table of PURGE_TABLES) {
+      const rows = await ctx.db.query(table).take(PURGE_BATCH)
+      for (const row of rows) {
+        await ctx.db.delete(table, row._id)
+        deleted += 1
+      }
+    }
+
+    // Anything deleted means a table may still have more behind it.
+    if (deleted > 0) {
+      await ctx.scheduler.runAfter(0, internal.seed.purgeAll, {
+        confirm: "purge-everything",
+      })
+    }
+
+    return { deleted, done: deleted === 0 }
+  },
+})
+
+/**
+ * Put every account back to "identity never attempted". Dev only.
+ *
+ * The cheap half of `purgeAll` for the one loop that is walked over and over:
+ * re-running the Didit flow otherwise means purging the whole deployment *and*
+ * deleting the Clerk user, because nothing else clears `identityStatus`.
+ * `adminResetAttempts` is not that — it clears the counter, keeps the status,
+ * and requires an admin.
+ *
+ * Clears the session id too. Leaving it would hand the next webhook a user to
+ * resolve by a session that belongs to an attempt nobody is making any more.
+ */
+export const resetIdentity = internalMutation({
+  args: { confirm: v.literal("reset-identity") },
+  handler: async (ctx) => {
+    const users = await ctx.db.query("users").take(2000)
+    for (const user of users) {
+      await ctx.db.patch("users", user._id, {
+        identityStatus: undefined,
+        diditSessionId: undefined,
+        identityAttempts: undefined,
+        identityVerifiedName: undefined,
+        identityDocType: undefined,
+        identityVerifiedAt: undefined,
+      })
+    }
+    return { users: users.length }
   },
 })

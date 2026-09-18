@@ -13,7 +13,7 @@ import type { HeirForm } from "@/screens/heirs/use-heir-form"
 /**
  * The heir form's fields, shared by ٥.٢ and ٥.٢b.
  *
- * Three decisions the board is firm about, each enforced by the shape of the
+ * Three firm decisions, each enforced by the shape of the
  * control rather than merely displayed:
  *
  * 1. **Relationship is a required enum, never free text.** It is recorded on

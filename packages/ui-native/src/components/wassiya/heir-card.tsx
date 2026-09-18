@@ -32,7 +32,7 @@ const AVATAR_TONES: Tone[] = ['olive', 'terracotta', 'sand'];
 /**
  * A stable avatar colour per person.
  *
- * Deliberately not derived from anything semantic: on the board the disc
+ * Deliberately not derived from anything semantic: the disc
  * colours simply vary between people, and tying them to state would give the
  * vault two competing colour languages for the same row.
  */

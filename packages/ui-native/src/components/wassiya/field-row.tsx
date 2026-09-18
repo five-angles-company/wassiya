@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 
 /**
  * One field on an asset or wizard screen: a label over its value, on a hairline.
- * The vault board's core unit — *"no boxed inputs, no cards, except around a
+ * The vault's core unit — *"no boxed inputs, no cards, except around a
  * secret or the recipient set"* — and the reason those screens read as pages
  * rather than stacks of panels.
  *
@@ -14,7 +14,7 @@ import { Pressable, View } from 'react-native';
  * other row drops to 45% — which focuses the screen without dimming it into a
  * modal.
  *
- * A control in `trailing` **stays put when the row is not active**: the board is
+ * A control in `trailing` **stays put when the row is not active**: the rule is
  * explicit that Reveal greys out rather than disappearing, so its position never
  * moves and nobody hunts for it.
  *

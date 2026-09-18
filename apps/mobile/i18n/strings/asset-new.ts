@@ -1,13 +1,13 @@
 /**
  * ٤.٣–٤.٨ — the six add-asset wizards.
  *
- * One dictionary per wizard plus the chrome they share, keyed by the board's
+ * One dictionary per wizard plus the chrome they share, keyed by their
  * own routes (`/assets/new/crypto`, `/assets/new/bank`, …).
  *
- * The board's footer button reads "التالي: من يستلمه؟" on every one of these,
+ * The footer button was to read "التالي: من يستلمه؟" on every one of these,
  * because each wizard is two steps and the second is heir assignment (5.3).
  * That screen is not built, so `save`/`unroutedNote` below say what actually
- * happens instead. See `WizardFrame` for why the board's label was not kept
+ * happens instead. See `WizardFrame` for why that label was not kept
  * over a button that does not go there.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
@@ -16,7 +16,7 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 export const ASSET_NEW = {
   back: { ar: "رجوع", en: "Back" },
   stepSeparator: { ar: "من", en: "of" },
-  // The board's own label. It was replaced by "احفظ في الخزنة" while 5.3 did
+  // The original label. It was replaced by "احفظ في الخزنة" while 5.3 did
   // not exist and the run really did end here; it does exist, so the button
   // can promise the step it actually takes again.
   save: { ar: "التالي: من يستلمه؟", en: "Next: who receives it?" },
@@ -263,7 +263,7 @@ export const NEW_ACCOUNT = {
   },
   dispositionHandOver: { ar: "سلّمه إلى وارث", en: "Hand it over" },
   dispositionDelete: { ar: "احذفه نهائياً", en: "Delete it permanently" },
-  // What choosing each one actually does. The board gives every option a line,
+  // What choosing each one actually does. Every option gets a line,
   // because these are three different instructions to a grieving person.
   dispositionHandOverNote: {
     ar: "يستلم الدخول ويكمل هو",
@@ -318,7 +318,7 @@ export const NEW_NOTE = {
   words: { ar: "{n} كلمة", en: "{n} words" },
   readOnRelease: { ar: "تُقرأ عند الإفراج", en: "Read at release" },
 
-  // Toolbar. Labels are for screen readers — the board shows glyphs only.
+  // Toolbar. Labels are for screen readers — the buttons show glyphs only.
   bold: { ar: "عريض", en: "Bold" },
   italic: { ar: "مائل", en: "Italic" },
   list: { ar: "قائمة", en: "List" },

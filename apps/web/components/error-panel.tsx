@@ -37,12 +37,12 @@ export function ErrorPanel({
         <h1 className="font-heading text-[19px] font-extrabold">
           {labels.errorTitle}
         </h1>
-        <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
+        <p className="text-muted-foreground mt-3 text-[15px] leading-[1.75]">
           {labels.errorBody}
         </p>
 
         {error.digest !== undefined && (
-          <p className="text-sand-600 ltr-isolate mt-4 font-mono text-[12px]">
+          <p className="text-muted-foreground ltr-isolate mt-4 font-mono text-[12px]">
             {labels.errorDigest}: {error.digest}
           </p>
         )}

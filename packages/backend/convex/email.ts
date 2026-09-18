@@ -1,13 +1,10 @@
-// The one thing this deployment says to a human.
+// How this deployment reaches a human. The delivery funnel only — the words
+// live in `model/emailCopy.ts`, because wording and mechanism change for
+// different reasons and neither should put the other in its diff.
 //
-// Until now nothing here could reach anyone: the only outbound call in the
-// whole backend went to Didit. That mattered most for the dead man's switch,
-// whose entire premise is that the owner has stopped opening the app — so
-// escalating by writing an in-app notification escalated into silence, and an
-// owner who was merely travelling was walked toward release without ever being
-// asked.
-//
-// This module is that ask.
+// The premise: an in-app notification escalates into silence for the one
+// recipient who has stopped opening the app, which is precisely the person the
+// dead man's switch is about.
 //
 // ## Why a component and not a `fetch`
 //
@@ -29,6 +26,19 @@ import { components } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
 import type { MutationCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
+import {
+  CLAIM_CLOSED_COPY,
+  CLAIM_FILED_COPY,
+  CLAIM_GUARDIAN_CONFIRMED_COPY,
+  CLAIM_IN_REVIEW_COPY,
+  CLAIM_RELEASED_COPY,
+  CLAIM_REVIEW_FAILED_COPY,
+  CLAIM_VETOED_COPY,
+  ESCALATION_COPY,
+  GUARDIAN_CLAIM_COPY,
+  RECOVERY_COPY,
+  type LocalisedCopy,
+} from "./model/emailCopy"
 
 export const resend: Resend = new Resend(components.resend, {
   // On unless explicitly turned off, so the safe state is the default one.
@@ -36,86 +46,31 @@ export const resend: Resend = new Resend(components.resend, {
 })
 
 /**
- * The escalation ladder, in the owner's own language.
+ * Where `apps/web` is, so a notice can point at the thing it is about.
  *
- * Copy lives here rather than in the app because the app is exactly what the
- * recipient is not looking at. It is kept plain on purpose: a message that
- * reads like a marketing send is one a worried person distrusts, and this is
- * the message that has to be believed.
+ * ⚠️ This is the **Convex deployment's** env, set with `npx convex env set
+ * APP_URL …` — one value per deployment. Putting it in `apps/web/.env.local` or
+ * `packages/backend/.env.local` does nothing at all, silently: neither is read
+ * here. See the three-env-stores table in AGENTS.md.
  *
- * `countdown` is not merely louder — it is the step where the veto window is
- * running, so it says what will happen and by when.
+ * Not `CONVEX_SITE_URL`, which is on `env` already and looks like the answer.
+ * That is the *deployment's* own HTTP origin — using it would mail people a
+ * link to the backend.
+ *
+ * Unset degrades to a link-free email rather than a broken one. That is the
+ * same shape as a missing `RESEND_FROM` and deliberate: a bare path, or an
+ * origin guessed from anything, is worse than a message that names the site in
+ * words and lets the reader find it — which is what every copy block here
+ * already does.
  */
-const COPY = {
-  day0: {
-    ar: {
-      subject: "حان وقت تأكيد الحياة",
-      body: "مرّ موعد تأكيدك. افتح وصيّة وأكّد ببصمتك — لا شيء يتحرّك قبل ذلك.",
-    },
-    en: {
-      subject: "Your check-in is due",
-      body: "Your check-in date has passed. Open Wassiya and confirm with your fingerprint — nothing moves before that.",
-    },
-  },
-  day7: {
-    ar: {
-      subject: "أسبوع على موعد تأكيدك",
-      body: "لم نسمع منك منذ أسبوع. افتح وصيّة وأكّد ببصمتك.",
-    },
-    en: {
-      subject: "A week since your check-in was due",
-      body: "We have not heard from you in a week. Open Wassiya and confirm with your fingerprint.",
-    },
-  },
-  day14: {
-    ar: {
-      subject: "أسبوعان — سنبدأ بالتواصل مع وصيّك",
-      body: "لم نسمع منك منذ أسبوعين. إن لم تؤكّد، ستبدأ إجراءات التحقّق مع وصيّك.",
-    },
-    en: {
-      subject: "Two weeks — we will start contacting your guardian",
-      body: "We have not heard from you in two weeks. If you do not confirm, verification with your guardian begins.",
-    },
-  },
-  countdown: {
-    ar: {
-      subject: "مهم: بدأت مهلة الاعتراض على خزنتك",
-      body: "بدأت المهلة التي تسبق تسليم خزنتك إلى ورثتك. تأكيدك الآن يوقف ذلك فوراً.",
-    },
-    en: {
-      subject: "Important: the veto window on your vault has started",
-      body: "The window before your vault is handed to your heirs has begun. Confirming now stops it immediately.",
-    },
-  },
-} as const
-
-/**
- * The notice a guardian gets when a death claim reaches them.
- *
- * Deliberately says almost nothing. It names no claimant, no deceased and no
- * vault: an email is the least controlled surface this product touches, and a
- * guardian's inbox is not a place to disclose that a particular person has died
- * or that a particular person filed about it. It says only that something is
- * waiting and where it lives — which is all the recipient needs to take the
- * next step, and all an interceptor learns.
- *
- * **The destination is the website, not the phone app.** Guardians are web
- * users; mobile is the owner's app. The copy stays link-free until the web
- * guardian route exists — sending someone to a 404 is worse than naming the
- * site — so a deep link is the web rework's job, not a missing value here.
- */
-const GUARDIAN_CLAIM_COPY = {
-  ar: {
-    subject: "طلب ينتظر تأكيدك",
-    body: "هناك طلب على خزنة أنت وصيٌّ عليها ينتظر تأكيدك. افتح موقع وصيّة لمراجعته — لا يمكن تأكيده من البريد.",
-  },
-  en: {
-    subject: "Something is waiting for your confirmation",
-    body: "A claim on a vault you guard is waiting for you. Open the Wassiya website to review it — it cannot be confirmed from email.",
-  },
-} as const
-
-type Copy = { subject: string; body: string }
+function appLink(path: string): string | undefined {
+  const base = process.env.APP_URL
+  if (base === undefined || base.length === 0) {
+    console.error(`APP_URL is not set — sending a link-free email for ${path}`)
+    return undefined
+  }
+  return `${base.replace(/\/+$/, "")}${path}`
+}
 
 /**
  * Deliver one notice, in the recipient's language.
@@ -131,8 +86,10 @@ type Copy = { subject: string; body: string }
 async function send(
   ctx: MutationCtx,
   userId: Id<"users">,
-  copy: { ar: Copy; en: Copy },
-  what: string
+  copy: LocalisedCopy,
+  what: string,
+  link?: string,
+  date?: number
 ): Promise<void> {
   const from = process.env.RESEND_FROM
   if (from === undefined) {
@@ -149,13 +106,35 @@ async function send(
     return
   }
 
-  const text = copy[user.locale?.startsWith("en") === true ? "en" : "ar"]
+  const english = user.locale?.startsWith("en") === true
+  const text = copy[english ? "en" : "ar"]
+
+  // `{date}` is the one placeholder any copy uses, and it is formatted here
+  // rather than by the caller because this is where the recipient's language
+  // is decided — a caller would have to resolve it a second time to format a
+  // date in it, and the two could then disagree.
+  const withDate =
+    date === undefined
+      ? text.body
+      : text.body.replaceAll(
+          "{date}",
+          new Intl.DateTimeFormat(english ? "en-GB" : "ar", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          }).format(new Date(date))
+        )
+
+  // The link on its own line, and only when there is one. Every body is
+  // written to stand without it, so an unset `APP_URL` costs a click rather
+  // than the message.
+  const body = link === undefined ? withDate : `${withDate}\n\n${link}`
 
   await resend.sendEmail(ctx, {
     from,
     to: user.email,
     subject: text.subject,
-    text: text.body,
+    text: body,
   })
 
   // Written here and only here, after the message is actually enqueued — the
@@ -192,9 +171,9 @@ async function send(
 export async function sendEscalation(
   ctx: MutationCtx,
   userId: Id<"users">,
-  state: keyof typeof COPY
+  state: keyof typeof ESCALATION_COPY
 ): Promise<void> {
-  await send(ctx, userId, COPY[state], "escalation")
+  await send(ctx, userId, ESCALATION_COPY[state], "escalation")
 }
 
 /**
@@ -205,42 +184,161 @@ export async function sendEscalation(
  * **nobody**: it wrote an audit line and stopped, so a guardian could only learn
  * a claim was waiting by opening the app speculatively. Every other transition
  * in `claims.ts` notifies someone; this one was the gap.
+ *
+ * It was then suppressed for a further stretch by a `GUARDIAN_CAN_ACT` flag,
+ * because the route it pointed at did not exist yet. It does now, and
+ * `nameMatchBlockedReason`'s `no-guardian` block is what replaced the flag:
+ * rather than approving and telling nobody, the approval is refused when there
+ * is nobody to tell.
  */
 export async function sendGuardianClaimNotice(
   ctx: MutationCtx,
   guardianUserId: Id<"users">
 ): Promise<void> {
-  await send(ctx, guardianUserId, GUARDIAN_CLAIM_COPY, "guardian claim notice")
+  await send(
+    ctx,
+    guardianUserId,
+    GUARDIAN_CLAIM_COPY,
+    "guardian claim notice",
+    appLink("/guardian")
+  )
 }
 
 /**
- * Tell an owner their vault was opened with the printed sheet.
- *
- * This is the message that replaces a person. Recovery used to need the
- * guardian's half, so an illegitimate attempt had a second human in it who
- * could notice or refuse. K_rec is the sheet alone now, and the sheet is a
- * bearer token — whoever photographs it can recover the vault, silently. This
- * notice is what makes it not silent, which is why it is sent from the same
- * transaction that records the use rather than from a cron that might not run.
- *
- * It names no device and no location: an inbox is an intercepted surface, and
- * the recipient needs only "this happened, and here is what to do if it wasn't
- * you."
+ * Tell an owner their vault was opened with the printed sheet. See
+ * `RECOVERY_COPY` for why this message exists and why it names so little.
  */
-const RECOVERY_COPY = {
-  ar: {
-    subject: "مهم: فُتحت خزنتك باستخدام وثيقة الاسترداد",
-    body: "استُخدمت وثيقة الاسترداد المطبوعة لفتح خزنتك على جهاز. إن لم تكن أنت، افتح وصيّة الآن: اطبع وثيقة جديدة — فالقديمة تبطل بذلك — وألغِ الأجهزة التي لا تعرفها.",
-  },
-  en: {
-    subject: "Important: your vault was opened with your recovery sheet",
-    body: "Your printed recovery sheet was used to open your vault on a device. If this wasn't you, open Wassiya now: print a new sheet — that voids the old one — and revoke any device you don't recognise.",
-  },
-} as const
-
 export async function sendRecoveryNotice(
   ctx: MutationCtx,
   userId: Id<"users">
 ): Promise<void> {
   await send(ctx, userId, RECOVERY_COPY, "recovery notice")
+}
+
+// ── The claimant's side ──────────────────────────────────────────────────────
+//
+// Six notices across a claim's life. Before them the heir was told nothing at
+// all: no mail, and two in-app rows at the very end.
+//
+// Each takes the claim id and links to that claim's own page. That is safe in a
+// way the guardian's notice is not — the id is the recipient's *own* case, and
+// `claims.publicStatus` is written to be forwarded to a relative. The guardian's
+// link stays at `/guardian` for the opposite reason.
+
+/** Filed — the receipt. */
+export async function sendClaimFiled(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_FILED_COPY,
+    "claim filed",
+    appLink(`/claims/${claimId}`)
+  )
+}
+
+/** Approved, and now with the guardian. */
+export async function sendClaimInReview(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_IN_REVIEW_COPY,
+    "claim in review",
+    appLink(`/claims/${claimId}`)
+  )
+}
+
+/**
+ * Closed at review. Carries no reason — see `CLAIM_REVIEW_FAILED_COPY`, and
+ * `claims.publicStatus` for why the name-match verdict never reaches a
+ * claimant.
+ */
+export async function sendClaimReviewFailed(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_REVIEW_FAILED_COPY,
+    "claim review failed",
+    appLink(`/claims/${claimId}`)
+  )
+}
+
+/**
+ * The guardian confirmed, and the thirty-day clock has started.
+ *
+ * `vetoDeadline` is interpolated into `{date}` so the message names the day the
+ * box opens on its own. That date is the difference between "wait" and "wait
+ * until the twelfth" — and it is what makes "nothing is needed from you"
+ * something a grieving person can actually act on.
+ */
+export async function sendClaimGuardianConfirmed(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">,
+  vetoDeadline: number
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_GUARDIAN_CONFIRMED_COPY,
+    "claim guardian confirmed",
+    appLink(`/claims/${claimId}`),
+    vetoDeadline
+  )
+}
+
+/** The owner objected, and the 90-day bar applies. */
+export async function sendClaimVetoed(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_VETOED_COPY,
+    "claim vetoed",
+    appLink(`/claims/${claimId}`)
+  )
+}
+
+/** Released — and the guardian still has to hand over their half. */
+export async function sendClaimReleased(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_RELEASED_COPY,
+    "claim released",
+    appLink(`/box/${claimId}`)
+  )
+}
+
+/** No vault matched, and the grace window ran out. */
+export async function sendClaimClosed(
+  ctx: MutationCtx,
+  claimantUserId: Id<"users">,
+  claimId: Id<"claims">
+): Promise<void> {
+  await send(
+    ctx,
+    claimantUserId,
+    CLAIM_CLOSED_COPY,
+    "claim closed",
+    appLink(`/claims/${claimId}`)
+  )
 }

@@ -4,10 +4,8 @@ import { useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
-import { UserCheckIcon } from "lucide-react"
 
 import { Button } from "@/components/button"
-import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
@@ -33,7 +31,6 @@ import { GUARDIAN_DUTIES } from "@/features/guardian/strings/guardian-duties"
  */
 export function ConfirmPanel({
   claimId,
-  subjectName,
   claimantName,
   certificateName,
   nameMatch,
@@ -41,12 +38,17 @@ export function ConfirmPanel({
   onConfirmed,
 }: {
   claimId: string
-  subjectName: string
   claimantName: string
   certificateName: string | null
   nameMatch: boolean | null
   heirLinked: boolean
-  onConfirmed: () => void
+  /**
+   * Optional. The spine does not need it — `claimForGuardian` returns the
+   * claim in whatever state it is now, so confirming simply advances the step.
+   * It was required back when this screen filtered a list that dropped the row
+   * on success and had to be told out of band.
+   */
+  onConfirmed?: () => void
 }) {
   const labels = t(GUARDIAN_DUTIES, useLocale())
   const confirm = useMutation(api.claims.guardianConfirm)
@@ -58,7 +60,7 @@ export function ConfirmPanel({
     setError(null)
     try {
       await confirm({ claimId: claimId as Id<"claims"> })
-      onConfirmed()
+      onConfirmed?.()
     } catch {
       setError(labels.confirmFailed)
       setBusy(false)
@@ -70,11 +72,7 @@ export function ConfirmPanel({
   }
 
   return (
-    <Panel
-      accent={heirLinked ? "primary" : undefined}
-      icon={UserCheckIcon}
-      title={labels.dutyConfirmTitle.replace("{name}", subjectName)}
-    >
+    <div>
       <dl className="mb-5 flex flex-col gap-2 text-[14px]">
         <Row label={labels.claimantIs} value={claimantName} />
         {certificateName !== null && (
@@ -95,17 +93,17 @@ export function ConfirmPanel({
       {!heirLinked ? (
         <>
           <h3 className="text-[15px] font-semibold">{labels.notLinkedTitle}</h3>
-          <p className="text-muted-foreground mt-2 max-w-[62ch] text-[14px] leading-[1.7]">
+          <p className="text-muted-foreground mt-2 max-w-[66ch] text-[14px] leading-[1.7]">
             {labels.notLinkedBody}
           </p>
         </>
       ) : (
         <>
           <h3 className="text-[16px] font-semibold">{labels.confirmTitle}</h3>
-          <p className="mt-2 max-w-[62ch] text-[14.5px] leading-[1.72] opacity-80">
+          <p className="mt-2 max-w-[66ch] text-[14.5px] leading-[1.72] opacity-80">
             {labels.confirmBody}
           </p>
-          <p className="mt-3 max-w-[62ch] text-[14px] leading-[1.7] opacity-70">
+          <p className="mt-3 max-w-[66ch] text-[14px] leading-[1.7] opacity-70">
             {labels.confirmWhatHappens}
           </p>
 
@@ -123,7 +121,7 @@ export function ConfirmPanel({
           )}
         </>
       )}
-    </Panel>
+    </div>
   )
 }
 

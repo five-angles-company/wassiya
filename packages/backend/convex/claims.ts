@@ -21,6 +21,7 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import {
+  activeGuardiansFor,
   requireAcceptedGuardian,
   requireAdmin,
   requireUser,
@@ -36,32 +37,85 @@ import {
   nameMatchOutcome,
   vetoWindowElapsed,
 } from "./model/claimFlow"
-import { sendGuardianClaimNotice } from "./email"
+import {
+  sendClaimClosed,
+  sendClaimFiled,
+  sendClaimGuardianConfirmed,
+  sendClaimInReview,
+  sendClaimReleased,
+  sendClaimReviewFailed,
+  sendClaimVetoed,
+  sendGuardianClaimNotice,
+} from "./email"
 import { recordJobRun } from "./model/jobRuns"
 import { getCurrentUserOrThrow } from "./users"
 
-/**
- * Whether a guardian has anywhere to go when told a claim is waiting.
- *
- * **They do not.** Guardians act in the web app, which has not shipped:
- * `guardianConfirm`, `guardians.accept` and `guardians.pendingApprovals` have
- * no caller in any app. So approval used to send a real person a real email —
- * *"open the Wassiya website to review it"* — pointing at a route that does not
- * exist, about a death they may not yet have heard of, with nothing they could
- * do on arrival. Silence is the better of those two.
- *
- * It also made the console lie. The review screen tells the reviewer in words
- * that approving sends no notification (`guardianGapBody` in
- * `apps/admin/features/claims/strings/claims.ts`), while this sent one. The
- * screen was right about what should happen; this is the code catching up.
- *
- * Flip to `true` in the same commit that ships the guardian's route. The
- * notification and the mail are written and correct — they are waiting only on
- * somewhere to point.
- */
-const GUARDIAN_CAN_ACT = false
-
 const ADVANCE_BATCH = 50
+
+/**
+ * How long an unmatched claim waits for a human before the sweep closes it.
+ *
+ * Long enough that staff can realistically link a mistyped address, and long
+ * enough that the eventual "no vault matched" is not a fast oracle. See
+ * `sweepUnmatched`.
+ */
+const UNMATCHED_GRACE_DAYS = 7
+
+/**
+ * The vault a claim is against, asserted rather than assumed.
+ *
+ * `subjectUserId` is optional because a claim filed against an address with no
+ * vault is a real claim — see the schema. But it is optional only in the one
+ * state that can hold it: `submitted`, before review. Every path past that
+ * point needs a subject and cannot sensibly continue without one, so each
+ * asserts it here rather than threading `| undefined` through code whose whole
+ * job is authorisation.
+ *
+ * Throws the same opaque "Not found" the guarded paths already use for every
+ * other refusal, so an unmatched claim is indistinguishable from a missing one
+ * to anyone probing.
+ */
+export function requireSubject(claim: Doc<"claims">): Id<"users"> {
+  const subjectUserId = claim.subjectUserId
+  if (subjectUserId === undefined) {
+    throw new Error("Not found")
+  }
+  return subjectUserId
+}
+
+/**
+ * The only thing allowed to write a claim.
+ *
+ * It exists for one field. `updatedAt` has no trigger — Convex has none — so a
+ * writer that forgets it leaves a row whose "last moved" is a lie, and nothing
+ * anywhere fails. That is the same trap `searchText` documents on the schema,
+ * and it was already loose once.
+ *
+ * So the stamp is not something a caller remembers: it is the price of writing
+ * at all. `scripts/verify-invariants.mjs` fails the build on any
+ * `ctx.db.patch("claims", …)` outside this function, which is what stops the
+ * next writer quietly reintroducing the problem.
+ *
+ * `now` is passed where the caller already has one, so the timestamp on the row
+ * matches the one in its audit line rather than being a millisecond apart.
+ *
+ * Pass `null` to write **without** stamping. That is for a backfill — filling a
+ * column that was always implicitly true — and nothing else. A state change that
+ * skipped the stamp would be the exact bug this function exists to prevent, so
+ * the opt-out is explicit at the call site rather than a default.
+ */
+export async function patchClaim(
+  ctx: MutationCtx,
+  claimId: Id<"claims">,
+  fields: Partial<Doc<"claims">>,
+  now: number | null = Date.now()
+): Promise<void> {
+  await ctx.db.patch(
+    "claims",
+    claimId,
+    now === null ? fields : { ...fields, updatedAt: now }
+  )
+}
 
 /**
  * File a claim against a vault.
@@ -70,9 +124,26 @@ const ADVANCE_BATCH = 50
  * at claim time anyway, and an account is what makes the rate limit and the
  * 90-day lockout attach to a person rather than to a typed-in string.
  *
- * The return value is identical whether or not `subjectEmail` names a real
- * vault. That is on purpose — an honest "no such vault" would turn this into an
- * email-enumeration oracle for anyone curious who uses Wassiya.
+ * ## It always creates a claim, and returns its id
+ *
+ * It used to insert nothing when the address matched no vault, and answer
+ * `{ received: true }` either way, so that an honest "no such vault" could not
+ * become an email-enumeration oracle. The cost was paid by the wrong person: a
+ * bereaved claimant filled in the form and was then shown a list reading "no
+ * reports yet", with no way to tell a typo from a vault that never existed.
+ *
+ * The defence was also not working. A miss inserted no row, and
+ * `assertUnderRateLimit` counts rows — so probing addresses that have no vault
+ * was free and unlimited, while a *hit* produced a row visible in `mine`
+ * seconds later. The oracle already existed; it was just delayed by one
+ * navigation, and the rate limit capped only the case nobody needed to cap.
+ *
+ * So: always insert, and let `subjectUserId` be absent. The claimant gets a
+ * reference and a page; the rate limit now counts every attempt, which is the
+ * first time it has actually limited enumeration; and nothing in the response
+ * distinguishes a match from a miss — the first two steps of the funnel are
+ * identical either way, and `sweepUnmatched` is what eventually says so, by
+ * email, days later.
  */
 export const submit = mutation({
   args: {
@@ -88,24 +159,37 @@ export const submit = mutation({
 
     await assertUnderRateLimit(ctx, claimant._id, now)
 
+    // Normalised here, not in the form. The web client lowercases already, but
+    // it is not the only possible caller, and a stray capital used to mean a
+    // real vault silently did not match.
+    const subjectEmail = args.subjectEmail.trim().toLowerCase()
+
     const subject = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.subjectEmail))
+      .withIndex("by_email", (q) => q.eq("email", subjectEmail))
       .unique()
-    if (subject === null || subject._id === claimant._id) {
-      return { received: true }
+
+    // Claiming against yourself is not an information leak to refuse loudly:
+    // you already know whether you have a vault.
+    if (subject !== null && subject._id === claimant._id) {
+      throw new Error("You cannot file a report against your own vault.")
     }
 
+    // Keyed on the person and the address, not on the typed contact string. The
+    // old key let a vetoed claimant walk around their own 90-day bar by
+    // entering a different phone number, and it could not index an unmatched
+    // claim at all.
     const prior = await ctx.db
       .query("claims")
-      .withIndex("by_subjectUserId_and_claimantContact", (q) =>
-        q
-          .eq("subjectUserId", subject._id)
-          .eq("claimantContact", args.claimantContact)
+      .withIndex("by_claimantUserId_and_subjectEmail", (q) =>
+        q.eq("claimantUserId", claimant._id).eq("subjectEmail", subjectEmail)
       )
       .take(20)
 
-    // An open claim already exists — do not stack a second one on it.
+    // An open claim already exists — do not stack a second one on it. The
+    // claimant gets the id of the one they already have rather than silence:
+    // this is the ordinary "I refreshed and filed twice" case, and pretending
+    // nothing happened is what sent people back to an empty list.
     const open = prior.find(
       (claim) =>
         claim.status === "submitted" ||
@@ -113,7 +197,7 @@ export const submit = mutation({
         claim.status === "awaiting_veto"
     )
     if (open !== undefined) {
-      return { received: true }
+      return { claimId: open._id }
     }
 
     // A veto within the last 90 days bars this claimant. The attempt is still
@@ -123,7 +207,11 @@ export const submit = mutation({
     const barred = lockout !== undefined
 
     const claimId = await ctx.db.insert("claims", {
-      subjectUserId: subject._id,
+      // Absent when nothing matched. That is the whole point: a filing always
+      // produces a claim now, so the claimant has a reference and a page, and
+      // staff have something to resolve.
+      subjectUserId: subject?._id,
+      subjectEmail,
       claimantName: args.claimantName,
       claimantContact: args.claimantContact,
       claimantUserId: claimant._id,
@@ -132,6 +220,9 @@ export const submit = mutation({
       certificateName: args.certificateName,
       status: barred ? "locked" : "submitted",
       lockedUntil: barred ? lockout.lockedUntil : undefined,
+      closedReason: barred ? "review_failed" : undefined,
+      closedAt: barred ? now : undefined,
+      updatedAt: now,
       searchText: searchTextFor({
         claimantName: args.claimantName,
         claimantContact: args.claimantContact,
@@ -139,22 +230,81 @@ export const submit = mutation({
       }),
     })
 
-    const event = barred ? "claim.blocked_by_lockout" : "claim.submitted"
-    await writeAudit(ctx, {
-      userId: subject._id,
-      event,
-      meta: { claimId, claimantUserId: claimant._id },
-      at: now,
-    })
-    // The notification kind mirrors the audit event: an owner inside a lockout
-    // window must be able to tell "someone tried again and was blocked" from
-    // "a claim is now running against your vault".
-    await notify(ctx, subject._id, event, { claimId })
-    return { received: true }
+    // The owner is told only when there is an owner. An unmatched claim names
+    // nobody's vault, so there is no one to notify and no log to write to —
+    // `sweepUnmatched` closes it, or staff link it and the history starts then.
+    if (subject !== null) {
+      const event = barred ? "claim.blocked_by_lockout" : "claim.submitted"
+      await writeAudit(ctx, {
+        userId: subject._id,
+        event,
+        meta: { claimId, claimantUserId: claimant._id },
+        at: now,
+      })
+      // The notification kind mirrors the audit event: an owner inside a
+      // lockout window must be able to tell "someone tried again and was
+      // blocked" from "a claim is now running against your vault".
+      await notify(ctx, subject._id, event, {}, claimId)
+    }
+
+    // The claimant's receipt, and the reason this mutation stopped being silent.
+    //
+    // Not on a barred attempt. A `locked` claim is one the 90-day veto bar
+    // already refused, and "we have your report and review has started" would
+    // be false. That claimant was told at veto time, including how long the bar
+    // runs; saying it again here would be the app pretending not to remember.
+    if (!barred) {
+      await notify(ctx, claimant._id, "claim.filed", {}, claimId)
+      await sendClaimFiled(ctx, claimant._id, claimId)
+    }
+
+    // The id, which the old contract withheld. It is the claimant's own claim,
+    // and `publicStatus` is written to be forwarded — so this discloses nothing
+    // to them that the next screen would not. What it stops is the thing that
+    // sent a bereaved person to a page reading "no reports yet".
+    return { claimId }
   },
 })
 
-/** What the claimant sees about their own claims. Never anyone else's. */
+/**
+ * Whether this person has any claims at all, and the most recent one.
+ *
+ * Deliberately lean, because it runs on **every page**: `use-nav-groups` calls
+ * it on each navigation purely to learn whether the list is non-empty. Putting
+ * the per-row subject joins that `mine` now does onto that path would pay for a
+ * name lookup per claim, on every screen, to answer a yes/no question.
+ */
+export const mineSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const claimant = await getCurrentUserOrThrow(ctx)
+    const rows = await ctx.db
+      .query("claims")
+      .withIndex("by_claimantUserId", (q) =>
+        q.eq("claimantUserId", claimant._id)
+      )
+      .order("desc")
+      .take(20)
+    const latest = rows[0]
+    return {
+      count: rows.length,
+      latestId: latest?._id ?? null,
+      latestStatus: latest?.status ?? null,
+    }
+  },
+})
+
+/**
+ * What the claimant sees about their own claims. Never anyone else's.
+ *
+ * `subjectName` is joined per row because without it a case list can only say
+ * "C-4482", and a guardian's list beside it — which has always carried names —
+ * would read half-named. It is no new disclosure: `publicStatus` already hands
+ * the same field to anyone holding the id, with no account at all.
+ *
+ * Bounded at 20 with the join inside that bound, so this is at most 20 extra
+ * document reads. Use `mineSummary` on any path that only needs a count.
+ */
 export const mine = query({
   args: {},
   handler: async (ctx) => {
@@ -164,14 +314,88 @@ export const mine = query({
       .withIndex("by_claimantUserId", (q) =>
         q.eq("claimantUserId", claimant._id)
       )
+      .order("desc")
       .take(20)
-    return rows.map((row) => ({
-      id: row._id,
-      status: row.status,
-      vetoDeadline: row.vetoDeadline ?? null,
-      lockedUntil: row.lockedUntil ?? null,
-      submittedAt: row._creationTime,
-    }))
+    return await Promise.all(
+      rows.map(async (row) => {
+        const subject =
+          row.subjectUserId === undefined
+            ? null
+            : await ctx.db.get("users", row.subjectUserId)
+        return {
+          id: row._id,
+          subjectName: subject?.name ?? null,
+          status: row.status,
+          vetoDeadline: row.vetoDeadline ?? null,
+          lockedUntil: row.lockedUntil ?? null,
+          certificateReceived: row.certificateStorageId !== undefined,
+          guardianConfirmed: row.guardianConfirmedAt !== undefined,
+          submittedAt: row._creationTime,
+          updatedAt: row.updatedAt ?? row._creationTime,
+        }
+      })
+    )
+  },
+})
+
+/**
+ * One case, for the person whose case it is.
+ *
+ * The claimant-gated twin of `publicStatus`, and the reason both exist:
+ * `publicStatus` is written to be forwarded — its header is a list of things it
+ * must never return, because anyone holding the id can read it. Widening it to
+ * serve the case page would dismantle that. This one is gated instead, so it can
+ * be generous.
+ *
+ * It also makes `isMine` a server fact. The page currently derives ownership by
+ * scanning `mine`'s `take(20)` for a matching id, which silently reports "not
+ * mine" to anyone past twenty claims — and then hides their own actions from
+ * them.
+ *
+ * ⚠️ `identityStatus` is the **live** value from the claimant's own user row,
+ * never `claim.claimantIdentityStatus`, which is a snapshot. Someone who files
+ * and then verifies sits between the two, and a page that branched on the
+ * snapshot would render the identity step as outstanding while the panel inside
+ * it reported "verified" — an ask that answers itself, with the certificate step
+ * never appearing behind it. See `model/claimFlow.ts`.
+ *
+ * Returns `null` rather than throwing for a bad or foreign id: this backs a page
+ * reached from an emailed link, and mail clients truncate them.
+ *
+ * Never returns `nameMatch`, `heirId` or `staffNote` — the same exclusions
+ * `publicStatus` states, for the same reason.
+ */
+export const forClaimant = query({
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId }) => {
+    const claimant = await getCurrentUserOrThrow(ctx)
+    const id = ctx.db.normalizeId("claims", claimId)
+    if (id === null) return null
+    const claim = await ctx.db.get("claims", id)
+    if (claim === null || claim.claimantUserId !== claimant._id) return null
+
+    const subject =
+      claim.subjectUserId === undefined
+        ? null
+        : await ctx.db.get("users", claim.subjectUserId)
+    return {
+      id: claim._id,
+      subjectName: subject?.name ?? null,
+      status: claim.status,
+      identityStatus: claimant.identityStatus ?? "unverified",
+      certificateReceived: claim.certificateStorageId !== undefined,
+      certificateName: claim.certificateName ?? null,
+      guardianConfirmed: claim.guardianConfirmedAt !== undefined,
+      vetoDeadline: claim.vetoDeadline ?? null,
+      lockedUntil: claim.lockedUntil ?? null,
+      submittedAt: claim._creationTime,
+      updatedAt: claim.updatedAt ?? claim._creationTime,
+      certificateAttachedAt: claim.certificateAttachedAt ?? null,
+      reviewedAt: claim.reviewedAt ?? null,
+      guardianConfirmedAt: claim.guardianConfirmedAt ?? null,
+      releasedAt: claim.releasedAt ?? null,
+      closedAt: claim.closedAt ?? null,
+    }
   },
 })
 
@@ -217,10 +441,16 @@ export const veto = mutation({
       throw new Error("The veto window has closed")
     }
 
-    await ctx.db.patch("claims", claimId, {
-      status: "vetoed",
-      lockedUntil: now + VETO_LOCKOUT_DAYS * DAY_MS,
-    })
+    await patchClaim(
+      ctx,
+      claimId,
+      {
+        status: "vetoed",
+        lockedUntil: now + VETO_LOCKOUT_DAYS * DAY_MS,
+        closedAt: now,
+      },
+      now
+    )
     await writeAudit(ctx, {
       userId: user._id,
       event: "claim.vetoed",
@@ -228,7 +458,8 @@ export const veto = mutation({
       at: now,
     })
     if (claim.claimantUserId !== undefined) {
-      await notify(ctx, claim.claimantUserId, "claim.vetoed", { claimId })
+      await notify(ctx, claim.claimantUserId, "claim.vetoed", {}, claimId)
+      await sendClaimVetoed(ctx, claim.claimantUserId, claimId)
     }
     return null
   },
@@ -245,7 +476,8 @@ export const guardianConfirm = mutation({
     if (claim === null) {
       throw new Error("Not found")
     }
-    await requireAcceptedGuardian(ctx, claim.subjectUserId)
+    const subjectUserId = requireSubject(claim)
+    await requireAcceptedGuardian(ctx, subjectUserId)
 
     if (claim.status !== "guardian_review") {
       throw new Error("This claim is not awaiting guardian confirmation")
@@ -256,23 +488,256 @@ export const guardianConfirm = mutation({
 
     const now = Date.now()
     const vetoDeadline = now + VETO_WINDOW_DAYS * DAY_MS
-    await ctx.db.patch("claims", claimId, {
-      status: "awaiting_veto",
-      guardianConfirmedAt: now,
-      vetoDeadline,
-    })
+    await patchClaim(
+      ctx,
+      claimId,
+      { status: "awaiting_veto", guardianConfirmedAt: now, vetoDeadline },
+      now
+    )
     await writeAudit(ctx, {
-      userId: claim.subjectUserId,
+      userId: subjectUserId,
       event: "claim.guardian_confirmed",
       meta: { claimId, vetoDeadline },
       at: now,
     })
     // The owner's last chance to say they are alive.
-    await notify(ctx, claim.subjectUserId, "claim.veto_window_open", {
-      claimId,
-      vetoDeadline,
-    })
+    await notify(
+      ctx,
+      subjectUserId,
+      "claim.veto_window_open",
+      { vetoDeadline },
+      claimId
+    )
+
+    // And the claimant, who until now learned nothing here — the transition
+    // that starts a thirty-day wait told only the person it might go against.
+    // The mail names the date the box opens on its own, which is what turns an
+    // indefinite wait into one somebody can plan around.
+    if (claim.claimantUserId !== undefined) {
+      await notify(
+        ctx,
+        claim.claimantUserId,
+        "claim.guardian_confirmed",
+        { vetoDeadline },
+        claimId
+      )
+      await sendClaimGuardianConfirmed(
+        ctx,
+        claim.claimantUserId,
+        claimId,
+        vetoDeadline
+      )
+    }
     return null
+  },
+})
+
+/**
+ * Attach a vault to a claim that matched none.
+ *
+ * The ordinary cause is a typo — an heir types the address the deceased used
+ * from memory, or off a printed sheet, and gets one character wrong. Before
+ * this there was nothing to repair: the filing created no row at all, so the
+ * claimant simply waited forever on a claim that did not exist.
+ *
+ * Only ever *adds* a subject, never changes one. Re-pointing a claim that is
+ * already against a vault would move a live review from one person's estate to
+ * another's, and every audit line already written for it would be filed under
+ * the wrong owner.
+ */
+export const adminLinkSubject = mutation({
+  args: { claimId: v.id("claims"), subjectUserId: v.id("users") },
+  handler: async (ctx, { claimId, subjectUserId }) => {
+    const admin = await requireAdmin(ctx)
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) {
+      throw new Error("Not found")
+    }
+    if (claim.subjectUserId !== undefined) {
+      throw new Error("This claim is already attached to a vault")
+    }
+    if (claim.status !== "submitted") {
+      throw new Error("Only an open claim can be attached to a vault")
+    }
+    const subject = await ctx.db.get("users", subjectUserId)
+    if (subject === null) {
+      throw new Error("Not found")
+    }
+    if (subject._id === claim.claimantUserId) {
+      throw new Error("A claimant cannot be the subject of their own claim")
+    }
+
+    await patchClaim(ctx, claimId, { subjectUserId })
+
+    // The owner's history starts here rather than at submit, because until now
+    // there was no owner for it to belong to.
+    await writeAudit(ctx, {
+      userId: subjectUserId,
+      event: "claim.subject_linked",
+      meta: { claimId, adminUserId: admin._id },
+    })
+    await notify(ctx, subjectUserId, "claim.submitted", {}, claimId)
+    return null
+  },
+})
+
+/**
+ * End a claim without a verdict.
+ *
+ * Distinct from rejecting one. `adminSetNameMatch(false)` is a *ruling* — it
+ * locks the claimant out for 90 days — and it needs a vault to rule about. This
+ * is for a claim that cannot be ruled on at all: no vault matched and staff
+ * cannot find one. It carries no bar, because the commonest cause is a mistyped
+ * address and the right next step is to file again with the right one.
+ *
+ * `staffNote` is written here and never leaves the console.
+ */
+export const adminCloseClaim = mutation({
+  args: { claimId: v.id("claims"), staffNote: v.optional(v.string()) },
+  handler: async (ctx, { claimId, staffNote }) => {
+    const admin = await requireAdmin(ctx)
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) {
+      throw new Error("Not found")
+    }
+    if (claim.status !== "submitted") {
+      throw new Error("Only an open claim can be closed")
+    }
+
+    const now = Date.now()
+    await patchClaim(
+      ctx,
+      claimId,
+      {
+        status: "closed",
+        closedReason: "no_vault_matched",
+        closedAt: now,
+        staffNote,
+      },
+      now
+    )
+    if (claim.subjectUserId !== undefined) {
+      await writeAudit(ctx, {
+        userId: claim.subjectUserId,
+        event: "claim.closed",
+        meta: { claimId, adminUserId: admin._id },
+        at: now,
+      })
+    }
+    if (claim.claimantUserId !== undefined) {
+      await notify(ctx, claim.claimantUserId, "claim.closed", {}, claimId)
+      await sendClaimClosed(ctx, claim.claimantUserId, claimId)
+    }
+    return null
+  },
+})
+
+/**
+ * Close claims that matched no vault and that nobody resolved.
+ *
+ * The counterpart to `submit` always inserting: a claim that sits in
+ * `submitted` with no subject forever is the old silent failure with a row
+ * attached. After the grace window the claimant is told, by email, that no
+ * process could be started from that address — which is the answer they came
+ * for, and the thing the product could not say before.
+ *
+ * ⚠️ **This is the one place the product discloses whether an address has a
+ * vault**, and it is deliberate. Weigh it against what it replaces: probing was
+ * free, unlimited and instantly answered by an empty list. It now costs a
+ * rate-limited slot out of three a day, is attributable to a Clerk account,
+ * writes a row, and answers a week late. Strictly better on every axis — but it
+ * is a disclosure, so the delay is not decorative and should not be shortened
+ * without saying why.
+ *
+ * Batched and self-scheduling like `advance`, so a backlog cannot exceed one
+ * transaction.
+ */
+export const sweepUnmatched = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const now = Date.now()
+    const cutoff = now - UNMATCHED_GRACE_DAYS * DAY_MS
+
+    const stale = await ctx.db
+      .query("claims")
+      .withIndex("by_status_and_subjectUserId", (q) =>
+        q.eq("status", "submitted").eq("subjectUserId", undefined)
+      )
+      .take(ADVANCE_BATCH)
+
+    let closed = 0
+    for (const claim of stale) {
+      if (claim._creationTime > cutoff) continue
+      await patchClaim(
+        ctx,
+        claim._id,
+        {
+          status: "closed",
+          closedReason: "no_vault_matched",
+          closedAt: now,
+        },
+        now
+      )
+      if (claim.claimantUserId !== undefined) {
+        await notify(ctx, claim.claimantUserId, "claim.closed", {}, claim._id)
+        await sendClaimClosed(ctx, claim.claimantUserId, claim._id)
+      }
+      closed += 1
+    }
+
+    await recordJobRun(ctx, {
+      name: "claims.sweepUnmatched",
+      ranAt: now,
+      scanned: stale.length,
+      changed: closed,
+      rescheduled: stale.length === ADVANCE_BATCH,
+      continued: stale.length === ADVANCE_BATCH,
+    })
+    if (stale.length === ADVANCE_BATCH) {
+      await ctx.scheduler.runAfter(0, internal.claims.sweepUnmatched, {})
+    }
+    return null
+  },
+})
+
+/**
+ * One-off: fill `subjectEmail` on claims filed before the column existed.
+ *
+ * Every pre-existing claim has a `subjectUserId` — filing against an unmatched
+ * address used to insert nothing — so the address is recoverable from the
+ * subject's own row.
+ *
+ * It matters because `subjectEmail` is now the dedupe and lockout key. A
+ * vetoed claimant whose old claim has no email on it would not be found by
+ * `by_claimantUserId_and_subjectEmail`, and would walk straight through their
+ * own 90-day bar.
+ *
+ * Run once per deployment: `npx convex run claims:backfillSubjectEmail '{}'`.
+ * Idempotent — it skips anything already filled — so running it twice is safe
+ * and running it after a partial failure resumes.
+ */
+export const backfillSubjectEmail = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const batch = await ctx.db.query("claims").take(200)
+    let filled = 0
+    for (const claim of batch) {
+      if (claim.subjectEmail !== undefined) continue
+      if (claim.subjectUserId === undefined) continue
+      const subject = await ctx.db.get("users", claim.subjectUserId)
+      if (subject?.email == null) continue
+      // `null` — no stamp. This fills a column that was always implicitly true
+      // rather than moving the claim, and stamping `updatedAt` would tell every
+      // case page that every old claim moved today.
+      await patchClaim(
+        ctx,
+        claim._id,
+        { subjectEmail: subject.email.trim().toLowerCase() },
+        null
+      )
+      filled += 1
+    }
+    return { scanned: batch.length, filled }
   },
 })
 
@@ -287,7 +752,10 @@ export const pendingReview = query({
       .take(100)
     return await Promise.all(
       rows.map(async (row) => {
-        const subject = await ctx.db.get("users", row.subjectUserId)
+        const subject =
+          row.subjectUserId === undefined
+            ? null
+            : await ctx.db.get("users", row.subjectUserId)
         return {
           id: row._id,
           claimantName: row.claimantName,
@@ -328,17 +796,38 @@ export const adminSetNameMatch = mutation({
         : await ctx.db.get("users", claim.claimantUserId)
     const claimantIdentityStatus = claimant?.identityStatus ?? "unverified"
 
-    // Two ways an approval silently destroys a legitimate claim, refused here
-    // rather than absorbed. `nameMatchBlockedReason` is the same predicate the
-    // console disables its button on, so the two cannot disagree — see its
-    // header for why each case exists and why neither applies to a rejection.
+    // An unmatched claim has no vault to rule on. It is not rejected here —
+    // `adminLinkSubject` is how a mistyped address gets attached to the right
+    // vault, and `adminCloseClaim` is how one that cannot be resolved ends.
+    const subjectUserId = claim.subjectUserId
+    if (subjectUserId === undefined) {
+      throw new Error(
+        "This claim matched no vault. Link it to one, or close it — a verdict cannot be recorded against nothing."
+      )
+    }
+
+    // The guardians who can actually be asked. Read once and used twice — to
+    // refuse an approval that would have nobody to send, and below to send it.
+    const guardians = await activeGuardiansFor(ctx, subjectUserId)
+
+    // The ways an approval silently destroys or strands a legitimate claim,
+    // refused here rather than absorbed. `nameMatchBlockedReason` is the same
+    // predicate the console disables its button on, so the two cannot disagree —
+    // see its header for why each case exists and why none applies to a
+    // rejection.
     const blocked = nameMatchBlockedReason(
       claim,
       nameMatch,
-      claimantIdentityStatus
+      claimantIdentityStatus,
+      guardians.length > 0
     )
     if (blocked === "past-review") {
       throw new Error("This claim is past review")
+    }
+    if (blocked === "no-guardian") {
+      throw new Error(
+        "This vault has no guardian who can confirm the death, so approving would strand the claim. The owner must appoint one and that person must accept."
+      )
     }
     if (blocked === "no-heir") {
       throw new Error(
@@ -353,13 +842,22 @@ export const adminSetNameMatch = mutation({
 
     const status = nameMatchOutcome(nameMatch, claimantIdentityStatus)
 
-    await ctx.db.patch("claims", claimId, {
-      nameMatch,
-      claimantIdentityStatus,
-      status,
-    })
+    const reviewedAt = Date.now()
+    await patchClaim(
+      ctx,
+      claimId,
+      {
+        nameMatch,
+        claimantIdentityStatus,
+        status,
+        reviewedAt,
+        // A rejection is terminal, so review is also when this claim closed.
+        closedAt: status === "locked" ? reviewedAt : undefined,
+      },
+      reviewedAt
+    )
     await writeAudit(ctx, {
-      userId: claim.subjectUserId,
+      userId: subjectUserId,
       event: "claim.name_match_set",
       meta: { claimId, nameMatch, status, adminUserId: admin._id },
     })
@@ -376,21 +874,39 @@ export const adminSetNameMatch = mutation({
     //
     // Only on approval. A rejection ends the claim, and there is nothing to ask
     // a guardian about a claim that is already closed.
-    if (status === "guardian_review" && GUARDIAN_CAN_ACT) {
-      const guardians = await ctx.db
-        .query("guardians")
-        .withIndex("by_userId", (q) => q.eq("userId", claim.subjectUserId))
-        .take(20)
+    //
+    // `guardians` is the set read above, already narrowed to accepted rows with
+    // an account — and `no-guardian` refused the approval if it was empty, so by
+    // here there is always somebody to tell.
+    if (status === "guardian_review") {
       for (const guardian of guardians) {
-        // Accepted **and** linked to an account. An invited guardian has no
-        // `guardianUserId` to notify, and a revoked one is no longer anyone's
-        // guardian — `guardianConfirm` would refuse them either way.
-        if (guardian.status !== "accepted") continue
-        if (guardian.guardianUserId === undefined) continue
-        await notify(ctx, guardian.guardianUserId, "claim.guardian_review", {
-          claimId,
-        })
-        await sendGuardianClaimNotice(ctx, guardian.guardianUserId)
+        const guardianUserId = guardian.guardianUserId
+        if (guardianUserId === undefined) continue
+        await notify(ctx, guardianUserId, "claim.guardian_review", {}, claimId)
+        await sendGuardianClaimNotice(ctx, guardianUserId)
+      }
+    }
+
+    // The claimant, both ways. This is the review they have been waiting on and
+    // the only transition a human decides, so silence here is the longest a
+    // claim can go dark — and `locked` is terminal, which makes the rejection
+    // the single most important message never to swallow.
+    //
+    // ⚠️ Neither message carries a reason. `claims.publicStatus` states why: a
+    // claimant who learns *which* check failed learns how to make it pass.
+    if (claim.claimantUserId !== undefined) {
+      if (status === "guardian_review") {
+        await notify(ctx, claim.claimantUserId, "claim.in_review", {}, claimId)
+        await sendClaimInReview(ctx, claim.claimantUserId, claimId)
+      } else {
+        await notify(
+          ctx,
+          claim.claimantUserId,
+          "claim.review_failed",
+          {},
+          claimId
+        )
+        await sendClaimReviewFailed(ctx, claim.claimantUserId, claimId)
       }
     }
 
@@ -415,9 +931,10 @@ export const adminLinkHeir = mutation({
       throw new Error("This claim has already been released")
     }
 
-    await ctx.db.patch("claims", claimId, { heirId })
+    const subjectUserId = requireSubject(claim)
+    await patchClaim(ctx, claimId, { heirId })
     await writeAudit(ctx, {
-      userId: claim.subjectUserId,
+      userId: subjectUserId,
       event: "claim.heir_linked",
       meta: { claimId, heirId, adminUserId: admin._id },
     })
@@ -455,7 +972,16 @@ export const advance = internalMutation({
       if (!vetoWindowElapsed(claim, now)) {
         continue
       }
-      await ctx.db.patch("claims", claim._id, { status: "released" })
+      await patchClaim(
+        ctx,
+        claim._id,
+        { status: "released", releasedAt: now },
+        now
+      )
+      // Unreachable: `awaiting_veto` is only entered through
+      // `guardianConfirm`, which asserts a subject. Skipped rather than thrown
+      // so one impossible row could never stall the whole release sweep.
+      if (claim.subjectUserId === undefined) continue
       await writeAudit(ctx, {
         userId: claim.subjectUserId,
         event: "claim.released",
@@ -463,9 +989,8 @@ export const advance = internalMutation({
         at: now,
       })
       if (claim.claimantUserId !== undefined) {
-        await notify(ctx, claim.claimantUserId, "claim.released", {
-          claimId: claim._id,
-        })
+        await notify(ctx, claim.claimantUserId, "claim.released", {}, claim._id)
+        await sendClaimReleased(ctx, claim.claimantUserId, claim._id)
       }
       released += 1
     }
@@ -537,13 +1062,14 @@ export function searchTextFor(parts: {
     .join(" ")
 }
 
-async function notify(
+export async function notify(
   ctx: MutationCtx,
   userId: Id<"users">,
   kind: string,
-  payload: Record<string, string | number | boolean | null>
+  payload: Record<string, string | number | boolean | null>,
+  claimId?: Id<"claims">
 ): Promise<void> {
-  await ctx.db.insert("notifications", { userId, kind, payload })
+  await ctx.db.insert("notifications", { userId, kind, payload, claimId })
 }
 
 export type Claim = Doc<"claims">
@@ -551,12 +1077,12 @@ export type Claim = Doc<"claims">
 /**
  * ٧.٤ — the status page, read with no account.
  *
- * The board's requirement: *"Signed-URL access with the claim id, no account —
+ * The requirement: *"Signed-URL access with the claim id, no account —
  * but the URL alone reveals nothing beyond status."* The claim id is therefore
  * a **capability**: holding it is what grants the read, exactly as holding the
  * emailed link does. Convex ids are 32 random characters, so guessing one is
  * not a practical attack; forwarding one to a relative is, and is intended —
- * the board notes this page gets forwarded and re-opened for weeks.
+ * this page is expected to be forwarded and re-opened for weeks.
  *
  * ## What this deliberately does NOT return
  *
@@ -592,7 +1118,10 @@ export const publicStatus = query({
     // Whose vault this is. The claimant knows who died — they filed against
     // this person's email — so naming them here reveals nothing they did not
     // bring, and it is what stops the page reading as a generic receipt.
-    const subject = await ctx.db.get("users", claim.subjectUserId)
+    const subject =
+      claim.subjectUserId === undefined
+        ? null
+        : await ctx.db.get("users", claim.subjectUserId)
 
     return {
       id: claim._id,
@@ -616,7 +1145,7 @@ export const publicStatus = query({
  *
  * Separate from `assets.generateUploadUrl` on purpose, even though the two are
  * one line apart in behaviour. A certificate is **third-party personal data**
- * about someone who cannot consent — the board is explicit that it must be
+ * about someone who cannot consent — it must be
  * restricted to the review queue and deleted on a schedule if the claim fails —
  * so it must not be indistinguishable from an owner's own vault upload in the
  * code, the audit log, or a future retention sweep.
@@ -674,7 +1203,8 @@ export const attachCertificate = mutation({
       throw new Error("The name on the certificate is required")
     }
 
-    await ctx.db.patch("claims", args.claimId, {
+    await patchClaim(ctx, args.claimId, {
+      certificateAttachedAt: Date.now(),
       certificateStorageId: args.certificateStorageId,
       certificateName: args.certificateName.trim(),
       // Rebuilt, not appended to: the certificate name is arriving now, and a
@@ -686,14 +1216,33 @@ export const attachCertificate = mutation({
         certificateName: args.certificateName.trim(),
       }),
     })
-    await writeAudit(ctx, {
-      userId: claim.subjectUserId,
-      event: "claim.certificate_attached",
-      // The name is deliberately not logged: it is third-party personal data
-      // about the deceased, and the audit line only needs to record that a
-      // document arrived.
-      meta: { claimId: args.claimId, claimantUserId: claimant._id },
-    })
+    // The audit log is the **owner's** history, and an unmatched claim has no
+    // owner — so there is no log for this line to belong to. The fact is not
+    // lost: `certificateAttachedAt` is on the claim, and the claimant gets a
+    // notification. Once staff link the claim to a vault, everything after that
+    // point is audited normally.
+    if (claim.subjectUserId !== undefined) {
+      await writeAudit(ctx, {
+        userId: claim.subjectUserId,
+        event: "claim.certificate_attached",
+        // The name is deliberately not logged: it is third-party personal data
+        // about the deceased, and the audit line only needs to record that a
+        // document arrived.
+        meta: { claimId: args.claimId, claimantUserId: claimant._id },
+      })
+    }
+
+    // In-app only, deliberately. The claimant is on the page as this lands, so
+    // a mail would arrive about something they just watched happen. It is
+    // recorded because the case history should show the document arriving, and
+    // because "did my upload go through?" is a question people come back to ask.
+    await notify(
+      ctx,
+      claimant._id,
+      "claim.certificate_received",
+      {},
+      args.claimId
+    )
     return null
   },
 })

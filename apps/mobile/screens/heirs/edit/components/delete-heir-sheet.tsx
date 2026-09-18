@@ -21,7 +21,7 @@ import { useStrings } from "@/i18n/use-strings"
  * trying to fix a mistake needs to learn that here, at the last moment it can
  * still change anything — hence the count, by name, rather than "are you sure?".
  *
- * **Destructive is outlined, safe is filled.** The inversion is the board's own
+ * **Destructive is outlined, safe is filled.** The inversion is deliberate
  * rule: a solid button in this product means *proceed calmly*, and keeping the
  * heir is the calm path. No red — terracotta already carries the weight, and red
  * would be the only alien colour in the product.

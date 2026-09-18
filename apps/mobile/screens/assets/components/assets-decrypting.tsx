@@ -1,7 +1,7 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { View } from "react-native"
 
-import { GhostRow } from "@/screens/assets/components/ghost-row"
+import { GhostRow } from "@/components/ghost-row"
 
 /**
  * ٤.١ while the vault is opening.
@@ -16,7 +16,7 @@ import { GhostRow } from "@/screens/assets/components/ghost-row"
  *
  * ## Why there is no "٢٨ من ٤٣" here
  *
- * The board shows a progress count. This app cannot honestly produce one: the
+ * A progress count was intended. This app cannot honestly produce one: the
  * whole list decrypts inside a single `useMemo`, so there is no moment at which
  * some rows are open and the rest are not — the state is "the query has not
  * answered yet", and at that point the total is unknown too. A fabricated count

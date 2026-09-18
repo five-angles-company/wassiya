@@ -22,7 +22,7 @@ export type MeterBarProps = {
   /** Stacked form — a breakdown by category (storage, routed assets). */
   segments?: MeterSegment[];
   tone?: Tone;
-  /** 10px is the board's data bar; 7px is the onboarding step meter. */
+  /** 10px is the data bar; 7px is the onboarding step meter. */
   height?: 'step' | 'data';
   className?: string;
 };

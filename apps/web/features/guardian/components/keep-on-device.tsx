@@ -56,7 +56,7 @@ export function KeepOnDevice({ sheet }: { sheet: GuardianKeySheet }) {
 
   if (outcome === "saved") {
     return (
-      <p className="text-olive-700 mt-6 flex items-start gap-2.5 text-[14px] leading-[1.7]">
+      <p className="text-tone-settled mt-6 flex items-start gap-2.5 text-[14px] leading-[1.7]">
         <ShieldCheckIcon
           className="mt-0.5 size-4 shrink-0"
           strokeWidth={2.4}
@@ -73,7 +73,7 @@ export function KeepOnDevice({ sheet }: { sheet: GuardianKeySheet }) {
         <FingerprintIcon className="size-[18px]" strokeWidth={2.3} aria-hidden />
         {labels.deviceKeyOfferTitle}
       </h3>
-      <p className="text-muted-foreground mt-2 max-w-[56ch] text-[14px] leading-[1.7]">
+      <p className="text-muted-foreground mt-2 max-w-[66ch] text-[14px] leading-[1.7]">
         {labels.deviceKeyOfferBody}
       </p>
 

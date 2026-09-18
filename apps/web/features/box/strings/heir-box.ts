@@ -5,7 +5,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  *
  * The whole screen exists to make one fact feel like custody rather than an
  * obstacle: **the guardian holding half the key is the reason nobody — this
- * company included — can open the box alone.** The board's closing line is the
+ * company included — can open the box alone.** The closing line is the
  * design in three words: *"اثنان لا واحد"*, two and never one.
  *
  * After the gate the copy stops explaining and starts delivering. Everything
@@ -14,17 +14,6 @@ import type { Dictionary } from "@/lib/i18n/locale"
  */
 export const HEIR_BOX = {
   // ---- the index ---------------------------------------------------------
-  indexTitle: { ar: "صندوقي", en: "My box" },
-  indexBody: {
-    ar: "يظهر الصندوق هنا بعد اكتمال البلاغ وتأكيد الوصي. يبقى متاحاً ٩٠ يوماً بعد ذلك.",
-    en: "A box appears here once the report completes and the guardian confirms. It stays open for 90 days after that.",
-  },
-  indexEmptyTitle: { ar: "لا صندوق جاهزاً بعد", en: "No box is ready yet" },
-  indexEmptyBody: {
-    ar: "لم يصل أي من بلاغاتك إلى مرحلة التسليم. سنراسلك على بريدك في اللحظة التي يجهز فيها صندوق.",
-    en: "None of your reports has reached release. We'll email you the moment a box is ready.",
-  },
-  boxOf: { ar: "صندوق خزنة {name}", en: "The box from {name}'s vault" },
   openBox: { ar: "افتح الصندوق", en: "Open the box" },
 
   // ---- the gate ----------------------------------------------------------
@@ -60,7 +49,6 @@ export const HEIR_BOX = {
     ar: "لم يُسلَّم هذا الصندوق بعد.",
     en: "This box hasn't been released yet.",
   },
-  checkStatus: { ar: "تابع حالة البلاغ", en: "Follow the report" },
 
   askTitle: { ar: "لا تعرف كيف تطلبه؟", en: "Not sure how to ask for it?" },
   askBody: {

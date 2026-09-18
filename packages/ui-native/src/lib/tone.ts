@@ -1,7 +1,7 @@
 /**
  * The product's semantic colour rule, in one place.
  *
- * From the design board: **olive = verified / safe / done**, **terracotta =
+ * The semantic rule: **olive = verified / safe / done**, **terracotta =
  * action / attention**, **sand = pending / inert**. Every status surface in the
  * app — pills, banners, timeline nodes, checklists — reads from these maps, so
  * "confirmed" is the same green everywhere and re-tinting the system is a

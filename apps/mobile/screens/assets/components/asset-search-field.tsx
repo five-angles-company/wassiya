@@ -13,7 +13,7 @@ export type AssetSearchFieldProps = {
 }
 
 /**
- * The 4.1 search field — a pill, per the board's input grammar, with the glyph
+ * The 4.1 search field — a pill, per the input grammar, with the glyph
  * inside it rather than beside it.
  *
  * Logical padding (`ps-`/`pe-`) rather than left/right, so the icon sits at the

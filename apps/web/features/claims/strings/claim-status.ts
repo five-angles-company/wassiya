@@ -19,15 +19,23 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * lossy hash, and saying so stops someone treating it as a password.
  */
 export const CLAIM_STATUS = {
-  timelineTitle: { ar: "أين وصل البلاغ", en: "Where the report stands" },
 
   daysLeft: {
     ar: "يوماً متبقياً في مدة الاعتراض",
     en: "days left in the objection period",
   },
-  endsOn: { ar: "تنتهي", en: "Ends" },
 
   stepReceived: { ar: "استلمنا البلاغ", en: "Report received" },
+  // The spine splits what the old timeline collapsed into one step: filing,
+  // the identity check and the certificate are three separate things a reader
+  // does, and merging them hid whichever one they were actually stuck on.
+  stepFiledMeta: { ar: "{date}", en: "{date}" },
+  stepIdentity: { ar: "إثبات هويتك", en: "Prove who you are" },
+  stepIdentityDoneMeta: {
+    ar: "اكتمل التحقّق من هويتك",
+    en: "Your identity check is complete",
+  },
+  stepCertificate: { ar: "شهادة الوفاة", en: "The death certificate" },
   stepReceivedMeta: {
     ar: "{date} · تحقّقنا من هويتك ومن الشهادة",
     en: "{date} · your identity and the certificate were verified",
@@ -46,9 +54,12 @@ export const CLAIM_STATUS = {
     en: "Ends {date}. This period exists for one reason: if the account holder is alive, they have the right to object.",
   },
   stepGuardian: { ar: "تأكيد الوصي", en: "Guardian confirmation" },
+  // The guardian is asked BEFORE the period, and their confirmation is what
+  // starts it — `guardianConfirm` sets `vetoDeadline` in the same mutation.
+  // This line used to say the opposite.
   stepGuardianMeta: {
-    ar: "نطلبه بعد انتهاء المدة — لا يحتاج منك شيئاً",
-    en: "Requested once the period ends — nothing needed from you",
+    ar: "تأكيده هو ما يبدأ مدة الاعتراض — لا يحتاج منك شيئاً",
+    en: "Their confirmation is what starts the objection period — nothing needed from you",
   },
   stepRelease: { ar: "تسليم صندوقك", en: "Your box is released" },
   stepReleaseMeta: {
@@ -56,16 +67,36 @@ export const CLAIM_STATUS = {
     en: "A link to your box is emailed to you",
   },
 
+  // Where things stand, as one line. Each is a sentence about the report, not a
+  // status name — "awaiting_veto" is a column, not something to tell a reader.
+  headIdentity: {
+    ar: "نحتاج إثبات هويتك قبل أن نُكمل.",
+    en: "We need proof of who you are before we can go on.",
+  },
+  headCertificate: {
+    ar: "بقيت شهادة الوفاة، ثم ينتقل البلاغ إلى الوصي.",
+    en: "The death certificate is what's left, then the report goes to the guardian.",
+  },
+  headGuardian: {
+    ar: "البلاغ عند الوصي للتأكيد.",
+    en: "The report is with the guardian for confirmation.",
+  },
+  headVeto: {
+    ar: "أكّد الوصي الوفاة، ومدة الاعتراض تسري الآن.",
+    en: "The guardian confirmed the death, and the objection period is now running.",
+  },
+  headReleased: {
+    ar: "صندوقك جاهز.",
+    en: "Your box is ready.",
+  },
+  writeOn: { ar: "سنراسلك في {date}.", en: "We'll write to you on {date}." },
+
   nothingTitle: { ar: "لا شيء مطلوب منك", en: "Nothing is required of you" },
   nothingBody: {
     ar: "لا تحتاج أن تتصل بنا أو ترفع مستنداً آخر أو تفتح هذه الصفحة يومياً. سيصلك بريد عند كل خطوة.",
     en: "You don't need to call us, upload anything else, or check this page daily. An email arrives at each step.",
   },
 
-  refNote: {
-    ar: "الرقم المختصر {ref} للمراسلة فقط — لا يفتح البلاغ.",
-    en: "The short reference {ref} is for correspondence only — it can't open the report.",
-  },
 
   othersTitle: { ar: "هل يعرف الآخرون؟", en: "Do other heirs see this?" },
   othersBody: {
@@ -74,16 +105,7 @@ export const CLAIM_STATUS = {
   },
 
   // Terminal states.
-  releasedHeading: { ar: "صندوقك جاهز", en: "Your box is ready" },
-  releasedBody: {
-    ar: "انتهت مدة الاعتراض وأكّد الوصي. يبقى الصندوق متاحاً ٩٠ يوماً — حمّل ما يهمّك قبل ذلك.",
-    en: "The objection period ended and the guardian confirmed. The box stays open for 90 days — download what matters before then.",
-  },
   openBox: { ar: "افتح صندوقك", en: "Open your box" },
-  releasedKeyNote: {
-    ar: "ستحتاج نصيب الوصي من المفتاح لفتح الصندوق — سنشرح كيف تطلبه.",
-    en: "You'll need the guardian's half of the key to open it — we'll show you how to ask.",
-  },
 
   vetoedHeading: { ar: "أُغلق هذا البلاغ", en: "This report was closed" },
   vetoedBody: {
@@ -95,11 +117,21 @@ export const CLAIM_STATUS = {
     en: "A new report cannot be filed against this vault for 90 days.",
   },
 
+  // `closed` is not `locked`: nothing is held against this claimant and there
+  // is no waiting period. Saying so is the point — the commonest cause is a
+  // mistyped address, and the right next step is to file again.
+  closedHeading: {
+    ar: "انتهى هذا البلاغ",
+    en: "This report has ended",
+  },
+  closedBody: {
+    ar: "لم نجد خزنة مرتبطة بالبريد الذي أدخلته. غالباً ما يكون السبب خطأً في كتابة البريد — تحقّق منه وقدّم بلاغاً جديداً. لا يوجد أي قيد على ذلك.",
+    en: "We found no vault for the address you entered. The commonest reason is a typo — check it and file again. There is no restriction on doing so.",
+  },
   lockedHeading: { ar: "هذه الخزنة موقوفة مؤقتاً", en: "This vault is barred for now" },
   lockedBody: {
     ar: "اعتُرض على بلاغ سابق، ومدة الإيقاف لم تنتهِ بعد. سيُغلق هذا البلاغ دون تسليم.",
     en: "An earlier report was objected to and the barring period has not ended. This report will close without a delivery.",
   },
 
-  loading: { ar: "نقرأ حالة بلاغك…", en: "Reading your report's status…" },
 } as const satisfies Dictionary

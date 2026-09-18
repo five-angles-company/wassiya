@@ -1,11 +1,11 @@
 /**
- * ٤.٨ — a note. The board's own subtitle is "a letter, not a text field".
+ * ٤.٨ — a note: "a letter, not a text field".
  *
  * Everything that subtitle implies is here: the raised page, the three kind
  * pills that set the note's job and drive its placeholder, the formatting
  * toolbar, dictation, and a draft that survives leaving the screen.
  *
- * Two deliberate divergences from the board's drawing, both explained where
+ * Two deliberate divergences from the drawing, both explained where
  * they live: formatting is **markdown markers in plain text** rather than a
  * rich-text editor (`NoteToolbar`), and dictation is **on-device only or
  * absent** (`useDictation`). The recipient strip is the one thing genuinely

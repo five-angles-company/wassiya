@@ -4,11 +4,14 @@ import { auth } from "@clerk/nextjs/server"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
-import { AppNav } from "@/components/app-nav"
 import { AuthGate } from "@/components/auth-gate"
+import { PageTop } from "@/components/page-top"
+import { SurfaceScope } from "@/components/surface-scope"
+import { UserMenu } from "@/components/user-menu"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { safePath } from "@/lib/safe-path"
+import { getTheme } from "@/lib/theme-server"
 import { NAV } from "@/lib/i18n/strings/nav"
 
 /**
@@ -48,7 +51,9 @@ export default async function AppLayout({
     redirect(`/sign-in?redirect_url=${encodeURIComponent(here)}`)
   }
 
-  const nav = t(NAV, await getLocale())
+  const locale = await getLocale()
+  const theme = await getTheme()
+  const nav = t(NAV, locale)
 
   return (
     <AuthGate>
@@ -60,14 +65,19 @@ export default async function AppLayout({
           {nav.skipToContent}
         </a>
 
-        <AppNav />
+{/* The mark and the page under it have to agree about which world the
+            reader is in, and it is rendered here — above the `(heir)` and
+            `(guardian)` groups — so it can never inherit their attribute. */}
+        <SurfaceScope>
+          <PageTop locale={locale} theme={theme} trailing={<UserMenu />} />
 
-        <main
-          id="content"
-          className="mx-auto w-full max-w-[1180px] space-y-6 px-4 py-6 md:px-6 md:py-8"
-        >
-          {children}
-        </main>
+          <main
+            id="content"
+            className="mx-auto w-full max-w-[920px] px-4 pt-8 pb-20 md:px-6"
+          >
+            {children}
+          </main>
+        </SurfaceScope>
 
         <Toaster position="bottom-center" richColors />
       </TooltipProvider>

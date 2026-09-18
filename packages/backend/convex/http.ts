@@ -129,9 +129,31 @@ function asString(value: unknown): string | undefined {
  * `decision.id_verification`, as a bag of unknowns. Returning an empty object
  * for a missing or malformed branch keeps every caller on one path.
  */
+/**
+ * The document block, wherever Didit is putting it.
+ *
+ * ⚠️ **It is at the top level, not under `decision`.** This looked only for
+ * `decision.id_verification`, which v2 does not send — there is no `decision`
+ * key in the payload at all — so every lookup fell through to `{}` and both
+ * `verifiedName` and `docType` arrived `undefined`. A verified owner ended up
+ * with a verdict, a timestamp, and no name.
+ *
+ * That is not cosmetic: the release ceremony matches the death certificate
+ * against the owner's **verified legal name**, so an empty one leaves the check
+ * with nothing to compare. Confirmed against a real session's decision payload,
+ * which carries `id_verification.full_name` and `id_verification.document_type`.
+ *
+ * The `decision` path is kept as a fallback rather than deleted: it costs one
+ * branch, and this function failing silently is exactly how the field went
+ * missing for as long as it did.
+ */
 function idVerificationOf(
   body: Record<string, unknown>
 ): Record<string, unknown> {
+  const direct = body.id_verification
+  if (typeof direct === "object" && direct !== null) {
+    return direct as Record<string, unknown>
+  }
   const decision = body.decision
   if (typeof decision !== "object" || decision === null) {
     return {}

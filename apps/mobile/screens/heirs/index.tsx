@@ -15,12 +15,11 @@ import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
+import { HeirsEmpty } from "@/screens/heirs/components/heirs-empty"
 import { HeirCard } from "@workspace/ui-native/components/wassiya/heir-card"
-import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { fmtNum, fmtPhoneMasked } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { Plus, Users } from "lucide-react-native"
+import { Plus } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -44,23 +43,21 @@ export function HeirsScreen() {
   }
 
   if (heirs !== undefined && heirs.length === 0) {
+    // `gap-header`, matching ٤.١b exactly. `HeirsEmpty` returns a fragment, so
+    // its blocks are direct children of this container and the gap between
+    // title, lede, ghosts and CTA comes from here — without it the two empty
+    // screens space differently for no reason a reader could name.
     return (
       <Screen contentClassName="gap-header">
-        <Text variant="pageTitle">{t.title}</Text>
         {/* The empty list keeps a full-width button rather than the FAB: it is
             the only action on an otherwise blank screen, and a round button in
             the corner of one reads as an afterthought. Same call as ٤.١'s. */}
-        <EmptyState
-          icon={Users}
-          title={t.emptyTitle}
-          subtitle={t.emptyBody}
-          action={
-            <PrimaryCta
-              label={t.add!}
-              icon={Plus}
-              onPress={() => router.push("/heirs/new")}
-            />
-          }
+        <HeirsEmpty
+          title={t.title}
+          subtitle={t.emptySubtitle!}
+          lead={t.emptyLead!}
+          addLabel={t.add!}
+          onAdd={() => router.push("/heirs/new")}
         />
       </Screen>
     )

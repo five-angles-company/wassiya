@@ -35,7 +35,7 @@ export type CryptoForm = {
   /**
    * A hardware wallet's PIN, and where the device physically is.
    *
-   * The board's asset screen carries both, and it is right to: a seed phrase
+   * The asset screen carries both, and it is right to: a seed phrase
    * recovers a wallet, but an heir who finds the Ledger in a drawer and knows
    * its PIN never has to type twelve words at all. ٤.٣ does not collect them
    * yet, so they are absent on everything saved so far — which the parser

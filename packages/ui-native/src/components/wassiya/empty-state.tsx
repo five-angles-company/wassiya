@@ -26,7 +26,7 @@ export type EmptyStateProps = {
  * The template for every empty list in the app — assets, heirs, guardians,
  * notifications.
  *
- * Three rules, taken from the board: a **sage** disc (never terracotta — an
+ * Three rules: a **sage** disc (never terracotta — an
  * empty vault is a normal first day, not an error), exactly **one** honest
  * sentence, and exactly **one** primary CTA with at most one quiet secondary.
  * An empty state that offers three equal choices is a menu, not a nudge.

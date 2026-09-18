@@ -10,7 +10,7 @@ export type SlideDotsProps = {
 }
 
 /**
- * The carousel's position indicator. Dots are tappable, per the board — they
+ * The carousel's position indicator. Dots are tappable — they
  * are the only way back to an earlier slide once the user has swiped past it,
  * short of swiping again.
  *

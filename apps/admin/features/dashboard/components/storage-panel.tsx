@@ -19,6 +19,7 @@ import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts"
 
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
+import { barValueLabel } from "@/features/dashboard/components/bar-value-label"
 import { STORAGE } from "@/features/dashboard/strings/storage"
 import { fmtBytes } from "@/lib/format"
 
@@ -58,6 +59,9 @@ const TYPE_LABEL: Record<
  */
 export function StoragePanel() {
   const locale = useLocale()
+  // Mirrored as one piece under RTL — see `activation-funnel.tsx` for why the
+  // value axis has to reverse along with the category one.
+  const rtl = locale === "ar"
   const labels = t(STORAGE, locale)
   const storage = useQuery(api.admin.storage, {})
 
@@ -93,14 +97,14 @@ export function StoragePanel() {
             {labels.topEmpty}
           </div>
         ) : (
-          <ChartContainer config={config} className="h-56 w-full">
+          <ChartContainer config={config} className="h-56 w-full [&_svg]:[direction:ltr]">
             <BarChart
               accessibilityLayer
               layout="vertical"
               data={chartData}
-              margin={{ left: 8, right: 56 }}
+              margin={rtl ? { left: 56, right: 8 } : { left: 8, right: 56 }}
             >
-              <XAxis type="number" dataKey="bytes" hide />
+              <XAxis type="number" dataKey="bytes" reversed={rtl} hide />
               <YAxis
                 type="category"
                 dataKey="type"
@@ -108,16 +112,15 @@ export function StoragePanel() {
                 axisLine={false}
                 width={104}
                 tick={{ fontSize: 12 }}
-                orientation={locale === "ar" ? "right" : "left"}
+                orientation={rtl ? "right" : "left"}
               />
               <ChartTooltip content={<ChartTooltipContent hideLabel />} />
               <Bar dataKey="bytes" fill="var(--color-bytes)" radius={4}>
                 <LabelList
                   dataKey="bytes"
-                  position="right"
-                  className="fill-foreground"
-                  fontSize={12}
-                  formatter={(value) => fmtBytes(Number(value ?? 0), locale)}
+                  content={barValueLabel(rtl, (value) =>
+                    fmtBytes(value, locale)
+                  )}
                 />
               </Bar>
             </BarChart>

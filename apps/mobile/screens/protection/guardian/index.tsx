@@ -28,6 +28,7 @@ import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import * as Sharing from "expo-sharing"
 import { Alert, Share, View } from "react-native"
 
+import { guardianAcceptUrl } from "@/lib/app-url"
 import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
@@ -62,7 +63,9 @@ export function GuardianScreen() {
   }
 
   async function shareInvite(inviteToken: string, guardianName: string) {
-    const message = t.inviteMessage
+    const link = guardianAcceptUrl(inviteToken)
+    const message = (link === null ? t.inviteMessageNoLink : t.inviteMessage)
+      .replace("{link}", link ?? "")
       .replace("{token}", inviteToken)
       .replace("{name}", guardianName)
     // `Share` rather than `Sharing`: this is text, and the OS sheet is what

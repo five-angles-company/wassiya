@@ -1,5 +1,5 @@
 /**
- * Section ٢ · تهيئة الخزنة — board copy for screens 2.1 to 2.6, verbatim. Three
+ * Section ٢ · تهيئة الخزنة — copy for screens 2.1 to 2.6, verbatim. Three
  * constraints it has to honour:
  *
  *  - **Two keys, two jobs, not interchangeable.** The device key opens the vault
@@ -61,14 +61,18 @@ export const KYC_PENDING = {
     ar: "عادةً أقل من دقيقتين. سنخبرك بإشعار — يمكنك إغلاق التطبيق.",
     en: "Usually under two minutes. We'll notify you — you can close the app.",
   },
-  stepDocument: { ar: "تم استلام صورة الهوية", en: "ID document received" },
+  // ⚠️ Worded as the checks being run, never as checks that have passed.
+  // Didit reports one verdict and no sub-steps, so the app has no way to know
+  // that any individual one is done — see `kyc-pending/index.tsx`.
+  checksHeading: { ar: "ما يجري التحقق منه", en: "What is being checked" },
+  stepDocument: { ar: "صورة هويتك", en: "Your ID document" },
   stepLiveness: {
-    ar: "تم التحقق من أنك شخص حقيقي",
-    en: "Liveness confirmed",
+    ar: "أنك شخص حقيقي",
+    en: "That you are a real person",
   },
   stepFaceMatch: {
-    ar: "مطابقة الوجه مع الهوية",
-    en: "Face match against the ID",
+    ar: "مطابقة وجهك مع الهوية",
+    en: "Your face against the ID",
   },
   rejectedTitle: { ar: "لم يكتمل التحقق", en: "Verification didn't pass" },
   rejectedBody: {
@@ -98,7 +102,7 @@ export const KYC_VERIFIED = {
 
   // Document kinds. Didit returns a machine string ("national_id"); showing it
   // raw would put an English snake_case token in an Arabic summary card. The
-  // board also prints the document's last four digits beside the type, but the
+  // design also prints the document's last four digits beside the type, but the
   // schema deliberately stores only `identityDocType` — adding the digits means
   // adding a column, so the type stands alone until then.
   docNationalId: { ar: "الهوية الوطنية", en: "National ID" },
@@ -194,6 +198,10 @@ export const RECOVERY_KIT = {
     en: "Keep it with your notarised will. This sheet alone opens your vault on any device — and whoever holds it can open it.",
   },
   documentTitle: { ar: "وثيقة استرداد وصيّة", en: "وثيقة استرداد وصيّة" },
+  // The masthead beside the mark. Arabic in both locales, like the title:
+  // this document is filed in Arabic-speaking jurisdictions whatever language
+  // the app is running in.
+  brandName: { ar: "وصيّة", en: "وصيّة" },
   documentSubtitle: {
     ar: "WASSIYA RECOVERY DOCUMENT",
     en: "WASSIYA RECOVERY DOCUMENT",
@@ -220,6 +228,31 @@ export const RECOVERY_KIT = {
   handling: {
     ar: "من يحمل هذه الوثيقة يستطيع استعادة خزنتك. لا تُصوَّر ولا تُرسل رقمياً.",
     en: "Whoever holds this sheet can recover your vault. Do not photograph it or send it digitally.",
+  },
+  // The printed sheet's instructions. It is filed with a will and read years
+  // later by someone who has lost every device — quite possibly not the person
+  // who printed it — so the document has to explain itself without the app.
+  howTitle: { ar: "متى تحتاجها، وكيف تُستخدم", en: "When you need it, and how" },
+  howWhen: {
+    ar: "إن فقدت كل أجهزتك المسجّلة، هذه الوثيقة هي الطريق الوحيد لاستعادة خزنتك. لا يوجد طريق آخر، ولا نملك نسخة منها.",
+    en: "If you lose every enrolled device, this sheet is the only way back into your vault. There is no other path, and we hold no copy.",
+  },
+  howStep1: {
+    ar: "ثبّت تطبيق وصيّة على جهاز جديد، واختر «استعادة».",
+    en: "Install Wassiya on a new device and choose “Recover”.",
+  },
+  howStep2: {
+    ar: "اكتب الرمز أعلاه كما هو تماماً — حروف لاتينية، والشرطات ليست جزءاً منه.",
+    en: "Type the code above exactly as printed — Latin letters; the dashes are not part of it.",
+  },
+  howStep3: {
+    ar: "بعد الاستعادة اطبع وثيقة جديدة. تتوقف هذه عن العمل، ونُشعرك عند استخدامها.",
+    en: "Print a new sheet afterwards. This one stops working, and we notify you when it is used.",
+  },
+  qrCaption: { ar: "للمسح بدل الكتابة", en: "Scan instead of typing" },
+  sheetFooter: {
+    ar: "وثيقة واحدة من صفحة واحدة · لا تحتوي على معرّف حسابك",
+    en: "One document, one page · it does not contain your account identifier",
   },
   keepWithWill: {
     ar: "احفظها مع وصيّتك الموثّقة عند كاتب العدل.",

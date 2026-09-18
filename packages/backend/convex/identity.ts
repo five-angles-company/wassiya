@@ -22,6 +22,7 @@ import {
 import { writeAudit } from "./audit"
 import { requireAdmin } from "./model/access"
 import { getCurrentUser } from "./users"
+import { notify, patchClaim } from "./claims"
 
 const DEFAULT_API_URL = "https://verification.didit.me/v2/session/"
 
@@ -57,6 +58,11 @@ export const status = query({
       verifiedName: user.identityVerifiedName ?? null,
       docType: user.identityDocType ?? null,
       verifiedAt: user.identityVerifiedAt ?? null,
+      // ⚠️ A session was *created*, nothing more. `recordSession` writes the
+      // id the instant `startSession` returns, before the reader has shown the
+      // provider a document — so this can never stand for "submitted",
+      // "received" or any progress at all. It went wrong that way once; see
+      // `screens/setup/kyc-pending`.
       hasOpenSession: user.diditSessionId !== undefined,
       attempts: user.identityAttempts ?? 0,
       attemptsRemaining: Math.max(
@@ -133,13 +139,24 @@ export const viewer = internalQuery({
   },
 })
 
+/**
+ * Remember which Didit session belongs to this user.
+ *
+ * ⚠️ **It does not touch `identityStatus`, and must not.** Creating a session is
+ * the app opening a window; it says nothing about whether the reader showed the
+ * provider anything. This used to set `"pending"` here, and `pending` is what
+ * routes the setup flow to "your documents are being reviewed" — so opening the
+ * hosted flow and closing it again parked the reader on a review screen for a
+ * review that had never started, with no way back to the gate.
+ *
+ * Didit reports `pending` itself, over the HMAC-verified webhook, once there is
+ * genuinely something in review. Waiting for that is both honest and no slower:
+ * the client holds a live subscription to `identity.status`.
+ */
 export const recordSession = internalMutation({
   args: { userId: v.id("users"), sessionId: v.string() },
   handler: async (ctx, { userId, sessionId }) => {
-    await ctx.db.patch("users", userId, {
-      diditSessionId: sessionId,
-      identityStatus: "pending",
-    })
+    await ctx.db.patch("users", userId, { diditSessionId: sessionId })
     await writeAudit(ctx, {
       userId,
       event: "identity.session_started",
@@ -194,6 +211,34 @@ export const applyWebhookResult = internalMutation({
         attempts,
       },
     })
+
+    // Identity is a step in somebody's claim, and this mutation is the only
+    // place that learns it resolved. Without it the claimant completes the one
+    // thing they were asked to do, in a third-party window, and hears nothing
+    // back from us about the claim it was for.
+    //
+    // The same loop refreshes each open claim's `claimantIdentityStatus`. That
+    // column is a snapshot taken at submit and otherwise updated only as a side
+    // effect of an admin's verdict, so `claims.pendingReview` could show a
+    // reviewer a status that was days stale. This does not weaken
+    // `claimFlow`'s rule that a verdict reads the LIVE value — it still does;
+    // it just stops the stored copy being wrong in the meantime.
+    if (args.status === "verified") {
+      for (const status of ["submitted", "guardian_review"] as const) {
+        const open = await ctx.db
+          .query("claims")
+          .withIndex("by_claimantUserId_and_status", (q) =>
+            q.eq("claimantUserId", user._id).eq("status", status)
+          )
+          .take(10)
+        for (const claim of open) {
+          await patchClaim(ctx, claim._id, {
+            claimantIdentityStatus: args.status,
+          })
+          await notify(ctx, user._id, "claim.identity_verified", {}, claim._id)
+        }
+      }
+    }
     return null
   },
 })

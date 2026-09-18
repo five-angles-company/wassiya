@@ -8,7 +8,7 @@ import { View } from 'react-native';
 export type AssetTypeOption = AssetTypeTileProps & { id: string };
 
 export type AssetTypeGridProps = {
-  /** The asset types on offer — six, on the board. */
+  /** The asset types on offer — six. */
   options: AssetTypeOption[];
   className?: string;
 };

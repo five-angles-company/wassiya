@@ -1,15 +1,9 @@
 /**
  * ٩ — الإعدادات.
  *
- * ⚠️ **Design-blind, like ٦.** The board's `get_file` caps at 256 KiB and every
- * read stops inside section ٥, so this section has never been legible. It is
- * built instead from AGENTS.md's section map (9.2 auto-lock, 9.3 audit log, 9.4
- * subscription/storage, 9.5 legal), the backend's documented rules, and the
- * `@workspace/ui-native` primitives a previous session built directly against
- * this section.
- *
- * Behaviour is sourced; arrangement is inferred. Check this copy first when the
- * board is split.
+ * 9.2 auto-lock, 9.3 audit log, 9.4 subscription and storage, 9.5 legal. What
+ * each one may claim is fixed by the backend — the lapse rule, the append-only
+ * log, the lock policy — and the wording is ours.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
@@ -125,6 +119,29 @@ export const SETTINGS = {
   rowLanguage: { ar: "اللغة", en: "Language" },
   rowAutoLock: { ar: "القفل التلقائي", en: "Auto-lock" },
   rowDevices: { ar: "الأجهزة", en: "Devices" },
+  // ⚠️ Worded as reissuing, never as viewing or downloading. `S_paper` is
+  // never persisted, so the code on the sheet in someone's drawer cannot be
+  // shown again by anyone, including us — and the only way to hold a sheet is
+  // to mint a new one, which retires the old.
+  rowRecoverySheet: { ar: "وثيقة الاسترداد", en: "Recovery document" },
+  sheetNeverPrinted: { ar: "لم تُطبع بعد", en: "Not printed yet" },
+  sheetVersion: { ar: "نسخة {v}", en: "Version {v}" },
+  sheetUsed: { ar: "استُخدمت — أعد الطباعة", en: "Used — reprint it" },
+
+  sheetTitle: { ar: "وثيقة الاسترداد", en: "Your recovery document" },
+  sheetCannotShow: {
+    ar: "لا يمكننا عرض رمز وثيقتك الحالية — لا نحتفظ بنسخة منه، وهذا هو سبب أمان خزنتك. الرمز موجود على الورقة التي طبعتها، وهناك فقط.",
+    en: "We cannot show you the code on your current document. We keep no copy of it — that is precisely why your vault is safe. It exists on the sheet you printed, and nowhere else.",
+  },
+  sheetReissueTitle: { ar: "طباعة وثيقة جديدة", en: "Print a new document" },
+  sheetReissueBody: {
+    ar: "تُنشئ رمزاً جديداً بالكامل. تتوقف الورقة القديمة عن العمل فور حفظ الجديدة — أتلفها بعد الطباعة.",
+    en: "This creates an entirely new code. The old sheet stops working the moment the new one is saved — destroy it once you have printed the replacement.",
+  },
+  sheetReissueAction: { ar: "اطبع وثيقة جديدة", en: "Print a new document" },
+  sheetPrintedOn: { ar: "طُبعت في", en: "Printed on" },
+  sheetCurrentVersion: { ar: "النسخة الحالية", en: "Current version" },
+
   rowAudit: { ar: "سجل النشاط", en: "Activity log" },
   rowGuardian: { ar: "الوصي", en: "Guardian" },
   rowPlan: { ar: "الخطة والتخزين", en: "Plan and storage" },

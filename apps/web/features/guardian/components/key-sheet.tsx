@@ -24,19 +24,27 @@ import { KEY_SHEET } from "@/features/guardian/strings/key-sheet"
  * a screen loses their place in a fifty-six character run. On the page's ground
  * tone rather than a card: this is the one block in the app meant to end up on
  * paper, and a print takes the ground with it.
+ *
+ * Full width, and the grid opens to seven columns on a wide screen so the
+ * fourteen groups fall into two even rows. Capped at 640px it sat as a narrow
+ * panel in a 920px column with the rest of the page ranged past it — and this
+ * is the only thing on its screen, so it should occupy it.
  */
 export function KeySheet({ code }: { code: string }) {
   const labels = t(KEY_SHEET, useLocale())
   const groups = code.split("-")
 
   return (
-    <div className="max-w-[640px]">
+    <div>
       <div className="rounded-sheet border-border bg-background mb-4 border-2 px-6 py-7 text-[color:var(--foreground)]">
         <div className="font-heading mb-4 text-[17px] font-extrabold">
           {labels.title}
         </div>
 
-        <div dir="ltr" className="mb-4 grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+        <div
+          dir="ltr"
+          className="mb-4 grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-7"
+        >
           {groups.map((group, index) => (
             <span
               key={`${group}-${index}`}
@@ -62,7 +70,7 @@ export function KeySheet({ code }: { code: string }) {
         <CopyButton
           value={code}
           label={labels.copy}
-          className="border-border hover:bg-sand-100 text-foreground inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-6 text-[14.5px] font-semibold transition-colors"
+          className="border-border hover:bg-muted text-foreground inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-6 text-[14.5px] font-semibold transition-colors"
         />
       </div>
     </div>

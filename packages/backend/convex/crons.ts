@@ -29,4 +29,15 @@ crons.interval(
   {}
 )
 
+// Close claims that matched no vault and that nobody linked one to. Daily,
+// not hourly: the grace window is measured in days, and the message it sends is
+// the one disclosure in the product — there is nothing to gain from being
+// prompt about it.
+crons.interval(
+  "close unmatched claims",
+  { hours: 24 },
+  internal.claims.sweepUnmatched,
+  {}
+)
+
 export default crons

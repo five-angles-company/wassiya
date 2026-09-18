@@ -18,7 +18,7 @@ import type {
  * ## What is masked, and what deliberately is not
  *
  * The password and the recovery codes hide behind a plain eye. The **two-factor
- * field does not** — the board is explicit that it is free text and unmasked,
+ * field does not** — it is free text and unmasked by design,
  * because a rotating six-digit code is worthless to an heir and *where the
  * second factor lives* is everything. Masking "Authy on the iPad" would protect
  * nothing and hide the only part that gets someone in.
@@ -29,7 +29,7 @@ import type {
  * ## Focus dims the rest
  *
  * One row at a time carries the terracotta label and the 2px rule; the others
- * drop to 45%. That is the board's focus model — the screen narrows without
+ * drop to 45%. That is the focus model — the screen narrows without
  * dimming into a modal, and nothing moves.
  */
 export type DigitalFieldsProps = {

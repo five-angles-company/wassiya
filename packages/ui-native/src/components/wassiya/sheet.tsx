@@ -62,11 +62,11 @@ export type SheetProps = {
  * The app's bottom sheet — a real native one.
  *
  * Native rather than a `Modal` or a portal, and both alternatives are in this
- * repo with costs the board's sheets cannot pay. `Select` teleports through
+ * repo with costs these sheets cannot pay. `Select` teleports through
  * `PortalHost`, which breaks when the screen underneath is replaced
  * mid-interaction (see `country-picker.tsx`). A `Modal` is a full-screen
  * overlay: it cannot be dragged, cannot rest at a detent, and dismisses with a
- * back press that unwinds whatever is behind it — where the board asks for a
+ * back press that unwinds whatever is behind it — where the design asks for a
  * sheet that "dismisses without losing the list scroll".
  *
  * **Sizing: prefer `'auto'`, and never wrap short content in a scroller.** The

@@ -23,6 +23,7 @@ import type * as identity from "../identity.js";
 import type * as keyring from "../keyring.js";
 import type * as model_access from "../model/access.js";
 import type * as model_claimFlow from "../model/claimFlow.js";
+import type * as model_emailCopy from "../model/emailCopy.js";
 import type * as model_jobRuns from "../model/jobRuns.js";
 import type * as notifications from "../notifications.js";
 import type * as release from "../release.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   keyring: typeof keyring;
   "model/access": typeof model_access;
   "model/claimFlow": typeof model_claimFlow;
+  "model/emailCopy": typeof model_emailCopy;
   "model/jobRuns": typeof model_jobRuns;
   notifications: typeof notifications;
   release: typeof release;

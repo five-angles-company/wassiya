@@ -34,6 +34,20 @@
     --color-secondary: var(--secondary);
     --color-primary-foreground: var(--primary-foreground);
     --color-primary: var(--primary);
+    /* Wayfinding, not action — see the `--surface-accent` note under `.wassiya`.
+       `inline` matters here: the value is redefined further down the tree by
+       `[data-surface]`, and only an inline theme resolves the `var()` against
+       the element the utility lands on rather than against `:root`. */
+    /* The two reading colours. A coloured *word* needs a step that clears 4.5:1
+       against whatever ground it is on, and the ground inverts with the theme —
+       so a hard-coded `text-terracotta-700` is right on sand and unreadable on
+       near-black. These flip; the ramp steps do not. */
+    --color-tone-settled: var(--tone-settled);
+    --color-tone-attention: var(--tone-attention);
+    --color-surface-accent: var(--surface-accent);
+    --color-surface-accent-foreground: var(--surface-accent-foreground);
+    --color-surface-accent-soft: var(--surface-accent-soft);
+    --color-surface-accent-ink: var(--surface-accent-ink);
     --color-popover-foreground: var(--popover-foreground);
     --color-popover: var(--popover);
     --color-card-foreground: var(--card-foreground);
@@ -228,15 +242,23 @@
   --color-sand-900: #2e2b25;
 
   /* Terracotta — action, and the one warning colour. This palette has no red. */
-  --color-terracotta-100: #fff2eb;
-  --color-terracotta-200: #ffe1d0;
-  --color-terracotta-300: #ffc6a5;
-  --color-terracotta-400: #f6a06b;
-  --color-terracotta-500: #d67f48;
-  --color-terracotta-600: #b2622d;
-  --color-terracotta-700: #8c491a;
-  --color-terracotta-800: #643312;
-  --color-terracotta-900: #402310;
+  /* The brand's own orange. 500 is #ea5b48, sampled from the ribbon mark in
+     `apps/mobile/assets/brand/logo-mark.png`, which is the authority — this
+     ramp and `apps/mobile/global.css` must be changed together.
+
+     ⚠️ **The bright steps are fills, the deep ones are text.** #ea5b48 on the
+     sand ground is 2.7:1, which is not readable body text; 700 is 5.4:1. Any
+     coloured word on the page takes an ink step, never 500. The same holds for
+     olive: `--secondary` is 3.1:1 and `olive-700` is 5.4. */
+  --color-terracotta-100: #fff6f0;
+  --color-terracotta-200: #fcddd5;
+  --color-terracotta-300: #f7bbb0;
+  --color-terracotta-400: #f19081;
+  --color-terracotta-500: #ea5b48;
+  --color-terracotta-600: #c54d3c;
+  --color-terracotta-700: #9d3e2e;
+  --color-terracotta-800: #783022;
+  --color-terracotta-900: #5a2518;
 
   /* Olive — done, verified, safe. */
   --color-olive-100: #f0fae1;
@@ -288,28 +310,78 @@
 .wassiya {
   --background: #f5ead8;
   --foreground: #201e1d;
-  --card: #ebddc5;
+  /* Paper laid on the desk, not a patch pressed into it. #fdfaf4 sits 5.2 L*
+     ABOVE the #f5ead8 ground (the old #ebddc5 sat 4.5 below), and every text
+     colour gains contrast on it — muted body goes 3.6:1 to 4.1.
+
+     It carries a hairline and no shadow. Flat fills on this ground used to read
+     as discoloured patches, which is what the shadows were for; --border is 26%
+     now and defines the edge on its own.
+
+     ⚠️ **Web only, deliberately.** `apps/mobile/global.css` still has #ebddc5.
+     Mobile leans on cards far more heavily than this app does, so moving it is
+     that app's decision to make, not a side effect of this one. */
+  --card: #fdfaf4;
   --card-foreground: #201e1d;
-  --popover: #ebddc5;
+  --popover: #fdfaf4;
   --popover-foreground: #201e1d;
-  --primary: #c67139;
-  --primary-foreground: #fff2eb;
+  --primary: #ea5b48;
+  --primary-foreground: #fff6f0;
   --secondary: #7a8a5e;
   --secondary-foreground: #f0fae1;
   --muted: #eee7db;
   --muted-foreground: #82796a;
-  --accent: #ffe1d0;
-  --accent-foreground: #8c491a;
+  --accent: #fcddd5;
+  --accent-foreground: #9d3e2e;
   /* No red anywhere: `destructive` is a deep terracotta, and it is drawn as an
      outline rather than a fill. */
-  --destructive: #8c491a;
-  --border: color-mix(in srgb, #201e1d 16%, transparent);
-  --input: color-mix(in srgb, #201e1d 16%, transparent);
-  --ring: #c67139;
+  --destructive: #9d3e2e;
+  --border: color-mix(in srgb, #201e1d 26%, transparent);
+  --input: color-mix(in srgb, #201e1d 30%, transparent);
+  --ring: #ea5b48;
+
+  /* ---------------------------------------------------------------------
+     Wayfinding — which of the two worlds you are standing in.
+
+     An heir and a guardian share one deployment, one bar and one account, and
+     they are not the same reader: an heir is mid-bereavement in a ten-minute
+     flow, a guardian is doing admin they last thought about four years ago.
+     This is what lets the shell say which one it is currently serving.
+
+     It is deliberately **not** `--primary`. Terracotta means "this needs you"
+     and olive means "settled" everywhere in the product, on both apps, and that
+     must not change meaning depending on which section you are in — so asks,
+     CTAs and status keep reading from `--primary`/`--secondary`, and only
+     *chrome* reads from here: the bar's active rule, the phone menu's rule, a
+     section's count.
+
+     The default is terracotta, which is the heir's world and the neutral one.
+     `[data-surface="guardian"]` below is the only override — see
+     `apps/web/lib/surface.ts`, which decides which routes are which.
+     --------------------------------------------------------------------- */
+  --surface-accent: #ea5b48;
+  --surface-accent-foreground: #fff6f0;
+  --surface-accent-soft: #fcddd5;
+  --surface-accent-ink: #9d3e2e;
+
+  /* 5.4:1 and 5.4:1 on the sand ground. */
+  --tone-settled: #56633f;
+  --tone-attention: #9d3e2e;
 
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-body-wassiya);
+}
+
+/* The guardian's world is olive, because olive already means settled and safe
+   here and a guardian is never being asked to act urgently — the invitation
+   copy makes the same argument in words. Nothing else needs to know: the tokens
+   above are read by the chrome, so the whole shell follows one attribute. */
+.wassiya [data-surface="guardian"] {
+  --surface-accent: #7a8a5e;
+  --surface-accent-foreground: #f0fae1;
+  --surface-accent-soft: #e1eecc;
+  --surface-accent-ink: #56633f;
 }
 
 .wassiya h1,
@@ -401,6 +473,25 @@
   transform: translateX(4px);
 }
 
+/* ---------------------------------------------------------------------------
+   The header, which earns its ground only once there is something behind it.
+
+   The bar carries no navigation — the app routes a reader into the one thing
+   they have in flight rather than offering them places to go — so a permanent
+   near-white band with a hairline under it reads as a nav bar that lost its
+   links. At rest it is now nothing: the page ground runs straight up behind the
+   mark.
+
+   It still has to stay legible when content scrolls underneath, so it takes the
+   ground and the hairline **only then**. Driven by `animation-timeline: scroll()`
+   rather than a scroll listener, for the same reason `.rise-in` uses `view()`:
+   this product's pages are required to work with JavaScript disabled, and a
+   browser without the feature simply gets a bar that never fills — legible
+   either way, because the blur and the border box are already in place.
+
+   `border-bottom` is declared transparent at rest rather than absent, so the
+   fill does not move the page by a pixel when it arrives.
+   --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .wassiya .rise,
   .wassiya .rise-in,
@@ -424,12 +515,15 @@
 
    ## Why this is a separate class and not a widened `.wassiya`
 
-   Folding these in would mean writing a `.dark .wassiya` rule, and that rule
-   would flip `apps/web`'s claim funnel to dark for every visitor whose OS is in
-   dark mode. That funnel is deliberately light-only, and it is the one surface
-   in this product reached in the worst week of someone's life — not the place
-   to ship an untested colour scheme as a side effect. So the console gets its
-   own class and the funnel is left exactly as it was.
+   The console needs `--sidebar-*` and a chart ramp; the funnel needs neither.
+
+   `.wassiya` has a dark block of its own further down. ⚠️ **It is reached only
+   by an explicit switch, never by `prefers-color-scheme`.** The funnel is the
+   one surface in this product opened in the worst week of someone's life, and
+   flipping its colours because a visitor's laptop is in dark mode would be
+   shipping an untested scheme to someone who never asked for it. The cookie
+   defaults to light and `app/layout.tsx` reads it server-side, so a reader who
+   has not chosen sees exactly what they saw before.
 
    ## Why the dark selector is written twice
 
@@ -450,34 +544,34 @@
 .wassiya-admin {
   --background: #f5ead8;
   --foreground: #201e1d;
-  --card: #ebddc5;
+  --card: #fdfaf4;
   --card-foreground: #201e1d;
-  --popover: #ebddc5;
+  --popover: #fdfaf4;
   --popover-foreground: #201e1d;
-  --primary: #c67139;
-  --primary-foreground: #fff2eb;
+  --primary: #ea5b48;
+  --primary-foreground: #fff6f0;
   --secondary: #7a8a5e;
   --secondary-foreground: #f0fae1;
   --muted: #eee7db;
   --muted-foreground: #82796a;
-  --accent: #ffe1d0;
-  --accent-foreground: #8c491a;
+  --accent: #fcddd5;
+  --accent-foreground: #9d3e2e;
   /* No red anywhere, same rule as the app: `destructive` is a deep terracotta. */
-  --destructive: #8c491a;
-  --border: color-mix(in srgb, #201e1d 16%, transparent);
-  --input: color-mix(in srgb, #201e1d 16%, transparent);
-  --ring: #c67139;
+  --destructive: #9d3e2e;
+  --border: color-mix(in srgb, #201e1d 26%, transparent);
+  --input: color-mix(in srgb, #201e1d 30%, transparent);
+  --ring: #ea5b48;
 
   /* The sidebar sits on the surface tone, one step up from the page ground, so
      the inset panel reads as a card rather than a painted gutter. */
   --sidebar: #ebddc5;
   --sidebar-foreground: #201e1d;
-  --sidebar-primary: #c67139;
+  --sidebar-primary: #ea5b48;
   --sidebar-primary-foreground: #fff2eb;
   --sidebar-accent: #dcd3c4;
   --sidebar-accent-foreground: #201e1d;
   --sidebar-border: color-mix(in srgb, #201e1d 16%, transparent);
-  --sidebar-ring: #c67139;
+  --sidebar-ring: #ea5b48;
 
   /* Charts — a SEQUENTIAL terracotta ramp, not a categorical set.
      ------------------------------------------------------------------------
@@ -499,14 +593,69 @@
      card; the lighter steps of the ramp are invisible on it. `--chart-5` is
      olive and exists only for the rare second series that is *also* directly
      labelled — never as colour alone. */
-  --chart-1: #b2622d;
-  --chart-2: #8c491a;
-  --chart-3: #643312;
-  --chart-4: #402310;
+  --chart-1: #c54d3c;
+  --chart-2: #9d3e2e;
+  --chart-3: #783022;
+  --chart-4: #5a2518;
   --chart-5: #56633f;
 
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* ---------------------------------------------------------------------------
+   The funnel, after dark — chosen, never inherited. See the note above.
+
+   Written twice for the same reason `.wassiya-admin` is: `.wassiya` sits on
+   <html> and so does `.dark`, and a descendant selector needs an ancestor, so
+   it would silently never match when both are on the same element.
+   --------------------------------------------------------------------------- */
+.wassiya.dark,
+.dark .wassiya {
+  --background: #201e1d;
+  --foreground: #f9f4ed;
+  --card: #2e2b25;
+  --card-foreground: #f9f4ed;
+  --popover: #2e2b25;
+  --popover-foreground: #f9f4ed;
+
+  /* Terracotta-400, not the brand 500: the brand fill goes muddy on near-black,
+     and its label flips to the deep end because cream on mid-terracotta lands
+     near 3:1 — under what a button label should clear. */
+  --primary: #f19081;
+  --primary-foreground: #2e1409;
+
+  --secondary: #56633f;
+  --secondary-foreground: #f0fae1;
+
+  --muted: #2e2b25;
+  --muted-foreground: #a19786;
+  --accent: #5a2518;
+  --accent-foreground: #f7bbb0;
+  --destructive: #f19081;
+  --border: color-mix(in srgb, #f9f4ed 24%, transparent);
+  --input: color-mix(in srgb, #f9f4ed 28%, transparent);
+  --ring: #f19081;
+
+  /* Wayfinding. The light theme reads these off the brand; here they step up
+     the ramp so a coloured word stays legible on a near-black ground — the
+     same fills-versus-text split the light palette makes, inverted. */
+  --surface-accent: #f19081;
+  --surface-accent-foreground: #2e1409;
+  --surface-accent-soft: #5a2518;
+  --surface-accent-ink: #f7bbb0;
+
+  /* Up the ramp, not down: the 700s that read on sand vanish on near-black. */
+  --tone-settled: #ccdbb2;
+  --tone-attention: #f7bbb0;
+}
+
+.wassiya.dark [data-surface="guardian"],
+.dark .wassiya [data-surface="guardian"] {
+  --surface-accent: #aebf92;
+  --surface-accent-foreground: #272e1b;
+  --surface-accent-soft: #3d472b;
+  --surface-accent-ink: #ccdbb2;
 }
 
 .wassiya-admin.dark,
@@ -525,8 +674,8 @@
      muddy against a near-black ground. The label flips to the near-black for
      contrast — cream on mid-terracotta lands around 3:1, which is under the
      4.5:1 a button label should clear. */
-  --primary: #d67f48;
-  --primary-foreground: #201e1d;
+  --primary: #f19081;
+  --primary-foreground: #2e1409;
 
   /* Olive still means "done"; darkened so cream text sits on it comfortably. */
   --secondary: #56633f;
@@ -534,32 +683,32 @@
 
   --muted: #2e2b25;
   --muted-foreground: #a19786;
-  --accent: #402310;
-  --accent-foreground: #ffc6a5;
+  --accent: #5a2518;
+  --accent-foreground: #f7bbb0;
   /* Drawn as an outline, so this is the colour of text and border, not a fill —
      it has to be light enough to read against the ground. */
-  --destructive: #f6a06b;
-  --border: color-mix(in srgb, #f9f4ed 16%, transparent);
-  --input: color-mix(in srgb, #f9f4ed 16%, transparent);
-  --ring: #d67f48;
+  --destructive: #f19081;
+  --border: color-mix(in srgb, #f9f4ed 24%, transparent);
+  --input: color-mix(in srgb, #f9f4ed 28%, transparent);
+  --ring: #f19081;
 
   --sidebar: #2e2b25;
   --sidebar-foreground: #f9f4ed;
-  --sidebar-primary: #d67f48;
+  --sidebar-primary: #f19081;
   --sidebar-primary-foreground: #201e1d;
   --sidebar-accent: #474238;
   --sidebar-accent-foreground: #f9f4ed;
   --sidebar-border: color-mix(in srgb, #f9f4ed 14%, transparent);
-  --sidebar-ring: #d67f48;
+  --sidebar-ring: #f19081;
 
   /* The same sequential ramp, re-stepped for a near-black ground rather than
      flipped: the mid terracottas that clear 3:1 on sand disappear here, so the
      ramp runs light-to-dark from the other end. Validated at >= 3:1 against
      #2e2b25. `--chart-5` is olive, and carries the same "only with a label"
      rule as its light counterpart. */
-  --chart-1: #f6a06b;
-  --chart-2: #d67f48;
-  --chart-3: #b2622d;
-  --chart-4: #ffc6a5;
+  --chart-1: #f19081;
+  --chart-2: #ea5b48;
+  --chart-3: #c54d3c;
+  --chart-4: #f7bbb0;
   --chart-5: #aebf92;
 }

@@ -2,9 +2,9 @@
 
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
-import { MessageSquareHeartIcon, ShieldCheckIcon } from "lucide-react"
 
-import { Panel } from "@/components/panel"
+import { Paper } from "@/components/doc/paper"
+import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
 import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
@@ -45,18 +45,20 @@ export function OpenedBox({
   const contents = useQuery(api.release.assetsForHeir, { claimId })
 
   if (contents === undefined) {
-    return <div className="bg-card rounded-card h-40 animate-pulse" aria-hidden />
+    return (
+      <div className="border-border h-40 animate-pulse border-y" aria-hidden />
+    )
   }
   // The five preconditions are re-asserted inside the query, so `null` here
   // means the claim stopped qualifying between opening the bundle and asking
   // for the list — a vetoed claim, or a session that changed hands.
   if (contents === null) {
     return (
-      <Panel title={labels.notReleased}>
+      <DocSection title={labels.notReleased}>
         <p className="text-muted-foreground text-[14px] leading-[1.7]">
           {labels.failed}
         </p>
-      </Panel>
+      </DocSection>
     )
   }
 
@@ -80,8 +82,8 @@ export function OpenedBox({
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel accent="secondary" icon={ShieldCheckIcon} title={labels.openTitle}>
-        <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.72]">
+      <DocSection title={labels.openTitle}>
+        <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.72]">
           {labels.openBody}
         </p>
         <p className="bg-secondary text-secondary-foreground mt-5 inline-flex h-11 items-center rounded-full px-6 text-[14.5px] font-bold">
@@ -90,25 +92,27 @@ export function OpenedBox({
         <p className="text-muted-foreground mt-5 text-[13px] leading-[1.65]">
           {labels.expiry}
         </p>
-      </Panel>
+      </DocSection>
 
       {/* A personal message is not an asset — it has its own key map and no
           `assetRecipients` row — so it gets its own card rather than a row that
           would need every column to be optional. */}
       {contents.messageKind !== null &&
         Object.keys(bundle.messageKeys).length > 0 && (
-          <Panel icon={MessageSquareHeartIcon} title={labels.messageTitle}>
+          <DocSection title={labels.messageTitle}>
             <p className="text-muted-foreground text-[14px] leading-[1.7]">
               {labels.messageBody}
             </p>
-          </Panel>
+          </DocSection>
         )}
 
-      <ul className="flex flex-col gap-3">
-        {items.map((item) => (
-          <AssetRow key={item.assetId} item={item} />
-        ))}
-      </ul>
+      <Paper>
+        <ul className="divide-border divide-y">
+          {items.map((item) => (
+            <AssetRow key={item.assetId} item={item} />
+          ))}
+        </ul>
+      </Paper>
     </div>
   )
 }

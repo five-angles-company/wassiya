@@ -180,7 +180,7 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `avatar-stack` | `names`, `size`, `ring`, `allHeirsLabel` | faces · dashed ring (nobody) · group word | wherever "who receives this" is answered |
 | `primary-cta` | `label`, `disabledLabel`, `icon`, `iconSize`, `disabled`, `busy` | live · surface-toned when disabled, **never a faded primary** | every bottom action, 56px |
 | `screen-top` / `screen-top-action` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing text ("إلغاء") | the top of every vault screen |
-| `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every sheet the board draws |
+| `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every other sheet |
 | `field-link` | `label`, `value`, `placeholder`, `hint`, `chevron`, `onPress` | `down` opens a sheet · `forward` leaves for a screen (RTL-mirrored) | the boxed-field look, for anything that does not take typing — `sheet-select` renders it too |
 | `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder`, `trigger`, `note` | selected · unselected; boxed field by default, or any `trigger` you hand it | 1.3 / 2.1 country field; ٩.١ language row. Scrolls only past 6 options — a scroller stops the sheet hugging |
 | `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |
@@ -221,7 +221,7 @@ stays diffable. These four carry deliberate brand changes:
 | File | Change | Why |
 | --- | --- | --- |
 | `text.tsx` | cva variants retuned; Wassiya scale added | the type system lives here, not in a parallel component |
-| `button.tsx` | pills, Cairo 800 labels, `protect` variant, ramp-step pressed states, outlined `destructive` | the board's button spec; `/alpha` states do not render (see above) |
+| `button.tsx` | pills, Cairo 800 labels, `protect` variant, ramp-step pressed states, outlined `destructive` | the button spec; `/alpha` states do not render (see above) |
 | `icon.tsx` | `flip` prop; `strokeWidth` defaults to 2.75 | RTL glyph mirroring, and the design system's icon weight |
 | `skeleton.tsx` | `bg-secondary` → `bg-sand-300` | `secondary` is olive here, which means "done" — a placeholder must not read as confirmed |
 | `card.tsx` | `tint` prop (`terracotta`/`olive`/`sand`) + `CARD_TINT_DIVIDER` | the 9.4 plan card is a ramp-filled panel, not a surface card; the divider it needs is a declared alpha token, since `/alpha` is dead here |
@@ -247,17 +247,17 @@ keeps working.
 
 ### Deviations from the brief, and why
 
-- **Radii are role-based**, from the board's own screen grammar — `rounded-row`
+- **Radii are role-based**, from the screen grammar — `rounded-row`
   24, `rounded-card` 26, `rounded-summary` 28, `rounded-sheet` 34,
   `rounded-box` 20 — rather than the brief's "cards 24, inputs 16". Inputs and
-  buttons are **pills** on the board, not 16px.
+  buttons are **pills**, not 16px.
 - **The type scale is larger than the brief's seven variants**, because the
-  board's row/section/notice/meta sizes appear in almost every primitive;
+  row/section/notice/meta sizes appear in almost every primitive;
   without named tokens each component would carry inline pixel values.
 - **Caprasimo is ignored** (as instructed): it has no Arabic glyphs. Cairo
   800/900 is the heading voice in both languages.
 - **The 9.4 lapse banner uses `notice`, not `info`.** The 9.4 spec asks for the
-  info variant at terracotta-100/terracotta-900, but the board already uses two
+  info variant at terracotta-100/terracotta-900, but the palette already uses two
   different notice tints: 3.3's "needs you" band is terracotta, while 4.4's
   OTP explainer is neutral-200. Repointing `info` at terracotta would collapse
   those into one name, so `notice` carries the terracotta values and `info`

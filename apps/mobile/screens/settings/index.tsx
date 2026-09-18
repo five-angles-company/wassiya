@@ -18,7 +18,7 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { FileText, Fingerprint, Languages, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
+import { FileKey, FileText, Fingerprint, Languages, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -27,6 +27,15 @@ import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
 
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
+  const keyring = useQuery(api.keyring.get)
+  const sheetStatus =
+    keyring === undefined || keyring === null
+      ? undefined
+      : keyring.paperUsedAt != null
+        ? t.sheetUsed
+        : keyring.paperPrintedAt == null
+          ? t.sheetNeverPrinted
+          : t.sheetVersion.replace("{v}", String(keyring.paperVersion))
   // Only for the row's label — the screen it opens owns the rest.
   const { t: p } = useStrings("settings/profile")
   const { t: autoLock } = useStrings("settings/lock")
@@ -125,6 +134,18 @@ export function SettingsScreen() {
           user of *this* app. Mobile is the owner's app; everything a guardian
           does happens on the web. So this is a deletion, not a move.
         */}
+        {/* Named for what it does. The row deliberately does not say "view" or
+            "download": `S_paper` is never persisted, so the code on the current
+            sheet cannot be shown again — the screen behind this offers status
+            and a reissue, which is the only honest pair. */}
+        <SettingsRow
+          icon={FileKey}
+          label={t.rowRecoverySheet}
+          value={sheetStatus}
+          chevron
+          divider
+          onPress={() => router.push("/settings/recovery-sheet")}
+        />
         <SettingsRow
           icon={ScrollText}
           label={t.rowAudit}

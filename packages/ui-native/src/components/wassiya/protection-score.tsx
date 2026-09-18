@@ -25,7 +25,7 @@ export type ProtectionScoreProps = Omit<LabelledProps<never>, 'labels'> & {
  * setup-complete, and the Protection Centre list — so they can never disagree
  * about how safe the vault is.
  *
- * The ring is a plain border rather than the board's conic gradient: React
+ * The ring is a plain border rather than a conic gradient: React
  * Native has no conic gradient without pulling in SVG, and a partial arc adds
  * no information the fraction in the middle does not already carry. The border
  * colour still does the semantic work — olive once every protection is live,

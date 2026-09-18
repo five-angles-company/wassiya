@@ -1,7 +1,7 @@
 import { t, type Locale } from "@/lib/i18n/locale"
 import { CLAIMS } from "@/features/claims/strings/claims"
 
-/** The six statuses, in lifecycle order — the order the filter renders them. */
+/** The seven statuses, in lifecycle order — the order the filter renders them. */
 export const CLAIM_STATUSES = [
   "submitted",
   "guardian_review",
@@ -9,6 +9,7 @@ export const CLAIM_STATUSES = [
   "released",
   "vetoed",
   "locked",
+  "closed",
 ] as const
 
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number]
@@ -35,6 +36,7 @@ export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
     released: labels.statusReleased,
     vetoed: labels.statusVetoed,
     locked: labels.statusLocked,
+    closed: labels.statusClosed,
   }
   return map[status]
 }
@@ -42,10 +44,14 @@ export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
 /**
  * Whether a status still has a human decision in front of it.
  *
- * Used only for emphasis in the filter. `released`, `vetoed` and `locked` are
- * `TERMINAL_STATUSES` in `model/claimFlow.ts`; `awaiting_veto` is waiting on a
- * clock rather than a person, and `guardian_review` is waiting on someone this
- * console cannot reach.
+ * Used only for emphasis in the filter. `released`, `vetoed`, `locked` and
+ * `closed` are `TERMINAL_STATUSES` in `model/claimFlow.ts`; `awaiting_veto` is
+ * waiting on a clock rather than a person, and `guardian_review` is waiting on
+ * someone this console cannot reach.
+ *
+ * Note a `submitted` claim with no vault attached needs a human *more* than an
+ * ordinary one — see `admin.unmatchedClaims` — but it is the same status, so
+ * that urgency lives on its own screen rather than in this flag.
  */
 export function needsAnyone(status: ClaimStatus): boolean {
   return status === "submitted"

@@ -17,7 +17,7 @@ import { TextInput, type TextInputProps } from 'react-native';
  *
  * Masked is text, revealed is a field — so while hidden the whole row stays a
  * tap target, and once revealed editing is the same gesture as reading, which is
- * the board's rule that there is no edit mode.
+ * the rule that there is no edit mode.
  *
  * ⚠️ **`keyboardType: 'visible-password'` must never appear here.** It and
  * `secureTextEntry` set the same Android input-type variation bits and the

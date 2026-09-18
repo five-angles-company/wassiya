@@ -55,7 +55,7 @@ export function MissingEnv({ missing }: MissingEnvProps) {
         <View
           key={name}
           style={{
-            backgroundColor: "#ffe1d0",
+            backgroundColor: "#fcddd5",
             borderRadius: 16,
             paddingVertical: 12,
             paddingHorizontal: 16,
@@ -63,7 +63,7 @@ export function MissingEnv({ missing }: MissingEnvProps) {
           }}
         >
           <Text
-            style={{ fontSize: 13, color: "#8c491a", fontFamily: "monospace" }}
+            style={{ fontSize: 13, color: "#9d3e2e", fontFamily: "monospace" }}
           >
             {name}
           </Text>

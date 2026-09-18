@@ -3,7 +3,7 @@ import { cn } from '@workspace/ui-native/lib/utils';
 import { View } from 'react-native';
 
 /**
- * Who receives this — as faces, at the end of a row. The board carries status
+ * Who receives this — as faces, at the end of a row. This product carries status
  * with faces and one line of text: no badges, no bars, no scores. In an
  * inheritance vault the only status worth showing is *who gets this*, and a name
  * answers it better than any pill. The discs overlap by 9px, so four recipients

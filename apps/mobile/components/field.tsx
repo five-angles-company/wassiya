@@ -20,7 +20,7 @@ export type FieldProps = TextInputProps & {
 }
 
 /**
- * A labelled text field at the board's proportions.
+ * A labelled text field at the product's proportions.
  *
  * The shared `Input` primitive is upstream shadcn verbatim — 40px tall, 12px
  * radius, and carrying an inert `dark:bg-input/30` — which is not the 50px

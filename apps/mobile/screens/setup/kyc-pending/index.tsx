@@ -21,10 +21,18 @@ import { SubstepRow } from "@/screens/setup/kyc-pending/components/substep-row"
  * pushes the new status down. An interval here would be redundant work that
  * arrives later than the reactive update it duplicates.
  *
- * The three sub-steps are inferred from the overall status rather than
- * reported individually — Didit does not stream them — so they read as a
- * settling progression, not a fabricated one: nothing claims "done" that the
- * status has not already earned.
+ * ## ⚠️ The three rows name the checks; none of them can be ticked
+ *
+ * Didit returns one verdict and streams no sub-steps, so the app has no signal
+ * that any individual check has passed. These rows used to be a checklist whose
+ * `done` flag was `status.hasOpenSession` — which is `diditSessionId !==
+ * undefined`, written by `recordSession` at the moment a session is *created*.
+ * Opening the provider and closing it again therefore reported "ID document
+ * received" and "liveness confirmed" to someone who had submitted nothing.
+ *
+ * There is no honest `done` to compute here, so there is no `done`. A verdict
+ * only ever arrives as the whole status changing, and `verified` redirects off
+ * this screen before any row could show it.
  */
 export function KycPendingScreen() {
   const { t, locale } = useStrings("setup/kyc/pending")
@@ -45,7 +53,6 @@ export function KycPendingScreen() {
 
   const rejected = status.status === "rejected"
   const exhausted = identityRetriesExhausted(status.attempts)
-  const submitted = status.hasOpenSession
 
   return (
     <Screen inset="flow">
@@ -75,10 +82,13 @@ export function KycPendingScreen() {
             {t.body}
           </Text>
 
+          <Text variant="metaSm" className="mb-2.5 text-muted-foreground">
+            {t.checksHeading}
+          </Text>
           <View className="gap-row">
-            <SubstepRow label={t.stepDocument} done={submitted} />
-            <SubstepRow label={t.stepLiveness} done={submitted} />
-            <SubstepRow label={t.stepFaceMatch} done={false} />
+            <SubstepRow label={t.stepDocument} />
+            <SubstepRow label={t.stepLiveness} />
+            <SubstepRow label={t.stepFaceMatch} />
           </View>
         </>
       )}

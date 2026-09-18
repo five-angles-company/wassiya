@@ -20,7 +20,7 @@ export type BackButtonProps = {
 }
 
 /**
- * The 40px round back affordance the board puts at the top-start of every
+ * The 40px round back affordance at the top-start of every
  * sub-page.
  *
  * `flip` is what makes the chevron mean "back" rather than "left": the glyph
@@ -57,7 +57,7 @@ export function BackButton({
       {/* `size` and `color` are passed as props, not classes. `Icon` maps
           `size-*` to `width` only, so height falls back to Lucide's default and
           a flipped glyph (which also replaces `style` with an array) can end up
-          mis-measured and invisible. The board draws this chevron at 19×20. */}
+          mis-measured and invisible. This chevron is drawn at 19×20. */}
       <Icon as={ChevronLeft} flip size={20} color={FOREGROUND} />
     </Pressable>
   )

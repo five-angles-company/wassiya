@@ -1,40 +1,32 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The nav bar's labels, and the shell's.
+ * The shell's labels — all four of them.
  *
- * `config/nav.ts` indexes this dictionary by key rather than carrying copy of
- * its own, so adding a nav item without adding both languages fails the build
- * instead of shipping an English label into an Arabic bar.
+ * This was the nav bar's dictionary: a group heading and a label for every
+ * destination, indexed by `config/nav.ts` so that adding a link without adding
+ * both languages failed the build. There are no destinations left. `/` routes a
+ * reader into the one thing they have in flight, and the bar is a mark and an
+ * avatar — so what survives is the product's name, the skip link, and the two
+ * rows inside the avatar's menu.
  */
 export const NAV = {
   appName: { ar: "وصيّة", en: "Wassiya" },
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
-  openMenu: { ar: "افتح القائمة", en: "Open the menu" },
-  closeMenu: { ar: "أغلق القائمة", en: "Close the menu" },
-
-  groupOverview: { ar: "البداية", en: "Start" },
-  home: { ar: "الرئيسية", en: "Home" },
-
-  // The heir's side. "بلاغاتي" rather than "مطالباتي": a claim here is a report
-  // someone files about a death, not a demand against an estate.
-  groupHeir: { ar: "ما تركوه لك", en: "Left to you" },
-  claims: { ar: "بلاغاتي", en: "My reports" },
-  newClaim: { ar: "بلاغ جديد", en: "New report" },
-  box: { ar: "صندوقي", en: "My box" },
-
-  // The guardian's side.
-  groupGuardian: { ar: "وصايتك", en: "Your guardianship" },
-  guardian: { ar: "ما هو مطلوب", en: "What needs you" },
-  guardianKey: { ar: "مفتاحي", en: "My key" },
-
-  groupAccount: { ar: "حسابك", en: "Your account" },
-  notifications: { ar: "الإشعارات", en: "Notifications" },
   account: { ar: "الحساب", en: "Account" },
 
-  /** The bell's unread badge, capped — counting past ten is waste. */
-  unreadMany: { ar: "٩+", en: "9+" },
+  /**
+   * ⚠️ **"مفتاح الوصاية", not "المفتاح".** The menu is shared with heirs, who
+   * hold no key and would read a bare "key" as something of theirs that has gone
+   * missing. Naming the role makes the row self-explanatory to the reader it is
+   * not for.
+   */
+  guardianKey: { ar: "مفتاح الوصاية", en: "Guardian key" },
 
+  // "Manage account" and "Account" sat next to each other in the old menu and
+  // read as the same thing. This one is Clerk's modal — email, password, the
+  // second factor — so it is named for what it actually holds.
+  security: { ar: "الدخول والأمان", en: "Sign-in & security" },
   signOut: { ar: "تسجيل الخروج", en: "Sign out" },
-  language: { ar: "اللغة", en: "Language" },
+  openMenu: { ar: "حسابك", en: "Your account" },
 } as const satisfies Dictionary

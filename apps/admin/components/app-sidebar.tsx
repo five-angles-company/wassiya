@@ -113,7 +113,7 @@ export function AppSidebar() {
                         // `bg-sidebar-accent` — the same token as hover, told
                         // apart only by `font-medium`. In a sidebar where all
                         // but one item is disabled that reads as nothing. The
-                        // board's own grammar settles it: "the selected one is
+                        // the vault grammar settles it: "the selected one is
                         // solid terracotta". twMerge drops the upstream
                         // `data-active:bg-*` in favour of these.
                         className="data-active:bg-sidebar-primary data-active:text-sidebar-primary-foreground data-active:hover:bg-sidebar-primary data-active:hover:text-sidebar-primary-foreground"

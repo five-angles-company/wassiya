@@ -1,15 +1,10 @@
 /**
  * ٦ — الحماية.
  *
- * ⚠️ **This section's board design has never been readable** — `get_file` caps
- * at 256 KiB and the onboarding board is roughly twice that, so every read stops
- * inside section ٥. What is built here derives from sources that are
- * authoritative: AGENTS.md's locked security model and section map (6.1 Centre,
- * 6.2 guardian, 6.4 check-in), `convex/checkin.ts` and `convex/guardians.ts`,
- * and the `@workspace/ui-native` primitives built directly from this section.
- *
- * Behaviour is sourced; the visual arrangement is inferred. Check this copy
- * first when the board is split.
+ * The behaviour these strings describe is fixed by AGENTS.md's locked security
+ * model and by `convex/checkin.ts` and `convex/guardians.ts` — the ladder, the
+ * cadence and what a guardian is for are not copy decisions. The wording and the
+ * arrangement are ours.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
@@ -80,9 +75,25 @@ export const GUARDIAN = {
   share: { ar: "أرسل الدعوة", en: "Send the invitation" },
   // Points at the website, not the app: a guardian has no reason to install
   // the mobile app, which is the owner's.
+  // ⚠️ Carries the **link**, not a bare code. It used to say "open the Wassiya
+  // website and enter this code" — and that page has no field to enter one, so
+  // an invited guardian reached a screen that could not take what they were
+  // holding. The code stays in the message underneath, for a messaging app that
+  // mangles a long URL; the accept page can take it pasted.
+  // ⚠️ Carries the **link**, not a bare code. It used to say "open the Wassiya
+  // website and enter this code" — and that page has no field to enter one, so
+  // an invited guardian reached a screen that could not take what they were
+  // holding. The code stays underneath, for a messaging app that mangles a long
+  // URL; the accept page takes it pasted.
   inviteMessage: {
-    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح موقع وصيّة وأدخل هذا الرمز: {token}",
-    en: "You've been asked to be a guardian for a Wassiya vault. Open the Wassiya website and enter this code: {token}",
+    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح هذا الرابط:\n{link}\n\nإن لم يعمل الرابط، افتح موقع وصيّة وألصق هذا الرمز:\n{token}",
+    en: "You have been asked to be a guardian for a Wassiya vault. Open this link:\n{link}\n\nIf the link does not work, open the Wassiya website and paste this code:\n{token}",
+  },
+  // No link to give, because `EXPO_PUBLIC_APP_URL` is unset. Naming the site
+  // beats a message that names none.
+  inviteMessageNoLink: {
+    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح موقع وصيّة، واذهب إلى صفحة قبول الوصاية، وألصق هذا الرمز:\n{token}",
+    en: "You have been asked to be a guardian for a Wassiya vault. Open the Wassiya website, go to the guardian acceptance page, and paste this code:\n{token}",
   },
 
   statusInvited: { ar: "بانتظار القبول", en: "Waiting to accept" },
@@ -94,8 +105,8 @@ export const GUARDIAN = {
   // share, and there is no such share. What is left is a wait, and the copy
   // says whose it is — the owner has nothing to do and no way to hurry it.
   awaitingAcceptance: {
-    ar: "أرسلنا الدعوة. يقبلها وصيّك من موقع وصيّة — لا شيء مطلوب منك حتى ذلك الحين.",
-    en: "The invitation is out. Your guardian accepts it on the Wassiya website — there's nothing for you to do until then.",
+    ar: "الدعوة جاهزة — أرسلها لوصيّك بنفسك. يقبلها من الرابط، ثم لا شيء مطلوب منك.",
+    en: "The invitation is ready — send it to your guardian yourself. They accept from the link, and nothing more is needed from you.",
   },
   acceptedBody: {
     ar: "قبل وصيّك ونشر مفتاحه. أصبح بإمكان ورثتك استلام ما تركته لهم.",
@@ -177,7 +188,7 @@ export const CHECKIN = {
  * ٧.٥ — the owner's veto interrupt.
  *
  * The one screen of section ٧ that lives in the app rather than the web funnel,
- * and the board says why: *"it must reach a person who is alive, on their own
+ * and the reason is stated: *"it must reach a person who is alive, on their own
  * phone, with a biometric to cancel."* A veto is the assertion "I am not dead",
  * and it has to be provable by presence, not by a tap on an unlocked handset
  * someone else is holding.

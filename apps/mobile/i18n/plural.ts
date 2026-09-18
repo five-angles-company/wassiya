@@ -8,7 +8,7 @@
  *   11+      singular again ٤٣ مستلماً   · ٤٣ أصلاً   (accusative)
  *
  * A naive `${n} ${n === 1 ? one : many}` produces "٤٣ أصول", which reads to an
- * Arabic speaker exactly the way "43 asset" reads in English — and the board
+ * Arabic speaker exactly the way "43 asset" reads in English — and the design
  * writes "٤٣ أصلاً" on the first screen that counts anything.
  *
  * `zero` is separate from the grammar: Arabic would say "٠ أصول", but every

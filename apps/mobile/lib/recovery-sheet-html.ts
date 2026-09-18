@@ -23,6 +23,7 @@ import { fmtDate } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
 
 export type RecoverySheetLabels = {
+  brandName: string
   documentTitle: string
   documentSubtitle: string
   codeLabel: string
@@ -33,6 +34,13 @@ export type RecoverySheetLabels = {
   shownOnce: string
   handling: string
   keepWithWill: string
+  howTitle: string
+  howWhen: string
+  howStep1: string
+  howStep2: string
+  howStep3: string
+  qrCaption: string
+  sheetFooter: string
 }
 
 export type RecoverySheetData = {
@@ -50,6 +58,38 @@ export type RecoverySheetData = {
 
 /** Cached across calls: the user may print, then save, then share. */
 let cairoDataUri: string | null | undefined
+let markDataUri: string | null | undefined
+
+/**
+ * Base64 of the ribbon mark, or null if it cannot be read.
+ *
+ * `assets/images/brand-mark.png`, not `assets/brand/` — Metro only bundles the
+ * former, and the latter is the regeneration source (see its README). Cosmetic
+ * on failure, like the font: a missing logo is not a reason to withhold
+ * somebody's recovery document.
+ */
+async function loadMark(): Promise<string | null> {
+  if (markDataUri !== undefined) return markDataUri
+  try {
+    // Metro resolves a static asset through `require`, which is how
+    // `screens/splash` loads this same file; there is no import form that
+    // yields the module id an `Asset` needs.
+    const asset = Asset.fromModule(
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../assets/images/brand-mark.png") as number
+    )
+    await asset.downloadAsync()
+    if (asset.localUri === null) {
+      markDataUri = null
+      return null
+    }
+    const base64 = await new File(asset.localUri).base64()
+    markDataUri = `data:image/png;base64,${base64}`
+  } catch {
+    markDataUri = null
+  }
+  return markDataUri
+}
 
 /**
  * Base64 of the bundled Cairo 900 face, or null if it cannot be read.
@@ -95,7 +135,7 @@ function codeLines(groups: string[], perLine = 3): string[] {
 export async function buildRecoverySheetHtml(
   data: RecoverySheetData
 ): Promise<string> {
-  const cairo = await loadCairo()
+  const [cairo, mark] = await Promise.all([loadCairo(), loadMark()])
   const { labels: t } = data
 
   const fontFace =
@@ -108,14 +148,30 @@ export async function buildRecoverySheetHtml(
       ? `'Noto Naskh Arabic','Geeza Pro',serif`
       : `'Cairo','Noto Naskh Arabic',sans-serif`
 
+  const logo =
+    mark === null ? "" : `<img class="mark" src="${mark}" alt="" />`
+
   const qr =
     data.qrDataUri === null
       ? ""
-      : `<img class="qr" src="${data.qrDataUri}" alt="" />`
+      : `<figure class="qr">
+          <img src="${data.qrDataUri}" alt="" />
+          <figcaption>${escapeHtml(t.qrCaption)}</figcaption>
+        </figure>`
 
   const code = codeLines(data.codeGroups)
     .map((line) => `<div class="code-line">${escapeHtml(line)}</div>`)
     .join("")
+
+  const steps = [t.howStep1, t.howStep2, t.howStep3]
+    .map((step) => `<li>${escapeHtml(step)}</li>`)
+    .join("")
+
+  const field = (key: string, value: string, ltr = false) =>
+    `<div class="field">
+       <div class="k">${escapeHtml(key)}</div>
+       <div class="v${ltr ? " ltr" : ""}">${escapeHtml(value)}</div>
+     </div>`
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="${data.locale}">
@@ -124,81 +180,113 @@ export async function buildRecoverySheetHtml(
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   ${fontFace}
-  @page { size: A4; margin: 18mm 16mm; }
+  @page { size: A4; margin: 16mm 15mm; }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    background: #ffffff;
+    background: #fff;
     color: #201e1d;
     font-family: 'Noto Naskh Arabic', 'Geeza Pro', serif;
-    font-size: 12pt;
-    line-height: 1.7;
+    font-size: 11pt;
+    line-height: 1.65;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  .sheet { border: 1.5pt solid #201e1d; border-radius: 6pt; padding: 10mm; }
-  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8mm; }
-  h1 { font-family: ${heading}; font-weight: 900; font-size: 20pt; line-height: 1.2; margin: 0; }
-  .subtitle { direction: ltr; text-align: left; font-size: 8pt; letter-spacing: .12em; color: #645c50; margin-top: 1mm; }
-  .qr { width: 30mm; height: 30mm; flex: none; }
-  hr { border: 0; border-top: .8pt solid #dcd3c4; margin: 6mm 0; }
-  .label { font-size: 8.5pt; letter-spacing: .08em; color: #645c50; margin-bottom: 2mm; }
-  /* The code is machine-readable text a human retypes: Latin, monospace, and
-     explicitly LTR so no bidi rule can reorder a group. */
-  .code { direction: ltr; text-align: left; font-family: 'Courier New', monospace; font-size: 14pt; font-weight: 700; letter-spacing: .08em; }
-  .code-line { margin-bottom: 1.5mm; white-space: nowrap; }
-  .meta { display: flex; flex-wrap: wrap; gap: 2mm 10mm; font-size: 10pt; }
-  .meta div { min-width: 60mm; }
-  .meta .k { color: #645c50; font-size: 8.5pt; }
-  .meta .v { font-weight: 600; }
-  .meta .ltr { direction: ltr; text-align: right; unicode-bidi: isolate; }
-  .band { border: 1pt solid #8c491a; color: #8c491a; border-radius: 4pt; padding: 4mm 5mm; margin-top: 6mm; font-size: 10.5pt; }
-  .band p { margin: 0 0 1.5mm; }
-  .band p:last-child { margin-bottom: 0; }
-  .foot { margin-top: 5mm; font-size: 9pt; color: #645c50; }
+
+  /* Masthead. The rule under it is the only full-width brand colour on the
+     page: everything else has to survive a monochrome printer, so nothing
+     carries meaning by colour alone. */
+  .masthead { display: flex; align-items: center; justify-content: space-between; gap: 8mm; }
+  .brand { display: flex; align-items: center; gap: 3.5mm; }
+  .mark { height: 9mm; width: auto; }
+  .brand .name { font-family: ${heading}; font-weight: 900; font-size: 15pt; }
+  .kind { direction: ltr; text-align: left; font-size: 7.5pt; letter-spacing: .16em; color: #645c50; }
+  .kind .ver { font-weight: 700; color: #201e1d; }
+  .rule { height: 1.6pt; background: #ea5b48; margin: 3mm 0 7mm; }
+
+  h1 { font-family: ${heading}; font-weight: 900; font-size: 22pt; line-height: 1.15; margin: 0 0 2mm; }
+  .lede { font-size: 10.5pt; color: #4a463f; margin: 0 0 7mm; max-width: 120mm; }
+
+  /* The code is the document. Everything else is here to explain it. */
+  .vault { display: flex; gap: 7mm; align-items: stretch; }
+  .code-panel { flex: 1; border: 1.2pt solid #201e1d; border-radius: 3pt; padding: 5mm 6mm; }
+  .code-label { font-size: 8pt; letter-spacing: .14em; color: #645c50; margin-bottom: 3mm; }
+  /* Machine-readable text a human retypes: Latin, monospace, explicitly LTR so
+     no bidi rule can reorder a group. */
+  .code { direction: ltr; text-align: left; font-family: 'Courier New', monospace; font-size: 15pt; font-weight: 700; letter-spacing: .1em; }
+  .code-line { margin-bottom: 2mm; white-space: nowrap; }
+  .code-line:last-child { margin-bottom: 0; }
+
+  .qr { margin: 0; flex: none; width: 32mm; text-align: center; }
+  .qr img { width: 32mm; height: 32mm; display: block; }
+  .qr figcaption { font-size: 7.5pt; color: #645c50; margin-top: 1.5mm; line-height: 1.35; }
+
+  /* Label-over-value on hairlines — the same grammar as the app's own rows. */
+  .fields { display: flex; flex-wrap: wrap; gap: 0; margin-top: 7mm; border-top: .7pt solid #dcd3c4; }
+  .field { width: 50%; padding: 3mm 0; border-bottom: .7pt solid #dcd3c4; }
+  .field .k { font-size: 8pt; letter-spacing: .06em; color: #645c50; }
+  .field .v { font-size: 11pt; font-weight: 700; margin-top: .5mm; }
+  .field .ltr { direction: ltr; text-align: right; unicode-bidi: isolate; }
+
+  .how { margin-top: 7mm; }
+  .how h2 { font-family: ${heading}; font-weight: 900; font-size: 12pt; margin: 0 0 2mm; }
+  .how p { margin: 0 0 3mm; font-size: 10.5pt; color: #4a463f; }
+  .how ol { margin: 0; padding-inline-start: 6mm; font-size: 10.5pt; }
+  .how li { margin-bottom: 1.5mm; }
+
+  /* The bearer-token warning. Bordered rather than filled so it reads on any
+     printer, and the rule above it is thick enough to find at a glance. */
+  .warning { margin-top: 7mm; border: 1.2pt solid #9d3e2e; border-radius: 3pt; padding: 4mm 5mm; color: #9d3e2e; font-size: 10.5pt; }
+  .warning p { margin: 0 0 1.5mm; }
+  .warning p:last-child { margin-bottom: 0; }
+  .warning strong { font-weight: 700; }
+
+  .foot { margin-top: 6mm; padding-top: 3mm; border-top: .7pt solid #dcd3c4; display: flex; justify-content: space-between; gap: 6mm; font-size: 8.5pt; color: #645c50; }
+  .foot .ltr { direction: ltr; text-align: left; }
 </style>
 </head>
 <body>
-  <div class="sheet">
-    <div class="head">
-      <div>
-        <h1>${escapeHtml(t.documentTitle)}</h1>
-        <div class="subtitle">${escapeHtml(t.documentSubtitle)}</div>
-      </div>
-      ${qr}
+  <header class="masthead">
+    <div class="brand">${logo}<span class="name">${escapeHtml(t.brandName)}</span></div>
+    <div class="kind">
+      ${escapeHtml(t.documentSubtitle)}<br />
+      <span class="ver">WSY${data.paperVersion}</span>
     </div>
+  </header>
+  <div class="rule"></div>
 
-    <hr />
+  <h1>${escapeHtml(t.documentTitle)}</h1>
+  <p class="lede">${escapeHtml(t.howWhen)}</p>
 
-    <div class="label">${escapeHtml(t.codeLabel)}</div>
-    <div class="code">${code}</div>
-
-    <hr />
-
-    <div class="meta">
-      <div>
-        <div class="k">${escapeHtml(t.owner)}</div>
-        <div class="v">${escapeHtml(data.ownerName)}</div>
-      </div>
-      <div>
-        <div class="k">${escapeHtml(t.account)}</div>
-        <div class="v ltr">${escapeHtml(data.accountEmail)}</div>
-      </div>
-      <div>
-        <div class="k">${escapeHtml(t.issued)}</div>
-        <div class="v">${escapeHtml(fmtDate(data.issuedAt, data.locale))}</div>
-      </div>
-      <div>
-        <div class="k">${escapeHtml(t.version)}</div>
-        <div class="v ltr">WSY${data.paperVersion}</div>
-      </div>
+  <section class="vault">
+    <div class="code-panel">
+      <div class="code-label">${escapeHtml(t.codeLabel)}</div>
+      <div class="code">${code}</div>
     </div>
+    ${qr}
+  </section>
 
-    <div class="band">
-      <p>${escapeHtml(t.shownOnce)}</p>
-      <p>${escapeHtml(t.handling)}</p>
-    </div>
+  <section class="fields">
+    ${field(t.owner, data.ownerName)}
+    ${field(t.account, data.accountEmail, true)}
+    ${field(t.issued, fmtDate(data.issuedAt, data.locale))}
+    ${field(t.version, `WSY${data.paperVersion}`, true)}
+  </section>
 
-    <div class="foot">${escapeHtml(t.keepWithWill)}</div>
-  </div>
+  <section class="how">
+    <h2>${escapeHtml(t.howTitle)}</h2>
+    <ol>${steps}</ol>
+  </section>
+
+  <section class="warning">
+    <p><strong>${escapeHtml(t.handling)}</strong></p>
+    <p>${escapeHtml(t.shownOnce)}</p>
+  </section>
+
+  <footer class="foot">
+    <span>${escapeHtml(t.keepWithWill)}</span>
+    <span class="ltr">${escapeHtml(t.sheetFooter)}</span>
+  </footer>
 </body>
 </html>`
 }

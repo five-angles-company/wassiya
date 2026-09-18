@@ -4,10 +4,8 @@ import { useRef, useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
-import { FileCheck2Icon } from "lucide-react"
 
 import { Button } from "@/components/button"
-import { Panel } from "@/components/panel"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { Field } from "@/features/claims/components/field"
@@ -33,7 +31,11 @@ const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "image/heic"]
  * reviewer could also open. `claims.generateCertificateUploadUrl` is separate
  * from the asset upload path precisely so retention rules can find it later.
  */
-export function CertificatePanel({ claimId }: { claimId: string }) {
+export function CertificatePanel({
+  claimId,
+}: {
+  claimId: string
+}) {
   const locale = useLocale()
   const labels = t(CLAIM_CERTIFICATE, locale)
   const generateUploadUrl = useMutation(api.claims.generateCertificateUploadUrl)
@@ -98,8 +100,8 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
   }
 
   return (
-    <Panel accent="primary" icon={FileCheck2Icon} title={labels.heading}>
-      <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.7]">
+    <div>
+      <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.7]">
         {labels.intro}
       </p>
 
@@ -117,7 +119,7 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
             if (dropped) void upload(dropped)
           }}
           className={`rounded-card mt-5 flex flex-col items-center gap-2 border-2 border-dashed px-6 py-10 text-center transition-colors ${
-            dragging ? "border-primary bg-background" : "border-sand-400"
+            dragging ? "border-primary bg-muted" : "border-[color:var(--input)]"
           }`}
         >
           <p className="text-[15.5px] font-semibold">{labels.dropHere}</p>
@@ -143,13 +145,7 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
           />
         </div>
       ) : (
-        <div className="bg-background rounded-card mt-5 flex items-center gap-3 p-4">
-          <span
-            aria-hidden
-            className="bg-primary text-primary-foreground grid size-9 shrink-0 place-items-center rounded-full"
-          >
-            <FileCheck2Icon className="size-[17px]" strokeWidth={2.3} />
-          </span>
+        <div className="border-border mt-5 flex items-center gap-4 border-y py-3.5">
           <div className="min-w-0 flex-1">
             <p className="truncate text-[14.5px] font-semibold">{file.name}</p>
             <p className="text-[12.5px] opacity-60">
@@ -182,7 +178,7 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
       {/* Said before they submit, not after a mismatch. Someone whose
           grandmother's name is spelled three ways across three documents should
           not spend a month thinking they were caught lying. */}
-      <p className="bg-olive-100 text-olive-700 rounded-card mt-5 p-4 text-[13.5px] leading-[1.7]">
+      <p className="text-tone-settled mt-5 max-w-[66ch] text-[13.5px] leading-[1.7]">
         {labels.matchNote}
       </p>
 
@@ -196,6 +192,6 @@ export function CertificatePanel({ claimId }: { claimId: string }) {
       <p className="mt-2 text-[12.5px] opacity-60">{labels.submitNote}</p>
 
       {error !== null && <p className="mt-4 text-[14px]">{error}</p>}
-    </Panel>
+    </div>
   )
 }

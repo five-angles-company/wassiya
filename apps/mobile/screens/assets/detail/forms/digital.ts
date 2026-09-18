@@ -17,7 +17,7 @@ import type { AssetLabel } from "@workspace/crypto/label"
 
 import type { EditSource } from "@/screens/assets/detail/forms/source"
 
-/** Mirrors the board's three options, in its order. */
+/** The three dispositions, in order. */
 export type Disposition = "handOver" | "delete" | "memorialise"
 
 export const DISPOSITIONS: Disposition[] = ["handOver", "delete", "memorialise"]

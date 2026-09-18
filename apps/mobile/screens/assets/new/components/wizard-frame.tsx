@@ -26,7 +26,7 @@ import { useStrings } from "@/i18n/use-strings"
 export type WizardFrameProps = {
   /** "محفظة رقمية" — the type being added. */
   title: string
-  /** The board meters every wizard "١ من ٢"; step 2 is heir assignment. */
+  /** Every wizard meters "١ من ٢"; step 2 is heir assignment. */
   step?: number
   stepCount?: number
   canSubmit: boolean

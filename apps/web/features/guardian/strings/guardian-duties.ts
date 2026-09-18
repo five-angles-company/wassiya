@@ -26,6 +26,34 @@ export const GUARDIAN_DUTIES = {
     en: "You are asked to act twice at most in the whole life of a guardianship. Everything that concerns you now is here.",
   },
 
+  // ── The claim, as four steps ─────────────────────────────────────────────
+  //
+  // A guardian arriving cold — often years after accepting — needs the whole
+  // shape before the one row that concerns them. A screen showing only the live
+  // step asks someone to act inside a process they cannot see.
+  claimTitle: { ar: "خزنة {name}", en: "{name}'s vault" },
+  stepFiled: { ar: "قُدّم بلاغ وفاة", en: "A death was reported" },
+  stepFiledMeta: {
+    ar: "{date} · راجعناه قبل أن يصلك",
+    en: "{date} · reviewed before it reached you",
+  },
+  stepConfirm: { ar: "تأكيدك", en: "Your confirmation" },
+  stepConfirmDoneMeta: { ar: "أكّدت الوفاة", en: "You confirmed the death" },
+  stepConfirmBlockedMeta: {
+    ar: "نربط الوارث بالبلاغ يدوياً أولاً — لا شيء مطلوب منك بعد.",
+    en: "We link the heir to the report by hand first — nothing is needed from you yet.",
+  },
+  stepVeto: { ar: "مدة الاعتراض", en: "The objection period" },
+  stepVetoMeta: {
+    ar: "تنتهي {date}. يستطيع صاحب الخزنة إيقاف التسليم خلالها.",
+    en: "Ends {date}. The vault owner can stop the handover during it.",
+  },
+  stepHandover: { ar: "تسليم نصف مفتاحك", en: "Hand over your key half" },
+  stepHandoverMeta: {
+    ar: "بعد انتهاء المدة، ويُسلَّم للوارث مباشرة لا من خلالنا.",
+    en: "After the period ends, and handed to the heir directly rather than through us.",
+  },
+
   nothingTitle: { ar: "لا شيء مطلوب منك", en: "Nothing needs you" },
   nothingBody: {
     ar: "هذا هو الوضع الطبيعي، وقد يدوم سنوات. سنراسلك على بريدك حين يتغيّر.",
@@ -43,15 +71,12 @@ export const GUARDIAN_DUTIES = {
   },
 
   // The section heading, identical in shape to the home screen's.
-  asksTitle: { ar: "ما يحتاجك الآن", en: "What needs you now" },
 
   colVault: { ar: "الخزنة", en: "Vault" },
   vaultsTitle: { ar: "الخزائن التي توصي عليها", en: "The vaults you guard" },
   // The count is what is *loaded*, not what exists: `usePaginatedQuery` knows
   // the first and not the second, and a number that silently meant "the first
   // page" is the kind of thing that stays wrong for years.
-  vaultsShown: { ar: "معروض {n}", en: "{n} shown" },
-  vaultsMore: { ar: "المزيد", en: "Load more" },
   vaultsEmpty: {
     ar: "لا توجد وصاية على حسابك بعد. تُفتح الوصاية من رابط الدعوة وحده.",
     en: "There is no guardianship on your account yet. A guardianship starts from an invitation link and nothing else.",
@@ -115,12 +140,32 @@ export const GUARDIAN_DUTIES = {
   },
 
   // ---- handover ----------------------------------------------------------
-  handoverTitle: { ar: "نصف المفتاح للوارث", en: "The key half for the heir" },
   handoverBody: {
     ar: "أدخل مفتاحك المطبوع. نفكّ به نصيب هذا الوارث على جهازك، فيظهر لك نصّ تسلّمه له بنفسك — مكالمة أو رسالة، لا من خلالنا.",
     en: "Enter your printed key. We use it on your device to unwrap this heir's half, and show you a code you hand over yourself — a call or a message, not through us.",
   },
+  handoverRecipient: { ar: "يُسلَّم إلى", en: "Hand it to" },
   handoverKeyLabel: { ar: "مفتاحك المطبوع", en: "Your printed key" },
+
+  /**
+   * ⚠️ **"ببصمتك", not "بالمفتاح المحفوظ".** What the reader is being asked for
+   * is a fingerprint; that the device holds a sealed key is our business, not
+   * theirs. The long explanation already ran on the day they accepted.
+   */
+  handoverDeviceAction: {
+    ar: "افتح ببصمتك",
+    en: "Unlock with your fingerprint",
+  },
+
+  /**
+   * The divider above the typed field once the device path is offered. "أو"
+   * carries the whole meaning: neither is the fallback, and a guardian who
+   * prefers paper has not chosen the lesser road.
+   */
+  handoverTypeInstead: {
+    ar: "أو اكتب ورقتك المطبوعة",
+    en: "Or type your printed sheet",
+  },
   handoverAction: { ar: "افتح نصيب الوارث", en: "Unwrap the heir's half" },
   handoverBusy: { ar: "جارٍ الفتح…", en: "Unwrapping…" },
   handoverResultTitle: {
@@ -150,6 +195,22 @@ export const GUARDIAN_DUTIES = {
     ar: "أُنشئ مفتاحك على جهازك يوم قبلت الوصاية، ولم يصل إلينا. لا نحفظ نسخة منه ولا نستطيع إصداره لك مرة أخرى — لأننا لو استطعنا، لاستطعنا فتح صناديق الورثة وحدنا.",
     en: "Your key was created on your device the day you accepted, and never reached us. We hold no copy and cannot issue it again — because if we could, we could open the heirs' boxes on our own.",
   },
+  // The sentence this screen exists to deliver. A guardian opens it to learn
+  // one thing — will I be able to do this when asked — and it was the one
+  // thing the page never said.
+  keyHeldLine: {
+    ar: "مفتاحك محفوظ في هذا المتصفّح. لن تحتاج الورقة ما دمت هنا.",
+    en: "Your key is held in this browser. You will not need the sheet while you are here.",
+  },
+  keyPaperOnlyLine: {
+    ar: "مفتاحك ليس في هذا المتصفّح — ورقتك هي الطريق الوحيد. تحقّق منها اليوم، لا يوم يُطلب منك.",
+    en: "Your key is not in this browser — your sheet is the only way in. Check it today, not on the day you are asked.",
+  },
+  keyCheckLabel: {
+    ar: "الرمز كما هو على ورقتك",
+    en: "The code exactly as it appears on your sheet",
+  },
+
   keyCheckTitle: { ar: "تحقّق من ورقتك", en: "Check your sheet" },
   keyCheckBody: {
     ar: "اكتب المفتاح كما هو على ورقتك. نقارنه بالمفتاح العام المسجّل لهذه الخزنة — على جهازك، دون أن يغادر المفتاح المتصفّح.",
@@ -189,14 +250,20 @@ export const GUARDIAN_DUTIES = {
     ar: "حُفظت نسخة على هذا الجهاز. يمكنك عرض الورقة وطباعتها متى شئت من صفحة «مفتاحي».",
     en: "A copy is kept on this device. You can view and reprint the sheet whenever you like from the key page.",
   },
+  // ⚠️ It is the **authenticator** that lacks PRF, not the browser. Windows
+  // Hello is the common case: the passkey prompt appears and succeeds, and the
+  // extension result comes back without `prf.enabled`. Blaming the browser sent
+  // readers off to install a different one, which changes nothing — choosing a
+  // different device in the platform's own prompt is what can work.
   deviceKeyUnsupported: {
-    ar: "لا يدعم هذا المتصفّح حفظ المفتاح ببصمة الجهاز. لا شيء تغيّر — ورقتك تعمل كما هي.",
-    en: "This browser can't seal a key to the device's biometrics. Nothing has changed — your printed sheet works exactly as before.",
+    ar: "تعذّر الختم بما اخترته. في نافذة النظام اختر «تغيير» وجرّب مفتاح أمان أو هاتفك أو مدير كلمات المرور في متصفّحك — أو تابع بالورقة، فهي تعمل كما هي.",
+    en: "That option couldn't seal the key. In the system prompt choose “Change” and try a security key, your phone, or your browser's own password manager — or continue with the paper, which works exactly as before.",
   },
   deviceKeyDeclined: {
-    ar: "لم تُحفظ نسخة. ورقتك تعمل كما هي، ويمكنك المحاولة لاحقاً من صفحة «مفتاحي».",
-    en: "No copy was kept. Your printed sheet works as before, and you can try again later from the key page.",
+    ar: "لم تُحفظ نسخة. يمكنك المحاولة مرة أخرى، أو المتابعة بالورقة — وهي تعمل كما هي.",
+    en: "No copy was kept. You can try again, or continue with the paper — it works exactly as before.",
   },
+  deviceKeyRetry: { ar: "حاول مرة أخرى", en: "Try again" },
 
   // The key page, when the device holds it.
   deviceHeldTitle: { ar: "هذا الجهاز يحمل مفتاحك", en: "This device holds your key" },
@@ -230,5 +297,13 @@ export const GUARDIAN_DUTIES = {
     ar: "أبلغ صاحب الخزنة ليعيد تعيينك. سيُنشئ جهازك مفتاحاً جديداً، ويُعاد ختم نصيب كل وارث عليه. لا يمكن استرجاع القديم.",
     en: "Tell the vault's owner so they can re-appoint you. Your device will create a new key and every heir's half is re-sealed to it. The old one cannot be recovered.",
   },
-  keyForVault: { ar: "خزنة {name}", en: "{name}'s vault" },
+  /**
+   * ⚠️ **"يفتحها", not "خزائنك".** `vaultsTitle` already names the set on `/`;
+   * what this heading adds is that **one** key covers all of them, which is the
+   * only reason the list is on a page about a key at all.
+   */
+  keyOpensTitle: {
+    ar: "الخزائن التي يفتحها هذا المفتاح",
+    en: "The vaults this key opens",
+  },
 } as const satisfies Dictionary

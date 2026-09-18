@@ -1,8 +1,8 @@
 /**
  * ٥ — الورثة ومن يستلم ماذا.
  *
- * One rule governs the copy on every screen in this section, and the board
- * states it twice: **الأنصبة يحدّدها القانون، لا التطبيق**. There are no
+ * One rule governs the copy on every screen in this section, and it is
+ * stated twice: **الأنصبة يحدّدها القانون، لا التطبيق**. There are no
  * percentages, no shares and no division anywhere in these strings. An asset
  * goes to a recipient whole, and how its value is later divided is the
  * fara'id's business, not the app's.
@@ -39,6 +39,13 @@ export const HEIRS = {
 
   add: { ar: "أضف وارثاً", en: "Add an heir" },
   emptyTitle: { ar: "لم تضف ورثة بعد", en: "No heirs yet" },
+  emptySubtitle: { ar: "لا أحد بعد", en: "Nobody yet" },
+  // One sentence that teaches how to *choose*, the same job `assets.emptyLead`
+  // does — not a description of the feature.
+  emptyLead: {
+    ar: "ابدأ بشخص واحد: من تريده أن يجد ما تركته، ويعرف ماذا يفعل به.",
+    en: "Start with one person: whoever you want to find what you left, and know what to do with it.",
+  },
   emptyBody: {
     ar: "الوارث هو من يستلم ما تركته. أضف واحداً لتبدأ توجيه أصولك.",
     en: "An heir is who receives what you leave. Add one to start routing your assets.",
@@ -53,7 +60,7 @@ export const HEIR_NEW = {
 
   relationLabel: { ar: "صلة القرابة", en: "Relationship" },
   // Required, and an enum rather than free text: it is recorded on the will
-  // document and suggests routing. The note under it is the board's own, and
+  // document and suggests routing. The note under it is deliberate, and
   // it exists to close the door on the question the field invites.
   relationNote: {
     ar: "تُسجَّل في الوثيقة وتقترح التوجيه — ولا تُحسب بها أنصبة.",
@@ -97,7 +104,7 @@ export const HEIR_NEW = {
  * ٥.٣b — choosing an asset's recipients.
  *
  * Was `ROUTING`, and carried an overview screen's copy too: a title ("من يستلم
- * ماذا؟"), a default-rule card, and the board's manifesto. That screen is gone —
+ * ماذا؟"), a default-rule card, and a manifesto. That screen is gone —
  * it was ٤.١ grouped and filtered, and ٤.١ now groups and filters itself — so
  * what is left is exactly the picker's own words.
  *
@@ -150,7 +157,7 @@ export const HEIR_PREVIEW = {
   // selected, so it has to name them — "تعديل" alone would be a lie the moment
   // someone switches to a different heir and does not notice.
   editHeir: { ar: "تعديل {name}", en: "Edit {name}" },
-  // The board's own framing: this is a promise about the ceiling, not a teaser.
+  // The framing is deliberate: a promise about the ceiling, not a teaser.
   disclaimer: {
     ar: "هذا كل ما سيراه {name} بعد الإفراج — لا أكثر.",
     en: "This is everything {name} will see after release — nothing more.",

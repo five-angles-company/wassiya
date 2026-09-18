@@ -20,7 +20,15 @@ export const HOME = {
   greeting: { ar: "أهلاً، {name}", en: "Hello, {name}" },
   greetingAnonymous: { ar: "أهلاً بك", en: "Hello" },
 
-  needsYouTitle: { ar: "ما يحتاجك الآن", en: "What needs you now" },
+
+  // The list, shown only to somebody with more than one thing in flight. With
+  // exactly one, `/` goes straight into it — see `case-router.tsx`.
+  listBody: {
+    ar: "كل ما هو جارٍ الآن. نراسلك على بريدك عند كل تغيّر — لا حاجة لمتابعة هذه الصفحة.",
+    en: "Everything in flight. We email you at each change — there is no need to watch this page.",
+  },
+  caseTitle: { ar: "خزنة {name}", en: "{name}'s vault" },
+  caseUnknownVault: { ar: "خزنة", en: "A vault" },
   nothingTitle: { ar: "لا شيء مطلوب منك", en: "Nothing needs you" },
   nothingBody: {
     ar: "سنراسلك على بريدك عند أي تغيّر. لا حاجة لفتح هذه الصفحة يومياً.",
@@ -66,10 +74,7 @@ export const HOME = {
   // The doors: a place to go with a count on it. The figure carries the
   // weight, so the label and the unit are separate — "٢" and "بلاغ" are set at
   // different sizes and cannot come from one interpolated string.
-  yourReports: { ar: "بلاغاتك", en: "Your reports" },
-  yourVaults: { ar: "الخزائن التي توصي عليها", en: "Vaults you guard" },
-  unitReports: { ar: "بلاغ", en: "filed" },
-  unitVaults: { ar: "خزنة", en: "vaults" },
+
 
   // The asks, phrased as asks. Each carries a sentence about what happens if
   // the reader acts — without one the card was a title alone in a wide box,
@@ -90,11 +95,6 @@ export const HOME = {
   dutyBlockedBody: {
     ar: "نربط الوارث بالبلاغ يدوياً قبل أن نطلب تأكيدك. لا شيء مطلوب منك حتى ذلك.",
     en: "We link the heir to the report by hand before asking you to confirm. Nothing is needed from you until then.",
-  },
-  claimReady: { ar: "صندوقك جاهز", en: "Your box is ready" },
-  claimReadyBody: {
-    ar: "انتهت مدة الاعتراض وأكّد الوصي. يبقى الصندوق متاحاً ٩٠ يوماً — حمّل ما يهمّك قبل ذلك.",
-    en: "The objection period ended and the guardian confirmed. The box stays open for 90 days — download what matters before then.",
   },
   review: { ar: "راجع", en: "Review" },
   open: { ar: "افتح الصندوق", en: "Open the box" },

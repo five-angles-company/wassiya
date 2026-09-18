@@ -12,7 +12,7 @@ export const ASSETS = {
   // Matches the tab. The screen was "أصولك" while the tab said "الخزنة".
   title: { ar: "الخزنة", en: "Vault" },
 
-  // ── The vault list, as the v2 board draws it ────────────────────────────
+  // ── The vault list ──────────────────────────────────────────────────────
   // "خزنتك" rather than "الخزنة": the tab is a place, this screen is theirs.
   vaultTitle: { ar: "خزنتك", en: "Your vault" },
   // The one subtitle, always in the same slot — the decrypting state puts its
@@ -36,7 +36,7 @@ export const ASSETS = {
   addAsset: { ar: "أضف", en: "Add" },
   allHeirsShort: { ar: "الكل", en: "all" },
 
-  // "٤٣ أصلاً" on the board — the 11+ form, which is where the naive
+  // "٤٣ أصلاً" — the 11+ form, which is where the naive
   // one/other split visibly breaks.
   countZero: { ar: "لا أصول", en: "No assets" },
   countOne: { ar: "أصل واحد", en: "1 asset" },
@@ -152,16 +152,16 @@ export const ASSETS = {
 /**
  * ٤.٢ — "ما الذي تريد حفظه؟", the type picker.
  *
- * A bottom sheet rather than a route, per the board: back dismisses it without
+ * A bottom sheet rather than a route: back dismisses it without
  * losing the list's scroll position. Its own dictionary because it is its own
- * screen in the board's numbering, even though it has no URL.
+ * numbered screen, even though it has no URL.
  *
  * Type names here are **singular** — you are about to create one thing. The
  * filter chips in `ASSETS` name categories and stay plural. Same six types,
  * deliberately different words.
  */
 export const ADD_ASSET = {
-  // ── /vault/new, as the v2 board draws it ────────────────────────────────
+  // ── /vault/new ──────────────────────────────────────────────────────────
   // Second lines are **examples, not definitions**: "بريد، متجر، بث" tells you
   // more about what belongs here than "digital account" ever will.
   pickTitle: { ar: "ماذا تضيف؟", en: "What are you adding?" },
@@ -297,7 +297,7 @@ export const ASSET_DETAIL = {
   },
   recipientsEdit: { ar: "من يستلمه؟", en: "Who receives it?" },
 
-  // ── The asset screen (v2 board) ─────────────────────────────────────────
+  // ── The asset screen ────────────────────────────────────────────────────
   cancel: { ar: "إلغاء", en: "Cancel" },
   more: { ar: "المزيد", en: "More" },
   receivedBy: { ar: "يستلمها", en: "Received by" },
@@ -371,7 +371,7 @@ export const ASSET_DETAIL = {
     ar: "سيُحذف المحتوى المشفّر نهائياً. لا يمكن التراجع.",
     en: "The encrypted content is destroyed permanently. This cannot be undone.",
   },
-  // Names the people who lose access, per the board — the point of the confirm
+  // Names the people who lose access — the point of the confirm
   // is that deletion is a decision about *recipients*, not about storage.
   deleteBodyRouted: {
     ar: "سيفقد {names} إمكانية الوصول إليه، ويُحذف المحتوى نهائياً. لا يمكن التراجع.",

@@ -1,7 +1,7 @@
 /**
  * BIP-39 recovery-phrase validation, for ٤.٣.
  *
- * The board is unusually blunt about why this exists: *"an invalid phrase
+ * The reason this exists is stated bluntly: *"an invalid phrase
  * cannot be stored — a silently wrong seed discovered years later by an heir is
  * the worst failure this product has."* Every other validation in the app
  * inconveniences a living user who can retry. This one is checked on behalf of

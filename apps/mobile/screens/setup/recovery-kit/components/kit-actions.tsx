@@ -17,7 +17,7 @@ export type KitActionsProps = {
 /**
  * The three ways off 2.4 — print, save a PDF, hand it to another app.
  *
- * All three count equally as the kit milestone. The board is explicit that
+ * All three count equally as the kit milestone. It is deliberate that
  * there is no confirmation step after this screen, so whichever intent
  * succeeds is what marks the sheet printed; insisting on a physical printer
  * would strand every user who saves to a file and prints it at work.
@@ -35,7 +35,7 @@ export function KitActions({
     <View className="gap-2.25">
       <Button disabled={disabled} onPress={onPrint}>
         {/* Matches the label beside it — both are content on terracotta,
-            which the board sets in `background`. */}
+            which is set in `background`. */}
         <Icon as={Printer} className="text-background size-5" />
         <Text>{printLabel}</Text>
       </Button>

@@ -18,7 +18,7 @@ import { checkIban, groupIban, normalizeIban, type IbanCheck } from "@/lib/iban"
 import type { BankForm } from "@/screens/assets/detail/forms/bank"
 
 /**
- * ٤.٤'s fields, as the board draws them on ١٥.
+ * ٤.٤'s fields.
  *
  * **Nothing here is masked, and the IBAN can be copied.** A bank account has no
  * password; the IBAN is printed on statements and handed out to receive money,

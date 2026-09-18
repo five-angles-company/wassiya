@@ -26,7 +26,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
  *
  * ## It does not count down in seconds
  *
- * The board is explicit that nothing here pulses or ticks. This is a month-long
+ * Nothing here pulses or ticks. This is a month-long
  * wait read by someone anxious; a live counter turns a calm page into a clock
  * they will watch.
  */

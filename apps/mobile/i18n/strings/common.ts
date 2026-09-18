@@ -1,7 +1,7 @@
 /**
  * Copy shared across screens, plus the stubbed tab shell.
  *
- * `stepOf` is the section ٢ progress meter: four steps, and the board renders
+ * `stepOf` is the section ٢ progress meter: four steps, rendered
  * it "١ من ٤" in Arabic — Eastern Arabic-Indic numerals, so the numbers go
  * through `fmtNum` at the call site rather than being baked in here.
  */

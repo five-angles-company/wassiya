@@ -20,7 +20,7 @@ import { View } from 'react-native';
  */
 export type SurfaceProps = {
   children?: React.ReactNode;
-  /** The board's role radii: row 24 · card 26 · summary 28. */
+  /** The role radii: row 24 · card 26 · summary 28. */
   as?: 'row' | 'card' | 'summary';
   /**
    * `card` is the neutral sand fill. The three tones are the semantic ones

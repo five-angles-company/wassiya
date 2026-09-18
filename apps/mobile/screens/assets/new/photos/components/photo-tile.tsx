@@ -8,7 +8,7 @@ import { Image, Pressable, View } from "react-native"
  *
  * ## A done tile is simply clean
  *
- * No tick. The board is explicit about it, and it is right: a finished photo
+ * No tick, deliberately: a finished photo
  * needs no decoration, and twenty ticks is twenty pieces of confirmation nobody
  * asked for. **Only in-flight and failed are marked**, so whatever is marked is
  * the thing that still needs attention.

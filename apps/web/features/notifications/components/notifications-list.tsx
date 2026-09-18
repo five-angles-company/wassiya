@@ -3,9 +3,9 @@
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { usePaginatedQuery, useMutation } from "convex/react"
-import { BellIcon } from "lucide-react"
 
 import { Button } from "@/components/button"
+import { Paper } from "@/components/doc/paper"
 import { EmptyState } from "@/components/empty-state"
 import { useLocale } from "@/components/locale-provider"
 import { fmtDate } from "@/lib/format"
@@ -43,13 +43,14 @@ export function NotificationsList() {
   )
 
   if (status === "LoadingFirstPage") {
-    return <div className="bg-card rounded-card h-40 animate-pulse" aria-hidden />
+    return (
+      <div className="border-border h-40 animate-pulse border-y" aria-hidden />
+    )
   }
 
   if (results.length === 0) {
     return (
       <EmptyState
-        icon={BellIcon}
         title={labels.emptyTitle}
         body={labels.emptyBody}
       />
@@ -57,22 +58,26 @@ export function NotificationsList() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
+      <Paper>
+      <div className="divide-border divide-y">
       {results.map((row) => {
         const copy = COPY[row.kind] ?? kindPrefixCopy(row.kind)
         const unread = row.readAt === undefined
         return (
           <article
             key={row._id}
-            className="bg-card border-border rounded-card flex flex-wrap items-start gap-4 border p-4 shadow-[var(--shadow-raised)] md:p-5"
+            className="flex flex-wrap items-start gap-4 px-5 py-4"
           >
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-heading text-[15.5px] font-extrabold">
                   {copy === null ? labels.unknownKind : labels[copy.title]}
                 </h2>
+                {/* A word, not a badge — the one pill left on this screen was
+                    the only chip in the product. */}
                 {unread && (
-                  <span className="bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold">
+                  <span className="text-tone-attention text-[12.5px] font-bold">
                     {labels.unread}
                   </span>
                 )}
@@ -107,6 +112,8 @@ export function NotificationsList() {
           </article>
         )
       })}
+      </div>
+      </Paper>
 
       {status === "CanLoadMore" && (
         <Button
@@ -133,6 +140,26 @@ const COPY: Record<string, Copy> = {
     body: "claimGuardianReviewBody",
   },
   "claim.released": { title: "claimReleased", body: "claimReleasedBody" },
+  // The claimant's own six. Before these the heir saw exactly two rows in this
+  // feed across a whole claim, both at the very end.
+  "claim.filed": { title: "claimFiled", body: "claimFiledBody" },
+  "claim.certificate_received": {
+    title: "claimCertificate",
+    body: "claimCertificateBody",
+  },
+  "claim.identity_verified": {
+    title: "claimIdentity",
+    body: "claimIdentityBody",
+  },
+  "claim.in_review": { title: "claimInReview", body: "claimInReviewBody" },
+  "claim.review_failed": {
+    title: "claimReviewFailed",
+    body: "claimReviewFailedBody",
+  },
+  "claim.guardian_confirmed": {
+    title: "claimGuardianConfirmed",
+    body: "claimGuardianConfirmedBody",
+  },
   "recovery.attempted": { title: "recovery", body: "recoveryBody" },
 }
 

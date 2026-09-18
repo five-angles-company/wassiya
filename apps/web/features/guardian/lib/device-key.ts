@@ -127,10 +127,25 @@ export async function saveDeviceKey({
           { type: "public-key", alg: -257 },
         ],
         authenticatorSelection: {
-          // Platform + resident, because the point is *this device* and a
-          // credential the reader does not have to carry a token for.
-          authenticatorAttachment: "platform",
-          residentKey: "required",
+          // ⚠️ **No `authenticatorAttachment`, deliberately.** It was
+          // `"platform"`, which on Windows means Windows Hello and nothing
+          // else — and Windows Hello does not expose `hmac-secret`, so the
+          // `prf` extension comes back disabled and the seal is impossible on
+          // most Windows machines however many times it is tried.
+          //
+          // What the feature needs is an authenticator that can do PRF, not one
+          // that is physically inside this box. Leaving attachment unset lets
+          // the browser offer whatever it has — Chrome's own password manager,
+          // a security key, a phone — and the sealed blob stays in this
+          // browser's storage either way. Only the key that opens it moves.
+          //
+          // `residentKey` is `"preferred"` rather than `"required"` for a
+          // related reason: a discoverable credential is one this site cannot
+          // delete and the reader must clean up by hand, and every failed PRF
+          // attempt left one behind. The credential id is kept beside the
+          // sealed blob, and losing that storage loses the seal regardless, so
+          // discoverability buys nothing here.
+          residentKey: "preferred",
           userVerification: "required",
         },
         extensions: { prf: {} } as PrfInputs,

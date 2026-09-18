@@ -1,7 +1,7 @@
 /**
  * The screen-copy catalogue.
  *
- * Keys are the board's route slugs, so a screen's dictionary is findable from
+ * Keys are route slugs, so a screen's dictionary is findable from
  * its URL and vice versa. Read through `useStrings`, never imported directly
  * by a screen — that keeps the locale decision in one place.
  */

@@ -13,7 +13,7 @@ import {
  *
  * Four sections of the owner screen are the same shape — a heading and a short
  * list of facts — and writing each one out separately is how they end up with
- * four slightly different paddings. The vault board's grammar, in the console:
+ * four slightly different paddings. The vault grammar, in the console:
  * hairline rows, label above value, no boxes inside boxes.
  */
 export function OwnerFacts({

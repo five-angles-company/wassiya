@@ -1,9 +1,8 @@
 /**
  * ٨ — الأمان: the recovery ceremony.
  *
- * ⚠️ Design-blind, like ٦ and ٩ — the board's reads all stop inside section ٥.
- * The steps are not guesswork even though the layout is: the paper share **is**
- * K_rec, and K_rec unwraps MK. Nothing else can.
+ * The steps are not a design choice: the paper share **is** K_rec, and K_rec
+ * unwraps MK. Nothing else can.
  *
  * This screen once described two halves and said *"neither is enough alone"*.
  * That is now false in both directions, and it is the most dangerous kind of

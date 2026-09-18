@@ -17,6 +17,7 @@ import { v } from "convex/values"
 
 import { mutation, query } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { requireSubject } from "./claims"
 import { requireAcceptedGuardian, requireUser } from "./model/access"
 import { getCurrentUserOrThrow } from "./users"
 
@@ -161,11 +162,12 @@ export const releasedBundleForHeir = mutation({
     if (heirId === undefined) {
       throw new Error("Not found")
     }
+    const subjectUserId = requireSubject(claim)
 
     const bundle = await ctx.db
       .query("releaseBundles")
       .withIndex("by_userId_and_heirId", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("heirId", heirId)
+        q.eq("userId", subjectUserId).eq("heirId", heirId)
       )
       .unique()
     if (bundle === null) {
@@ -175,7 +177,7 @@ export const releasedBundleForHeir = mutation({
     // A mutation rather than a query precisely so this line can exist: handing
     // out the withheld half of K_h is not something that may happen unlogged.
     await writeAudit(ctx, {
-      userId: claim.subjectUserId,
+      userId: subjectUserId,
       event: "release.server_share_released",
       meta: { claimId, heirId, claimantUserId: claimant._id },
     })
@@ -213,12 +215,13 @@ export const guardianShareForClaim = mutation({
       throw new Error("Not found")
     }
 
-    await requireAcceptedGuardian(ctx, claim.subjectUserId)
+    const subjectUserId = requireSubject(claim)
+    await requireAcceptedGuardian(ctx, subjectUserId)
 
     const bundle = await ctx.db
       .query("releaseBundles")
       .withIndex("by_userId_and_heirId", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("heirId", heirId)
+        q.eq("userId", subjectUserId).eq("heirId", heirId)
       )
       .unique()
     if (bundle === null) {
@@ -226,11 +229,33 @@ export const guardianShareForClaim = mutation({
     }
 
     await writeAudit(ctx, {
-      userId: claim.subjectUserId,
+      userId: subjectUserId,
       event: "release.guardian_share_handed_over",
       meta: { claimId, heirId, guardianUserId: guardianUser._id },
     })
-    return { guardianShareSealed: bundle.guardianShareSealed }
+    // The heir's name and number, returned **here and nowhere else**.
+    //
+    // The ceremony instructs the guardian to "give it to them directly, and
+    // make sure you are speaking to the right person" — and until now gave them
+    // no way to reach anyone. The heir typed this number themselves, under copy
+    // promising it would be used for exactly this ("we will use it to contact
+    // you about the report").
+    //
+    // It rides on this mutation rather than a query for three reasons that all
+    // point the same way: this is already the tightest gate in the codebase
+    // (`released` + `nameMatch` + `guardianConfirmedAt` + `heirId` +
+    // `requireAcceptedGuardian`), it already writes an audit line, so the
+    // disclosure is recorded for free at the moment it happens, and it is the
+    // one moment the contact is actually needed. A confirming guardian at
+    // `guardian_review` is judging paperwork and has nobody to phone —
+    // `pendingApprovals` and `claimForGuardian` keep it out.
+    //
+    // Named fields, never a spread: the rule this file states about every read.
+    return {
+      guardianShareSealed: bundle.guardianShareSealed,
+      heirName: claim.claimantName,
+      heirContact: claim.claimantContact,
+    }
   },
 })
 
@@ -285,16 +310,17 @@ export const assetsForHeir = query({
     // `routing.previewForHeir` gives: an owner with hundreds of executor rows
     // would otherwise push an "allHeirs" row past the window and silently drop
     // an asset out of an heir's inheritance, with no error anywhere.
+    const subjectUserId = requireSubject(claim)
     const direct = await ctx.db
       .query("assetRecipients")
       .withIndex("by_userId_and_recipientHeirId", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("recipientHeirId", heirId)
+        q.eq("userId", subjectUserId).eq("recipientHeirId", heirId)
       )
       .take(500)
     const shared = await ctx.db
       .query("assetRecipients")
       .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", claim.subjectUserId).eq("recipientKind", "allHeirs")
+        q.eq("userId", subjectUserId).eq("recipientKind", "allHeirs")
       )
       .take(500)
 

@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable } from 'react-native';
 /**
  * The filled control that unhides the highest-stakes value on a screen.
  *
- * The board grades protection by the *size of the control*, not by copy: a seed
+ * Protection is graded by the *size of the control*, not by copy: a seed
  * phrase gets this button, a password gets a plain eye, a storage location gets
  * nothing. Three levels, three affordances, no sentence needed to explain any
  * of them.
@@ -64,7 +64,7 @@ export function RevealPill({
           as={Fingerprint}
           size={15}
           strokeWidth={2.75}
-          // `text-background`, not `text-primary-foreground`: the board fills
+          // `text-background`, not `text-primary-foreground`: the fill is
           // this glyph with --color-bg (#f5ead8), the page ground, and the
           // app's primary-foreground is the lighter #fff2eb.
           className={disabled ? 'text-foreground' : 'text-background'}

@@ -23,7 +23,7 @@ const LABELS: LabelSet<StorageLabelKey> = {
 const BYTES_PER_GB = 1_000_000_000;
 
 /**
- * Category fills, in the board's order: photos terracotta, documents olive,
+ * Category fills, in order: photos terracotta, documents olive,
  * messages sand-500. Exported so a caller adding a fourth category can see
  * what it has to sit next to.
  */
@@ -33,7 +33,7 @@ export type StorageSegment = {
   /** Already-localised category name: "صور", "مستندات", "رسائل". */
   label: string;
   bytes: number;
-  /** Fill class. Defaults to this segment's position in the board order. */
+  /** Fill class. Defaults to this segment's position in the order above. */
   color?: string;
 };
 

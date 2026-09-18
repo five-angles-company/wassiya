@@ -91,7 +91,7 @@ export function SignupsChart() {
             {labels.signupsEmpty}
           </div>
         ) : (
-          <ChartContainer config={config} className="h-64 w-full">
+          <ChartContainer config={config} className="h-64 w-full [&_svg]:[direction:ltr]">
             <AreaChart
               accessibilityLayer
               data={data}

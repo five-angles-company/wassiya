@@ -24,7 +24,7 @@ export type CountryPickerProps = {
  * `Modal` with a scrim, a rounded top, a drawn grabber pill and a `max-h-[70%]`
  * guess, because the shared `Select` teleports through `PortalHost` and broke
  * when the setup gate replaced the screen underneath it. A native sheet has no
- * such problem, and drags and dismisses the way the board draws it.
+ * such problem, and drags and dismisses the way it is drawn.
  */
 export function CountryPicker({
   label,

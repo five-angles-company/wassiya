@@ -2,17 +2,10 @@
 
 import { useState } from "react"
 import { api } from "@workspace/backend/api"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
 import { useQuery } from "convex/react"
-import { ShieldCheckIcon } from "lucide-react"
 
+import { Paper } from "@/components/doc/paper"
+import { DocSection } from "@/components/doc/section"
 import { Pager } from "@/components/pager"
 import { useLocale } from "@/components/locale-provider"
 import { fmtNumber } from "@/lib/format"
@@ -66,20 +59,18 @@ export function VaultsPanel() {
   const rows = result?.page ?? kept.rows
 
   if (result === undefined && kept.rows.length === 0) {
-    return <div className="bg-card rounded-sheet h-72 animate-pulse" aria-hidden />
+    return (
+      <div className="border-border h-60 animate-pulse border-t" aria-hidden />
+    )
   }
 
   if (rows.length === 0 && index === 0) {
     return (
-      <section className="bg-card rounded-sheet border-border border p-6 shadow-[var(--shadow-raised)]">
-        <h2 className="font-heading mb-3 flex items-center gap-2.5 text-[17px] font-extrabold">
-          <ShieldCheckIcon className="size-[18px]" strokeWidth={2.4} aria-hidden />
-          {labels.vaultsTitle}
-        </h2>
-        <p className="text-muted-foreground text-[14px] leading-[1.7]">
+      <DocSection title={labels.vaultsTitle}>
+        <p className="text-muted-foreground text-[14.5px] leading-[1.7]">
           {labels.vaultsEmpty}
         </p>
-      </section>
+      </DocSection>
     )
   }
 
@@ -87,47 +78,27 @@ export function VaultsPanel() {
   const last = index * PAGE + rows.length
 
   return (
-    <section className="bg-card rounded-sheet border-border overflow-hidden border shadow-[var(--shadow-raised)]">
-      <div className="flex items-center gap-2.5 px-5 pt-5 pb-4">
-        <ShieldCheckIcon className="size-[18px] shrink-0" strokeWidth={2.4} aria-hidden />
-        <h2 className="font-heading text-[17px] font-extrabold">
-          {labels.vaultsTitle}
-        </h2>
-      </div>
-
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="ps-5 text-start">{labels.colVault}</TableHead>
-            <TableHead className="pe-5 text-end">{labels.relation}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((vault) => {
-            const name = vault.subjectName ?? "—"
-            return (
-              <TableRow key={vault.guardianId}>
-                <TableCell className="ps-5">
-                  <span className="flex items-center gap-3">
-                    <span
-                      aria-hidden
-                      className="bg-background text-muted-foreground font-heading grid size-9 shrink-0 place-items-center rounded-full text-[14px] font-extrabold"
-                    >
-                      {name.slice(0, 1)}
-                    </span>
-                    <span className="truncate text-[14.5px] font-semibold">
-                      {name}
-                    </span>
-                  </span>
-                </TableCell>
-                <TableCell className="text-muted-foreground pe-5 text-end text-[13.5px]">
-                  {vault.relation}
-                </TableCell>
-              </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+    <DocSection title={labels.vaultsTitle}>
+      {/* Rows, not a table. Two columns of which one is a name and the other a
+          word does not need a header, and at phone width a table either scrolls
+          sideways or crushes the name it exists to show. */}
+      <Paper>
+        <dl className="divide-border divide-y">
+          {rows.map((vault) => (
+            <div
+              key={vault.guardianId}
+              className="flex items-baseline justify-between gap-4 px-5 py-3.5"
+            >
+              <dt className="truncate text-[15px] font-semibold">
+                {vault.subjectName ?? "—"}
+              </dt>
+              <dd className="text-muted-foreground shrink-0 text-[13px]">
+                {vault.relation}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </Paper>
 
       <Pager
         from={fmtNumber(first, locale)}
@@ -145,6 +116,6 @@ export function VaultsPanel() {
           setIndex((current) => current + 1)
         }}
       />
-    </section>
+    </DocSection>
   )
 }

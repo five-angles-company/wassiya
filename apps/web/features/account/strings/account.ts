@@ -11,6 +11,8 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * question worth a page rather than a footnote.
  */
 export const ACCOUNT = {
+  // The feed has no bell any more; this is its door.
+  notificationsLink: { ar: "كل الإشعارات", en: "All notifications" },
   title: { ar: "الحساب", en: "Account" },
   body: {
     ar: "ما نعرفه عنك، وما لا نعرفه. تُدار بيانات الدخول من نافذة الحساب في الأعلى.",

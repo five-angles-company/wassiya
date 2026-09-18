@@ -12,7 +12,9 @@ import "@workspace/ui/globals.css"
 import { cn } from "@workspace/ui/lib/utils"
 import { ConvexClientProvider } from "@/components/convex-client-provider"
 import { LocaleProvider } from "@/components/locale-provider"
+import { clerkLocalization } from "@/lib/clerk-localization"
 import { dirFor, LOCALE_COOKIE, resolveLocale } from "@/lib/i18n/locale"
+import { getTheme } from "@/lib/theme-server"
 
 /** Latin face, bound to `--font-latin` so the two stacks can sit side by side. */
 const inter = Inter({ subsets: ["latin"], variable: "--font-latin" })
@@ -63,6 +65,7 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
+  const theme = await getTheme()
   const arabic = locale === "ar"
 
   return (
@@ -75,6 +78,10 @@ export default async function RootLayout({
         // scoped to the funnel while the root was stock shadcn; there is no
         // longer a screen here that wants the stock one.
         "wassiya font-sans antialiased",
+        // Read from a cookie on the server, so the class is present in the
+        // first byte and nothing flips after paint. Never from
+        // `prefers-color-scheme` — see `lib/theme.ts`.
+        theme === "dark" && "dark",
         inter.variable,
         fontMono.variable,
         plexArabic.variable,
@@ -92,14 +99,39 @@ export default async function RootLayout({
       <body>
         {/* ClerkProvider must wrap ConvexClientProvider — Convex reads Clerk's
             context to get its access token. */}
-        {/* Clerk's card ships white-and-blue, which on a sand ground reads as
+{/* Clerk's card ships white-and-blue, which on a sand ground reads as
             a different product's login bolted onto this one. These map its
             surfaces onto the Organic tokens; the pill radius matches every
-            other button in the funnel. */}
+            other button in the funnel.
+
+            This themes what Clerk still renders — sign-in, sign-up, and the
+            profile modal. The avatar and its menu are `components/user-menu.tsx`
+            and are not Clerk's; see that file for why.
+
+            🚨 **The card is still a card, and `doc/paper.tsx` says it should
+            not be**: "a card goes around things that are data… never around the
+            page's own argument", then "nothing with an input in it goes on
+            paper". A sign-in form is the letter asking you something. Every
+            other form here obeys that; this one does not, because the markup is
+            Clerk's.
+
+            ⚠️ **Taking it off was attempted and reverted.** `elements.cardBox`
+            and `elements.card` set to `shadow-none border-0 bg-transparent`
+            changed nothing on screen — the classes did not win, and the likely
+            reason is the cascade: Clerk v7 emits its own styles into a layer, so
+            a utility class can lose to them regardless of specificity. Whoever
+            picks this up should look at `cssLayerName` on this same
+            `appearance` object before trying more element keys; adding keys that
+            do not apply is what the last attempt did.
+
+            ⚠️ **The shadow is a separate, older instance of the same problem.**
+            `card: "shadow-none …"` is set right here and a drop shadow renders
+            anyway — a config that reads as deliberate and does nothing. */}
         <ClerkProvider
+          localization={clerkLocalization(locale)}
           appearance={{
             variables: {
-              colorPrimary: "#c67139",
+              colorPrimary: "#ea5b48",
               colorBackground: "#ebddc5",
               colorForeground: "#201e1d",
               colorMutedForeground: "#82796a",
@@ -112,27 +144,10 @@ export default async function RootLayout({
               card: "shadow-none border border-[color-mix(in_srgb,#201e1d_16%,transparent)]",
               formButtonPrimary: "rounded-full text-[15px] font-semibold",
 
-              // The avatar generates its own gradient from the user id — which
-              // came out green, beside a terracotta mark on a sand ground.
-              // Three unrelated hues in a 56px bar is most of what made it look
-              // assembled from parts. Flattened to the brand colour; the
-              // initial stays, and a real profile photo still wins because
-              // `avatarImage` sits on top of this box.
-              avatarBox:
-                "bg-primary! text-primary-foreground! [background-image:none]!",
-              userButtonAvatarBox: "size-8!",
-
-              // The menu it opens is Clerk's, and shipped square-cornered with
-              // a hard shadow. These are the same radius and hairline every
-              // other surface in this app uses.
-              userButtonPopoverCard:
-                "rounded-2xl! border! border-[color-mix(in_srgb,#201e1d_16%,transparent)]! shadow-[0_8px_24px_-8px_color-mix(in_srgb,#201e1d_18%,transparent)]!",
-              userButtonPopoverActionButton: "rounded-full!",
-              userButtonPopoverCustomItemButton: "rounded-full!",
               // Clerk's "Secured by Clerk" footer. Nothing in this product's
               // chrome is another company's, least of all on the surface whose
               // entire argument is who can and cannot read your data.
-              userButtonPopoverFooter: "hidden!",
+              footer: "hidden!",
             },
           }}
         >

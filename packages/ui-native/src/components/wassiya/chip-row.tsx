@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 /**
  * A short one-of-N choice, as pills.
  *
- * The board's rule, exactly: chips are pills on `--color-surface`, and the
+ * The rule, exactly: chips are pills on `--color-surface`, and the
  * selected one is **solid terracotta**. Not an outline, not a tint — the same
  * fill the primary button uses, because a chosen chip and a live button are the
  * same kind of statement.

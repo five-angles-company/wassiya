@@ -28,7 +28,7 @@ import { useStrings } from "@/i18n/use-strings"
  * خطتي owns **people you name to receive**, and nothing else. Routing is asset
  * division and belongs to ٤.١, which groups by type and filters by "بلا مستلم";
  * the guardian verifies rather than inherits, and is reached from Home. (The
- * board's ٤.١ screenshot draws five tabs — the owner directed a ground-up
+ * the original ٤.١ design drew five tabs — the owner directed a ground-up
  * redesign that supersedes it; see `.claude/plans/`.)
  *
  * This layout gates only on having a session. The vault-readiness gate lives on

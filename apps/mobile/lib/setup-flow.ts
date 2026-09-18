@@ -11,7 +11,7 @@
  * ─────────────────────────────────────────────────── ──────────────── ──────────────────────────────
  * no session                                           welcome          nothing to resume
  * unverified                                           kyc              the blocking gate, untouched
- * pending                                              kycPending       hosted flow open or in review
+ * pending                                              kycPending       Didit has something in review
  * rejected                                             kyc              retry, or support at 3 failures
  * verified · no keyring · no MK                        explainer        nothing generated yet
  * verified · no keyring · MK                           recoveryKit      MK exists, wrapper never saved
@@ -72,7 +72,7 @@ export type SetupStep =
   | "recovery"
   | "done"
 
-/** The four metered steps of section ٢, in the order the board numbers them. */
+/** The four metered steps of section ٢, in their numbered order. */
 export const SETUP_STEP_COUNT = 4
 
 export const SETUP_STEP_INDEX = {

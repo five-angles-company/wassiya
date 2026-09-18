@@ -2,10 +2,8 @@
 
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
-import { BadgeCheckIcon, EyeOffIcon, SmartphoneIcon } from "lucide-react"
 
-import { Panel } from "@/components/panel"
-import { Section } from "@/components/section"
+import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
 import { fmtDate, fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
@@ -37,7 +35,9 @@ export function AccountPanel() {
   const identity = useQuery(api.identity.status, {})
 
   if (me === undefined) {
-    return <div className="bg-card rounded-card h-40 animate-pulse" aria-hidden />
+    return (
+      <div className="border-border h-40 animate-pulse border-y" aria-hidden />
+    )
   }
 
   const state = identity?.status ?? "unverified"
@@ -45,18 +45,14 @@ export function AccountPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel title={labels.profileTitle}>
+      <DocSection title={labels.profileTitle}>
         <dl className="flex flex-col">
           <Row label={labels.name} value={me?.name ?? labels.notSet} first />
           <Row label={labels.email} value={me?.email ?? labels.notSet} ltr />
         </dl>
-      </Panel>
+      </DocSection>
 
-      <Panel
-        icon={BadgeCheckIcon}
-        accent={state === "verified" ? "secondary" : undefined}
-        title={labels.identityTitle}
-      >
+      <DocSection title={labels.identityTitle}>
         <p className="text-[15px] font-semibold">
           {statusKey === undefined ? state : labels[statusKey]}
         </p>
@@ -89,30 +85,25 @@ export function AccountPanel() {
         >
           {labels.identityWhy}
         </p>
-      </Panel>
+      </DocSection>
 
-      <Panel icon={EyeOffIcon} title={labels.weCannotTitle}>
-        <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.75]">
+      <DocSection title={labels.weCannotTitle}>
+        <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.75]">
           {labels.weCannotBody}
         </p>
-      </Panel>
+      </DocSection>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Section title={labels.languageTitle}>
+        <DocSection title={labels.languageTitle}>
           <p className="text-muted-foreground text-[14px] leading-[1.7]">
             {labels.languageBody}
           </p>
-        </Section>
-        <Section title={labels.ownerTitle}>
-          <p className="text-muted-foreground flex items-start gap-2.5 text-[14px] leading-[1.7]">
-            <SmartphoneIcon
-              className="mt-0.5 size-4 shrink-0"
-              strokeWidth={2.2}
-              aria-hidden
-            />
+        </DocSection>
+        <DocSection title={labels.ownerTitle}>
+          <p className="text-muted-foreground text-[14px] leading-[1.7]">
             {labels.ownerBody}
           </p>
-        </Section>
+        </DocSection>
       </div>
     </div>
   )

@@ -35,7 +35,7 @@ type Notice = { text: string; detail?: string }
  * product, and the OTP only ever does the first — saying so here is what stops
  * a user assuming the code is what protects their vault.
  *
- * The board draws a bespoke numeric keypad. That is mockup furniture: the
+ * The design draws a bespoke numeric keypad. That is mockup furniture: the
  * `otp-input` primitive puts one real, transparent `TextInput` over the painted
  * boxes precisely so autofill and paste work, and a hand-drawn keypad would
  * break both. The OS keyboard with `autoComplete="one-time-code"` is the
@@ -83,6 +83,10 @@ export function OtpScreen() {
         setPhase(
           attempt.error.code === "verification_expired" ? "expired" : "wrong"
         )
+        // Clear the rejected digits rather than leaving the reader to delete
+        // six of them before they can try again. The message above the boxes
+        // is what carries the verdict; the boxes carry the next attempt.
+        setCode("")
         return
       }
 

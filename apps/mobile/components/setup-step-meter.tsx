@@ -11,7 +11,7 @@ export type SetupStepMeterProps = {
   /** 1-based step: KYC, explainer, biometrics, recovery kit. */
   step: number
   /**
-   * Turns the bar olive. The board changes the bar's colour in exactly one
+   * Turns the bar olive. The bar changes colour in exactly one
    * place — when a step has *completed* (2.1c, 2.3b) — so this is a real
    * signal, not decoration, and must not be set anywhere else.
    */
@@ -26,7 +26,7 @@ export type SetupStepMeterProps = {
 /**
  * The "١ من ٤" progress header that opens every metered screen in section ٢.
  *
- * Four steps, not six: the board numbers 2.1/2.1b/2.1c as step 1 and
+ * Four steps, not six: 2.1/2.1b/2.1c count as step 1 and
  * 2.3/2.3b as step 3, so sub-screens share their parent's number. 2.6 has no
  * meter at all — it is the destination, not a step.
  */
@@ -47,7 +47,7 @@ export function SetupStepMeter({
       )}
     >
       {/* `MeterBar` derives both the fill and the track from one tone, but the
-          board draws a neutral track under a coloured fill at every step — the
+          a neutral track sits under a coloured fill at every step — the
           terracotta-tinted track the tone would give makes the remaining steps
           look partly done. The explicit background wins the twMerge conflict. */}
       <MeterBar

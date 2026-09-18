@@ -1,48 +1,33 @@
 import { headers } from "next/headers"
-import { LanguagesIcon } from "lucide-react"
 
+import { LanguageSwitch } from "@/components/language-switch"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 
 /**
- * The language switch — a form, not a button with an `onClick`, and a Server
- * Component on purpose. The previous version called `router.refresh()`, which
- * dragged a hydration boundary into the bar and cost the sign-in page the
- * property its own doc comment promises: that it works with JavaScript
- * disabled, on an old browser, in the worst week of someone's life.
+ * The language switch.
  *
- * Posting to `/api/locale` sets the cookie and 303s back, so the next document
- * arrives with `dir` and `lang` already right. No flash, no client state.
+ * A Server Component that resolves the label and the return path, wrapping one
+ * small Client Component that does the switching — see `language-switch.tsx`
+ * for why the interaction is client-side and why the form underneath it is not
+ * decorative.
  *
- * It is a ghost pill at the same height as the bell beside it, with a globe —
- * as a bare word it read as leftover text rather than something pressable, and
- * matching footprints are most of what makes a controls cluster look
- * deliberate.
+ * The boundary stops at that button. It is a leaf, so no page or layout becomes
+ * a Client Component because of it, and the dictionary stays on the server.
  *
- * **Each language is written in its own script, always.** Someone who has landed
- * on the wrong one cannot be expected to recognise "الإنجليزية".
+ * It is a ghost pill at the same height as the theme switch beside it, with a
+ * globe — as a bare word it read as leftover text rather than something
+ * pressable, and matching footprints are most of what makes a controls cluster
+ * look deliberate.
  */
 export async function LanguageToggle({ locale }: { locale: Locale }) {
   const labels = t(COMMON, locale)
   const next: Locale = locale === "ar" ? "en" : "ar"
 
-  // Where to come back to. `x-pathname` is set by `proxy.ts`; without it the
-  // switch still works and simply lands on the home page.
+  // Only the no-JS path uses this; the enhanced one never leaves the page.
+  // `x-pathname` is set by `proxy.ts` — without it the switch still works and
+  // simply lands on the home page.
   const here = (await headers()).get("x-pathname") ?? "/"
 
-  return (
-    <form action="/api/locale" method="post" className="flex">
-      <input type="hidden" name="locale" value={next} />
-      <input type="hidden" name="redirect_to" value={here} />
-      <button
-        type="submit"
-        lang={next}
-        aria-label={labels.language}
-        className="text-sand-700 hover:text-foreground hover:bg-sand-100 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13.5px] font-semibold transition-colors"
-      >
-        <LanguagesIcon className="size-4 shrink-0" strokeWidth={2.2} aria-hidden />
-        {next === "en" ? "English" : "العربية"}
-      </button>
-    </form>
-  )
+  return <LanguageSwitch next={next} here={here} label={labels.language} />
 }

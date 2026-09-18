@@ -106,7 +106,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
   }
 
   return (
-    <li className="bg-card rounded-card flex flex-wrap items-start gap-4 p-4 md:p-5">
+    <li className="flex flex-wrap items-start gap-4 px-5 py-4">
       <span
         aria-hidden
         className="bg-background text-muted-foreground grid size-9 shrink-0 place-items-center rounded-full"
@@ -131,7 +131,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
                 .join(" · ")}
         </p>
         {item.hasInstructions && item.title !== null && (
-          <p className="text-olive-700 mt-2 text-[13px] leading-[1.6]">
+          <p className="text-tone-settled mt-2 text-[13px] leading-[1.6]">
             {labels.instructionsNote}
           </p>
         )}
@@ -141,7 +141,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
           </p>
         )}
         {error !== null && (
-          <p className="text-terracotta-800 mt-2 text-[13px]">{error}</p>
+          <p className="text-tone-attention mt-2 text-[13px]">{error}</p>
         )}
       </div>
 

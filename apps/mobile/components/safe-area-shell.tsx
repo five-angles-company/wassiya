@@ -22,7 +22,7 @@ export type SafeAreaShellProps = {
 /**
  * Keeps the app clear of the status bar and the gesture bar.
  *
- * Every screen runs with `headerShown: false` — the board's pattern is a 40px
+ * Every screen runs with `headerShown: false` — the pattern is a 40px
  * round back button inside the content, not a title bar — so nothing else is
  * reserving that space and content would draw underneath the clock and the
  * navigation pill.
@@ -35,7 +35,7 @@ export type SafeAreaShellProps = {
  * error anywhere. Using the hook keeps layout in `style` (always honoured) and
  * colour in `className` (honoured on core components).
  *
- * Mounted once at the root so screens keep the board's own paddings and never
+ * Mounted once at the root so screens keep their own paddings and never
  * repeat this.
  */
 export function SafeAreaShell({

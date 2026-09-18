@@ -51,7 +51,11 @@ export default async function DashboardLayout({
         */}
         <SidebarProvider className="h-svh overflow-hidden">
           <AppSidebar />
-          <SidebarInset className="min-h-0">
+          {/* Flush and square. The `inset` variant floats the content on a
+              margin with `rounded-xl`, which put a gap and two rounded corners
+              above a header that is meant to sit against the top of the window.
+              The rail keeps its own inset padding; only the panel is squared. */}
+          <SidebarInset className="min-h-0 md:peer-data-[variant=inset]:m-0 md:peer-data-[variant=inset]:rounded-none md:peer-data-[variant=inset]:shadow-none">
             <AppHeader />
             {/*
               A plain scrolling column, not a flex one.

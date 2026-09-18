@@ -1,72 +1,67 @@
 "use client"
 
-import type { GuardianKeySheet } from "@workspace/crypto/guardianKey"
-import { ArrowRightIcon } from "lucide-react"
-
+import { Button } from "@/components/button"
+import { Prose } from "@/components/doc/prose"
+import { DocTitle } from "@/components/doc/title"
 import type { Resolved } from "@/lib/i18n/locale"
+import type { GuardianKeySheet } from "@workspace/crypto/guardianKey"
 import { KeySheet } from "@/features/guardian/components/key-sheet"
 import type { GUARDIAN } from "@/features/guardian/strings/guardian"
 
 /**
- * The sheet, at the moment it is created.
+ * The key, and nothing else.
  *
- * The line the whole ceremony rests on is `keyLede`: *"It was never sent to us,
- * we hold no copy, and we cannot issue it again — because if we could, we could
- * open the heirs' boxes on our own."* Every product says "we can't recover this
- * for you" as an apology. Said that way it is a proof, and it is why this screen
- * can ask someone to keep a piece of paper for a decade without sounding
- * negligent.
+ * ## One decision per screen
  *
- * That sentence stays exactly true now that the device can keep a copy. What
- * the passkey holds is a copy *on the guardian's own hardware*, openable only
- * by them; we still have nothing, and a wiped device still leaves the paper as
- * the only way back. The offer to keep one comes after acceptance, on the next
- * screen — before it, there is no guardianship for the copy to belong to.
+ * This used to carry the key, the print and copy actions, the offer to seal it
+ * to the device, the outcome of a failed seal, and a link past all of it. Five
+ * things, three of them actionable, with nothing saying which mattered — so the
+ * reader had to work out the order the screen would not tell them.
+ *
+ * Now it asks one thing: **get this onto paper**. Sealing it to the device is
+ * the screen after, which is also the true order — the paper is the durable
+ * copy and the device copy is a convenience laid on top of it.
+ *
+ * `KeySheet` owns the code, the print button and the copy button, so the actions
+ * that belong to the key sit with the key rather than under it.
  */
 export function AcceptSheet({
   labels,
   sheet,
+  busy,
   onNext,
 }: {
   labels: Resolved<typeof GUARDIAN>
   sheet: GuardianKeySheet
+  busy: boolean
   onNext: () => void
 }) {
   return (
-    <div className="flex flex-col">
-      <div className="flex items-center gap-3">
-        <span
-          aria-hidden
-          className="bg-secondary h-1 w-11 shrink-0 rounded-full"
+    <article className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4">
+        <DocTitle
+          title={`${labels.keyTitleOne} ${labels.keyTitleTwo}`}
+          meta={labels.createdNow}
         />
-        <span className="text-olive-700 text-[13.5px] font-semibold">
-          {labels.createdNow}
-        </span>
+        <Prose>
+          <p>{labels.keyLede}</p>
+        </Prose>
       </div>
-
-      <h1 className="font-heading mt-6 mb-4 text-[26px] leading-[1.15] font-black md:text-[32px]">
-        {labels.keyTitleOne}{" "}
-        <span className="text-secondary">{labels.keyTitleTwo}</span>
-      </h1>
-
-      <p className="mb-7 max-w-[62ch] text-[15.5px] leading-[1.72] opacity-80">
-        {labels.keyLede}
-      </p>
 
       <KeySheet code={sheet.code} />
 
-      <button
-        type="button"
+      {/* Worded as a claim the reader makes — "saved it" — rather than a bare
+          "next". The whole screen rests on them having actually done it, and a
+          neutral button lets someone move on without ever deciding. */}
+      <Button
+        variant="secondary"
+        size="lg"
+        className="self-start"
         onClick={onNext}
-        className="font-heading mt-6 inline-flex items-center gap-2.5 self-start text-[16px] font-extrabold"
+        disabled={busy}
       >
-        {labels.confirmTitle}
-        <ArrowRightIcon
-          className="nudge size-5 rtl:-scale-x-100"
-          strokeWidth={2.75}
-          aria-hidden
-        />
-      </button>
-    </div>
+        {labels.sheetNext}
+      </Button>
+    </article>
   )
 }

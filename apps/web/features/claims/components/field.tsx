@@ -58,7 +58,7 @@ export function Field({
       {message !== undefined && (
         <span
           className={`text-[12.5px] leading-[1.6] ${
-            error === undefined ? "text-muted-foreground" : "text-terracotta-800"
+            error === undefined ? "text-muted-foreground" : "text-tone-attention"
           }`}
         >
           {message}

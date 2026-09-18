@@ -86,6 +86,7 @@ export function RecoveryKitScreen() {
       paperVersion: state.material.paperVersion,
       locale,
       labels: {
+        brandName: t.brandName,
         documentTitle: t.documentTitle,
         documentSubtitle: t.documentSubtitle,
         codeLabel: t.codeLabel,
@@ -96,6 +97,13 @@ export function RecoveryKitScreen() {
         shownOnce: t.shownOnce,
         handling: t.handling,
         keepWithWill: t.keepWithWill,
+        howTitle: t.howTitle,
+        howWhen: t.howWhen,
+        howStep1: t.howStep1,
+        howStep2: t.howStep2,
+        howStep3: t.howStep3,
+        qrCaption: t.qrCaption,
+        sheetFooter: t.sheetFooter,
       },
     })
   }, [locale, me, qrDataUri, state, t])
@@ -137,12 +145,30 @@ export function RecoveryKitScreen() {
         await Print.printAsync({ html })
       } else {
         const { uri } = await Print.printToFileAsync({ html })
-        if (action === "share" && (await Sharing.isAvailableAsync())) {
-          await Sharing.shareAsync(uri, {
-            mimeType: "application/pdf",
-            UTI: "com.adobe.pdf",
-          })
+
+        // ⚠️ `printToFileAsync` writes into the app's **cache**, which no file
+        // manager lists and the OS is free to clear. Handing the file to the
+        // system sheet is the only way it reaches the reader on either
+        // platform — "Save to Files" and "Save to Drive" both live there — so
+        // "save" and "share" are the same act and take the same path.
+        //
+        // This used to run the share step for `"share"` only, so `"save"`
+        // generated a PDF into the cache, dropped the uri on the floor, and
+        // fell through to `complete()` — which wipes the code from memory and
+        // records the sheet as printed. The code is shown **once**. Anyone who
+        // tapped save walked away believing they had their recovery document
+        // and had nothing, and would have found out on the one day it is
+        // needed.
+        if (!(await Sharing.isAvailableAsync())) {
+          setNotice(t.failed)
+          // Emphatically no `complete()`: nothing was delivered, so the code
+          // must stay on screen rather than be wiped behind a false success.
+          return
         }
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          UTI: "com.adobe.pdf",
+        })
       }
       await complete()
     } catch {

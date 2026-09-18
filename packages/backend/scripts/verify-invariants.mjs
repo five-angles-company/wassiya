@@ -133,6 +133,38 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   )
 }
 
+// ── 4. A claim is written in exactly one place ──────────────────────────────
+//
+// `claims.updatedAt` drives the case timeline, and Convex has no triggers — so a
+// writer that forgets to stamp it leaves a row whose "last moved" is silently
+// wrong. `patchClaim` in `claims.ts` always stamps it; this is what stops a
+// second writer appearing beside it.
+//
+// The header comment in `claims.ts` mentions the call in prose, which is why
+// every check in this file strips comments first.
+{
+  const patching = /\.patch\(\s*["']claims["']/g
+  for (const file of files) {
+    if (rel(file) === "claims.ts") {
+      continue
+    }
+    const hits = code(file).match(patching)
+    if (hits !== null) {
+      failures.push(
+        `${rel(file)} patches claims directly (${hits.join(", ")}). Use patchClaim from claims.ts — it stamps updatedAt.`
+      )
+    }
+  }
+
+  // And inside claims.ts there may be exactly one: patchClaim's own.
+  const own = code(join(convexDir, "claims.ts")).match(patching)
+  if (own === null || own.length !== 1) {
+    failures.push(
+      `claims.ts should contain exactly one ctx.db.patch("claims", …) — patchClaim's — but found ${own === null ? 0 : own.length}.`
+    )
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -142,5 +174,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one serverShare read path, append-only audit log, no logged ciphertext."
+  "Backend invariants hold: one serverShare read path, append-only audit log, no logged ciphertext, one claims writer."
 )

@@ -7,7 +7,7 @@ import { safePath } from "@/lib/safe-path"
  * The language switch, as a plain form POST.
  *
  * It used to be an `onClick` on a Client Component, which quietly cost the
- * claim landing page the one property the board asks it to keep: *"works at
+ * claim landing page the one property it has to keep: *"works at
  * 320px and on an old browser"*, *"renders and works with JS disabled"*. The
  * page itself is a Server Component, but hosting the toggle in its header
  * dragged a hydration boundary onto it.

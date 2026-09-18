@@ -4,10 +4,10 @@ import { useState, useSyncExternalStore } from "react"
 import { encodeGuardianKey } from "@workspace/crypto/guardianKey"
 import { guardianPublicKey } from "@workspace/crypto/guardian"
 import { equalBytes } from "@workspace/crypto/bytes"
-import { CheckIcon, FingerprintIcon, TriangleAlertIcon } from "lucide-react"
+import { CheckIcon, TriangleAlertIcon } from "lucide-react"
 
 import { Button } from "@/components/button"
-import { Panel } from "@/components/panel"
+import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { KeySheet } from "@/features/guardian/components/key-sheet"
@@ -91,8 +91,8 @@ export function DeviceKeyPanel({
   }
 
   return (
-    <Panel accent="secondary" icon={FingerprintIcon} title={labels.deviceHeldTitle}>
-      <p className="text-muted-foreground max-w-[62ch] text-[14.5px] leading-[1.72]">
+    <DocSection title={labels.deviceHeldTitle}>
+      <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.72]">
         {labels.deviceHeldBody}
       </p>
 
@@ -107,7 +107,7 @@ export function DeviceKeyPanel({
             {busy ? labels.deviceUnlocking : labels.deviceShowSheet}
           </Button>
           {failed && (
-            <p className="text-terracotta-800 mt-4 text-[14px] leading-[1.7]">
+            <p className="text-tone-attention mt-4 text-[14px] leading-[1.7]">
               {labels.deviceUnlockFailed}
             </p>
           )}
@@ -159,6 +159,6 @@ export function DeviceKeyPanel({
           {labels.deviceForgetNote}
         </p>
       </div>
-    </Panel>
+    </DocSection>
   )
 }

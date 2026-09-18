@@ -1,8 +1,8 @@
 /**
  * The six kinds of thing a vault holds, and the glyph each one wears. The order
- * is the board's own, from the ٤.٢ picker, and is also the ٤.١ filter-chip order.
+ * is the ٤.٢ picker's, and is also the ٤.١ filter-chip order.
  *
- * The board draws its own outline glyphs rather than naming lucide icons, so
+ * The design uses its own outline glyphs rather than naming lucide icons, so
  * these are the closest equivalents, collected here for one edit rather than
  * inlined per call site. Two depart from the drawn shape on purpose: `bank` is a
  * `Landmark` and `digital` an `AtSign`, because the drawn stand-ins would be
@@ -20,7 +20,7 @@ import {
 } from "lucide-react-native"
 import type { Tone } from "@workspace/ui-native/lib/tone"
 
-/** Mirrors the `assetType` union in `convex/assets.ts`, in board order. */
+/** Mirrors the `assetType` union in `convex/assets.ts`, in picker order. */
 export const ASSET_TYPES = [
   "crypto",
   "bank",
@@ -34,10 +34,10 @@ export type AssetType = (typeof ASSET_TYPES)[number]
 
 export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
   crypto: Bitcoin,
-  // The board draws a gabled building. `Landmark` is lucide's bank — the same
+  // The drawn glyph is a gabled building. `Landmark` is lucide's bank — the same
   // pediment, with columns — where `House` would read as real estate.
   bank: Landmark,
-  // A plain page with a folded corner, not `FileText`: the board's glyph has no
+  // A plain page with a folded corner, not `FileText`: the drawn glyph has no
   // rules on it, and a document here is as often a scan as it is text.
   document: File,
   photos: ImageIcon,
@@ -49,7 +49,7 @@ export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
 
 /**
  * Icon tint on the 4.2 tiles, grouping the six types by **what they hold** —
- * the board's own rule: "secrets (terracotta), files (sage), instructions
+ * the rule: "secrets (terracotta), files (sage), instructions
  * (neutral)".
  *
  * It is a grouping, not a severity: `terracotta` here means "this one contains
@@ -73,7 +73,7 @@ export const ASSET_TYPE_TONE: Record<AssetType, Tone> = {
  * Where each tile on ٤.٢ goes.
  *
  * `digital` maps to `/assets/new/account`, not `/assets/new/digital` — the
- * board names that route after what the user is describing (an account), while
+ * the route is named after what the user is describing (an account), while
  * the schema names the column after the kind of thing it is. Both stay as they
  * are; this table is where the two vocabularies meet, so neither has to bend.
  */

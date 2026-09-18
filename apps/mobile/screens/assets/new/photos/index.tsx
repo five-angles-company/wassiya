@@ -53,7 +53,7 @@ export function NewPhotosScreen() {
   /**
    * Fraction uploaded, per photo.
    *
-   * Per file rather than per album, which is the board's own reasoning: with
+   * Per file rather than per album, and the reasoning matters: with
    * twenty photos on a weak connection one bar hides *which* file is stuck.
    * Keyed by index into `photos`, because the uploader reports the same index
    * — originals lead the payload list, so a `fileIndex` below `photos.length`
@@ -197,7 +197,7 @@ export function NewPhotosScreen() {
             <PhotoTile
               key={photo.uri}
               uri={photo.uri}
-              // A done tile is simply clean. The board is explicit: a finished
+              // A done tile is simply clean, deliberately: a finished
               // photo needs no decoration, so only in-flight and failed are
               // marked at all.
               progress={submitting ? (progress[i] ?? 0) : 1}

@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Platform, Pressable } from 'react-native';
 
 /**
- * Wassiya buttons are pills with Cairo 800 labels — see the design board's
+ * Wassiya buttons are pills with Cairo 800 labels — see the
  * screen grammar: "54px primary CTA at 17px, 50px secondary, 46px inline".
  *
  * Two rules this file follows deliberately:
@@ -15,7 +15,7 @@ import { Platform, Pressable } from 'react-native';
  *    renders nothing. `active:bg-terracotta-600` is the same intent, one step
  *    down the ramp, and actually works.
  *  - **There is no red.** `destructive` is an outlined confirm in deep
- *    terracotta, per the board: "this palette has no red and doesn't need one."
+ *    terracotta: "this palette has no red and doesn't need one."
  */
 const buttonVariants = cva(
   cn(
@@ -101,7 +101,7 @@ const buttonTextVariants = cva(
         /**
          * `background` (#f5ead8), not `primary-foreground` (#fff2eb).
          *
-         * The board is explicit that label-on-terracotta is the page ground,
+         * Label-on-terracotta is the page ground,
          * and `primary-cta` has always drawn it that way — this variant was the
          * one filled button in the product using the other white. The two are
          * close enough to look like a rendering artefact rather than a choice,

@@ -3,7 +3,7 @@ import { TONE_DISC_BG, TONE_DISC_FG, type Tone } from '@workspace/ui-native/lib/
 import { cn } from '@workspace/ui-native/lib/utils';
 import { View } from 'react-native';
 
-/** Disc diameters from the board: 30px stacked, 38px inline, 44px card avatar. */
+/** Disc diameters: 30px stacked, 38px inline, 44px card avatar. */
 const SIZES = {
   sm: { box: 'size-7.5', text: 'text-meta' },
   md: { box: 'size-9.5', text: 'text-row' },

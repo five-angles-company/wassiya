@@ -1,9 +1,7 @@
 "use client"
 
-import { ArrowRightIcon, KeyRoundIcon } from "lucide-react"
 
-import { ButtonLink } from "@/components/button"
-import { Panel } from "@/components/panel"
+import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { GUARDIAN } from "@/features/guardian/strings/guardian"
@@ -35,8 +33,8 @@ export function RoleReminder() {
   ]
 
   return (
-    <Panel title={labels.roleTitle}>
-      <div className="mt-1 grid gap-7 md:grid-cols-2 md:gap-10">
+    <DocSection title={labels.roleTitle}>
+      <div className="grid gap-7 md:grid-cols-2 md:gap-10">
         {jobs.map((job) => (
           <div key={job.title}>
             <span
@@ -53,20 +51,13 @@ export function RoleReminder() {
         ))}
       </div>
 
-      <div className="border-border mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 border-t pt-5">
-        <p className="text-muted-foreground max-w-[46ch] flex-1 text-[13px] leading-[1.7]">
-          {labels.roleKeyNote}
-        </p>
-        <ButtonLink href="/guardian/key" variant="outline" size="sm">
-          <KeyRoundIcon className="size-4" strokeWidth={2.3} aria-hidden />
-          {labels.keyTitle}
-          <ArrowRightIcon
-            className="nudge size-3.5 rtl:-scale-x-100"
-            strokeWidth={2.6}
-            aria-hidden
-          />
-        </ButtonLink>
-      </div>
-    </Panel>
+      {/* The note stays; the button that used to sit beside it is gone. It
+          pointed at `/guardian/key`, which is now this same page — a control
+          that redirects the reader back to where they already are. The key
+          check itself is above, in `GuardianKey`. */}
+      <p className="text-muted-foreground max-w-[66ch] text-[13px] leading-[1.7]">
+        {labels.roleKeyNote}
+      </p>
+    </DocSection>
   )
 }

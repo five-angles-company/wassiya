@@ -47,7 +47,7 @@ export function RecordNotFound({
         <h1 className="font-heading text-[19px] font-extrabold">
           {labels.notFoundTitle}
         </h1>
-        <p className="text-muted-foreground mt-2 max-w-[54ch] text-[14.5px] leading-[1.7]">
+        <p className="text-muted-foreground mt-2 max-w-[66ch] text-[14.5px] leading-[1.7]">
           {labels.notFoundBody}
         </p>
       </div>

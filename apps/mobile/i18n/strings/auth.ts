@@ -1,13 +1,13 @@
 /**
  * Section ١ · الدخول — copy for screens 1.1 to 1.5.
  *
- * Every string is the design board's, verbatim in both languages. Two of them
+ * Every string is the approved copy, verbatim in both languages. Two of them
  * are load-bearing rather than decorative and must not be paraphrased in a
  * future localisation pass:
  *
  *  - `signUp.nameNotice` — the name is what a death certificate is later
  *    matched against, so the warning has to be on the field that collects it.
- *  - `otp.notice` — the board's trust claim that an OTP proves identity and
+ *  - `otp.notice` — the trust claim that an OTP proves identity and
  *    never touches the vault. It is the whole reason the screen has a notice.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"

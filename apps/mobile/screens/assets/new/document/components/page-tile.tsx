@@ -15,7 +15,7 @@ import { Image, Pressable, View } from "react-native"
  * hands them over in whatever order they were fed, so the number is how someone
  * checks that before the order is baked into a PDF nobody can reopen.
  *
- * Reordering is arrows rather than the board's drag, because a drag gesture
+ * Reordering is arrows rather than drag, because a drag gesture
  * cannot be exercised over adb and a reorder that silently drops a page is worse
  * than one that takes two taps. The arrows point forward and back in reading
  * order, so they mirror under RTL with everything else.

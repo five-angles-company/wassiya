@@ -6,7 +6,7 @@ import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
 import { TextInput } from "@/components/text-input"
 import { t } from "@/lib/i18n/locale"
-import { HowItOpens } from "@/features/box/components/how-it-opens"
+import { HowItOpens } from "@/components/how-it-opens"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
 
 /**
@@ -45,7 +45,7 @@ export function BoxGate({
         <h1 className="font-heading text-[26px] leading-[1.15] font-black md:text-[32px]">
           {labels.gateTitle}
         </h1>
-        <p className="text-muted-foreground mt-3 max-w-[62ch] text-[15px] leading-[1.75]">
+        <p className="text-muted-foreground mt-3 max-w-[66ch] text-[15px] leading-[1.75]">
           {labels.gateBody}
         </p>
 
@@ -60,10 +60,9 @@ export function BoxGate({
           onChange={(event) => onShareChange(event.target.value)}
           placeholder={labels.sharePlaceholder}
           invalid={error !== undefined}
-          className="max-w-[560px]"
         />
         {error !== undefined && (
-          <p className="text-terracotta-800 mt-3 max-w-[62ch] text-[14px] leading-[1.65]">
+          <p className="text-tone-attention mt-3 max-w-[66ch] text-[14px] leading-[1.65]">
             {error}
           </p>
         )}

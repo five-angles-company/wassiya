@@ -2,7 +2,7 @@
  * The human-readable name of an asset — sealed, because the server must not be
  * able to read it.
  *
- * Section ١ of the board promises "حتى نحن لا نستطيع قراءة بياناتك" ("not even
+ * Section ١ promises "حتى نحن لا نستطيع قراءة بياناتك" ("not even
  * we can read your data"), and an asset list of `محفظة Ledger الرئيسية` /
  * `iCloud · fatima@icloud.com` sitting in plaintext columns would make that
  * claim false. Titles and subtitles are the most descriptive thing a vault

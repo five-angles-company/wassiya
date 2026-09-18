@@ -13,7 +13,7 @@ import { Pressable, View } from 'react-native';
  *
  * ## Nothing is pre-selected
  *
- * The board is explicit: a default here would quietly decide something people
+ * A default here would quietly decide something people
  * feel strongly about, and "delete" chosen by accident cannot be undone. So the
  * caller passes `null` until someone chooses, and the screen's button stays
  * surface-toned and says why.

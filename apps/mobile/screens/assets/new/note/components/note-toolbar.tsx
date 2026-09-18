@@ -70,7 +70,7 @@ export function NoteToolbar({
         label={labels.list}
         onPress={() => prefixLine("- ")}
       />
-      {/* Promoted to a first-class button, per the board — a wish is a
+      {/* Promoted to a first-class button — a wish is a
           different kind of sentence from an instruction, and marking it is how
           an heir knows which one they are reading. */}
       <ToolButton

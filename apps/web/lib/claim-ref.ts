@@ -1,7 +1,7 @@
 /**
  * A human-quotable claim reference, derived from the id.
  *
- * The board shows "C-4482" — short enough to read down a phone to support,
+ * The form is "C-4482" — short enough to read down a phone to support,
  * where a 32-character Convex id would be transcribed wrong every time.
  *
  * Derived rather than stored, so it needs no column and cannot drift from the

@@ -19,7 +19,7 @@ export default async function NotFound() {
         <h1 className="font-heading text-[19px] font-extrabold">
           {labels.routeMissingTitle}
         </h1>
-        <p className="text-sand-700 mt-3 text-[15px] leading-[1.75]">
+        <p className="text-muted-foreground mt-3 text-[15px] leading-[1.75]">
           {labels.routeMissingBody}
         </p>
         <ButtonLink href="/" variant="outline" className="mt-6">

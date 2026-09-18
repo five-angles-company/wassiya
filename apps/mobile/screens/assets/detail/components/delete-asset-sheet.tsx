@@ -20,7 +20,7 @@ import { useStrings } from "@/i18n/use-strings"
  * information can still change anything. Those names are hairline rows: two
  * people who lose something are a list, not a warning box.
  *
- * **Destructive is outlined, safe is filled.** The board's own rule — a solid
+ * **Destructive is outlined, safe is filled.** The rule is deliberate — a solid
  * button in this system means *proceed calmly*, and keeping the asset is the
  * calm path. No red; terracotta already carries the weight, and red would be the
  * only alien colour in the product.

@@ -77,7 +77,7 @@ export type GuardedSecretFieldProps = LabelledProps<GuardedLabelKey> & {
  *    verifiable without exposure.
  *  - **Reveal is gated and self-cancelling.** `onRequestReveal` is where the
  *    caller attaches biometrics; the peek then auto-hides after
- *    `revealSeconds` (10 on the board) whether or not the user acts.
+ *    `revealSeconds` (10 by default) whether or not the user acts.
  *  - **Paste and Scan QR are first-class**, because the alternative is the
  *    user retyping 12 words and getting one wrong.
  *

@@ -3,7 +3,7 @@ import Svg, { Circle } from 'react-native-svg';
 /**
  * A ring that fills as one file uploads.
  *
- * The board puts this on **each tile**, not in one bar across the album, and
+ * This sits on **each tile**, not in one bar across the album, and
  * says why: *"with twenty photos on a weak connection a single bar hides which
  * file failed."* An album-level bar answers "how far along is all of it"; the
  * only question worth answering here is "which one is stuck".

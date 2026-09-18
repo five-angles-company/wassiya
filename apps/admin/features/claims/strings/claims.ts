@@ -29,6 +29,10 @@ export const CLAIMS = {
   statusAwaitingVeto: { ar: "مدة الاعتراض جارية", en: "Veto window running" },
   statusReleased: { ar: "تم الإفراج", en: "Released" },
   statusVetoed: { ar: "أُغلق الطلب", en: "Owner objected" },
+  // Not "Closed": `statusLocked` already uses that word, and the two mean
+  // opposite things to an operator — locked is a ruling with a 90-day bar,
+  // ended is a claim that never had a vault to rule on.
+  statusClosed: { ar: "مُنتهٍ", en: "Ended, no vault" },
   statusLocked: { ar: "الطلب مغلق", en: "Closed" },
 
   colClaimant: { ar: "مقدّم الطلب", en: "Claimant" },
@@ -152,7 +156,14 @@ export const CLAIMS = {
   linkConfirm: { ar: "اربط", en: "Link" },
   cancel: { ar: "تراجع", en: "Cancel" },
 
-  // Why an action is unavailable — the same three reasons the mutation throws.
+  // Why an action is unavailable — the same four reasons the mutation throws.
+  //
+  // `blockedNoGuardian` is the one the reviewer cannot act on, so it says whose
+  // job it is instead of leaving them hunting for a button they do not have.
+  blockedNoGuardian: {
+    ar: "لا وصي على هذه الخزنة يستطيع تأكيد الوفاة، والموافقة ستُعلّق الطلب بلا مخرج. على صاحب الخزنة تعيين وصي وعلى ذلك الشخص قبول الدعوة — لا يمكن إصلاحه من هنا.",
+    en: "This vault has no guardian who can confirm the death, so approving would strand the claim with no way out. The owner must appoint one and that person must accept — it cannot be fixed from here.",
+  },
   blockedNoHeir: {
     ar: "اربط وريثاً أولاً: لا يستطيع الوصي تأكيد طلب بلا سجل وريث.",
     en: "Link an heir first: the guardian cannot confirm a claim with no heir record.",
@@ -177,13 +188,16 @@ export const CLAIMS = {
     en: "That did not go through. Nothing changed.",
   },
 
-  // The dead end, stated on the screen rather than discovered later.
-  guardianGapTitle: {
-    ar: "لا شاشة للوصي بعد",
-    en: "The guardian step has no screen yet",
+  // What approving sets in motion. This replaced a note saying the guardian had
+  // no screen and received no notification — both were true once and neither is
+  // now, and a console that describes the product's *previous* behaviour is
+  // worse than one that says nothing.
+  guardianNextTitle: {
+    ar: "ماذا يحدث بعد الموافقة",
+    en: "What approving does",
   },
-  guardianGapBody: {
-    ar: "الموافقة تنقل الطلب إلى الوصي، لكن لا توجد بعد شاشة يؤكّد منها، ولا يُرسَل إليه إشعار. سيبقى الطلب في هذه الحالة حتى تُبنى تلك الشاشة.",
-    en: "Approving moves the claim to the guardian, but no screen exists for them to confirm from and no notification is sent. The claim will sit in that state until that screen is built.",
+  guardianNextBody: {
+    ar: "ينتقل الطلب إلى وصي الخزنة، ويصله إشعار في التطبيق وبريد. تأكيده يبدأ مهلة اعتراض مدّتها ثلاثون يوماً، وبعدها يُفرَج عن الصندوق تلقائياً ما لم يعترض صاحب الخزنة.",
+    en: "The claim moves to the vault's guardian, who is notified in the app and by email. Their confirmation starts a thirty-day objection period, after which the box is released automatically unless the owner objects.",
   },
 } as const satisfies Dictionary

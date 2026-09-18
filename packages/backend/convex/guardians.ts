@@ -19,7 +19,7 @@ import { v } from "convex/values"
 import type { Doc, Id } from "./_generated/dataModel"
 import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
-import { requireUser } from "./model/access"
+import { requireAcceptedGuardian, requireUser } from "./model/access"
 import { DAY_MS } from "./model/claimFlow"
 import { getCurrentUserOrThrow } from "./users"
 
@@ -263,6 +263,75 @@ const GUARDIAN_DUTY: Record<string, "confirm" | "handover"> = {
   guardian_review: "confirm",
   released: "handover",
 }
+
+/**
+ * One claim, from the guardian's side.
+ *
+ * `pendingApprovals` is list-shaped across every vault a person guards, and the
+ * claim screen has been filtering it client-side. That costs two things worth
+ * fixing:
+ *
+ *  - **The duty vanishes the instant it is discharged.** `guardianConfirm`
+ *    moves the claim out of `guardian_review`, which is one of the two statuses
+ *    that list queries — so a guardian who confirmed successfully would watch
+ *    their row disappear and be shown "not found". The screen works around it
+ *    today by holding a `confirmed` flag above the subscription.
+ *  - **A finished claim becomes unreadable.** `vetoed`, `locked` and
+ *    `awaiting_veto` appear in no guardian query at all, so a guardian who
+ *    confirmed a death last week has no way to learn what became of it.
+ *
+ * This returns whatever the claim is now, with `duty: null` when nothing is
+ * being asked — which is a state the screen can render honestly rather than as
+ * a missing record.
+ *
+ * The gate is `requireAcceptedGuardian`, the same one `claims.guardianConfirm`
+ * and `release.guardianShareForClaim` use. That answers the objection to adding
+ * this at all: it is not a second place deciding what a guardian may see, it is
+ * the same place with one more caller.
+ *
+ * Never returns the certificate or a URL to it — that document is third-party
+ * personal data and belongs to the review queue, not to the guardian.
+ */
+export const claimForGuardian = query({
+  args: { claimId: v.string() },
+  handler: async (ctx, { claimId }) => {
+    const id = ctx.db.normalizeId("claims", claimId)
+    if (id === null) return null
+    const claim = await ctx.db.get("claims", id)
+    if (claim === null) return null
+    // An unmatched claim has no vault and therefore no guardian. Returning
+    // `null` keeps it indistinguishable from a claim that does not exist,
+    // which is the same answer every other refusal here gives.
+    const subjectUserId = claim.subjectUserId
+    if (subjectUserId === undefined) return null
+
+    // Throws for anyone who is not this vault's accepted guardian.
+    await requireAcceptedGuardian(ctx, subjectUserId)
+
+    const subject = await ctx.db.get("users", subjectUserId)
+    const duty =
+      claim.status === "guardian_review"
+        ? ("confirm" as const)
+        : claim.status === "released"
+          ? ("handover" as const)
+          : null
+
+    return {
+      claimId: claim._id,
+      duty,
+      status: claim.status,
+      subjectName: subject?.name ?? null,
+      claimantName: claim.claimantName,
+      certificateName: claim.certificateName ?? null,
+      nameMatch: claim.nameMatch ?? null,
+      heirLinked: claim.heirId !== undefined,
+      guardianConfirmedAt: claim.guardianConfirmedAt ?? null,
+      vetoDeadline: claim.vetoDeadline ?? null,
+      submittedAt: claim._creationTime,
+      updatedAt: claim.updatedAt ?? claim._creationTime,
+    }
+  },
+})
 
 export const pendingApprovals = query({
   args: {},

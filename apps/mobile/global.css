@@ -157,8 +157,8 @@
       --color-popover-foreground: hsl(20 4.9% 12%);
 
       /* Terracotta = action / identity. */
-      --color-primary: hsl(23.8 55.3% 50%); /* #c67139 */
-      --color-primary-foreground: hsl(21 100% 96.1%); /* #fff2eb */
+      --color-primary: hsl(7 79.4% 60%); /* #ea5b48 */
+      --color-primary-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
       /* Olive = protection / confirmation. */
       --color-secondary: hsl(81.8 19% 45.5%); /* #7a8a5e */
@@ -169,31 +169,31 @@
 
       /* shadcn "accent" keeps its role (subtle hover / tinted fill), tinted
          terracotta-200 on terracotta-700. */
-      --color-accent: hsl(21.7 100% 90.8%); /* #ffe1d0 */
-      --color-accent-foreground: hsl(24.7 68.7% 32.5%); /* #8c491a */
+      --color-accent: hsl(12.3 86.7% 91.2%); /* #fcddd5 */
+      --color-accent-foreground: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
 
       /* No alarm red anywhere in this product — danger stays in-family. */
-      --color-destructive: hsl(24.7 68.7% 32.5%); /* #8c491a */
-      --color-destructive-foreground: hsl(21 100% 96.1%); /* #fff2eb */
+      --color-destructive: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
+      --color-destructive-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
       --color-border: hsl(20 4.9% 12% / 0.16);
       --color-input: hsl(20 4.9% 12% / 0.16);
-      --color-ring: hsl(23.8 55.3% 50%);
+      --color-ring: hsl(7 79.4% 60%); /* #ea5b48 */
 
       /* Terracotta ramp — action, attention, "needs you". */
-      --color-terracotta-100: hsl(21 100% 96.1%); /* #fff2eb */
-      --color-terracotta-200: hsl(21.7 100% 90.8%); /* #ffe1d0 */
-      --color-terracotta-300: hsl(22 100% 82.4%); /* #ffc6a5 */
-      --color-terracotta-400: hsl(22.9 88.5% 69.2%); /* #f6a06b */
-      --color-terracotta-500: hsl(23.2 63.4% 56.1%); /* #d67f48 */
-      --color-terracotta-600: hsl(23.9 59.6% 43.7%); /* #b2622d */
-      --color-terracotta-700: hsl(24.7 68.7% 32.5%); /* #8c491a */
-      --color-terracotta-800: hsl(24.1 69.5% 23.1%); /* #643312 */
-      --color-terracotta-900: hsl(23.8 60% 15.7%); /* #402310 */
+      --color-terracotta-100: hsl(24 100% 97.1%); /* #fff6f0 */
+      --color-terracotta-200: hsl(12.3 86.7% 91.2%); /* #fcddd5 */
+      --color-terracotta-300: hsl(9.3 81.6% 82.9%); /* #f7bbb0 */
+      --color-terracotta-400: hsl(8 80% 72.5%); /* #f19081 */
+      --color-terracotta-500: hsl(7 79.4% 60%); /* #ea5b48 */
+      --color-terracotta-600: hsl(7.4 54.2% 50.4%); /* #c54d3c */
+      --color-terracotta-700: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
+      --color-terracotta-800: hsl(9.8 55.8% 30.2%); /* #783022 */
+      --color-terracotta-900: hsl(11.8 57.9% 22.4%); /* #5a2518 */
       /* Divider drawn ON a terracotta-tinted card (the 9.4 plan card). It has
          to be a declared alpha colour: an /alpha modifier on a theme colour
          compiles to colorMix("unset", …) in this stack and renders nothing. */
-      --color-terracotta-divider: hsl(23.8 60% 15.7% / 0.18);
+      --color-terracotta-divider: hsl(11.8 57.9% 22.4% / 0.18);
 
       /* Olive ramp — verified, safe, done. */
       --color-olive-100: hsl(84 71.4% 93.1%); /* #f0fae1 */
@@ -217,10 +217,10 @@
       --color-sand-800: hsl(40 11.8% 24.9%); /* #474238 */
       --color-sand-900: hsl(40 10.8% 16.3%); /* #2e2b25 */
 
-      --color-chart-1: hsl(23.8 55.3% 50%);
+      --color-chart-1: hsl(7 79.4% 60%); /* #ea5b48 */
       --color-chart-2: hsl(81.8 19% 45.5%);
       --color-chart-3: hsl(37.8 17.6% 70%);
-      --color-chart-4: hsl(22.9 88.5% 69.2%);
+      --color-chart-4: hsl(8 80% 72.5%); /* #f19081 */
       --color-chart-5: hsl(82.7 26% 66.1%);
     }
 
@@ -236,8 +236,8 @@
       --color-popover: hsl(37.9 48.7% 84.7%);
       --color-popover-foreground: hsl(20 4.9% 12%);
 
-      --color-primary: hsl(23.8 55.3% 50%);
-      --color-primary-foreground: hsl(21 100% 96.1%);
+      --color-primary: hsl(7 79.4% 60%); /* #ea5b48 */
+      --color-primary-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
       --color-secondary: hsl(81.8 19% 45.5%);
       --color-secondary-foreground: hsl(84 71.4% 93.1%);
@@ -245,26 +245,26 @@
       --color-muted: hsl(37.9 35.8% 89.6%);
       --color-muted-foreground: hsl(37.5 10.2% 46.3%);
 
-      --color-accent: hsl(21.7 100% 90.8%);
-      --color-accent-foreground: hsl(24.7 68.7% 32.5%);
+      --color-accent: hsl(12.3 86.7% 91.2%); /* #fcddd5 */
+      --color-accent-foreground: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
 
-      --color-destructive: hsl(24.7 68.7% 32.5%);
-      --color-destructive-foreground: hsl(21 100% 96.1%);
+      --color-destructive: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
+      --color-destructive-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
       --color-border: hsl(20 4.9% 12% / 0.16);
       --color-input: hsl(20 4.9% 12% / 0.16);
-      --color-ring: hsl(23.8 55.3% 50%);
+      --color-ring: hsl(7 79.4% 60%); /* #ea5b48 */
 
-      --color-terracotta-100: hsl(21 100% 96.1%);
-      --color-terracotta-200: hsl(21.7 100% 90.8%);
-      --color-terracotta-300: hsl(22 100% 82.4%);
-      --color-terracotta-400: hsl(22.9 88.5% 69.2%);
-      --color-terracotta-500: hsl(23.2 63.4% 56.1%);
-      --color-terracotta-600: hsl(23.9 59.6% 43.7%);
-      --color-terracotta-700: hsl(24.7 68.7% 32.5%);
-      --color-terracotta-800: hsl(24.1 69.5% 23.1%);
-      --color-terracotta-900: hsl(23.8 60% 15.7%);
-      --color-terracotta-divider: hsl(23.8 60% 15.7% / 0.18);
+      --color-terracotta-100: hsl(24 100% 97.1%); /* #fff6f0 */
+      --color-terracotta-200: hsl(12.3 86.7% 91.2%); /* #fcddd5 */
+      --color-terracotta-300: hsl(9.3 81.6% 82.9%); /* #f7bbb0 */
+      --color-terracotta-400: hsl(8 80% 72.5%); /* #f19081 */
+      --color-terracotta-500: hsl(7 79.4% 60%); /* #ea5b48 */
+      --color-terracotta-600: hsl(7.4 54.2% 50.4%); /* #c54d3c */
+      --color-terracotta-700: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
+      --color-terracotta-800: hsl(9.8 55.8% 30.2%); /* #783022 */
+      --color-terracotta-900: hsl(11.8 57.9% 22.4%); /* #5a2518 */
+      --color-terracotta-divider: hsl(11.8 57.9% 22.4% / 0.18);
 
       --color-olive-100: hsl(84 71.4% 93.1%);
       --color-olive-200: hsl(82.9 50% 86.7%);
@@ -286,10 +286,10 @@
       --color-sand-800: hsl(40 11.8% 24.9%);
       --color-sand-900: hsl(40 10.8% 16.3%);
 
-      --color-chart-1: hsl(23.8 55.3% 50%);
+      --color-chart-1: hsl(7 79.4% 60%); /* #ea5b48 */
       --color-chart-2: hsl(81.8 19% 45.5%);
       --color-chart-3: hsl(37.8 17.6% 70%);
-      --color-chart-4: hsl(22.9 88.5% 69.2%);
+      --color-chart-4: hsl(8 80% 72.5%); /* #f19081 */
       --color-chart-5: hsl(82.7 26% 66.1%);
     }
   }

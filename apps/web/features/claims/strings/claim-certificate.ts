@@ -31,12 +31,6 @@ export const CLAIM_CERTIFICATE = {
     ar: "انسخه حرفياً من الشهادة، حتى لو اختلف عن نطقه المعتاد",
     en: "Copy it letter for letter from the certificate, even if it differs from the usual spelling",
   },
-  dateLabel: { ar: "تاريخ الوفاة", en: "Date of death" },
-  placeLabel: { ar: "المكان", en: "Place" },
-  refLabel: {
-    ar: "رقم الشهادة (اختياري)",
-    en: "Certificate number (optional)",
-  },
 
   submit: { ar: "إرسال للمراجعة", en: "Send for review" },
   submitting: { ar: "جارٍ الإرسال…", en: "Sending…" },
@@ -53,10 +47,6 @@ export const CLAIM_CERTIFICATE = {
   // a mismatch is a review queue, never a rejection. Both languages have to say
   // "not rejected" out loud, because the fear is the same in either.
   megabytes: { ar: "م.ب", en: "MB" },
-  attached: {
-    ar: "وصلت الشهادة. لا شيء آخر مطلوب منك في هذه الخطوة.",
-    en: "The certificate arrived. Nothing else is needed from you at this step.",
-  },
 
   matchNote: {
     ar: "إن اختلف رسم الاسم عن المسجّل لدينا، يذهب الطلب إلى مراجعة بشرية — لا يُرفض.",

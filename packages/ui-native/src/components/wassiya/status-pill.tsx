@@ -6,7 +6,7 @@ import { View } from 'react-native';
 
 /**
  * The three states anything in the vault can be in. Ranking matters: exactly
- * one `action` item should be visible on a screen at a time (the board:
+ * one `action` item should be visible on a screen at a time (the rule:
  * "exactly one amber row is allowed"), because a wall of amber ranks nothing.
  */
 export type StatusPillStatus =

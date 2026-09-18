@@ -183,7 +183,7 @@ export default defineSchema({
     //
     // It is not a nicety. A plaintext `title` column would hold
     // "مصرف الراجحي" and "iCloud · fatima@icloud.com", which is precisely what
-    // section ١ of the board promises the server cannot read.
+    // section ١ promises the server cannot read.
     labelSealed: v.bytes(),
     // Non-sensitive only: counts, sizes, mime, reminder dates. Never a secret,
     // never a filename that gives away contents. The descriptive half of a row
@@ -316,7 +316,33 @@ export default defineSchema({
     .index("by_nextDueAt", ["nextDueAt"]),
 
   claims: defineTable({
-    subjectUserId: v.id("users"),
+    /**
+     * The vault this claim is against — **absent when the address matched no
+     * vault**, which is a real and expected state rather than a broken row.
+     *
+     * Filing used to insert nothing at all in that case, so a bereaved person
+     * filled in the form and was then shown "no reports yet". Every filing is
+     * now a claim; this column is what tells a matched one from an unmatched.
+     *
+     * ⚠️ An unmatched claim can never leave `submitted` except to `closed`:
+     * `adminSetNameMatch` is the only way forward and it refuses a claim with
+     * no subject. So every guarded path downstream — `guardianConfirm`,
+     * `release.*`, `pendingApprovals` — only ever sees a claim that has one,
+     * and `requireSubject` in `claims.ts` is where that is asserted rather
+     * than assumed.
+     */
+    subjectUserId: v.optional(v.id("users")),
+    /**
+     * The address the claimant typed, normalised (`trim().toLowerCase()`)
+     * **server-side**.
+     *
+     * Kept whether or not it matched, because it is the only way to resolve an
+     * unmatched claim later — a typo is by far the commonest cause, and staff
+     * need to see what was actually entered. It is also the honest dedupe and
+     * lockout key: the old one was the typed contact string, which a claimant
+     * can simply change.
+     */
+    subjectEmail: v.optional(v.string()),
     claimantName: v.string(),
     claimantContact: v.string(),
     // Set once the claimant signs in through Clerk, so their own client can
@@ -337,11 +363,65 @@ export default defineSchema({
       v.literal("vetoed"),
       v.literal("guardian_review"),
       v.literal("released"),
-      v.literal("locked")
+      v.literal("locked"),
+      /**
+       * Ended without a verdict — today only "no vault matched that address".
+       *
+       * Distinct from `locked`, which is a refusal after review and carries a
+       * 90-day bar. `closed` carries none: the commonest cause is a typo, and
+       * the right next step is to file again with the right address.
+       */
+      v.literal("closed")
     ),
     vetoDeadline: v.optional(v.number()),
     lockedUntil: v.optional(v.number()),
     guardianConfirmedAt: v.optional(v.number()),
+
+    /**
+     * Why a claim closed, in terms a claimant may safely be told.
+     *
+     * ⚠️ Never carries a review verdict. `publicStatus` documents the rule: a
+     * claimant who learns *which* check failed learns how to make it pass. A
+     * rejection says only that review did not go further; `staffNote` is where
+     * the actual reason lives, and it never leaves the console.
+     */
+    closedReason: v.optional(
+      v.union(v.literal("no_vault_matched"), v.literal("review_failed"))
+    ),
+    /** Admin-only. Never returned to a claimant or a guardian by any function. */
+    staffNote: v.optional(v.string()),
+
+    /**
+     * When this claim last moved, and when it entered each state that has no
+     * timestamp of its own.
+     *
+     * The case page is a timeline, and a timeline needs dates. Before these
+     * the only ones a claim carried were `_creationTime`, `guardianConfirmedAt`
+     * and `vetoDeadline` — so four of a heir's eight steps could be shown as
+     * done but never as *when*.
+     *
+     * The audit log records all of it and cannot serve this: it is keyed on the
+     * **subject's** `userId`, so a claimant reading it would read the owner's
+     * check-ins, devices and recovery history.
+     *
+     * Five nullable timestamps rather than a `claimEvents` table because the
+     * flow is strictly linear and each state is entered exactly once —
+     * `attachCertificate` refuses anything but `submitted`, so even the
+     * document cannot arrive twice. An event table earns its place the day an
+     * event repeats or needs an actor, and can be added then without changing
+     * any of this.
+     *
+     * ⚠️ `updatedAt` has no trigger. Convex has none, so every writer must
+     * stamp it and a missed one fails silently — the same trap `searchText`
+     * documents above. `patchClaim` in `claims.ts` is the only thing allowed
+     * to write this table, and `scripts/verify-invariants.mjs` fails the build
+     * if anything else calls `ctx.db.patch` on it.
+     */
+    updatedAt: v.optional(v.number()),
+    certificateAttachedAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    releasedAt: v.optional(v.number()),
+    closedAt: v.optional(v.number()),
     /**
      * Claimant name, contact and certificate name in one string, for the
      * console's search box.
@@ -374,8 +454,24 @@ export default defineSchema({
       "claimantContact",
     ])
     .index("by_claimantUserId", ["claimantUserId"])
+    // The claimant's own cases, split by state. The Didit webhook reads it to
+    // notify each open claim when a verification lands, and it is what lets a
+    // case list separate open from closed without scanning.
+    .index("by_claimantUserId_and_status", ["claimantUserId", "status"])
+    // Dedupe and the 90-day veto lockout, keyed on the *person* and the address
+    // they filed against. The old key was `claimantContact` — a typed string,
+    // so a vetoed claimant escaped their own bar by entering a different phone
+    // number. It also works for unmatched claims, which have no subject id.
+    .index("by_claimantUserId_and_subjectEmail", [
+      "claimantUserId",
+      "subjectEmail",
+    ])
     // The admin review queue, and the scheduler's veto-expiry sweep.
     .index("by_status", ["status"])
+    // The unmatched queue: `.eq("status", "submitted").eq("subjectUserId", undefined)`.
+    // `undefined` is a real index value in Convex — `notifications` already
+    // ranges on it via `by_userId_and_readAt`.
+    .index("by_status_and_subjectUserId", ["status", "subjectUserId"])
     .index("by_status_and_vetoDeadline", ["status", "vetoDeadline"]),
 
   // Append-only. `audit.ts` exposes an internal insert and an owner-only read,
@@ -421,8 +517,21 @@ export default defineSchema({
     userId: v.id("users"),
     kind: v.string(),
     payload: scalarRecord,
+    /**
+     * The claim this is about, where there is one.
+     *
+     * A column rather than a `payload` key because `payload` is a `v.record`
+     * and therefore unindexable — the same reason `auditLog` cannot answer
+     * "everything about this claim" without a scan. This is what lets a case
+     * page carry its own history instead of filtering a global feed.
+     *
+     * Optional because the owner-facing kinds (`checkin.*`, `recovery.*`) are
+     * about a vault rather than a claim.
+     */
+    claimId: v.optional(v.id("claims")),
     readAt: v.optional(v.number()),
   })
     .index("by_userId", ["userId"])
-    .index("by_userId_and_readAt", ["userId", "readAt"]),
+    .index("by_userId_and_readAt", ["userId", "readAt"])
+    .index("by_userId_and_claimId", ["userId", "claimId"]),
 })

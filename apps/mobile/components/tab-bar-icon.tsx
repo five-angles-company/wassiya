@@ -8,7 +8,7 @@ import { View } from "react-native"
  *
  * ## Why a pill
  *
- * Selection already has a shape in this product. The board states it for the
+ * Selection already has a shape in this product. It is stated for the
  * wizards — *"Chips are pills on `--color-surface`; the selected one is solid
  * terracotta"* — and ٤.١'s filter row and ٤.٣'s network chips both follow it.
  * The bar was the one place that said "selected" with colour alone, which made
@@ -16,7 +16,7 @@ import { View } from "react-native"
  *
  * ## The icon on the pill is `background`, not `primary-foreground`
  *
- * #f5ead8, the page ground. That is the board's own rule for anything drawn on
+ * #f5ead8, the page ground. That is the rule for anything drawn on
  * terracotta and it is *not* the same as `primary-foreground` (#fff2eb) — the
  * two differ by enough to read as a slightly dirty white on a saturated fill.
  */

@@ -87,7 +87,7 @@ export function BiometricsScreen() {
     setError(null)
     try {
       // On iOS the keystore prompts only when *reading or updating* an existing
-      // value, so creating MK would happen silently and the ceremony the board
+      // value, so creating MK would happen silently and the ceremony the design
       // describes would never appear. An explicit prompt supplies it there. On
       // Android every keystore operation prompts already, so adding one here
       // would show the sheet twice in a row.

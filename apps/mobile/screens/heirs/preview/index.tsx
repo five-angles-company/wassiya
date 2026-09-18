@@ -10,10 +10,9 @@
  * as ٤.١ does. Nothing here gives the heir early access, and nothing asks the
  * server what an asset is called.
  *
- * **The board's spec for this screen is truncated** by the 256 KiB `get_file`
- * cap, so what is built is what was legible: the heir switcher, the disclaimer,
- * and the routed-asset list with its "كاملة" marker. The personal-message
- * surface it shares with ٥.٥ was never readable.
+ * The screen is the heir switcher, the disclaimer, and the routed-asset list
+ * with its "كاملة" marker. The personal-message surface it shares with ٥.٥ is
+ * not built yet.
  */
 import { useState } from "react"
 import { useQuery } from "convex/react"
@@ -24,13 +23,13 @@ import { unwrap } from "@workspace/crypto/wrap"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
-import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
 import { router, useLocalSearchParams } from "expo-router"
-import { Inbox, Pencil } from "lucide-react-native"
+import { Pencil } from "lucide-react-native"
 import { Pressable, ScrollView, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { GhostRow } from "@/components/ghost-row"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPE_ICON } from "@/lib/asset-types"
@@ -78,27 +77,37 @@ export function HeirPreviewScreen() {
       </View>
 
       {/* The switcher. Comparing heirs side by side is how an owner notices
-          that one of them receives nothing. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerClassName="gap-2 py-4"
-      >
-        {(heirs ?? []).map((heir) => (
-          <Pressable
-            key={heir.id}
-            onPress={() => setHeirId(heir.id)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: heir.id === heirId }}
-            className={cnRow(heir.id === heirId)}
-          >
-            <InitialDisc name={heir.name} size="sm" />
-            <Text variant="metaSm" className="font-body-medium">
-              {heir.name.split(" ")[0]}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+          that one of them receives nothing — so it is absent with one heir,
+          where there is nothing to compare and a row of one reads as a control
+          that has failed.
+
+          ⚠️ `items-center` and `grow-0` are load-bearing. A horizontal
+          `ScrollView` stretches its children on the cross axis and takes the
+          column's leftover height, so without them a single chip was drawn as
+          a pill the height of the screen. */}
+      {(heirs?.length ?? 0) > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="grow-0"
+          contentContainerClassName="gap-2 py-4 items-center"
+        >
+          {(heirs ?? []).map((heir) => (
+            <Pressable
+              key={heir.id}
+              onPress={() => setHeirId(heir.id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: heir.id === heirId }}
+              className={cnRow(heir.id === heirId)}
+            >
+              <InitialDisc name={heir.name} size="sm" />
+              <Text variant="metaSm" className="font-body-medium">
+                {heir.name.split(" ")[0]}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
 
       <View className="rounded-card bg-olive-100 mb-header p-4">
         <Text variant="metaSm" className="text-olive-700 leading-[1.75]">
@@ -107,10 +116,20 @@ export function HeirPreviewScreen() {
       </View>
 
       {preview !== undefined && preview.items.length === 0 ? (
-        <EmptyState
-          icon={Inbox}
-          title={t.empty.replace("{name}", name)}
-        />
+        /* Left-aligned with ghost cards, the same shape as the empty vault and
+           the empty heirs list. A centred medallion here read as an error on a
+           screen whose answer — "nothing is routed to this person yet" — is a
+           true and ordinary state. The ghosts carry the trailing disc because
+           an `AssetRow` has one. */
+        <View className="gap-header">
+          <Text className="max-w-[320px] text-[19px] leading-[1.6]">
+            {t.empty.replace("{name}", name)}
+          </Text>
+          <View className="gap-row opacity-[0.32]">
+            <GhostRow title="62%" meta="30%" />
+            <GhostRow title="48%" meta="22%" />
+          </View>
+        </View>
       ) : (
         <View className="gap-2">
           <Text variant="sectionLabel">

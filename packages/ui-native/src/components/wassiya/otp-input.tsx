@@ -34,7 +34,7 @@ const LABELS: LabelSet<OtpLabelKey> = {
 export type OtpInputProps = LabelledProps<OtpLabelKey> & {
   value: string;
   onChangeText: (value: string) => void;
-  /** Board default is 6; the wizard supports 4–8. */
+  /** Default is 6; the wizard supports 4–8. */
   length?: number;
   state?: OtpInputState;
   /** Seconds until resend unlocks. Hidden when undefined or 0. */
@@ -60,6 +60,14 @@ export type OtpInputProps = LabelledProps<OtpLabelKey> & {
  *    full-width input sits over the row and the boxes render its value.
  *  - **Auto-advance and paste come free** from that single input: any string
  *    is filtered to digits and truncated to `length`.
+ *
+ * ## The keyboard is put back after a verdict
+ *
+ * `editable={false}` **blurs** a focused input on both platforms, so going into
+ * `verifying` drops the keyboard — and coming back out to `wrong` does not
+ * bring it back. The reader was then looking at six rejected digits, no
+ * keyboard, and a screen that had stopped responding to typing until they
+ * thought to tap it again. Focus is restored on the edge back to editable.
  */
 export function OtpInput({
   value,
@@ -77,6 +85,15 @@ export function OtpInput({
   const inputRef = React.useRef<TextInput>(null);
   const disabled = state === 'lockedOut' || state === 'verifying';
   const digits = [...value].slice(0, length);
+
+  // Only on the transition, not on every render: calling focus() while already
+  // focused re-opens the keyboard on Android even when the user has dismissed
+  // it deliberately.
+  const wasDisabled = React.useRef(disabled);
+  React.useEffect(() => {
+    if (wasDisabled.current && !disabled) inputRef.current?.focus();
+    wasDisabled.current = disabled;
+  }, [disabled]);
 
   function handleChange(next: string) {
     // Convert before filtering: an Arabic keyboard emits ٠-٩, and stripping

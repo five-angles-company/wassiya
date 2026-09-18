@@ -19,6 +19,45 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * missing translation looks like a missing translation instead of a bug.
  */
 export const NOTIFICATIONS = {
+  // ── The claimant's own, in claim order ───────────────────────────────────
+  //
+  // Each says what happened and, where the answer is "nothing", says that too.
+  // A feed that only ever reports movement teaches its reader that silence
+  // means something is wrong.
+  claimFiled: { ar: "استلمنا بلاغك", en: "We have your report" },
+  claimFiledBody: {
+    ar: "بدأت المراجعة. سنراسلك عند كل تغيّر.",
+    en: "Review has started. We'll email you at each change.",
+  },
+  claimCertificate: { ar: "وصلت شهادة الوفاة", en: "The certificate arrived" },
+  claimCertificateBody: {
+    ar: "استلمنا الوثيقة وأضفناها إلى بلاغك.",
+    en: "We received the document and added it to your report.",
+  },
+  claimIdentity: { ar: "وُثِّقت هويتك", en: "Your identity is verified" },
+  claimIdentityBody: {
+    ar: "اكتمل التحقّق من هويتك. لا شيء آخر مطلوب منك في هذه الخطوة.",
+    en: "Your identity check is complete. Nothing further is needed from you at this step.",
+  },
+  claimInReview: { ar: "انتقل بلاغك إلى الوصي", en: "Your report is with the guardian" },
+  claimInReviewBody: {
+    ar: "اكتملت مراجعتنا. لا شيء مطلوب منك الآن.",
+    en: "Our review is complete. Nothing is needed from you now.",
+  },
+  claimReviewFailed: { ar: "أُغلق بلاغك", en: "Your report is closed" },
+  claimReviewFailedBody: {
+    ar: "لم نتمكّن من متابعة هذا البلاغ. تواصل معنا إن كنت ترى أن هذا خطأ.",
+    en: "We could not take this report further. Contact us if you believe that is wrong.",
+  },
+  claimGuardianConfirmed: {
+    ar: "أكّد الوصي — بدأت مهلة الاعتراض",
+    en: "The guardian confirmed — the objection period has started",
+  },
+  claimGuardianConfirmedBody: {
+    ar: "مهلة ثلاثين يوماً يستطيع خلالها صاحب الخزنة إيقاف التسليم. لا شيء مطلوب منك.",
+    en: "Thirty days in which the vault owner can stop the handover. Nothing is needed from you.",
+  },
+
   title: { ar: "الإشعارات", en: "Notifications" },
   body: {
     ar: "كل ما راسلناك بشأنه. الأحدث أولاً.",

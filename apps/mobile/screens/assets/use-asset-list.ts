@@ -1,7 +1,7 @@
 /**
  * The ٤.١ data path: fetch, decrypt, filter, sort.
  *
- * Every **label** is decrypted in one pass, and the board's "decrypt lazily per
+ * Every **label** is decrypted in one pass, and the "decrypt lazily per
  * visible row" is read as the rendering rule it was written as — no row waits on
  * another row's blob. You cannot match text you have not decrypted, and a search
  * that only finds what has been scrolled past is wrong quietly. `assets.list` is
@@ -42,7 +42,7 @@ export type AssetListRow = {
   recipients: string[]
   /** The shared bucket is routed here; it gets a word, not an initial. */
   allHeirs: boolean
-  /** `recipientRule === "explicit"` — the badge and the sort key on the board. */
+  /** `recipientRule === "explicit"` — the badge and the list's sort key. */
   routed: boolean
   createdAt: number
 }

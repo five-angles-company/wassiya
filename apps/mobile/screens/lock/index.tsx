@@ -47,7 +47,7 @@ export function VaultLock({ onUnlock, busy, denied = false }: VaultLockProps) {
   return (
     <View
       // `absoluteFill` over the mounted tree, not a route. The scrim is the
-      // board's 55% ground; the screen underneath keeps rendering and is simply
+      // 55% ground; the screen underneath keeps rendering and is simply
       // no longer legible.
       className="absolute inset-0 z-50 items-center justify-center bg-[color:rgba(245,234,216,0.94)] px-gutter"
     >

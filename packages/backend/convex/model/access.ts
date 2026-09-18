@@ -45,6 +45,29 @@ export async function requireAcceptedGuardian(
 }
 
 /**
+ * The guardians of one vault who can actually be asked to confirm a death:
+ * accepted, **and** linked to an account.
+ *
+ * An invited guardian has no `guardianUserId` to notify and a revoked one is no
+ * longer anyone's guardian — `guardianConfirm` refuses both. This is the set
+ * `claims.adminSetNameMatch` notifies and the set `nameMatchBlockedReason` asks
+ * about, in one place so the two can never disagree about whether an approval
+ * has anywhere to go.
+ */
+export async function activeGuardiansFor(
+  ctx: QueryCtx,
+  subjectUserId: Id<"users">
+): Promise<Doc<"guardians">[]> {
+  const rows = await ctx.db
+    .query("guardians")
+    .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
+    .take(20)
+  return rows.filter(
+    (row) => row.status === "accepted" && row.guardianUserId !== undefined
+  )
+}
+
+/**
  * The subscription-lapse rule, in the one place it is allowed to apply: adding
  * assets. Reading the vault and releasing to heirs must never call this — a
  * lapsed subscription is a billing problem, not a reason to lose an

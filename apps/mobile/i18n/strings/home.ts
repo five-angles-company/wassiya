@@ -5,7 +5,7 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 
 /** ٣.١ — the home dashboard. */
 export const HOME = {
-  // The board opens with a time-of-day greeting and the first name only.
+  // Home opens with a time-of-day greeting and the first name only.
   greetMorning: { ar: "صباح الخير", en: "Good morning" },
   greetAfternoon: { ar: "مساء الخير", en: "Good afternoon" },
   greetEvening: { ar: "مساء الخير", en: "Good evening" },

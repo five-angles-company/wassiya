@@ -11,7 +11,7 @@ import { ActivityIndicator, Pressable } from 'react-native';
  *
  * Disabled is **surface-toned**, not faded terracotta. A greyed-out accent
  * reads as "this button is malfunctioning"; a surface-toned one reads as "this
- * is waiting for you". The board is explicit about it, and it is why the
+ * is waiting for you". That is deliberate, and it is why the
  * disabled state also gets its own label.
  *
  * ## The disabled label says what is missing
@@ -28,7 +28,7 @@ export type PrimaryCtaProps = {
   disabledLabel?: string;
   /** Leads the label. A plus on "أضف", a fingerprint on "افتح ببصمتك". */
   icon?: LucideIcon;
-  /** The glyph is drawn at 20px unless the board says otherwise. */
+  /** The glyph is drawn at 20px unless a caller overrides it. */
   iconSize?: number;
   onPress: () => void;
   disabled?: boolean;

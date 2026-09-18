@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
 /**
  * The heir's reports — the list, the filing form, and the detail page's chrome.
  *
- * The voice is the board's: **plain, warm, never euphemistic about death.**
+ * The voice: **plain, warm, never euphemistic about death.**
  * "بلاغ وفاة" is a *death report* and the headline says so in two words.
  *
  * Two lines are placed rather than merely written. *"We're sorry for your
@@ -13,7 +13,6 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * where the belief it corrects would already have formed.
  */
 export const CLAIMS = {
-  listTitle: { ar: "بلاغاتي", en: "My reports" },
   listBody: {
     ar: "كل بلاغ قدّمته، وأين وصل. نراسلك على بريدك عند كل تغيّر — لا حاجة لمتابعة هذه الصفحة يومياً.",
     en: "Every report you have filed, and where it stands. We email you at each change — there's no need to watch this page.",
@@ -24,8 +23,32 @@ export const CLAIMS = {
     en: "If someone who left you something in Wassiya has died, you start here.",
   },
   newReport: { ar: "بلاغ جديد", en: "New report" },
-  openReport: { ar: "افتح البلاغ", en: "Open the report" },
-  forVault: { ar: "خزنة {name}", en: "{name}'s vault" },
+  // For a reader who has the link but no session — a relative it was forwarded
+  // to, or the claimant on a new device. The page is fully readable; only the
+  // steps that ask for something swap to this.
+  signInToAct: { ar: "سجّل الدخول للمتابعة", en: "Sign in to continue" },
+
+  // `/file` is readable with no account so the checklist beside it can be read
+  // first. The form itself needs one: a report has to belong to a person, which
+  // is what makes the rate limit and the 90-day lockout mean anything.
+  signInTitle: { ar: "قبل أن تبدأ", en: "Before you start" },
+  signInBody: {
+    ar: "نحتاج حساباً لنربط البلاغ بك ونراسلك عند كل تغيّر. الحساب مجاني ويستغرق دقيقة. اقرأ ما تحتاجه على اليمين أولاً — أكثر ما يوقف الناس هو البدء بلا شهادة الوفاة.",
+    en: "We need an account so the report belongs to you and we can email you at each change. It is free and takes a minute. Read what you will need first — the commonest reason people stall is starting without the death certificate.",
+  },
+  signInAction: { ar: "سجّل الدخول وابدأ", en: "Sign in and start" },
+  fileAgain: { ar: "قدّم بلاغاً جديداً", en: "File a new report" },
+  otherCases: { ar: "كل بلاغاتك", en: "All your reports" },
+
+  // For a reader who is signed in but is not the claimant — a relative the link
+  // was forwarded to. They may read the whole report, which is what
+  // `publicStatus` is for; they simply cannot act on it. Telling them to sign in
+  // was the bug: they already had.
+  notYoursTitle: { ar: "هذا بلاغ شخص آخر", en: "This is someone else's report" },
+  notYoursBody: {
+    ar: "يمكنك متابعة أين وصل هذا البلاغ، لكن لا يمكن لأحد غير مقدّمه إثبات هويته أو رفع الشهادة أو فتح الصندوق.",
+    en: "You can follow where this report stands, but only the person who filed it can verify their identity, upload the certificate or open the box.",
+  },
   unknownVault: { ar: "خزنة", en: "A vault" },
 
   // ---- filing ------------------------------------------------------------
@@ -98,11 +121,6 @@ export const CLAIMS = {
   // `submit` answers `{ received: true }` whether or not the email matched a
   // vault, because it must not be an enumeration oracle. So the confirmation
   // cannot promise a vault was found, and this line is worded not to.
-  filedTitle: { ar: "سجّلنا بلاغك", en: "Your report is filed" },
-  filedBody: {
-    ar: "إن كان لهذا البريد خزنة لدينا، فقد بدأ الإجراء. تابع خطواتك من صفحة البلاغ.",
-    en: "If that address has a vault with us, the process has begun. Follow your steps on the report's page.",
-  },
 
   disclaimer: {
     ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات. الأنصبة يحدّدها القانون والفرائض الشرعية — نحن نوصّل ما وُجّه إليك بالاسم، لا أكثر.",
@@ -115,6 +133,5 @@ export const CLAIMS = {
 
   // ---- detail chrome -----------------------------------------------------
   detailTitle: { ar: "بلاغ خزنة {name}", en: "Report for {name}'s vault" },
-  nextStepTitle: { ar: "الخطوة التالية", en: "Your next step" },
   backToList: { ar: "كل البلاغات", en: "All reports" },
 } as const satisfies Dictionary

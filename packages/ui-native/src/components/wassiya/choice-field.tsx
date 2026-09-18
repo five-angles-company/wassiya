@@ -22,7 +22,7 @@ import { Pressable, ScrollView, View } from 'react-native';
  * ways of choosing one thing.
  *
  * An unset value shows its placeholder at 50%. That is a real state on ٤.٧,
- * which ships no default disposition on purpose — the board wants that choice
+ * which ships no default disposition on purpose — that choice is
  * made, not guessed.
  */
 export type ChoiceFieldProps = {

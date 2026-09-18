@@ -3,7 +3,7 @@ import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { Plus } from "lucide-react-native"
 import { View } from "react-native"
 
-import { GhostRow } from "@/screens/assets/components/ghost-row"
+import { GhostRow } from "@/components/ghost-row"
 
 /**
  * ٤.١b — the vault with nothing in it yet.

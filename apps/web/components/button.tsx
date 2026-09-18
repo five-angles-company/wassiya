@@ -5,7 +5,7 @@ import Link from "next/link"
  * The app's one button — primary actions had shipped at `h-14`, `h-[58px]`,
  * `h-[54px]`, `py-3` and `py-3.5` across nine screens before it existed.
  *
- * Sizes are roles, not measurements. `lg` is the board's 56px primary: the
+ * Sizes are roles, not measurements. `lg` is the 56px primary: the
  * single action a screen exists for, and a screen has at most one. `md` is
  * everything else that commits — a submit inside a panel, a confirm. `sm` is
  * chrome. The heading face is on `lg` alone, because at 44px and below Cairo 800
@@ -27,15 +27,15 @@ const SIZE: Record<Size, string> = {
 
 const VARIANT: Record<Variant, string> = {
   primary:
-    "bg-primary text-primary-foreground hover:bg-terracotta-600 shadow-[var(--shadow-raised)]",
+    "bg-primary text-primary-foreground hover:brightness-95 shadow-[var(--shadow-raised)]",
   secondary:
-    "bg-secondary text-secondary-foreground hover:bg-olive-600 shadow-[var(--shadow-raised)]",
-  outline: "border border-border hover:bg-sand-100",
-  ghost: "text-sand-700 hover:text-foreground hover:bg-sand-100",
+    "bg-secondary text-secondary-foreground hover:brightness-95 shadow-[var(--shadow-raised)]",
+  outline: "border border-border hover:bg-muted",
+  ghost: "text-muted-foreground hover:text-foreground hover:bg-muted",
 }
 
 const BASE =
-  "inline-flex shrink-0 items-center justify-center rounded-full whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+  "inline-flex shrink-0 items-center justify-center rounded-full whitespace-nowrap transition-[color,background-color,filter] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
 
 const DISABLED = "bg-muted text-muted-foreground cursor-not-allowed shadow-none"
 

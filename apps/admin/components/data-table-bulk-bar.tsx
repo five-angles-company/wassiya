@@ -68,7 +68,10 @@ export function DataTableBulkBar<TData extends RowData>({
         )}
       </span>
 
-      <Separator orientation="vertical" className="mx-1 h-5" />
+      <Separator
+        orientation="vertical"
+        className="mx-1 h-5 data-[orientation=vertical]:self-center"
+      />
 
       <Button
         variant="outline"

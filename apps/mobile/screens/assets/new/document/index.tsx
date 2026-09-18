@@ -6,7 +6,7 @@
  * the scanner caught page three twice and missed page two, and once it is a PDF
  * nobody can look inside again.
  *
- * One branch the board does not have: a **picked PDF** cannot be paginated
+ * One branch the design does not have: a **picked PDF** cannot be paginated
  * without a renderer this app does not carry, so it is stored as-is and shown
  * as a single opaque file rather than pretending to be pages. Picking replaces
  * scanned pages and scanning replaces a picked PDF — the screen always

@@ -5,12 +5,12 @@ import { I18nManager, TextInput, type TextInputProps } from 'react-native';
  * The editable half of a {@link FieldRow}.
  *
  * It is a `TextInput` at rest, not a `Text` that swaps for one on tap. That is
- * what makes the board's "no edit mode" real: there is no moment where the
+ * what makes "no edit mode" real: there is no moment where the
  * value is a label, so there is no transition to get wrong, no re-measure, and
  * no chance of the caret landing somewhere other than where the finger did.
  *
  * No border, no fill, no padding. The row supplies the rhythm and the focus
- * rule; this supplies only the type. Values are 16px/600 — the board's size for
+ * rule; this supplies only the type. Values are 16px/600 — the size for
  * a fact — and prose drops to 14.5px on 1.7 because instructions to an heir run
  * to three lines and a row label's leading is airless once it wraps.
  */

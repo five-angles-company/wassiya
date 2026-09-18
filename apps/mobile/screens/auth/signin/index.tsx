@@ -20,7 +20,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * Deliberately a separate screen from 1.3 rather than a combined
  * sign-in-or-up. The combined form has to pivot on
  * `form_identifier_not_found`, which a Clerk instance with enumeration
- * protection enabled will never return — and the board specifies both screens
+ * protection enabled will never return — and both screens are specified
  * anyway, with explicit cross-links between them.
  *
  * That caveat still applies to the one cross-link here: if the instance

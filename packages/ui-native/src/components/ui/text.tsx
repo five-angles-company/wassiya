@@ -11,7 +11,7 @@ import { Platform, Text as RNText, type Role } from 'react-native';
  * synthesise a fake bold instead of selecting Cairo 800 — see
  * `apps/mobile/src/global.css`.
  *
- * The first block is the Wassiya scale from the design board; the second keeps
+ * The first block is the Wassiya type scale; the second keeps
  * the upstream shadcn variant names working, retuned to the same type stack.
  */
 const textVariants = cva(

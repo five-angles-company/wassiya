@@ -1,52 +1,46 @@
 import type { ReactNode } from "react"
 
-import { LanguageToggle } from "@/components/language-toggle"
-import { t } from "@/lib/i18n/locale"
+import { PageTop } from "@/components/page-top"
 import { getLocale } from "@/lib/i18n/server"
-import { NAV } from "@/lib/i18n/strings/nav"
+import { getTheme } from "@/lib/theme-server"
 
 /**
  * The frame around sign-in and sign-up.
  *
- * These two routes sit outside `(app)` — they are the only screens reachable
- * without a session, so they cannot render `AppNav`, whose links subscribe to
- * Convex queries that require one.
+ * These two routes sit outside `(app)`, whose layout redirects anyone without
+ * a session — which is every reader of these two screens.
  *
  * They still get a mark and the language switch. Without them these were the
  * only screens in the product with no way back and no way to change language,
  * which made signing in feel like leaving the site — and the reader arriving
  * here is often following an emailed link in the wrong language.
  *
- * The bar matches `AppNav` exactly: same height, same near-white, same hairline,
- * and the same 1180px column, so the mark does not jump between the doorway and
- * the app. It has no nav row and no avatar, which is the only difference the
- * reader should be able to see.
+ * It is `PageTop`, the same component the app and the case page draw, so the
+ * mark cannot drift between the doorway and what is behind it. No avatar is the
+ * only difference the reader should be able to see.
  *
- * A Server Component with a client leaf, so this page ships no JavaScript of
- * its own beyond Clerk's card.
+ * ## ⚠️ It stays centred while Clerk still draws a card
+ *
+ * Moving it to the app's own column — `max-w-[920px] px-4 pt-8`, what every
+ * other screen uses — was tried and reverted the same hour. The argument for it
+ * was sound: `PageTop`'s docstring says the mark should sit over the first word
+ * of the heading *"and never move as a reader crosses between them"*, and a
+ * document starts at the top rather than floating in the middle.
+ *
+ * 🚨 **But it only holds once the card is gone.** A fixed-width card start-aligned
+ * in a 920px column is a box shoved against one edge with acres of empty page
+ * under it — worse than the centred version it replaced, and the two changes had
+ * to land together or not at all. The card is Clerk's and it did not come off
+ * when asked; until it does, centring is what makes a fixed-width box look
+ * deliberate.
  */
 export async function AuthShell({ children }: { children: ReactNode }) {
   const locale = await getLocale()
-  const nav = t(NAV, locale)
+  const theme = await getTheme()
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="bg-sand-50 border-border flex h-14 shrink-0 justify-center border-b">
-        <div className="flex w-full max-w-[1180px] items-center gap-2.5 px-4 md:px-6">
-          <span
-            aria-hidden
-            className="bg-primary text-primary-foreground font-heading grid size-7 shrink-0 place-items-center rounded-[9px] text-[15px] font-black"
-          >
-            و
-          </span>
-          <span className="font-heading text-[15.5px] font-extrabold">
-            {nav.appName}
-          </span>
-          <div className="ms-auto flex items-center">
-            <LanguageToggle locale={locale} />
-          </div>
-        </div>
-      </header>
+      <PageTop locale={locale} theme={theme} />
 
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
         {children}

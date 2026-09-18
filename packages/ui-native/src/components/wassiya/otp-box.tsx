@@ -18,7 +18,7 @@ export type OtpBoxProps = {
 };
 
 /**
- * A single OTP cell: 60px tall, 20px radius, Cairo 800 at 26px — the board's
+ * A single OTP cell: 60px tall, 20px radius, Cairo 800 at 26px — the
  * spec for `/auth/otp`.
  *
  * Two motions live here, both driven by `state`:

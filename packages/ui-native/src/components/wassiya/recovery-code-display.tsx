@@ -26,7 +26,7 @@ const LABELS: LabelSet<DisplayLabelKey> = {
 export type RecoveryCodeDisplayProps = LabelledProps<DisplayLabelKey> & {
   /** Groups of the code, e.g. ['WSY1','K7M2','4QPX','9TWL','ZR8D','3FHN']. */
   groups: string[];
-  /** Groups per printed line. The board prints three. */
+  /** Groups per printed line. The sheet prints three. */
   perLine?: number;
   ownerName: string;
   issuedAt: Date;

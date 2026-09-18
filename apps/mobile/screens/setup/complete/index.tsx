@@ -25,7 +25,7 @@ import { useStrings } from "@/i18n/use-strings"
  * what keeps the colour meaningful — flatten them and the user has five equal
  * chores instead of one next step.
  *
- * The list has no guardian row, matching the board. That is worth knowing
+ * The list has no guardian row, by design. That is worth knowing
  * rather than quietly fixing: until a guardian is enrolled in section ٦ the
  * printed sheet has no second key to pair with, so recovery is not yet
  * possible. Nothing on this screen claims otherwise.

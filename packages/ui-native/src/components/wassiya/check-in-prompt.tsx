@@ -85,7 +85,7 @@ export type CheckInPromptProps = LabelledProps<CheckInLabelKey> & {
  * The life check-in, screen 6.4 — a **full-screen centred prompt**, not a
  * dashboard card.
  *
- * From the board: "the whole screen is sage — this is the one moment the app
+ * The rule: "the whole screen is sage — this is the one moment the app
  * asks after the person, not the vault." That framing is the reason it gets a
  * screen to itself: a check-in squeezed into a card next to storage usage
  * reads as a chore, and the thing being asked is whether someone is alive.
