@@ -47,9 +47,8 @@ export function randomBytes(length: number): Uint8Array {
 const MAX_RANDOM_BLOCK = 65536
 
 /**
- * XOR of two equal-length buffers. This is the share-combining operation for
- * both K_rec (paper ⊕ guardian) and K_h (server ⊕ guardian): with one operand
- * uniformly random and independent, the result is a perfect 2-of-2 split.
+ * XOR of two equal-length buffers: with one operand uniformly random and
+ * independent, the result is a perfect 2-of-2 split.
  */
 export function xor(a: Uint8Array, b: Uint8Array): Uint8Array {
   if (a.length !== b.length) {

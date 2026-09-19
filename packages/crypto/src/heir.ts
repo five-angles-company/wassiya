@@ -6,10 +6,9 @@
  * plus the keys to their personal message — nothing about anyone else's share
  * of the vault.
  *
- * The bundle key is a second 2-of-2 split, K_h = S_server_h ⊕ S_guardian_h. The
- * server withholds S_server_h until release; the guardian holds the other half.
- * Neither party alone can open a bundle, and the bundle itself is stored in
- * file storage where the server can see only ciphertext.
+ * The bundle key K_h is fresh random bytes per rebuild (`generateHeirKey`),
+ * locked on the device to the escrow key (`./escrow`) and unlocked by Wassiya
+ * only at release. The bundle itself sits in file storage as ciphertext.
  *
  * The owner's device rebuilds every affected bundle whenever routing changes.
  */
@@ -21,19 +20,11 @@ import {
   hexToBytes,
   randomBytes,
   utf8ToBytes,
-  xor,
 } from "./bytes"
 import { open, seal } from "./wrap"
 
 /** Keys carried inside a bundle, addressed by the id the heir will look up. */
 export type KeyMap = Record<string, Uint8Array>
-
-export type HeirShares = {
-  /** Held by the server, released only on a released claim. */
-  sServer: Uint8Array
-  /** Sealed to the guardian; the server stores only the sealed form. */
-  sGuardian: Uint8Array
-}
 
 export type ReleaseBundleContents = {
   /** assetId → the asset's DEK. */
@@ -45,19 +36,9 @@ export type ReleaseBundleContents = {
 const BUNDLE_VERSION = 1
 const BUNDLE_AAD = utf8ToBytes("wassiya/release-bundle/v1")
 
-/** Fresh shares for one heir. Regenerated whenever the heir's routing changes. */
-export function makeHeirShares(): HeirShares {
-  return { sServer: randomBytes(KEY_BYTES), sGuardian: randomBytes(KEY_BYTES) }
-}
-
-/** K_h. Exported because the release ceremony combines the halves explicitly. */
-export function heirKey(
-  sServer: Uint8Array,
-  sGuardian: Uint8Array
-): Uint8Array {
-  assertKey(sServer, "sServer")
-  assertKey(sGuardian, "sGuardian")
-  return xor(sServer, sGuardian)
+/** A fresh K_h. Regenerated on every rebuild, so an old one opens nothing new. */
+export function generateHeirKey(): Uint8Array {
+  return randomBytes(KEY_BYTES)
 }
 
 /**
@@ -81,8 +62,8 @@ export function buildReleaseBundle(
 }
 
 /**
- * Opened on the heir's device after release, with S_server_h from the backend
- * and S_guardian_h from the guardian. Throws for a bundle built for a different
+ * Opened in the heir's browser after release, with K_h unlocked from escrow
+ * and sealed to that browser. Throws for a bundle built for a different
  * heir — their K_h differs, so the Poly1305 tag simply does not verify.
  */
 export function openReleaseBundle(

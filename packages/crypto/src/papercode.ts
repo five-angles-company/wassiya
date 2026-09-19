@@ -3,7 +3,6 @@
  * stress and a phone keyboard can accept without a numeric row.
  *
  *   WSY1-XXXX-XXXX-…    the owner's recovery sheet   (prefix + 14 groups of 4)
- *   WSYG1-XXXX-XXXX-…   the guardian's key sheet
  *
  * Payload is 35 bytes — version(1) ‖ secret(32) ‖ CRC-16(2) — which is exactly
  * 280 bits, so the Base32 encoding lands on 56 characters with no padding and
@@ -27,14 +26,14 @@
  *
  * `CodeFormat.domain` is what actually separates them. It is folded into the
  * checksum and **never transmitted**, so a code minted for one purpose fails
- * the CRC of the other — the same trick `guardian.ts` plays with its
- * `wassiya/guardian-seal/v1` info string, and `assetHeader.ts` with its magic.
+ * the CRC of the other — the same trick `seal.ts` plays with its info string,
+ * and `assetHeader.ts` with its magic.
  * It costs no characters: the code stays 56 long either way.
  *
  * An empty domain is the owner's original format, byte for byte, so every sheet
  * printed before this existed still decodes.
  */
-import { assertKey, concatBytes, utf8ToBytes } from "./bytes"
+import { assertKey, concatBytes } from "./bytes"
 
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 const GROUP = 4
@@ -62,21 +61,6 @@ export const RECOVERY_CODE_FORMAT: CodeFormat = {
   label: "Recovery code",
 }
 
-/**
- * The guardian's key sheet.
- *
- * `WSYG` deliberately extends `WSY` rather than replacing it — the guardian
- * should recognise it as the same product's artefact. The overlap is harmless
- * because the domain, not the prefix, is what rejects a code from the wrong
- * family, and the two decoders live in different apps (mobile reads recovery
- * sheets, the web guardian app reads key sheets) so nothing dispatches between
- * them.
- */
-export const GUARDIAN_CODE_FORMAT: CodeFormat = {
-  prefix: "WSYG",
-  domain: utf8ToBytes("wassiya/guardian-key/v1"),
-  label: "Guardian key",
-}
 
 /** CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, no final XOR. */
 export function crc16(bytes: Uint8Array): number {

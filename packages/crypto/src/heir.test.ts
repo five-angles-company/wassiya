@@ -4,8 +4,7 @@ import { KEY_BYTES, randomBytes } from "./bytes"
 import { generateDek } from "./keys"
 import {
   buildReleaseBundle,
-  heirKey,
-  makeHeirShares,
+  generateHeirKey,
   openReleaseBundle,
 } from "./heir"
 
@@ -17,8 +16,7 @@ function hexOf(map: Record<string, Uint8Array>): Record<string, number[]> {
 
 describe("release bundles", () => {
   it("round-trips DEKs and message keys through K_h", () => {
-    const shares = makeHeirShares()
-    const kH = heirKey(shares.sServer, shares.sGuardian)
+    const kH = generateHeirKey()
     const deks = { asset_a: generateDek(), asset_b: generateDek() }
     const messageKeys = { msg_1: generateDek() }
 
@@ -31,41 +29,23 @@ describe("release bundles", () => {
   })
 
   it("round-trips an empty bundle (an heir routed nothing yet)", () => {
-    const shares = makeHeirShares()
-    const kH = heirKey(shares.sServer, shares.sGuardian)
+    const kH = generateHeirKey()
     const opened = openReleaseBundle(buildReleaseBundle({}, {}, kH), kH)
     expect(opened.deks).toEqual({})
     expect(opened.messageKeys).toEqual({})
   })
 
-  it("cannot be opened with only the server share", () => {
-    const shares = makeHeirShares()
-    const kH = heirKey(shares.sServer, shares.sGuardian)
-    const bundle = buildReleaseBundle({ a: generateDek() }, {}, kH)
-    expect(() => openReleaseBundle(bundle, shares.sServer)).toThrow()
-    expect(() => openReleaseBundle(bundle, shares.sGuardian)).toThrow()
-  })
-
-  it("heir A's bundle cannot be opened with heir B's keys", () => {
-    const a = makeHeirShares()
-    const b = makeHeirShares()
+  it("heir A's bundle cannot be opened with heir B's key", () => {
     const bundleA = buildReleaseBundle(
       { shared_asset: generateDek() },
       {},
-      heirKey(a.sServer, a.sGuardian)
+      generateHeirKey()
     )
-    expect(() =>
-      openReleaseBundle(bundleA, heirKey(b.sServer, b.sGuardian))
-    ).toThrow()
-    // Nor by mixing halves — the server half of A with the guardian half of B.
-    expect(() =>
-      openReleaseBundle(bundleA, heirKey(a.sServer, b.sGuardian))
-    ).toThrow()
+    expect(() => openReleaseBundle(bundleA, generateHeirKey())).toThrow()
   })
 
   it("detects a flipped byte in the bundle", () => {
-    const shares = makeHeirShares()
-    const kH = heirKey(shares.sServer, shares.sGuardian)
+    const kH = generateHeirKey()
     const bundle = buildReleaseBundle({ a: generateDek() }, {}, kH)
     for (let i = 0; i < bundle.length; i += 7) {
       const tampered = bundle.slice()
@@ -74,20 +54,16 @@ describe("release bundles", () => {
     }
   })
 
-  it("gives every heir a fresh, unrelated pair of shares", () => {
-    const a = makeHeirShares()
-    const b = makeHeirShares()
-    expect(Array.from(a.sServer)).not.toEqual(Array.from(b.sServer))
-    expect(Array.from(a.sGuardian)).not.toEqual(Array.from(b.sGuardian))
-    expect(a.sServer).toHaveLength(KEY_BYTES)
-    expect(a.sGuardian).toHaveLength(KEY_BYTES)
+  it("gives every rebuild a fresh, unrelated K_h", () => {
+    const a = generateHeirKey()
+    const b = generateHeirKey()
+    expect(a).toHaveLength(KEY_BYTES)
+    expect(Array.from(a)).not.toEqual(Array.from(b))
   })
 
   it("rejects a non-32-byte key in the map", () => {
-    const shares = makeHeirShares()
-    const kH = heirKey(shares.sServer, shares.sGuardian)
-    expect(() => buildReleaseBundle({ a: randomBytes(16) }, {}, kH)).toThrow(
-      /32 bytes/
-    )
+    expect(() =>
+      buildReleaseBundle({ a: randomBytes(16) }, {}, generateHeirKey())
+    ).toThrow(/32 bytes/)
   })
 })

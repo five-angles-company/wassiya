@@ -15,8 +15,7 @@
  * lived only in the owner's own keystore — the very device recovery exists to
  * replace. A guardian-less owner could not recover at all.
  *
- * The guardian keeps their other job: `K_h = S_server_h ⊕ S_guardian_h` in
- * `heir.ts` is untouched. Recovery is 1-of-1; release is still 2-of-2.
+ * Recovery is 1-of-1. Release is escrowed — see `escrow.ts` and AGENTS.md.
  *
  * ## The sheet is a bearer token, so the wrapper is bound
  *
