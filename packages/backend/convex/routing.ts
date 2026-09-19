@@ -165,6 +165,8 @@ export const previewForHeir = query({
     return {
       heir: { id: heir._id, name: heir.name, mode: heir.mode },
       messageKind: heir.messageMeta?.kind ?? null,
+      // What the owner's device puts in the bundle as the message key.
+      messageKeyWrappedByMk: heir.messageMeta?.messageKeyWrappedByMk ?? null,
       items,
     }
   },

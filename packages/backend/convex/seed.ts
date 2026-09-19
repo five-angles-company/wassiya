@@ -10,12 +10,10 @@
 //  1. **Everything is an `internalMutation`.** Nothing here is reachable from a
 //     client, only from `npx convex run`, which needs deployment credentials.
 //
-//  2. **No `releaseBundles`.** Inserting one requires `serverShare`, and
+//  2. **No `releaseBundles`.** Inserting one requires `lockedKey`, and
 //     `scripts/verify-invariants.mjs` fails the build if that token appears
-//     outside `schema.ts` and `release.ts`. The check is right and the seed
-//     bends around it: every seeded heir therefore reads as "never built" —
-//     which is also what the real data says today, since the deployment holds
-//     zero bundles against two live heirs.
+//     outside the files allowed to touch it. The seed bends around it: every
+//     seeded heir reads as "never built".
 //
 //  3. **No `auditLog` rows.** The log is append-only by the same build gate, so
 //     anything written here could never be wiped. Audit-derived views run on
@@ -30,7 +28,9 @@
 import { v } from "convex/values"
 
 import { internal } from "./_generated/api"
-import { internalMutation } from "./_generated/server"
+import { internalAction, internalMutation } from "./_generated/server"
+import { DAY_MS as FLOW_DAY_MS, VETO_WINDOW_DAYS } from "./model/claimFlow"
+import { identityNumberHash } from "./model/identityHash"
 import type { Id } from "./_generated/dataModel"
 
 /** The marker. `user_…` is Clerk's prefix, so these can never collide. */
@@ -88,7 +88,6 @@ const ASSET_TYPES = [
 
 const CLAIM_SPREAD = [
   "submitted", "submitted", "submitted",
-  "guardian_review",
   "awaiting_veto", "awaiting_veto",
   "released",
   "vetoed",
@@ -106,19 +105,11 @@ export const demo = internalMutation({
   args: {
     confirm: v.literal("seed-dev"),
     /**
-     * Make this account the accepted guardian of the seeded vaults.
-     *
-     * Without it the guardian screens are untestable, and not by oversight:
-     * `requireAcceptedGuardian` matches on `guardians.guardianUserId`, and a
-     * seeded guardian is a name and a relation with no account behind it — so
-     * nobody can act as one. Passing a real user id here links every seeded
-     * `accepted` guardian row to that account, which is what puts rows in
-     * `guardians.pendingApprovals` once a claim reaches `guardian_review`.
-     *
-     * Optional, because the dashboard's numbers do not need it and it is the
-     * one field that points seeded data at a real person.
+     * Also build one owner whose report can be driven end to end: verified
+     * reporter, two heirs, a matching certificate name. Off by default because
+     * it is the one scenario that implies a real flow rather than numbers.
      */
-    guardianUserId: v.optional(v.id("users")),
+    withScenario: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("users").take(500)
@@ -183,27 +174,6 @@ export const demo = internalMutation({
       // `assertIdentityVerified` on the first write. The funnel's biggest drop
       // is meant to be real, not manufactured.
       const hasVault = verified && rand() < 0.8
-      let guardianId: Id<"guardians"> | undefined
-
-      if (rand() < 0.7) {
-        const status = pick(["invited", "accepted", "accepted", "revoked"] as const)
-        guardianId = await ctx.db.insert("guardians", {
-          userId,
-          name: `${pick(FIRST)} ${pick(LAST)}`,
-          relation: pick(["أخ", "أخت", "ابن", "صديق"]),
-          status,
-          // Only an accepted guardian gets an account behind it: `accept` is
-          // what writes `guardianUserId`, and an invited row genuinely has
-          // nobody behind it yet. Left undefined when no id was passed, which
-          // is the honest state — a guardian nobody can act as.
-          guardianUserId:
-            status === "accepted" ? args.guardianUserId : undefined,
-          x25519PublicKey: status === "accepted" ? fakeBytes(32) : undefined,
-          inviteToken: `${SEED_PREFIX}tok_${i}_${Math.floor(rand() * 1e9)}`,
-          inviteExpiresAt: now + 14 * DAY_MS,
-        })
-      }
-
       if (hasVault) {
         await ctx.db.insert("keyring", {
           userId,
@@ -281,15 +251,13 @@ export const demo = internalMutation({
     //
     // Everything above is random, which is right for the dashboard's numbers
     // and useless for exercising the review flow: the odds that some owner
-    // happens to have a guarded vault, heirs, *and* a verified claimant are
+    // happens to have a vault, heirs, *and* a verified claimant are
     // poor, and the first attempt at this seed produced a claim that tripped
     // both admin guards and could not be completed at all.
     //
-    // So when a guardian account is supplied, one owner is built deliberately
-    // to satisfy every precondition of the happy path: verified claimant,
-    // heirs to link, an accepted guardian that account can act as. Driving it
-    // is admin → link heir → approve → the guardian screen.
-    if (args.guardianUserId !== undefined) {
+    // So on request one owner is built deliberately to satisfy every
+    // precondition of the happy path. Driving it is admin → approve → advance.
+    if (args.withScenario === true) {
       const ownerId = await ctx.db.insert("users", {
         externalId: `${SEED_PREFIX}demo_owner`,
         name: "سلمى الدوسري",
@@ -316,17 +284,6 @@ export const demo = internalMutation({
         identityVerifiedAt: now - 2 * DAY_MS,
         identityAttempts: 0,
         role: "owner" as const,
-      })
-
-      await ctx.db.insert("guardians", {
-        userId: ownerId,
-        name: "منيرة الدوسري",
-        relation: "أخت",
-        status: "accepted" as const,
-        guardianUserId: args.guardianUserId,
-        x25519PublicKey: fakeBytes(32),
-        inviteToken: `${SEED_PREFIX}tok_demo`,
-        inviteExpiresAt: now + 14 * DAY_MS,
       })
 
       await ctx.db.insert("keyring", {
@@ -383,10 +340,6 @@ export const demo = internalMutation({
             ? now + Math.floor(rand() * 25 + 2) * DAY_MS
             : undefined,
         lockedUntil: status === "vetoed" ? now + 90 * DAY_MS : undefined,
-        guardianConfirmedAt:
-          status === "awaiting_veto" || status === "released"
-            ? now - Math.floor(rand() * 10) * DAY_MS
-            : undefined,
       })
       claimCount += 1
     }
@@ -419,7 +372,6 @@ export const wipe = internalMutation({
       for (const table of [
         "devices",
         "keyring",
-        "guardians",
         "assets",
         "heirs",
         "checkinConfig",
@@ -514,12 +466,12 @@ export const wipe = internalMutation({
  */
 const PURGE_TABLES = [
   "notifications",
+  "deliveries",
   "jobRuns",
   "releaseBundles",
   "assetRecipients",
   "assets",
   "heirs",
-  "guardians",
   "checkinConfig",
   "keyring",
   "devices",
@@ -594,3 +546,92 @@ export const resetIdentity = internalMutation({
     return { users: users.length }
   },
 })
+
+// ── Driving the release path end to end on dev ──────────────────────────────
+//
+// The real flow waits on a Didit session and a thirty-day objection period.
+// These two helpers compress exactly those waits and nothing else: the report
+// enters `awaiting_veto` already elapsed and the real `claims.advance` releases
+// it, and a simulated verdict goes through the real
+// `identity.applyWebhookResult`. Both refuse on a production deployment.
+
+function assertNotProduction(): void {
+  if (process.env.WASSIYA_ENV === "production") {
+    throw new Error("Refusing to fast-forward on a production deployment")
+  }
+}
+
+/**
+ * File an approved report against `subjectUserId` whose objection period has
+ * already run out, then run the release sweep so real deliveries are created.
+ *
+ * ```bash
+ * npx convex run seed:fastForwardRelease '{"confirm":"fast-forward","subjectUserId":"…","reporterUserId":"…"}'
+ * ```
+ */
+export const fastForwardRelease = internalMutation({
+  args: {
+    confirm: v.literal("fast-forward"),
+    subjectUserId: v.id("users"),
+    reporterUserId: v.id("users"),
+  },
+  handler: async (ctx, { subjectUserId, reporterUserId }) => {
+    assertNotProduction()
+    const subject = await ctx.db.get("users", subjectUserId)
+    const reporter = await ctx.db.get("users", reporterUserId)
+    if (subject === null || reporter === null) throw new Error("Unknown user")
+
+    const now = Date.now()
+    const claimId = await ctx.db.insert("claims", {
+      subjectUserId,
+      subjectEmail: subject.email ?? undefined,
+      claimantName: reporter.name ?? "Dev reporter",
+      claimantContact: reporter.email ?? "dev",
+      claimantUserId: reporterUserId,
+      claimantIdentityStatus: "verified" as const,
+      certificateName: subject.identityVerifiedName ?? subject.name ?? "—",
+      nameMatch: true,
+      status: "awaiting_veto" as const,
+      reviewedAt: now - VETO_WINDOW_DAYS * FLOW_DAY_MS,
+      vetoDeadline: now - 1,
+      updatedAt: now,
+    })
+    await ctx.scheduler.runAfter(0, internal.claims.advance, {})
+    return { claimId }
+  },
+})
+
+/**
+ * Stand in for a Didit verdict on `userId`, through the real webhook handler.
+ * `idNumber` is hashed exactly as `http.ts` hashes a document number.
+ *
+ * ```bash
+ * npx convex run seed:simulateDidit '{"confirm":"simulate-didit","userId":"…","verifiedName":"…","idNumber":"…","birthDate":"1990-04-21"}'
+ * ```
+ */
+export const simulateDidit = internalAction({
+  args: {
+    confirm: v.literal("simulate-didit"),
+    userId: v.id("users"),
+    verifiedName: v.string(),
+    idNumber: v.optional(v.string()),
+    birthDate: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertNotProduction()
+    await ctx.runMutation(internal.identity.applyWebhookResult, {
+      sessionId: `dev-sim-${args.userId}`,
+      vendorData: args.userId,
+      status: "verified",
+      verifiedName: args.verifiedName,
+      docType: "Identity Card",
+      docHashes:
+        args.idNumber === undefined
+          ? undefined
+          : [await identityNumberHash(args.idNumber)],
+      birthDate: args.birthDate,
+    })
+    return null
+  },
+})
+

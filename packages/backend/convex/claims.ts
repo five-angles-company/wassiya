@@ -1,14 +1,14 @@
-// Death claims — the path that ends in releasing an inheritance.
+// Death reports — the path that ends in releasing an inheritance.
 //
-// The transition table lives in `model/claimFlow.ts` and was written before
-// this file. Nothing here moves a claim except through those guards, and
-// `release.releasedBundleForHeir` re-checks `status === "released"` on its own
-// rather than trusting anything decided in this file.
+// The transition table lives in `model/claimFlow.ts`. Nothing here moves a
+// claim except through those guards, and the release action re-checks
+// `status === "released"` on its own rather than trusting this file.
 //
-// Four independent facts must all hold before a release: the claimant is
-// Didit-verified, the death certificate's name matches the owner's verified
-// legal name (an admin's judgement, never a string comparison), the guardian
-// has confirmed, and the veto window has elapsed with no veto.
+// A report reaches `released` only when the reporter is Didit-verified, the
+// death certificate's name matches the owner's verified legal name (an admin's
+// judgement, never a string comparison), and the veto window has elapsed with
+// no veto. What each heir then receives is a `deliveries` row, with its own
+// identity gate — the reporter receives nothing by reporting.
 import { v } from "convex/values"
 
 import { internal } from "./_generated/api"
@@ -20,12 +20,8 @@ import {
   type MutationCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
-import {
-  activeGuardiansFor,
-  requireAcceptedGuardian,
-  requireAdmin,
-  requireUser,
-} from "./model/access"
+import { createDeliveriesForClaim } from "./deliveries"
+import { requireAdmin, requireUser } from "./model/access"
 import {
   CLAIM_RATE_LIMIT,
   CLAIM_RATE_WINDOW_MS,
@@ -40,12 +36,10 @@ import {
 import {
   sendClaimClosed,
   sendClaimFiled,
-  sendClaimGuardianConfirmed,
   sendClaimInReview,
   sendClaimReleased,
   sendClaimReviewFailed,
   sendClaimVetoed,
-  sendGuardianClaimNotice,
 } from "./email"
 import { recordJobRun } from "./model/jobRuns"
 import { getCurrentUserOrThrow } from "./users"
@@ -192,9 +186,7 @@ export const submit = mutation({
     // nothing happened is what sent people back to an empty list.
     const open = prior.find(
       (claim) =>
-        claim.status === "submitted" ||
-        claim.status === "guardian_review" ||
-        claim.status === "awaiting_veto"
+        claim.status === "submitted" || claim.status === "awaiting_veto"
     )
     if (open !== undefined) {
       return { claimId: open._id }
@@ -298,7 +290,7 @@ export const mineSummary = query({
  * What the claimant sees about their own claims. Never anyone else's.
  *
  * `subjectName` is joined per row because without it a case list can only say
- * "C-4482", and a guardian's list beside it — which has always carried names —
+ * "C-4482", and a delivery list beside it — which has always carried names —
  * would read half-named. It is no new disclosure: `publicStatus` already hands
  * the same field to anyone holding the id, with no account at all.
  *
@@ -329,7 +321,6 @@ export const mine = query({
           vetoDeadline: row.vetoDeadline ?? null,
           lockedUntil: row.lockedUntil ?? null,
           certificateReceived: row.certificateStorageId !== undefined,
-          guardianConfirmed: row.guardianConfirmedAt !== undefined,
           submittedAt: row._creationTime,
           updatedAt: row.updatedAt ?? row._creationTime,
         }
@@ -362,7 +353,7 @@ export const mine = query({
  * Returns `null` rather than throwing for a bad or foreign id: this backs a page
  * reached from an emailed link, and mail clients truncate them.
  *
- * Never returns `nameMatch`, `heirId` or `staffNote` — the same exclusions
+ * Never returns `nameMatch` or `staffNote` — the same exclusions
  * `publicStatus` states, for the same reason.
  */
 export const forClaimant = query({
@@ -385,14 +376,12 @@ export const forClaimant = query({
       identityStatus: claimant.identityStatus ?? "unverified",
       certificateReceived: claim.certificateStorageId !== undefined,
       certificateName: claim.certificateName ?? null,
-      guardianConfirmed: claim.guardianConfirmedAt !== undefined,
       vetoDeadline: claim.vetoDeadline ?? null,
       lockedUntil: claim.lockedUntil ?? null,
       submittedAt: claim._creationTime,
       updatedAt: claim.updatedAt ?? claim._creationTime,
       certificateAttachedAt: claim.certificateAttachedAt ?? null,
       reviewedAt: claim.reviewedAt ?? null,
-      guardianConfirmedAt: claim.guardianConfirmedAt ?? null,
       releasedAt: claim.releasedAt ?? null,
       closedAt: claim.closedAt ?? null,
     }
@@ -460,73 +449,6 @@ export const veto = mutation({
     if (claim.claimantUserId !== undefined) {
       await notify(ctx, claim.claimantUserId, "claim.vetoed", {}, claimId)
       await sendClaimVetoed(ctx, claim.claimantUserId, claimId)
-    }
-    return null
-  },
-})
-
-/**
- * The guardian's confirmation — the human check between paperwork and release.
- * Starts the veto clock; it does not release anything itself.
- */
-export const guardianConfirm = mutation({
-  args: { claimId: v.id("claims") },
-  handler: async (ctx, { claimId }) => {
-    const claim = await ctx.db.get("claims", claimId)
-    if (claim === null) {
-      throw new Error("Not found")
-    }
-    const subjectUserId = requireSubject(claim)
-    await requireAcceptedGuardian(ctx, subjectUserId)
-
-    if (claim.status !== "guardian_review") {
-      throw new Error("This claim is not awaiting guardian confirmation")
-    }
-    if (claim.heirId === undefined) {
-      throw new Error("This claim is not linked to an heir record yet")
-    }
-
-    const now = Date.now()
-    const vetoDeadline = now + VETO_WINDOW_DAYS * DAY_MS
-    await patchClaim(
-      ctx,
-      claimId,
-      { status: "awaiting_veto", guardianConfirmedAt: now, vetoDeadline },
-      now
-    )
-    await writeAudit(ctx, {
-      userId: subjectUserId,
-      event: "claim.guardian_confirmed",
-      meta: { claimId, vetoDeadline },
-      at: now,
-    })
-    // The owner's last chance to say they are alive.
-    await notify(
-      ctx,
-      subjectUserId,
-      "claim.veto_window_open",
-      { vetoDeadline },
-      claimId
-    )
-
-    // And the claimant, who until now learned nothing here — the transition
-    // that starts a thirty-day wait told only the person it might go against.
-    // The mail names the date the box opens on its own, which is what turns an
-    // indefinite wait into one somebody can plan around.
-    if (claim.claimantUserId !== undefined) {
-      await notify(
-        ctx,
-        claim.claimantUserId,
-        "claim.guardian_confirmed",
-        { vetoDeadline },
-        claimId
-      )
-      await sendClaimGuardianConfirmed(
-        ctx,
-        claim.claimantUserId,
-        claimId,
-        vetoDeadline
-      )
     }
     return null
   },
@@ -766,7 +688,6 @@ export const pendingReview = query({
               ? null
               : await ctx.storage.getUrl(row.certificateStorageId),
           subjectVerifiedName: subject?.identityVerifiedName ?? null,
-          heirId: row.heirId ?? null,
           submittedAt: row._creationTime,
         }
       })
@@ -806,43 +727,29 @@ export const adminSetNameMatch = mutation({
       )
     }
 
-    // The guardians who can actually be asked. Read once and used twice — to
-    // refuse an approval that would have nobody to send, and below to send it.
-    const guardians = await activeGuardiansFor(ctx, subjectUserId)
-
-    // The ways an approval silently destroys or strands a legitimate claim,
-    // refused here rather than absorbed. `nameMatchBlockedReason` is the same
-    // predicate the console disables its button on, so the two cannot disagree —
-    // see its header for why each case exists and why none applies to a
-    // rejection.
+    // `nameMatchBlockedReason` is the same predicate the console disables its
+    // button on, so the two cannot disagree.
     const blocked = nameMatchBlockedReason(
       claim,
       nameMatch,
-      claimantIdentityStatus,
-      guardians.length > 0
+      claimantIdentityStatus
     )
     if (blocked === "past-review") {
       throw new Error("This claim is past review")
     }
-    if (blocked === "no-guardian") {
-      throw new Error(
-        "This vault has no guardian who can confirm the death, so approving would strand the claim. The owner must appoint one and that person must accept."
-      )
-    }
-    if (blocked === "no-heir") {
-      throw new Error(
-        "Link an heir before approving: the guardian cannot confirm a claim with no heir record."
-      )
-    }
     if (blocked === "identity-not-verified") {
       throw new Error(
-        "The claimant is not identity-verified, so approving would lock this claim permanently. Wait for verification."
+        "The reporter is not identity-verified, so approving would lock this report permanently. Wait for verification."
       )
     }
 
     const status = nameMatchOutcome(nameMatch, claimantIdentityStatus)
 
     const reviewedAt = Date.now()
+    const vetoDeadline =
+      status === "awaiting_veto"
+        ? reviewedAt + VETO_WINDOW_DAYS * DAY_MS
+        : undefined
     await patchClaim(
       ctx,
       claimId,
@@ -851,6 +758,7 @@ export const adminSetNameMatch = mutation({
         claimantIdentityStatus,
         status,
         reviewedAt,
+        vetoDeadline,
         // A rejection is terminal, so review is also when this claim closed.
         closedAt: status === "locked" ? reviewedAt : undefined,
       },
@@ -862,32 +770,19 @@ export const adminSetNameMatch = mutation({
       meta: { claimId, nameMatch, status, adminUserId: admin._id },
     })
 
-    // Tell the guardian, because until now this transition told nobody.
-    //
-    // Every other transition in this file notifies someone — `submit` the
-    // owner, `veto` the claimant, `guardianConfirm` the owner, `advance` the
-    // claimant. This one wrote an audit line and stopped, which meant a claim
-    // could land in `guardian_review` and sit there until a guardian happened
-    // to open the app and look. Both channels, for the same reason the check-in
-    // ladder uses both: the in-app row is for a guardian who opens the app, and
-    // the email is for the one who does not.
-    //
-    // Only on approval. A rejection ends the claim, and there is nothing to ask
-    // a guardian about a claim that is already closed.
-    //
-    // `guardians` is the set read above, already narrowed to accepted rows with
-    // an account — and `no-guardian` refused the approval if it was empty, so by
-    // here there is always somebody to tell.
-    if (status === "guardian_review") {
-      for (const guardian of guardians) {
-        const guardianUserId = guardian.guardianUserId
-        if (guardianUserId === undefined) continue
-        await notify(ctx, guardianUserId, "claim.guardian_review", {}, claimId)
-        await sendGuardianClaimNotice(ctx, guardianUserId)
-      }
+    // The owner's last chance to say they are alive — on every channel the
+    // veto notification already uses.
+    if (vetoDeadline !== undefined) {
+      await notify(
+        ctx,
+        subjectUserId,
+        "claim.veto_window_open",
+        { vetoDeadline },
+        claimId
+      )
     }
 
-    // The claimant, both ways. This is the review they have been waiting on and
+    // The reporter, both ways. This is the review they have been waiting on and
     // the only transition a human decides, so silence here is the longest a
     // claim can go dark — and `locked` is terminal, which makes the rejection
     // the single most important message never to swallow.
@@ -895,9 +790,14 @@ export const adminSetNameMatch = mutation({
     // ⚠️ Neither message carries a reason. `claims.publicStatus` states why: a
     // claimant who learns *which* check failed learns how to make it pass.
     if (claim.claimantUserId !== undefined) {
-      if (status === "guardian_review") {
+      if (status === "awaiting_veto") {
         await notify(ctx, claim.claimantUserId, "claim.in_review", {}, claimId)
-        await sendClaimInReview(ctx, claim.claimantUserId, claimId)
+        await sendClaimInReview(
+          ctx,
+          claim.claimantUserId,
+          claimId,
+          vetoDeadline ?? reviewedAt
+        )
       } else {
         await notify(
           ctx,
@@ -911,34 +811,6 @@ export const adminSetNameMatch = mutation({
     }
 
     return { status }
-  },
-})
-
-/** Bind a claimant to the heir record whose bundle they would receive. */
-export const adminLinkHeir = mutation({
-  args: { claimId: v.id("claims"), heirId: v.id("heirs") },
-  handler: async (ctx, { claimId, heirId }) => {
-    const admin = await requireAdmin(ctx)
-    const claim = await ctx.db.get("claims", claimId)
-    if (claim === null) {
-      throw new Error("Not found")
-    }
-    const heir = await ctx.db.get("heirs", heirId)
-    if (heir === null || heir.userId !== claim.subjectUserId) {
-      throw new Error("That heir belongs to a different vault")
-    }
-    if (claim.status === "released") {
-      throw new Error("This claim has already been released")
-    }
-
-    const subjectUserId = requireSubject(claim)
-    await patchClaim(ctx, claimId, { heirId })
-    await writeAudit(ctx, {
-      userId: subjectUserId,
-      event: "claim.heir_linked",
-      meta: { claimId, heirId, adminUserId: admin._id },
-    })
-    return null
   },
 })
 
@@ -979,13 +851,19 @@ export const advance = internalMutation({
         now
       )
       // Unreachable: `awaiting_veto` is only entered through
-      // `guardianConfirm`, which asserts a subject. Skipped rather than thrown
-      // so one impossible row could never stall the whole release sweep.
+      // `adminSetNameMatch`, which refuses a claim with no subject. Skipped
+      // rather than thrown so one impossible row could never stall the sweep.
       if (claim.subjectUserId === undefined) continue
+      const deliveries = await createDeliveriesForClaim(
+        ctx,
+        claim._id,
+        claim.subjectUserId,
+        now
+      )
       await writeAudit(ctx, {
         userId: claim.subjectUserId,
         event: "claim.released",
-        meta: { claimId: claim._id, heirId: claim.heirId ?? null },
+        meta: { claimId: claim._id, deliveries },
         at: now,
       })
       if (claim.claimantUserId !== undefined) {
@@ -1094,7 +972,7 @@ export type Claim = Doc<"claims">
  *  - `subjectUserId` and anything about the deceased's account, including
  *    whether one exists. `claims.submit` is careful to answer uniformly so it
  *    is not an oracle; this must not undo that.
- *  - `certificateName`, `nameMatch`, `heirId` — review internals. A claimant
+ *  - `certificateName`, `nameMatch` — review internals. A claimant
  *    learning that name matching failed would learn how to make it pass.
  *  - Anything at all about the vault's contents.
  *
@@ -1133,9 +1011,6 @@ export const publicStatus = query({
       // thing they are most likely to be waiting on.
       identityVerified: claim.claimantIdentityStatus === "verified",
       certificateReceived: claim.certificateStorageId !== undefined,
-      // `undefined`, not `null` — the column is `v.optional(v.number())`, and
-      // comparing it against null reports every claim as confirmed.
-      guardianConfirmed: claim.guardianConfirmedAt !== undefined,
     }
   },
 })

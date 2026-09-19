@@ -29,13 +29,13 @@ import { writeAudit } from "./audit"
 import {
   CLAIM_CLOSED_COPY,
   CLAIM_FILED_COPY,
-  CLAIM_GUARDIAN_CONFIRMED_COPY,
   CLAIM_IN_REVIEW_COPY,
   CLAIM_RELEASED_COPY,
   CLAIM_REVIEW_FAILED_COPY,
   CLAIM_VETOED_COPY,
+  DELIVERY_EXPIRING_COPY,
+  DELIVERY_READY_COPY,
   ESCALATION_COPY,
-  GUARDIAN_CLAIM_COPY,
   RECOVERY_COPY,
   type LocalisedCopy,
 } from "./model/emailCopy"
@@ -63,7 +63,7 @@ export const resend: Resend = new Resend(components.resend, {
  * words and lets the reader find it — which is what every copy block here
  * already does.
  */
-function appLink(path: string): string | undefined {
+export function appLink(path: string): string | undefined {
   const base = process.env.APP_URL
   if (base === undefined || base.length === 0) {
     console.error(`APP_URL is not set — sending a link-free email for ${path}`)
@@ -139,7 +139,7 @@ async function send(
 
   // Written here and only here, after the message is actually enqueued — the
   // single funnel every notice passes through, so one call covers the
-  // escalation ladder, the guardian notice and the recovery alert at once.
+  // escalation ladder, the report notices and the recovery alert at once.
   // Until this existed no outbound mail left any record at all, and "did this
   // owner get the day-14 warning?" had no answer short of the Resend dashboard.
   //
@@ -177,34 +177,6 @@ export async function sendEscalation(
 }
 
 /**
- * Tell a guardian a claim is waiting on them.
- *
- * Sent from `claims.adminSetNameMatch`, in the same transaction that moves the
- * claim into `guardian_review`. Until this existed, that transition notified
- * **nobody**: it wrote an audit line and stopped, so a guardian could only learn
- * a claim was waiting by opening the app speculatively. Every other transition
- * in `claims.ts` notifies someone; this one was the gap.
- *
- * It was then suppressed for a further stretch by a `GUARDIAN_CAN_ACT` flag,
- * because the route it pointed at did not exist yet. It does now, and
- * `nameMatchBlockedReason`'s `no-guardian` block is what replaced the flag:
- * rather than approving and telling nobody, the approval is refused when there
- * is nobody to tell.
- */
-export async function sendGuardianClaimNotice(
-  ctx: MutationCtx,
-  guardianUserId: Id<"users">
-): Promise<void> {
-  await send(
-    ctx,
-    guardianUserId,
-    GUARDIAN_CLAIM_COPY,
-    "guardian claim notice",
-    appLink("/guardian")
-  )
-}
-
-/**
  * Tell an owner their vault was opened with the printed sheet. See
  * `RECOVERY_COPY` for why this message exists and why it names so little.
  */
@@ -220,10 +192,9 @@ export async function sendRecoveryNotice(
 // Six notices across a claim's life. Before them the heir was told nothing at
 // all: no mail, and two in-app rows at the very end.
 //
-// Each takes the claim id and links to that claim's own page. That is safe in a
-// way the guardian's notice is not — the id is the recipient's *own* case, and
-// `claims.publicStatus` is written to be forwarded to a relative. The guardian's
-// link stays at `/guardian` for the opposite reason.
+// Each takes the claim id and links to that claim's own page — the id is the
+// recipient's *own* case, and `claims.publicStatus` is written to be forwarded
+// to a relative.
 
 /** Filed — the receipt. */
 export async function sendClaimFiled(
@@ -240,18 +211,23 @@ export async function sendClaimFiled(
   )
 }
 
-/** Approved, and now with the guardian. */
+/**
+ * Approved, and the thirty-day objection period has started. `vetoDeadline`
+ * fills `{date}`, so the message names the day the report is released.
+ */
 export async function sendClaimInReview(
   ctx: MutationCtx,
   claimantUserId: Id<"users">,
-  claimId: Id<"claims">
+  claimId: Id<"claims">,
+  vetoDeadline: number
 ): Promise<void> {
   await send(
     ctx,
     claimantUserId,
     CLAIM_IN_REVIEW_COPY,
     "claim in review",
-    appLink(`/claims/${claimId}`)
+    appLink(`/claims/${claimId}`),
+    vetoDeadline
   )
 }
 
@@ -274,30 +250,6 @@ export async function sendClaimReviewFailed(
   )
 }
 
-/**
- * The guardian confirmed, and the thirty-day clock has started.
- *
- * `vetoDeadline` is interpolated into `{date}` so the message names the day the
- * box opens on its own. That date is the difference between "wait" and "wait
- * until the twelfth" — and it is what makes "nothing is needed from you"
- * something a grieving person can actually act on.
- */
-export async function sendClaimGuardianConfirmed(
-  ctx: MutationCtx,
-  claimantUserId: Id<"users">,
-  claimId: Id<"claims">,
-  vetoDeadline: number
-): Promise<void> {
-  await send(
-    ctx,
-    claimantUserId,
-    CLAIM_GUARDIAN_CONFIRMED_COPY,
-    "claim guardian confirmed",
-    appLink(`/claims/${claimId}`),
-    vetoDeadline
-  )
-}
-
 /** The owner objected, and the 90-day bar applies. */
 export async function sendClaimVetoed(
   ctx: MutationCtx,
@@ -313,7 +265,7 @@ export async function sendClaimVetoed(
   )
 }
 
-/** Released — and the guardian still has to hand over their half. */
+/** Released — Wassiya now contacts each named heir directly. */
 export async function sendClaimReleased(
   ctx: MutationCtx,
   claimantUserId: Id<"users">,
@@ -324,7 +276,7 @@ export async function sendClaimReleased(
     claimantUserId,
     CLAIM_RELEASED_COPY,
     "claim released",
-    appLink(`/box/${claimId}`)
+    appLink(`/claims/${claimId}`)
   )
 }
 
@@ -340,5 +292,44 @@ export async function sendClaimClosed(
     CLAIM_CLOSED_COPY,
     "claim closed",
     appLink(`/claims/${claimId}`)
+  )
+}
+
+// ── The heir's side ──────────────────────────────────────────────────────────
+//
+// Both link to the delivery page, which requires sign-in, so an intercepted
+// mail reveals no more than that something is waiting.
+
+/** Identity matched; the delivery can be opened. */
+export async function sendDeliveryReady(
+  ctx: MutationCtx,
+  heirUserId: Id<"users">,
+  deliveryId: Id<"deliveries">,
+  expiresAt: number
+): Promise<void> {
+  await send(
+    ctx,
+    heirUserId,
+    DELIVERY_READY_COPY,
+    "delivery ready",
+    appLink(`/delivery/${deliveryId}`),
+    expiresAt
+  )
+}
+
+/** Thirty days before the delivery's key is destroyed. */
+export async function sendDeliveryExpiring(
+  ctx: MutationCtx,
+  heirUserId: Id<"users">,
+  deliveryId: Id<"deliveries">,
+  expiresAt: number
+): Promise<void> {
+  await send(
+    ctx,
+    heirUserId,
+    DELIVERY_EXPIRING_COPY,
+    "delivery expiring",
+    appLink(`/delivery/${deliveryId}`),
+    expiresAt
   )
 }

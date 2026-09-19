@@ -13,6 +13,8 @@ import type { Id } from "./_generated/dataModel"
 import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
+import { evaluateDeliveryIdentity } from "./deliveries"
+import { identityNumberHash } from "./model/identityHash"
 
 export const list = query({
   args: {},
@@ -33,6 +35,9 @@ export const list = query({
       name: row.name,
       relation: row.relation,
       phone: row.phone,
+      // Whether one is registered — the number itself is not stored.
+      hasIdNumber: row.idNumberHash !== undefined,
+      birthDate: row.birthDate ?? null,
 
       messageKind: row.messageMeta?.kind ?? null,
       /**
@@ -81,19 +86,41 @@ async function routedCounts(
   return { direct, sharedCount: shared.length }
 }
 
+const BIRTH_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+function assertBirthDate(value: string): string {
+  if (!BIRTH_DATE.test(value)) throw new Error("Birth date must be YYYY-MM-DD")
+  return value
+}
+
+/**
+ * The ID number arrives in plaintext exactly once, over this call, and only
+ * its keyed hash is stored — see `model/identityHash.ts`. Never log `args`.
+ */
 export const add = mutation({
   args: {
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
+    idNumber: v.optional(v.string()),
+    birthDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
+    const idNumber = args.idNumber?.trim()
     const heirId = await ctx.db.insert("heirs", {
       userId: user._id,
       name: args.name,
       relation: args.relation,
       phone: args.phone,
+      idNumberHash:
+        idNumber === undefined || idNumber === ""
+          ? undefined
+          : await identityNumberHash(idNumber),
+      birthDate:
+        args.birthDate === undefined || args.birthDate === ""
+          ? undefined
+          : assertBirthDate(args.birthDate),
       // Not an argument: there is nothing else it could be.
       mode: "silent",
       inviteStatus: "none",
@@ -113,35 +140,75 @@ export const update = mutation({
     name: v.optional(v.string()),
     relation: v.optional(v.string()),
     phone: v.optional(v.string()),
+    /** Absent leaves it; "" clears it; anything else replaces its hash. */
+    idNumber: v.optional(v.string()),
+    /** Absent leaves it; "" clears it. */
+    birthDate: v.optional(v.string()),
   },
-  handler: async (ctx, { heirId, ...fields }) => {
+  handler: async (ctx, { heirId, idNumber, birthDate, ...fields }) => {
     const user = await requireUser(ctx)
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) {
       throw new Error("Not found")
     }
-    await ctx.db.patch("heirs", heirId, fields)
+    const trimmed = idNumber?.trim()
+    await ctx.db.patch("heirs", heirId, {
+      ...fields,
+      ...(trimmed === undefined
+        ? {}
+        : {
+            idNumberHash:
+              trimmed === "" ? undefined : await identityNumberHash(trimmed),
+          }),
+      ...(birthDate === undefined
+        ? {}
+        : {
+            birthDate: birthDate === "" ? undefined : assertBirthDate(birthDate),
+          }),
+    })
+    // A number added after the heir already bound a delivery must be able to
+    // open it: the match is otherwise re-checked only on bind and on a verdict.
+    if (trimmed !== undefined && trimmed !== "") {
+      const waiting = await ctx.db
+        .query("deliveries")
+        .withIndex("by_heirId", (q) => q.eq("heirId", heirId))
+        .take(10)
+      const now = Date.now()
+      for (const delivery of waiting) {
+        if (delivery.heirUserId === undefined) continue
+        const bound = await ctx.db.get("users", delivery.heirUserId)
+        if (bound !== null) await evaluateDeliveryIdentity(ctx, delivery, bound, now)
+      }
+    }
+
+    const changed = [
+      ...Object.keys(fields),
+      ...(trimmed === undefined ? [] : ["idNumber"]),
+      ...(birthDate === undefined ? [] : ["birthDate"]),
+    ]
     await writeAudit(ctx, {
       userId: user._id,
       event: "heir.updated",
-      meta: { heirId, fields: Object.keys(fields).join(",") },
+      meta: { heirId, fields: changed.join(",") },
     })
     return null
   },
 })
 
 /**
- * Attach the heir's personal message. Only its kind and storage id land here —
- * the content is encrypted on-device under a message key that travels in the
- * release bundle, so this deployment holds an unreadable blob.
+ * Attach the heir's personal message. The content is sealed on-device under a
+ * message key; that key arrives wrapped by MK and reaches the heir only inside
+ * the release bundle, so this deployment holds an unreadable blob. Setting it
+ * stamps `routingChangedAt`, because the bundle must now carry the key.
  */
 export const setMessage = mutation({
   args: {
     heirId: v.id("heirs"),
     kind: v.union(v.literal("text"), v.literal("audio"), v.literal("video")),
     storageId: v.id("_storage"),
+    messageKeyWrappedByMk: v.bytes(),
   },
-  handler: async (ctx, { heirId, kind, storageId }) => {
+  handler: async (ctx, { heirId, kind, storageId, messageKeyWrappedByMk }) => {
     const user = await requireUser(ctx)
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) {
@@ -150,13 +217,60 @@ export const setMessage = mutation({
     if (heir.messageMeta !== undefined) {
       await ctx.storage.delete(heir.messageMeta.storageId)
     }
-    await ctx.db.patch("heirs", heirId, { messageMeta: { kind, storageId } })
+    await ctx.db.patch("heirs", heirId, {
+      messageMeta: { kind, storageId, messageKeyWrappedByMk },
+      routingChangedAt: Date.now(),
+    })
     await writeAudit(ctx, {
       userId: user._id,
       event: "heir.message_set",
       meta: { heirId, kind },
     })
     return null
+  },
+})
+
+/** Remove the heir's personal message; their bundle is rebuilt without it. */
+export const clearMessage = mutation({
+  args: { heirId: v.id("heirs") },
+  handler: async (ctx, { heirId }) => {
+    const user = await requireUser(ctx)
+    const heir = await ctx.db.get("heirs", heirId)
+    if (heir === null || heir.userId !== user._id) {
+      throw new Error("Not found")
+    }
+    if (heir.messageMeta === undefined) return null
+    await ctx.storage.delete(heir.messageMeta.storageId)
+    await ctx.db.patch("heirs", heirId, {
+      messageMeta: undefined,
+      routingChangedAt: Date.now(),
+    })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "heir.message_cleared",
+      meta: { heirId },
+    })
+    return null
+  },
+})
+
+/**
+ * The owner's own copy of a message, to re-read or edit it. Ciphertext and a
+ * wrapped key only — the owner's device opens both with MK.
+ */
+export const message = query({
+  args: { heirId: v.id("heirs") },
+  handler: async (ctx, { heirId }) => {
+    const user = await requireUser(ctx)
+    const heir = await ctx.db.get("heirs", heirId)
+    if (heir === null || heir.userId !== user._id) return null
+    const meta = heir.messageMeta
+    if (meta === undefined || meta.messageKeyWrappedByMk === undefined) return null
+    return {
+      kind: meta.kind,
+      url: await ctx.storage.getUrl(meta.storageId),
+      messageKeyWrappedByMk: meta.messageKeyWrappedByMk,
+    }
   },
 })
 

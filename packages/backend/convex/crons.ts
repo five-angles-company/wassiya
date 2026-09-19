@@ -40,4 +40,13 @@ crons.interval(
   {}
 )
 
+// Destroy the locked key and bundle of every delivery past its one-year
+// window. After this nobody, Wassiya included, can open it again.
+crons.interval(
+  "expire deliveries",
+  { hours: 24 },
+  internal.deliveries.expire,
+  {}
+)
+
 export default crons

@@ -1,7 +1,7 @@
 // Authorisation helpers. Every one of them derives the caller from the Clerk
 // JWT — nothing here accepts a user id as an argument, because a client-passed
 // id is not evidence of anything.
-import type { Doc, Id } from "../_generated/dataModel"
+import type { Doc } from "../_generated/dataModel"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { getCurrentUserOrThrow } from "../users"
 
@@ -20,51 +20,6 @@ export async function requireAdmin(ctx: QueryCtx): Promise<Doc<"users">> {
     throw new Error("Not authorised")
   }
   return user
-}
-
-/**
- * The caller in their capacity as someone else's guardian. Returns the
- * `guardians` row that links them to `subjectUserId`.
- */
-export async function requireAcceptedGuardian(
-  ctx: QueryCtx,
-  subjectUserId: Id<"users">
-): Promise<Doc<"guardians">> {
-  const guardian = await getCurrentUserOrThrow(ctx)
-  const link = await ctx.db
-    .query("guardians")
-    .withIndex("by_guardianUserId_and_status", (q) =>
-      q.eq("guardianUserId", guardian._id).eq("status", "accepted")
-    )
-    .take(50)
-  const match = link.find((row) => row.userId === subjectUserId)
-  if (match === undefined) {
-    throw new Error("Not authorised")
-  }
-  return match
-}
-
-/**
- * The guardians of one vault who can actually be asked to confirm a death:
- * accepted, **and** linked to an account.
- *
- * An invited guardian has no `guardianUserId` to notify and a revoked one is no
- * longer anyone's guardian — `guardianConfirm` refuses both. This is the set
- * `claims.adminSetNameMatch` notifies and the set `nameMatchBlockedReason` asks
- * about, in one place so the two can never disagree about whether an approval
- * has anywhere to go.
- */
-export async function activeGuardiansFor(
-  ctx: QueryCtx,
-  subjectUserId: Id<"users">
-): Promise<Doc<"guardians">[]> {
-  const rows = await ctx.db
-    .query("guardians")
-    .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
-    .take(20)
-  return rows.filter(
-    (row) => row.status === "accepted" && row.guardianUserId !== undefined
-  )
 }
 
 /**

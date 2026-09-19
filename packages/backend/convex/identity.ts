@@ -13,6 +13,7 @@ import type { Doc, Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
 import {
   action,
+  internalAction,
   internalMutation,
   internalQuery,
   mutation,
@@ -23,6 +24,8 @@ import { writeAudit } from "./audit"
 import { requireAdmin } from "./model/access"
 import { getCurrentUser } from "./users"
 import { notify, patchClaim } from "./claims"
+import { reevaluateDeliveriesFor } from "./deliveries"
+import { verifiedDocument } from "./model/didit"
 
 const DEFAULT_API_URL = "https://verification.didit.me/v2/session/"
 
@@ -180,6 +183,9 @@ export const applyWebhookResult = internalMutation({
     declined: v.optional(v.boolean()),
     verifiedName: v.optional(v.string()),
     docType: v.optional(v.string()),
+    /** Keyed hashes, computed in `http.ts` — never the numbers. */
+    docHashes: v.optional(v.array(v.string())),
+    birthDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await resolveSubject(ctx, args.sessionId, args.vendorData)
@@ -195,12 +201,17 @@ export const applyWebhookResult = internalMutation({
     const attempts =
       (user.identityAttempts ?? 0) + (args.declined === true ? 1 : 0)
 
+    // Document fields are written only when this webhook carries them. Didit
+    // sends several per session, and one without the block must not erase what
+    // an earlier one — or the decision API — already recorded.
     await ctx.db.patch("users", user._id, {
       identityStatus: args.status,
-      identityVerifiedName: args.verifiedName,
-      identityDocType: args.docType,
       identityVerifiedAt: args.status === "verified" ? Date.now() : undefined,
       identityAttempts: attempts,
+      ...(args.verifiedName === undefined ? {} : { identityVerifiedName: args.verifiedName }),
+      ...(args.docType === undefined ? {} : { identityDocType: args.docType }),
+      ...(args.docHashes === undefined ? {} : { identityDocHashes: args.docHashes }),
+      ...(args.birthDate === undefined ? {} : { identityBirthDate: args.birthDate }),
     })
     await writeAudit(ctx, {
       userId: user._id,
@@ -224,7 +235,12 @@ export const applyWebhookResult = internalMutation({
     // `claimFlow`'s rule that a verdict reads the LIVE value — it still does;
     // it just stops the stored copy being wrong in the meantime.
     if (args.status === "verified") {
-      for (const status of ["submitted", "guardian_review"] as const) {
+      // A person who bound a delivery before verifying: their document may
+      // now match the heir's registered ID number.
+      const verified = await ctx.db.get("users", user._id)
+      if (verified !== null) await reevaluateDeliveriesFor(ctx, verified)
+
+      for (const status of ["submitted"] as const) {
         const open = await ctx.db
           .query("claims")
           .withIndex("by_claimantUserId_and_status", (q) =>
@@ -320,5 +336,45 @@ export const adminResetAttempts = mutation({
       meta: { from, adminUserId: admin._id },
     })
     return null
+  },
+})
+
+/**
+ * Re-read a verified user's document from Didit's decision API and store it.
+ * For accounts verified while the approval webhook carried no document block —
+ * see `model/didit.ts`. Admin-run: `npx convex run identity:refreshDocument '{"userId":"…"}'`.
+ */
+export const refreshDocument = internalAction({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user: { sessionId: string | null; status: string } | null =
+      await ctx.runQuery(internal.identity.sessionOf, { userId })
+    if (user === null || user.sessionId === null || user.status !== "verified") {
+      throw new Error("No verified Didit session for this user")
+    }
+    const document = await verifiedDocument(user.sessionId, true, {})
+    await ctx.runMutation(internal.identity.applyWebhookResult, {
+      sessionId: user.sessionId,
+      vendorData: userId,
+      status: "verified",
+      ...document,
+    })
+    return {
+      name: document.verifiedName !== undefined,
+      birthDate: document.birthDate !== undefined,
+      numbers: document.docHashes?.length ?? 0,
+    }
+  },
+})
+
+export const sessionOf = internalQuery({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const user = await ctx.db.get("users", userId)
+    if (user === null) return null
+    return {
+      sessionId: user.diditSessionId ?? null,
+      status: user.identityStatus ?? "unverified",
+    }
   },
 })

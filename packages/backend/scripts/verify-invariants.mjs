@@ -1,7 +1,7 @@
 // Three security invariants that are cheap to state and expensive to lose.
 //
 // They are enforced here rather than in a code review because each one fails
-// silently: a second `serverShare` read path, an `auditLog` patch, or a
+// silently: a second `lockedKey` read path, an `auditLog` patch, or a
 // `console.log` of a ciphertext column all typecheck perfectly.
 //
 //   pnpm --filter @workspace/backend verify
@@ -33,7 +33,7 @@ const files = sourceFiles()
 const read = (path) => readFileSync(path, "utf8")
 
 /**
- * Comments are prose, not a leak. `release.ts` documents `serverShare` heavily
+ * Comments are prose, not a leak. `release.ts` documents `lockedKey` heavily
  * on purpose, and every check below is about code, so strip comments first.
  */
 const BLOCK_COMMENT = new RegExp("/\\*[\\s\\S]*?\\*/", "g")
@@ -42,47 +42,79 @@ const code = (path) =>
   read(path).replace(BLOCK_COMMENT, "").replace(LINE_COMMENT, "$1")
 const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
 
-// ── 1. `serverShare` has exactly one read path ───────────────────────────────
+// ── 1. The locked heir key has one write path and one unlock path ──────────
 //
-// The token legitimately appears three times: the schema column, the write in
-// `release.saveBundles`, and the one gated return in
-// `release.releasedBundleForHeir`. Any fourth appearance is a new way for half
-// of K_h to leave the deployment.
+// `lockedKey` is K_h locked to the escrow key. It may appear in the schema, in
+// `release.saveBundles` (the write) and `release.releaseGate` (the one read),
+// and in `escrow.ts`, whose only export `openDelivery` is the one unlock path.
+// Anything else touching it, calling the gate, reading the dev private key or
+// importing `@workspace/crypto` is a new way for an heir's key to leave.
 {
-  const ALLOWED_FILES = ["schema.ts", "release.ts"]
-  const ALLOWED_EXPORTS = ["saveBundles", "releasedBundleForHeir"]
+  const ALLOWED_FILES = ["schema.ts", "release.ts", "escrow.ts"]
+  const ALLOWED_RELEASE_EXPORTS = ["saveBundles", "releaseGate"]
+  const ESCROW_ONLY = [
+    "releaseGate",
+    "ESCROW_DEV_PRIVATE_KEY",
+    "privateDecrypt",
+    "@google-cloud/kms",
+    "cloudkms.googleapis.com",
+    "GCP_SERVICE_ACCOUNT",
+    "@workspace/crypto",
+  ]
 
-  const mentioning = files.filter((f) => code(f).includes("serverShare"))
-  for (const file of mentioning) {
-    if (!ALLOWED_FILES.includes(rel(file))) {
+  for (const file of files) {
+    const name = rel(file)
+    const source = code(file)
+    if (source.includes("lockedKey") && !ALLOWED_FILES.includes(name)) {
       failures.push(
-        `serverShare appears in ${rel(file)} — only ${ALLOWED_FILES.join(" and ")} may mention it.`
+        `lockedKey appears in ${name} — only ${ALLOWED_FILES.join(", ")} may mention it.`
       )
+    }
+    for (const token of ESCROW_ONLY) {
+      if (name === "escrow.ts") continue
+      if (token === "releaseGate" && name === "release.ts") continue
+      if (source.includes(token)) {
+        failures.push(`${token} appears in ${name} — only escrow.ts may use it.`)
+      }
     }
   }
 
   const releasePath = files.find((f) => rel(f) === "release.ts")
-  if (releasePath === undefined) {
-    failures.push("release.ts is missing — the gated read path is gone.")
+  const escrowPath = files.find((f) => rel(f) === "escrow.ts")
+  if (releasePath === undefined || escrowPath === undefined) {
+    failures.push("release.ts or escrow.ts is missing — the gated path is gone.")
   } else {
     // Split on top-level `export const <name> =` and see which blocks mention it.
     const blocks = code(releasePath).split(/\nexport const /)
-    const guilty = blocks
+    const touching = blocks
       .slice(1)
-      .filter((block) => block.includes("serverShare"))
+      .filter((block) => block.includes("lockedKey"))
       .map((block) => block.slice(0, block.indexOf(" ")))
-    const unexpected = guilty.filter((name) => !ALLOWED_EXPORTS.includes(name))
+    const unexpected = touching.filter(
+      (name) => !ALLOWED_RELEASE_EXPORTS.includes(name)
+    )
     if (unexpected.length > 0) {
       failures.push(
-        `serverShare is reachable from release.${unexpected.join(", release.")} — only ${ALLOWED_EXPORTS.join(" and ")} may touch it.`
+        `lockedKey is reachable from release.${unexpected.join(", release.")} — only ${ALLOWED_RELEASE_EXPORTS.join(" and ")} may touch it.`
       )
     }
-    for (const expected of ALLOWED_EXPORTS) {
-      if (!guilty.includes(expected)) {
+    for (const expected of ALLOWED_RELEASE_EXPORTS) {
+      if (!touching.includes(expected)) {
         failures.push(
-          `release.${expected} no longer mentions serverShare — did the gated path move?`
+          `release.${expected} no longer mentions lockedKey — did the gated path move?`
         )
       }
+    }
+    if (!/export const releaseGate = internalQuery\(/.test(code(releasePath))) {
+      failures.push("release.releaseGate must stay an internalQuery.")
+    }
+
+    const escrowExports = [...code(escrowPath).matchAll(/export (?:const|function|async function) (\w+)/g)]
+      .map((match) => match[1])
+    if (escrowExports.join(",") !== "openDelivery") {
+      failures.push(
+        `escrow.ts exports ${escrowExports.join(", ") || "nothing"} — only openDelivery may be exported.`
+      )
     }
   }
 }
@@ -174,5 +206,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one serverShare read path, append-only audit log, no logged ciphertext, one claims writer."
+  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer."
 )

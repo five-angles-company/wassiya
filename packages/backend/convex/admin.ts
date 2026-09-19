@@ -26,7 +26,7 @@ import type { Doc, Id } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
-import { activeGuardiansFor, requireAdmin } from "./model/access"
+import { requireAdmin } from "./model/access"
 
 /** One day, for bucketing a trend. Matches `model/claimFlow.ts`'s `DAY_MS`. */
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -43,7 +43,6 @@ const COUNT_CAP = 100
 /** Every value `claims.status` can hold, in lifecycle order. */
 const CLAIM_STATUSES = [
   "submitted",
-  "guardian_review",
   "awaiting_veto",
   "released",
   "vetoed",
@@ -112,7 +111,6 @@ export const overview = query({
 
     const claims: Record<(typeof CLAIM_STATUSES)[number], Tally> = {
       submitted: { count: 0, more: false },
-      guardian_review: { count: 0, more: false },
       awaiting_veto: { count: 0, more: false },
       released: { count: 0, more: false },
       vetoed: { count: 0, more: false },
@@ -152,7 +150,7 @@ export const overview = query({
     // `awaiting_veto` range yields the earliest deadline first. A handful is
     // taken rather than one row because Convex sorts `undefined` ahead of every
     // number, and a claim in this state with no deadline would otherwise mask
-    // the real answer. `guardianConfirm` always sets one, so this is a guard
+    // the real answer. `adminSetNameMatch` always sets one, so this is a guard
     // against a future edit, not against today's data.
     const soonest = await ctx.db
       .query("claims")
@@ -190,8 +188,8 @@ const IDENTITY_STATUSES = [
  *
  * Each child table holds at most one row per owner who *reached* that stage, so
  * it is always smaller than `users` — scanning down the funnel is the cheap
- * direction. `keyring` is read once and answers three questions (vault created,
- * sheet printed, guardian share sealed), which is why it is not read again.
+ * direction. `keyring` is read once and answers two questions (vault created
+ * and sheet printed), which is why it is not read again.
  *
  * ## The one thing this cannot see
  *
@@ -258,21 +256,12 @@ export const activation = query({
       heirRows.slice(0, SCAN_CAP).map((row) => row.userId as string)
     )
 
-    // A guardian counts only when the invitation was accepted **and** they have
-    // published an X25519 key — the key is what an heir bundle gets sealed to,
-    // so an accepted guardian without one can help with nothing.
-    // `apps/mobile/lib/guardian.ts` exists so this answer is never computed
-    // twice; keep the two in step.
-    const accepted = await ctx.db
-      .query("guardians")
-      .withIndex("by_status", (q) => q.eq("status", "accepted"))
-      .take(SCAN_CAP + 1)
-    const guardianCapped = accepted.length > SCAN_CAP
-    const guardianLive = new Set(
-      accepted
-        .slice(0, SCAN_CAP)
-        .filter((row) => row.x25519PublicKey !== undefined)
-        .map((row) => row.userId as string)
+    // Owners whose device has built at least one heir's delivery. Without a
+    // bundle a released report delivers nothing, however complete the rest.
+    const bundles = await ctx.db.query("releaseBundles").take(SCAN_CAP + 1)
+    const bundleCapped = bundles.length > SCAN_CAP
+    const deliveryPrepared = new Set(
+      bundles.slice(0, SCAN_CAP).map((row) => row.userId as string)
     )
 
     // Five indexed ranges rather than a scan — the index this table was built
@@ -317,8 +306,8 @@ export const activation = query({
           ...setTally(heirOwners, heirRows.length > SCAN_CAP),
         },
         {
-          key: "guardianLive",
-          ...setTally(guardianLive, guardianCapped || keyringCapped),
+          key: "deliveryPrepared",
+          ...setTally(deliveryPrepared, bundleCapped),
         },
         { key: "checkinConfigured", count: checkinCount, more: checkinCapped },
       ],
@@ -387,10 +376,10 @@ export const signups = query({
 const PROTECTION_ITEMS = [
   "identity",
   "key",
-  "guardian",
   "sheet",
   "heirs",
   "routing",
+  "delivery",
   "checkin",
 ] as const
 
@@ -437,11 +426,6 @@ export const risk = query({
         .query("keyring")
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
         .unique()
-
-      const guardians = await ctx.db
-        .query("guardians")
-        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
-        .take(20)
 
       const heirs = await ctx.db
         .query("heirs")
@@ -491,16 +475,11 @@ export const risk = query({
       const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
         identity: owner.identityStatus === "verified",
         key: keyring !== null,
-        // Accepted AND has published a key. The rule used to be "accepted and
-        // their recovery share is sealed"; that share no longer exists, so what
-        // makes a guardian usable is the X25519 key an heir bundle can be
-        // sealed to. Kept in step with `apps/mobile/lib/guardian.ts`.
-        guardian: guardians.some(
-          (row) => row.status === "accepted" && row.x25519PublicKey !== undefined
-        ),
         sheet: keyring?.paperPrintedAt !== undefined,
         heirs: heirs.length > 0,
         routing: routed,
+        // Every heir has a bundle built since their routing last changed.
+        delivery: heirs.length > 0 && heirsAtRisk === 0,
         checkin: checkin !== null,
       }
 
@@ -638,7 +617,6 @@ export const storage = query({
 /** Claim statuses, as an argument validator the console can pass through. */
 const claimStatusValidator = v.union(
   v.literal("submitted"),
-  v.literal("guardian_review"),
   v.literal("awaiting_veto"),
   v.literal("released"),
   v.literal("vetoed"),
@@ -670,7 +648,6 @@ const claimFilterArgs = {
   statuses: v.array(claimStatusValidator),
   identity: v.array(identityStatusValidator),
   /** `undefined` means no opinion; `true`/`false` narrow to one side. */
-  heirLinked: v.optional(v.boolean()),
   /** Trimmed by the caller. Empty means no search. */
   search: v.string(),
   sort: claimSortValidator,
@@ -679,7 +656,6 @@ const claimFilterArgs = {
 type ClaimFilters = {
   statuses: string[]
   identity: string[]
-  heirLinked?: boolean | undefined
   search: string
   sort: "newest" | "oldest" | "nameAsc" | "nameDesc"
 }
@@ -738,12 +714,6 @@ function claimsQuery(ctx: QueryCtx, filters: ClaimFilters) {
         )
       )
     }
-    if (filters.heirLinked === true) {
-      clauses.push(q.neq(q.field("heirId"), undefined))
-    }
-    if (filters.heirLinked === false) {
-      clauses.push(q.eq(q.field("heirId"), undefined))
-    }
     // An empty filter must match everything, and `and()` of nothing is not
     // guaranteed to. A literal `true` is.
     if (clauses.length === 0) return true
@@ -800,7 +770,6 @@ export const claimsPage = query({
           subjectName: subject?.name ?? null,
           subjectVerifiedName: subject?.identityVerifiedName ?? null,
           nameMatch: row.nameMatch ?? null,
-          heirLinked: row.heirId !== undefined,
           vetoDeadline: row.vetoDeadline ?? null,
           submittedAt: row._creationTime,
         }
@@ -977,164 +946,6 @@ export const identityTally = query({
 
 
 // ---------------------------------------------------------------------------
-// The guardians list — Review's fourth screen.
-// ---------------------------------------------------------------------------
-
-/**
- * What a guardian appointment actually *is*, as opposed to what it stores.
- *
- * The raw `status` hides the two conditions worth acting on. An `invited` row
- * whose window has closed still reads `invited`, so an owner believes they have
- * a guardian and does not. An `accepted` row with no published key cannot be
- * sealed an heir's share, so it protects delivery no more than an empty seat.
- *
- * Derived here rather than in the browser so the filter and the badge cannot
- * disagree, and so filtering by `expired` narrows the query rather than the
- * page.
- */
-const guardianStateValidator = v.union(
-  v.literal("live"),
-  v.literal("accepted"),
-  v.literal("invited"),
-  v.literal("expired"),
-  v.literal("revoked")
-)
-
-type GuardianState = "live" | "accepted" | "invited" | "expired" | "revoked"
-
-function guardianState(row: Doc<"guardians">, now: number): GuardianState {
-  if (row.status === "revoked") return "revoked"
-  if (row.status === "accepted") {
-    // `isGuardianLive`, server-side: accepted alone seals nothing.
-    return row.x25519PublicKey !== undefined ? "live" : "accepted"
-  }
-  return row.inviteExpiresAt < now ? "expired" : "invited"
-}
-
-const guardianFilterArgs = {
-  states: v.array(guardianStateValidator),
-  /** Passed in: a query may not read the wall clock. */
-  now: v.number(),
-  sort: v.union(v.literal("newest"), v.literal("expiring")),
-}
-
-type GuardianFilters = {
-  states: GuardianState[]
-  now: number
-  sort: "newest" | "expiring"
-}
-
-/**
- * Guardian rows for the console.
- *
- * The derived state is not indexable — it reads three columns and the clock —
- * so the raw statuses it could possibly come from are pushed into the query and
- * the rest is settled per row. `live` and `accepted` both live under the
- * `accepted` status; `invited` and `expired` both under `invited`.
- */
-async function guardianRows(
-  ctx: QueryCtx,
-  filters: GuardianFilters,
-  limit: number
-): Promise<Doc<"guardians">[]> {
-  const wanted = new Set(filters.states)
-  const statuses =
-    wanted.size === 0
-      ? null
-      : [
-          ...new Set(
-            [...wanted].map((state) =>
-              state === "live" || state === "accepted"
-                ? "accepted"
-                : state === "revoked"
-                  ? "revoked"
-                  : "invited"
-            )
-          ),
-        ]
-
-  const base =
-    statuses !== null && statuses.length === 1
-      ? ctx.db
-          .query("guardians")
-          .withIndex("by_status", (q) =>
-            q.eq("status", statuses[0] as Doc<"guardians">["status"])
-          )
-      : ctx.db.query("guardians").order("desc")
-
-  const rows = await base.take(limit)
-  const matched =
-    wanted.size === 0
-      ? rows
-      : rows.filter((row) => wanted.has(guardianState(row, filters.now)))
-
-  return filters.sort === "expiring"
-    ? matched.sort((a, b) => a.inviteExpiresAt - b.inviteExpiresAt)
-    : matched.sort((a, b) => b._creationTime - a._creationTime)
-}
-
-/**
- * How many guardian rows one console read scans.
- *
- * Not paginated, unlike claims and identity, and the reason is the derived
- * state: `expired` cannot be expressed as an index range, so a cursor page
- * would come back arbitrarily short after filtering and "another page follows"
- * would stop meaning anything. Guardians are bounded by owners rather than by
- * traffic — one or two per vault — so a capped read is the honest shape. The
- * console says when it hits the cap.
- */
-const GUARDIANS_SCAN = 1000
-
-/**
- * The guardians list, and the count of what was scanned.
- *
- * **Never selects `inviteToken`.** That token is the whole capability of an
- * invitation: `guardians.accept` takes nothing else, so a console that could
- * read one could enrol itself as any owner's guardian. `guardians.ts` returns
- * it from `invite` alone, to the owner, exactly so the deployment cannot choose
- * a guardian — and this query would be the hole in that. Nothing here may
- * select it, now or later.
- */
-export const guardiansList = query({
-  args: guardianFilterArgs,
-  handler: async (ctx, filters) => {
-    await requireAdmin(ctx)
-    const rows = await guardianRows(ctx, filters, GUARDIANS_SCAN + 1)
-    const capped = rows.length > GUARDIANS_SCAN
-    const page = rows.slice(0, GUARDIANS_SCAN)
-
-    const owners = new Map<string, Doc<"users"> | null>()
-    for (const row of page) {
-      const key = row.userId as string
-      if (!owners.has(key)) {
-        owners.set(key, await ctx.db.get("users", row.userId))
-      }
-    }
-
-    return {
-      rows: page.map((row) => {
-        const owner = owners.get(row.userId as string) ?? null
-        return {
-          id: row._id,
-          ownerName: owner?.name ?? null,
-          ownerEmail: owner?.email ?? null,
-          guardianName: row.name,
-          relation: row.relation,
-          state: guardianState(row, filters.now),
-          hasPublicKey: row.x25519PublicKey !== undefined,
-          /** Whether an account was ever bound — `accept` is what writes it. */
-          claimed: row.guardianUserId !== undefined,
-          inviteExpiresAt: row.inviteExpiresAt,
-          invitedAt: row._creationTime,
-        }
-      }),
-      capped,
-      scanCap: GUARDIANS_SCAN,
-    }
-  },
-})
-
-// ---------------------------------------------------------------------------
 // Owners — the Accounts group's keystone. Every other item in that group hangs
 // off a person, so this is the screen the rest are reached through.
 // ---------------------------------------------------------------------------
@@ -1249,8 +1060,8 @@ export const ownersTally = query({
  * The same indexed probes `risk` runs across many owners, run once here.
  *
  * **Nothing returned is ciphertext or key material.** The keyring is reported
- * as dates and a version, never as `mkWrappedByRecovery`; the guardians carry
- * no `inviteToken`. Both are the same rule stated in `guardiansList`.
+ * as dates and a version, never as `mkWrappedByRecovery`; a bundle is reported
+ * as the date it was rebuilt, never its locked key.
  */
 export const ownerDetail = query({
   // `v.string()` rather than `v.id("users")`, and the id checked in the body.
@@ -1278,10 +1089,13 @@ export const ownerDetail = query({
       .query("heirs")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .take(50)
-    const guardians = await ctx.db
-      .query("guardians")
+    const bundles = await ctx.db
+      .query("releaseBundles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .take(20)
+      .take(50)
+    const rebuiltFor = new Map<string, number>(
+      bundles.map((bundle) => [bundle.heirId as string, bundle.rebuiltAt])
+    )
     const keyring = await ctx.db
       .query("keyring")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -1337,14 +1151,12 @@ export const ownerDetail = query({
         name: row.name,
         relation: row.relation,
         phone: row.phone,
-      })),
-      guardians: guardians.map((row) => ({
-        id: row._id,
-        name: row.name,
-        relation: row.relation,
-        status: row.status,
-        hasPublicKey: row.x25519PublicKey !== undefined,
-        inviteExpiresAt: row.inviteExpiresAt,
+        hasIdNumber: row.idNumberHash !== undefined,
+        // Null when the device has never built this heir a delivery; stale when
+        // it predates the heir's last routing change.
+        bundleRebuiltAt: rebuiltFor.get(row._id as string) ?? null,
+        bundleStale:
+          (rebuiltFor.get(row._id as string) ?? -1) < (row.routingChangedAt ?? 0),
       })),
       claims: claims.map((row) => ({
         id: row._id,
@@ -1785,26 +1597,13 @@ const RELEASE_BAND_CAP = 100
 /**
  * The release pipeline: what is counting down, and what already went.
  *
- * **Not a list of bundles**, because there are none — `releaseBundles` has
- * never held a row, since `makeHeirShares`, `buildReleaseBundle` and
- * `release.saveBundles` have no caller in any app. What exists instead is a
- * pipeline, and this screen's job is to show where it stops.
- *
  * Bounded rather than paginated: a countdown an operator pages through has
  * stopped being a countdown. Each band says so when it hits the cap.
  *
- * ## Three delivery states, not two
- *
- * A released claim can fail to deliver two different ways, and reporting them
- * as one would blame the wrong thing:
- *
- *  - **no heir linked** — `claim.heirId` is unset, so nothing *could* be built
- *  - **no bundle** — an heir is linked and nothing was built for them
- *
- * `guardianConfirm` requires `heirId`, so a claim cannot legitimately reach
- * `awaiting_veto` without one; today's rows that lack it are seed artefacts,
- * written straight to a status past the state machine. On real data the first
- * state should be unreachable, which makes it an alarm rather than noise.
+ * A counting-down report shows how many heirs have a bundle, because a report
+ * that releases into an owner with none delivers nothing to anyone. A released
+ * one shows its deliveries by state — the per-heir work lives on the
+ * deliveries screen.
  */
 export const releasesPipeline = query({
   args: { now: v.number() },
@@ -1837,6 +1636,13 @@ export const releasesPipeline = query({
     const counting = []
     for (const row of pending.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
+      const bundles =
+        row.subjectUserId === undefined
+          ? []
+          : await ctx.db
+              .query("releaseBundles")
+              .withIndex("by_userId", (q) => q.eq("userId", row.subjectUserId!))
+              .take(100)
       counting.push({
         id: row._id,
         subjectName: subject?.name ?? null,
@@ -1845,30 +1651,33 @@ export const releasesPipeline = query({
         vetoDeadline: row.vetoDeadline ?? null,
         /** Negative once the deadline has passed and the sweep has not run. */
         remainingMs: (row.vetoDeadline ?? now) - now,
-        heirLinked: row.heirId !== undefined,
+        heirsWithBundle: bundles.length,
       })
     }
 
     const released = []
     for (const row of done.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
-      // Only probed when there is an heir to probe with — the absence of a
-      // link is a different answer, not a missing bundle.
-      let delivery: "delivered" | "no-bundle" | "no-heir" = "no-heir"
-      if (row.heirId !== undefined) {
-        const bundle = await ctx.db
-          .query("releaseBundles")
-          .withIndex("by_heirId", (q) => q.eq("heirId", row.heirId!))
-          .first()
-        delivery = bundle === null ? "no-bundle" : "delivered"
-      }
+      const deliveries = await ctx.db
+        .query("deliveries")
+        .withIndex("by_claimId", (q) => q.eq("claimId", row._id))
+        .take(100)
+      const count = (status: Doc<"deliveries">["status"]) =>
+        deliveries.filter((d) => d.status === status).length
       released.push({
         id: row._id,
         subjectName: subject?.name ?? null,
         subjectEmail: subject?.email ?? null,
         claimantName: row.claimantName,
-        releasedAt: row.vetoDeadline ?? row._creationTime,
-        delivery,
+        releasedAt: row.releasedAt ?? row.vetoDeadline ?? row._creationTime,
+        deliveries: {
+          total: deliveries.length,
+          awaitingHeir: count("awaiting_heir"),
+          identityPending: count("identity_pending"),
+          ready: count("ready"),
+          rejected: count("rejected"),
+          expired: count("expired"),
+        },
       })
     }
 
@@ -2213,7 +2022,7 @@ export const auditTally = query({
  *
  * Deliberately shorter than `AUDIT_DOMAINS`: only three writers insert into
  * `notifications` — the escalation ladder (`checkin.*`), the claim machine
- * (`claim.*`, including the guardian review) and `keyring.recoverAttempt`
+ * (`claim.*`) and `keyring.recoverAttempt`
  * (`recovery.attempted`). Offering a facet for a domain nothing can write
  * would be a filter that always returns nothing.
  */
@@ -2439,12 +2248,6 @@ export const claimDetail = query({
         : await ctx.db.get("users", claim.claimantUserId)
     const liveIdentityStatus = claimant?.identityStatus ?? "unverified"
 
-    // The same read `adminSetNameMatch` makes before it will approve, so the
-    // disabled button and the mutation's refusal are one decision.
-    const hasActiveGuardian =
-      subjectUserId !== undefined &&
-      (await activeGuardiansFor(ctx, subjectUserId)).length > 0
-
     const heirRows =
       subjectUserId === undefined
         ? []
@@ -2524,10 +2327,8 @@ export const claimDetail = query({
             ? null
             : await ctx.storage.getUrl(claim.certificateStorageId),
         nameMatch: claim.nameMatch ?? null,
-        heirId: claim.heirId ?? null,
         vetoDeadline: claim.vetoDeadline ?? null,
         lockedUntil: claim.lockedUntil ?? null,
-        guardianConfirmedAt: claim.guardianConfirmedAt ?? null,
         submittedAt: claim._creationTime,
       },
       /** What Didit says right now — the value the mutation will rule on. */
@@ -2549,25 +2350,9 @@ export const claimDetail = query({
       history,
       /** Why each verdict is unavailable, or `null`. The button reads this. */
       blocked: {
-        approve: nameMatchBlockedReason(
-          claim,
-          true,
-          liveIdentityStatus,
-          hasActiveGuardian
-        ),
-        reject: nameMatchBlockedReason(
-          claim,
-          false,
-          liveIdentityStatus,
-          hasActiveGuardian
-        ),
+        approve: nameMatchBlockedReason(claim, true, liveIdentityStatus),
+        reject: nameMatchBlockedReason(claim, false, liveIdentityStatus),
       },
-      /**
-       * Whether anyone can act on this claim once approved. The guardian route
-       * has shipped, so this is now a fact about *this vault* rather than about
-       * the product — and `blocked.approve` already refuses when it is false.
-       */
-      hasActiveGuardian,
     }
   },
 })

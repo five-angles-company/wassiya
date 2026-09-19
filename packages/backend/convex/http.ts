@@ -3,6 +3,7 @@ import type { WebhookEvent } from "@clerk/backend"
 import { Webhook } from "svix"
 import { internal } from "./_generated/api"
 import { httpAction } from "./_generated/server"
+import { asString, idVerificationOf, verifiedDocument } from "./model/didit"
 
 const http = httpRouter()
 
@@ -102,68 +103,27 @@ http.route({
     if (typeof sessionId !== "string") {
       return new Response("Missing session_id", { status: 400 })
     }
-    const verification = idVerificationOf(body)
+    const status = mapDiditStatus(body.status)
+    const document = await verifiedDocument(
+      sessionId,
+      status === "verified",
+      idVerificationOf(body)
+    )
 
     await ctx.runMutation(internal.identity.applyWebhookResult, {
       sessionId,
       vendorData: asString(body.vendor_data),
-      status: mapDiditStatus(body.status),
+      status,
       // Distinct from "rejected": three provider outcomes collapse to that
       // status, and only one of them is the user failing a check.
       declined: isDeclined(body.status),
-      verifiedName: verifiedNameOf(verification),
-      docType: asString(verification.document_type),
+      ...document,
     })
     return new Response(null, { status: 200 })
   }),
 })
 
 export default http
-
-/** A field is usable only if it really is a string. Anything else is dropped. */
-function asString(value: unknown): string | undefined {
-  return typeof value === "string" && value !== "" ? value : undefined
-}
-
-/**
- * `decision.id_verification`, as a bag of unknowns. Returning an empty object
- * for a missing or malformed branch keeps every caller on one path.
- */
-/**
- * The document block, wherever Didit is putting it.
- *
- * ⚠️ **It is at the top level, not under `decision`.** This looked only for
- * `decision.id_verification`, which v2 does not send — there is no `decision`
- * key in the payload at all — so every lookup fell through to `{}` and both
- * `verifiedName` and `docType` arrived `undefined`. A verified owner ended up
- * with a verdict, a timestamp, and no name.
- *
- * That is not cosmetic: the release ceremony matches the death certificate
- * against the owner's **verified legal name**, so an empty one leaves the check
- * with nothing to compare. Confirmed against a real session's decision payload,
- * which carries `id_verification.full_name` and `id_verification.document_type`.
- *
- * The `decision` path is kept as a fallback rather than deleted: it costs one
- * branch, and this function failing silently is exactly how the field went
- * missing for as long as it did.
- */
-function idVerificationOf(
-  body: Record<string, unknown>
-): Record<string, unknown> {
-  const direct = body.id_verification
-  if (typeof direct === "object" && direct !== null) {
-    return direct as Record<string, unknown>
-  }
-  const decision = body.decision
-  if (typeof decision !== "object" || decision === null) {
-    return {}
-  }
-  const verification = (decision as Record<string, unknown>).id_verification
-  if (typeof verification !== "object" || verification === null) {
-    return {}
-  }
-  return verification as Record<string, unknown>
-}
 
 // Didit's terminal statuses, narrowed to the four this app models. Anything
 // unrecognised is treated as still pending rather than as an approval.
@@ -195,27 +155,6 @@ function mapDiditStatus(
     default:
       return "pending"
   }
-}
-
-/**
- * The verified legal name, which `claims.adminSetNameMatch` later compares a
- * death certificate against — so a wrong value here is load-bearing. Prefer the
- * provider's own `full_name`; fall back to composing the parts.
- */
-function verifiedNameOf(
-  verification: Record<string, unknown>
-): string | undefined {
-  const fullName = asString(verification.full_name)
-  if (fullName !== undefined) {
-    return fullName
-  }
-  const composed = [
-    asString(verification.first_name),
-    asString(verification.last_name),
-  ]
-    .filter((part): part is string => part !== undefined)
-    .join(" ")
-  return composed === "" ? undefined : composed
 }
 
 /**

@@ -52,12 +52,12 @@ export const ESCALATION_COPY = {
   },
   day14: {
     ar: {
-      subject: "أسبوعان — سنبدأ بالتواصل مع وصيّك",
-      body: "لم نسمع منك منذ أسبوعين. إن لم تؤكّد، ستبدأ إجراءات التحقّق مع وصيّك.",
+      subject: "أسبوعان — لم نسمع منك",
+      body: "لم نسمع منك منذ أسبوعين. افتح وصيّة وأكّد ببصمتك — إن لم تؤكّد، سنستمرّ في محاولة الوصول إليك.",
     },
     en: {
-      subject: "Two weeks — we will start contacting your guardian",
-      body: "We have not heard from you in two weeks. If you do not confirm, verification with your guardian begins.",
+      subject: "Two weeks — we have not heard from you",
+      body: "We have not heard from you in two weeks. Open Wassiya and confirm with your fingerprint — if you do not, we will keep trying to reach you.",
     },
   },
   countdown: {
@@ -71,30 +71,6 @@ export const ESCALATION_COPY = {
     },
   },
 } as const satisfies Record<string, LocalisedCopy>
-
-/**
- * The notice a guardian gets when a death claim reaches them.
- *
- * Deliberately says almost nothing. It names no claimant, no deceased and no
- * vault: an email is the least controlled surface this product touches, and a
- * guardian's inbox is not a place to disclose that a particular person has died
- * or that a particular person filed about it. It says only that something is
- * waiting and where it lives — which is all the recipient needs to take the next
- * step, and all an interceptor learns.
- *
- * ⚠️ Its link is `/guardian`, never `/guardian/<claimId>` — see
- * `sendGuardianClaimNotice`. A claim id is a capability that names the deceased.
- */
-export const GUARDIAN_CLAIM_COPY = {
-  ar: {
-    subject: "طلب ينتظر تأكيدك",
-    body: "هناك طلب على خزنة أنت وصيٌّ عليها ينتظر تأكيدك. افتح موقع وصيّة لمراجعته — لا يمكن تأكيده من البريد.",
-  },
-  en: {
-    subject: "Something is waiting for your confirmation",
-    body: "A claim on a vault you guard is waiting for you. Open the Wassiya website to review it — it cannot be confirmed from email.",
-  },
-} as const satisfies LocalisedCopy
 
 /**
  * Tell an owner their vault was opened with the printed sheet.
@@ -139,7 +115,7 @@ export const RECOVERY_COPY = {
 //
 // **Say when nothing is needed.** Most of a claim's life is waiting, and a
 // message that does not say so invites someone in the worst week of their life
-// to refresh a page daily. `guardianConfirmed` is the clearest case: thirty days
+// to refresh a page daily. The objection period is the clearest case: thirty days
 // where the correct action is none.
 
 /** Filed. The receipt — and the first thing the product has ever sent a heir. */
@@ -155,17 +131,18 @@ export const CLAIM_FILED_COPY = {
 } as const satisfies LocalisedCopy
 
 /**
- * Approved, and with the guardian. Sent in the same transaction as the
- * guardian's own notice, so the two people learn it at the same moment.
+ * Approved, and the objection period has started. `{date}` is the day it ends:
+ * stating it converts an indefinite wait into a date on a calendar, and it is
+ * what makes "nothing is needed from you" believable rather than dismissive.
  */
 export const CLAIM_IN_REVIEW_COPY = {
   ar: {
-    subject: "انتقل بلاغك إلى الوصي",
-    body: "اكتملت مراجعتنا وانتقل بلاغك إلى وصيّ صاحب الخزنة للتأكيد. لا شيء مطلوب منك الآن، وسنراسلك فور تأكيده.",
+    subject: "اكتملت المراجعة — بدأت مهلة الاعتراض",
+    body: "اكتملت مراجعتنا للبلاغ، وبدأت مهلة اعتراض مدّتها ثلاثون يوماً يستطيع خلالها صاحب الخزنة إيقافه. لا شيء مطلوب منك. إن لم يحدث اعتراض حتى {date}، نتواصل بأنفسنا مع الورثة الذين سمّاهم.",
   },
   en: {
-    subject: "Your report is with the guardian",
-    body: "Our review is complete and your report has gone to the vault owner's guardian for confirmation. Nothing is needed from you now, and we will email you as soon as they confirm.",
+    subject: "Review complete — the objection period has started",
+    body: "We have finished reviewing the report, and a thirty-day objection period has begun in which the vault owner can stop it. Nothing is needed from you. If no objection comes by {date}, we contact the heirs the owner named ourselves.",
   },
 } as const satisfies LocalisedCopy
 
@@ -183,25 +160,6 @@ export const CLAIM_REVIEW_FAILED_COPY = {
   en: {
     subject: "Your report is closed",
     body: "We were not able to take this report further after review, and it is now closed. If you believe that is wrong, contact us and a person will look at it.",
-  },
-} as const satisfies LocalisedCopy
-
-/**
- * The guardian confirmed — the single most important message in the set, and
- * the one the product previously had no way to send.
- *
- * `{date}` is the day the box opens on its own. Stating it is the whole point:
- * it converts an indefinite wait into a date on a calendar, and it is what makes
- * "nothing is needed from you" believable rather than dismissive.
- */
-export const CLAIM_GUARDIAN_CONFIRMED_COPY = {
-  ar: {
-    subject: "أكّد الوصي — بدأت مهلة الاعتراض",
-    body: "أكّد الوصي الوفاة، وبدأت مهلة اعتراض مدّتها ثلاثون يوماً يستطيع خلالها صاحب الخزنة إيقاف التسليم. لا شيء مطلوب منك خلالها. إن لم يحدث اعتراض، يصبح صندوقك جاهزاً في {date} وسنراسلك عندها.",
-  },
-  en: {
-    subject: "The guardian confirmed — the objection period has started",
-    body: "The guardian has confirmed the death, and a thirty-day objection period has begun in which the vault owner can stop the handover. Nothing is needed from you during it. If no objection comes, your box is ready on {date} and we will email you then.",
   },
 } as const satisfies LocalisedCopy
 
@@ -225,20 +183,18 @@ export const CLAIM_VETOED_COPY = {
 } as const satisfies LocalisedCopy
 
 /**
- * Released.
- *
- * The one message that asks the reader to do something involving another human:
- * the guardian holds the second half and hands it over in person. Saying so here
- * saves them arriving at the gate and discovering it.
+ * Released. Sent to the reporter, who receives nothing by reporting: each heir
+ * the owner named is contacted directly and proves their own identity. Saying
+ * so stops a reporter who is also an heir from waiting on this message.
  */
 export const CLAIM_RELEASED_COPY = {
   ar: {
-    subject: "صندوقك جاهز",
-    body: "انتهت مهلة الاعتراض دون اعتراض، وصندوقك جاهز. لفتحه تحتاج نصف المفتاح الذي يحتفظ به الوصي — تواصل معه ليسلّمك إياه. لا نملك نحن هذا النصف ولا نستطيع فتح الصندوق وحدنا.",
+    subject: "انتهت مهلة الاعتراض",
+    body: "انتهت مهلة الاعتراض دون اعتراض. نتواصل الآن مباشرةً مع كل وارث سمّاه صاحب الخزنة، على الرقم الذي سجّله، ليُثبت هويته ويستلم ما تُرك له. إن كنت أحدهم، ستصلك رسالة منفصلة.",
   },
   en: {
-    subject: "Your box is ready",
-    body: "The objection period ended with no objection and your box is ready. To open it you need the key half the guardian keeps — contact them to hand it over. We do not hold that half and cannot open the box on our own.",
+    subject: "The objection period has ended",
+    body: "The objection period ended with no objection. We are now contacting each heir the vault owner named, on the number they registered, to prove their identity and receive what was left to them. If you are one of them, you will get a separate message.",
   },
 } as const satisfies LocalisedCopy
 
@@ -261,5 +217,35 @@ export const CLAIM_CLOSED_COPY = {
   en: {
     subject: "We could not start a process from that address",
     body: "We found no vault for the address you entered, so your report is closed. The commonest reason is a typo in the address — check it and file again. There is no restriction on filing another.",
+  },
+} as const satisfies LocalisedCopy
+
+/**
+ * The heir's identity matched and the delivery can be opened. Names no one and
+ * nothing: the link leads to a page that asks them to sign in first.
+ */
+export const DELIVERY_READY_COPY = {
+  ar: {
+    subject: "ما تُرك لك جاهز للفتح",
+    body: "تحقّقنا من هويتك، وأصبح ما تُرك لك جاهزاً. يُفتح على جهازك فقط، ويبقى متاحاً حتى {date} — نزّل ما تحتاجه قبل ذلك.",
+  },
+  en: {
+    subject: "What was left to you is ready to open",
+    body: "We have verified your identity and what was left to you is ready. It opens on your device only and stays available until {date} — download what you need before then.",
+  },
+} as const satisfies LocalisedCopy
+
+/**
+ * Thirty days before a delivery's key is destroyed. `{date}` is the day it
+ * closes: after it, nobody can open the delivery again, Wassiya included.
+ */
+export const DELIVERY_EXPIRING_COPY = {
+  ar: {
+    subject: "يُغلق ما تُرك لك بعد ثلاثين يوماً",
+    body: "في {date} يُتلف مفتاح ما تُرك لك نهائياً، ولا يستطيع أحد فتحه بعد ذلك — ولا نحن. إن لم تكن نزّلت ما تحتاجه، افتحه الآن.",
+  },
+  en: {
+    subject: "What was left to you closes in thirty days",
+    body: "On {date} the key to what was left to you is destroyed for good, and nobody can open it after that — us included. If you have not downloaded what you need, open it now.",
   },
 } as const satisfies LocalisedCopy

@@ -47,6 +47,12 @@ export default defineSchema({
     identityVerifiedName: v.optional(v.string()),
     identityDocType: v.optional(v.string()),
     identityVerifiedAt: v.optional(v.number()),
+    // Keyed hashes of every identity number read off the verified document
+    // (document number, personal number) — see `model/identityHash.ts`. What
+    // an heir delivery is matched against. Never the numbers themselves.
+    identityDocHashes: v.optional(v.array(v.string())),
+    // As printed on the verified document, "YYYY-MM-DD".
+    identityBirthDate: v.optional(v.string()),
     diditSessionId: v.optional(v.string()),
     // Failed Didit attempts. Incremented in `applyWebhookResult` on a
     // rejection, not when a session opens — the flow caps *failures* at three,
@@ -113,8 +119,7 @@ export default defineSchema({
     .index("by_userId_and_installId", ["userId", "installId"]),
 
   // One active row per user: the recovery leg, which is 1-of-1. The server
-  // holds the wrapper and never the paper share — and no longer holds a
-  // guardian half, because K_rec = S_paper alone. `paperVersion` is bound into
+  // holds the wrapper and never the paper share, because K_rec = S_paper alone. `paperVersion` is bound into
   // the wrapper's AAD, so the two are written together or not at all.
   keyring: defineTable({
     userId: v.id("users"),
@@ -137,31 +142,6 @@ export default defineSchema({
     paperUsedAt: v.optional(v.number()),
     rotatedAt: v.number(),
   }).index("by_userId", ["userId"]),
-
-  guardians: defineTable({
-    userId: v.id("users"),
-    // Bound at accept time, once the guardian signs up through Clerk.
-    guardianUserId: v.optional(v.id("users")),
-    name: v.string(),
-    relation: v.string(),
-    status: v.union(
-      v.literal("invited"),
-      v.literal("accepted"),
-      v.literal("revoked")
-    ),
-    // Published by the guardian's device at accept; a public key, not a secret.
-    x25519PublicKey: v.optional(v.bytes()),
-    inviteToken: v.string(),
-    inviteExpiresAt: v.number(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_inviteToken", ["inviteToken"])
-    .index("by_guardianUserId_and_status", ["guardianUserId", "status"])
-    // "How many guardianships are actually live?", for the console.
-    // `by_guardianUserId_and_status` cannot answer it: that index is keyed on
-    // the **guardian's** own user id, so it finds the vaults one person guards,
-    // never the population of accepted guardianships.
-    .index("by_status", ["status"]),
 
   assets: defineTable({
     userId: v.id("users"),
@@ -237,6 +217,12 @@ export default defineSchema({
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
+    // Keyed hash of the national ID number the owner registered, if any — see
+    // `model/identityHash.ts`. Optional by product decision: without it, a
+    // delivery needs a staff identity decision instead of an automatic match.
+    idNumberHash: v.optional(v.string()),
+    // "YYYY-MM-DD", compared by staff when there is no ID number to match.
+    birthDate: v.optional(v.string()),
     /**
      * Every heir is silent: they learn nothing until release.
      *
@@ -255,7 +241,8 @@ export default defineSchema({
     // `releaseBundles.rebuiltAt` to find heirs still owed a rebuild — see
     // `routing.staleHeirs`. Written only by `routing.setRecipients`.
     routingChangedAt: v.optional(v.number()),
-    // The message itself is encrypted; only its kind and blob id live here.
+    // The message itself is encrypted; only its kind, blob id and its key
+    // wrapped by MK live here. The key reaches the heir inside the bundle.
     messageMeta: v.optional(
       v.object({
         kind: v.union(
@@ -264,19 +251,23 @@ export default defineSchema({
           v.literal("video")
         ),
         storageId: v.id("_storage"),
+        messageKeyWrappedByMk: v.optional(v.bytes()),
       })
     ),
   }).index("by_userId", ["userId"]),
 
-  // One row per heir per rebuild. `serverShare` is the crown jewel: it is half
-  // of K_h, and the ONLY public function permitted to return it is
-  // `release.releasedBundleForHeir`, hard-gated on a released claim.
+  // One row per heir, replaced on every rebuild. `lockedKey` is K_h locked on
+  // the owner's device to the escrow public key; it is read by exactly one
+  // path, the gated release action, and never returned, logged or spread —
+  // `scripts/verify-invariants.mjs` fails the build otherwise.
   releaseBundles: defineTable({
     userId: v.id("users"),
     heirId: v.id("heirs"),
     bundleStorageId: v.id("_storage"),
-    serverShare: v.bytes(),
-    guardianShareSealed: v.bytes(),
+    lockedKey: v.bytes(),
+    // Which escrow key version locked it, so a rotated key still unlocks the
+    // rows it locked and a stale client cannot lock to a retired one.
+    escrowKeyId: v.string(),
     rebuiltAt: v.number(),
   })
     .index("by_userId", ["userId"])
@@ -326,8 +317,8 @@ export default defineSchema({
      *
      * ⚠️ An unmatched claim can never leave `submitted` except to `closed`:
      * `adminSetNameMatch` is the only way forward and it refuses a claim with
-     * no subject. So every guarded path downstream — `guardianConfirm`,
-     * `release.*`, `pendingApprovals` — only ever sees a claim that has one,
+     * no subject. So every guarded path downstream — `advance`, deliveries,
+     * `release.*` — only ever sees a claim that has one,
      * and `requireSubject` in `claims.ts` is where that is asserted rather
      * than assumed.
      */
@@ -348,9 +339,6 @@ export default defineSchema({
     // Set once the claimant signs in through Clerk, so their own client can
     // read the claim back without a token in the URL.
     claimantUserId: v.optional(v.id("users")),
-    // Which heir record this claimant is, set by the guardian/admin review.
-    // Until it is set there is nothing to release, whatever the status says.
-    heirId: v.optional(v.id("heirs")),
     claimantIdentityStatus: identityStatus,
     certificateStorageId: v.optional(v.id("_storage")),
     certificateName: v.optional(v.string()),
@@ -361,7 +349,6 @@ export default defineSchema({
       v.literal("submitted"),
       v.literal("awaiting_veto"),
       v.literal("vetoed"),
-      v.literal("guardian_review"),
       v.literal("released"),
       v.literal("locked"),
       /**
@@ -375,7 +362,6 @@ export default defineSchema({
     ),
     vetoDeadline: v.optional(v.number()),
     lockedUntil: v.optional(v.number()),
-    guardianConfirmedAt: v.optional(v.number()),
 
     /**
      * Why a claim closed, in terms a claimant may safely be told.
@@ -388,7 +374,7 @@ export default defineSchema({
     closedReason: v.optional(
       v.union(v.literal("no_vault_matched"), v.literal("review_failed"))
     ),
-    /** Admin-only. Never returned to a claimant or a guardian by any function. */
+    /** Admin-only. Never returned to a claimant or an heir by any function. */
     staffNote: v.optional(v.string()),
 
     /**
@@ -396,9 +382,8 @@ export default defineSchema({
      * timestamp of its own.
      *
      * The case page is a timeline, and a timeline needs dates. Before these
-     * the only ones a claim carried were `_creationTime`, `guardianConfirmedAt`
-     * and `vetoDeadline` — so four of a heir's eight steps could be shown as
-     * done but never as *when*.
+     * the only ones a claim carried were `_creationTime` and `vetoDeadline` —
+     * so most steps could be shown as done but never as *when*.
      *
      * The audit log records all of it and cannot serve this: it is keyed on the
      * **subject's** `userId`, so a claimant reading it would read the owner's
@@ -443,11 +428,8 @@ export default defineSchema({
     // there and a search filter field only supports equality on one value, so
     // the statuses are applied with `.filter()` after the search instead.
     .searchIndex("search_text", { searchField: "searchText" })
-    // What a guardian is being asked about, per vault they guard. Without it
-    // `guardians.pendingApprovals` reads a fixed window of a subject's claims
-    // and filters by status in memory — so a subject with more claims than the
-    // window could hide a real one from its guardian, silently and with no
-    // error. Every barred re-attempt inserts a row, so that window fills.
+    // A subject's reports by state, without reading a fixed window and
+    // filtering in memory — every barred re-attempt inserts a row.
     .index("by_subjectUserId_and_status", ["subjectUserId", "status"])
     .index("by_subjectUserId_and_claimantContact", [
       "subjectUserId",
@@ -473,6 +455,54 @@ export default defineSchema({
     // ranges on it via `by_userId_and_readAt`.
     .index("by_status_and_subjectUserId", ["status", "subjectUserId"])
     .index("by_status_and_vetoDeadline", ["status", "vetoDeadline"]),
+
+  /**
+   * One heir's share of a released death report.
+   *
+   * A report (`claims`) is about the owner and may be filed by anyone; a
+   * delivery is about one recipient. Created by `claims.advance` for every heir
+   * with a bundle when a report reaches `released`, never by a client.
+   *
+   *   awaiting_heir → identity_pending → ready → expired
+   *                                    ↘ rejected (staff refused the match)
+   *
+   * `contactToken` is the capability in the link sent to the heir. It is stored
+   * as-is because staff send it by hand until an SMS provider exists; that is
+   * safe only because the link merely lets a signed-in person *claim* the
+   * delivery — nothing opens until their own Didit identity matches this heir.
+   * Returned to admins only.
+   */
+  deliveries: defineTable({
+    claimId: v.id("claims"),
+    subjectUserId: v.id("users"),
+    heirId: v.id("heirs"),
+    status: v.union(
+      v.literal("awaiting_heir"),
+      v.literal("identity_pending"),
+      v.literal("ready"),
+      v.literal("rejected"),
+      v.literal("expired")
+    ),
+    contactToken: v.string(),
+    contactedAt: v.optional(v.number()),
+    heirUserId: v.optional(v.id("users")),
+    boundAt: v.optional(v.number()),
+    identityMatch: v.optional(v.union(v.literal("id_number"), v.literal("staff"))),
+    readyAt: v.optional(v.number()),
+    lastOpenedAt: v.optional(v.number()),
+    // Release + one year. After it the locked key and bundle are destroyed.
+    expiresAt: v.number(),
+    remindedAt: v.optional(v.number()),
+    destroyedAt: v.optional(v.number()),
+    /** Admin-only, like `claims.staffNote`. */
+    staffNote: v.optional(v.string()),
+  })
+    .index("by_claimId", ["claimId"])
+    .index("by_heirUserId", ["heirUserId"])
+    .index("by_contactToken", ["contactToken"])
+    .index("by_heirId", ["heirId"])
+    .index("by_status", ["status"])
+    .index("by_status_and_expiresAt", ["status", "expiresAt"]),
 
   // Append-only. `audit.ts` exposes an internal insert and an owner-only read,
   // and there is deliberately no mutation anywhere that patches or deletes it.
