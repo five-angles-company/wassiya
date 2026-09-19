@@ -146,44 +146,57 @@ Two traps worth stating:
 
 Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi-first; country is a parameter, never a branch.
 
-## Security model — 1-of-1 recovery, 2-of-2 release (LOCKED, no session may drift from this)
+## Security model — 1-of-1 recovery, escrowed release (LOCKED, no session may drift from this)
 
-> **Amended 2026-08-28, deliberately.** This section previously read "2-of-3"
-> with `K_rec = S_paper XOR S_guardian`. The guardian was removed from recovery
-> and kept for release. Rejected on the way: storing S_guardian server-side —
-> raw XOR of two random 32-byte values with no KDF means a server holding one
-> half is cryptographically identical to wrapping under the sheet alone, with
-> extra liability. It also *repaired* the common case: `splitRecovery` minted
-> S_guardian at setup but it lived only in the owner's own keystore until a
-> guardian accepted, so a guardian-less vault could not be recovered at all.
+> **Amended 2026-09-19, deliberately: the guardian is gone.** Release was
+> `K_h = S_server_h XOR S_guardian_h`, a second human holding half of every
+> heir's key. It cost an invitation flow, a whole web app for key ceremonies,
+> and a claim state, and never worked end to end. It is replaced by **escrow**:
+> K_h is locked to a key-vault public key and unlocked by Wassiya only after a
+> verified death and a verified heir. The trade is stated in the promise below
+> and must not be hidden: Wassiya can open what is routed to heirs, at release.
+> Rejected on the way: the owner's sheet opening the vault for heirs (no
+> routing, nothing waits for death) and a server-held K_h without a key vault
+> (a database leak would open every box).
+>
+> **The promise:** ما دمت حيّاً، لا أحد يفتح خزنتك — ولا نحن. وبعد رحيلك، نسلّم
+> ما اخترته فقط، لمن سمّيته فقط، بعد التحقق من هويته ومن الوفاة. "Zero-knowledge"
+> describes the **vault**, never delivery.
 
 - MK = 256-bit random master key, generated on the owner's device, never leaves it unencrypted. The server stores only ciphertext.
 - Daily unlock: each enrolled device stores MK wrapped by a hardware-backed key gated by biometrics (client-side; not in this backend).
 - Recovery (no enrolled device): MK also wrapped by **K_rec = S_paper**. S_paper lives only on the printed sheet (grouped Base32 + checksum). The wrapper is sealed under an AAD of `wassiya/recovery/v2 | userId | paperVersion`, and `paperVersion` is stored beside it — unwrapping recomputes the AAD from the **stored** version, wrapping uses the **new** one, and `keyring.save` refuses a version that does not follow, so the pair can never tear.
-- **The sheet is a bearer token.** Whoever holds it can recover the vault, and with no guardian in the loop there is no second human who notices. Four things contain that and none is optional: the AAD above (a stolen wrapper is not portable to another account or an older sheet); `markPaperUsed` writes a notification *and* an email to the owner; the sheet must be reprinted after use; the recovered device appears in `devices`. **The user id is deliberately not printed on the sheet** — without it the AAD cannot be built, so a photograph alone is not enough. Do not print it.
+- **The sheet is a bearer token.** Whoever holds it can recover the vault, and there is no second human who notices. Four things contain that and none is optional: the AAD above (a stolen wrapper is not portable to another account or an older sheet); `markPaperUsed` writes a notification *and* an email to the owner; the sheet must be reprinted after use; the recovered device appears in `devices`. **The user id is deliberately not printed on the sheet** — without it the AAD cannot be built, so a photograph alone is not enough. Do not print it.
 - **`keyring.wrapperVersion` says which construction built a wrapper; absent means the pre-AAD v1, which this code cannot open.** It is not inferable from `paperVersion` (a v1 row can sit at paper version 3). `setup-flow` routes such a row to `recoveryKit` **ahead of** the `paperPrintedAt` check, because re-wrapping needs MK and a device that still holds it is the only window in which the sheet is fixable. Without that, an owner who had already printed would be routed to `done` and would discover the break on the one day they cannot recover from. Bump `RECOVERY_WRAPPER_VERSION` in `@workspace/crypto/recovery` and its two mirrors (`convex/keyring.ts`, `lib/setup-flow.ts`) together.
-- **Reprint ordering is load-bearing: mint → display → confirm → save.** Nothing invalidates the old sheet until the new wrapper is written. Rotating as a side effect of recovery turns a theft mitigation into a total-loss bug — the wrapper would stand under a code printed nowhere, with no guardian to fall back on.
+- **Reprint ordering is load-bearing: mint → display → confirm → save.** Nothing invalidates the old sheet until the new wrapper is written. Rotating as a side effect of recovery turns a theft mitigation into a total-loss bug — the wrapper would stand under a code printed nowhere, with nothing to fall back on.
 - Per-asset: random DEK (XChaCha20-Poly1305) wrapped by MK; content + thumbnails encrypted client-side before upload.
-- Heir release: heirs NEVER receive MK. On every routing change the owner's device rebuilds per-heir bundles: Enc(K_h, routed DEKs + message keys), K_h = S_server_h XOR S_guardian_h. S_server_h is withheld until a claim reaches "released" (identity-verified heir + certificate name match + guardian confirmation + veto window elapsed).
-- Rotation: a new paper sheet ⇒ regenerate S_paper, bump `paperVersion`, re-wrap. A new guardian ⇒ nothing to re-wrap for recovery (they hold no share of K_rec); re-seal each heir's S_guardian_h instead.
-- **Guardians may be an heir or an outsider, and they are a set, not a singleton.** S_guardian_h is the same 32 bytes sealed *n* times, so any one of them can hand over — which also fixes the unreachable-guardian problem. Safe because the claim ceremony gates it; the same one-of-*n* on recovery would have been an *n*-fold weakening with nothing in front of it.
-- Rule for all code: no plaintext key material in Convex functions, logs, or errors. OTP/Clerk auth proves identity only — it never touches keys.
+- Rotation: a new paper sheet ⇒ regenerate S_paper, bump `paperVersion`, re-wrap.
+
+### Escrowed release
+- **Heirs NEVER receive MK.** Whenever routing changes, the owner's device rebuilds that heir's bundle: a fresh random K_h, `Enc(K_h, routed DEKs + message keys)`. Only routed items are ever escrowed; everything else dies with the owner.
+- **K_h is locked on the device** with RSA-OAEP-SHA256 to the escrow public key, over a payload that embeds `ownerId` and `heirId`. The server stores only the locked form (`releaseBundles.lockedKey`) and never sees K_h at write time.
+- **The escrow public key is pinned in the mobile app** (key + fingerprint per environment, `lib/escrow-key.ts`) and is never served by the backend. A served key would let a compromised server substitute its own and receive every K_h.
+- **One unlock path.** `lockedKey` is read by exactly one gated release action, which re-asserts every precondition itself (claim `released`, delivery `ready`, caller is the bound heir, caller Didit-verified, not expired), unlocks, checks the embedded ids, and returns K_h **sealed to a one-time X25519 key generated in the heir's browser**. Nothing else reads, returns, logs or spreads `lockedKey` or K_h; `pnpm --filter @workspace/backend verify` enforces it.
+- **Key vault:** production unlocks through Google Cloud KMS (HSM, `me-central2`). Development uses a software key in the dev deployment's env. **The unlock refuses the dev backend when `WASSIYA_ENV=production`** — a development shortcut must never silently ship.
+- **Release gates, in order:** death certificate + staff name match against the owner's verified legal name → veto window (owner can veto by fingerprint) → claim `released` → per-heir delivery → heir Didit verification matched to the heir record → unlock.
+- **Heir identity match:** when the owner registered an ID number, the heir's verified document must match it (compared as keyed hashes); otherwise staff compare verified name and birth date to the heir record. Never release on name alone without a staff decision.
+- **ID numbers are stored only as `HMAC(IDENTITY_HASH_SECRET, country|number)`** — for heirs and for verified users alike. Never the number, never in logs, never shown to staff.
+- **Delivery window: one year from release.** Then the locked key and bundle are destroyed and nobody, Wassiya included, can open that delivery again.
+- Rule for all code: no plaintext key material in Convex functions (outside the one unlock action's memory), logs, or errors. OTP/Clerk auth proves identity only — it never touches keys.
 
 ## Actors and apps (LOCKED)
 - **Owner → mobile only.** MK, biometrics, the veto and the check-in need a hardware keystore and a fingerprint. Never move any of them to a browser.
-- **Guardian → web only. Heir → web only.** Never add a guardian or heir screen to `apps/mobile`; mobile is the owner's app. The guardian screens that once lived there (`guardian/accept`, `guardian/claim`, `recovery/approve`) were deleted, not moved — accepting on mobile would mint the guardian's X25519 secret into a keystore the web app can never reach.
-- **The guardian authors the death claim** and supplies the certificate. That is the resolution to "every heir is silent": heirs do not know the vault exists, so they cannot plausibly be the ones who file.
-  - **Not yet implemented, and not to be half-implemented.** Today `claims.submit` + `attachCertificate` are the *claimant's*, and `release.releasedBundleForHeir` asserts `claimantUserId === caller`. Make the guardian the filer without first separating a claim's **author** from its **recipient** and the heir can no longer open their own box. The inversion belongs with the web rework.
-  - **A self-signing check is NOT the guard.** Refusing a confirmation when the confirmer is the claimant would block every claim once the guardian *is* the claimant. What holds the heir-guardian case is the certificate, the staff name-match, the veto window, and the heir's own Didit verification. Do not add one.
-- **A guardian accepts on the web, at `/guardian/accept`, and only there.** The invited person mints their own X25519 sheet in their own browser — a key minted anywhere the owner can reach is a key the owner holds, which is the one thing the second party to a 2-of-2 may never be. `use-protection-score` still marks an outstanding invitation `blocked` so it is never the one amber row: the step is real but it is not the owner's to take, and a score that accuses an owner of somebody else's step is the failure mode to avoid. (This previously read "until the web rework ships, no guardian can accept an invitation." It has shipped; the `blocked` treatment stands on the reason above instead.)
+- **Heir → web only. Death reporter → web only.** Never add an heir screen to `apps/mobile`; mobile is the owner's app.
+- **A death report (`claims`) is about the owner; a delivery (`deliveries`) is about one heir.** Anyone may file a report and attach the certificate. The filer receives nothing by filing. When a report reaches `released`, one delivery is created per heir with a bundle, and **Wassiya contacts each heir** on the owner-registered phone with a link. Never re-merge the two: a report's author is not its recipient.
 
 ## Product rules
 - Routing, not shares: assets go to recipients whole; no inheritance-share math anywhere (الأنصبة يحدّدها القانون، لا التطبيق).
-- **Every heir is silent** — they learn nothing until release. There is no notified/invited mode, no invitation and no notification: `mode` and `inviteStatus` are one-member unions in the schema, `heirs.add` does not take a mode, and ٥.٢ states the consequence instead of offering a choice. (This replaces an earlier silent-or-notified rule. Nothing ever sent an invite, so a "notified" heir sat at `pending` forever.) Heir preview = exactly what that heir would receive.
+- **Every heir is silent** — they learn nothing until release; the first thing an heir ever hears is Wassiya's outreach after the veto window. There is no notified/invited mode, no invitation and no notification: `mode` and `inviteStatus` are one-member unions in the schema, `heirs.add` does not take a mode, and ٥.٢ states the consequence instead of offering a choice. (This replaces an earlier silent-or-notified rule. Nothing ever sent an invite, so a "notified" heir sat at `pending` forever.) Heir preview = exactly what that heir would receive.
 - Dead man's switch: cadence + grace + escalation (day 0/7/14/30) + veto window; owner veto locks the claimant out 90 days. Life check-in confirmation is ALWAYS biometric-gated and exists in exactly one place — **Home's `CheckInHero`**, via the single gate in `hooks/use-confirm-alive.ts` (`disableDeviceFallback: true`; the mutation runs only after `auth.success`). The affordance moved there from the check-in prompt at the owner's request; it was not duplicated, and `screens/protection/checkin` is now status + cadence settings only. No *second* confirm affordance may ever be added — rows, notifications and widgets report and navigate only. The protected property is that a tap alone can never say "still alive": an unlocked phone in the wrong hands must not be able to suppress delivery forever. It is the fingerprint that provides that, not the route.
 - Subscription lapse: vault stays readable and heir delivery keeps working; only adding assets is blocked.
 - Vault lock policy: the default is **`LOCK_WHILE_OPEN`** (`stores/preferences.ts`) — no session cap, and backgrounding does not lock. The session ends with the process, which is automatic (MK is process memory, `useVault` has no `persist`). This is the owner's explicit choice, made with the trade stated on ٩.٢: anyone holding the unlocked phone can reopen the app and read the vault. **Do not "fix" it back to a timeout.** Choosing a duration in ٩.٢ restores the cap *and* the background lock together.
 - A masked field must never carry `keyboardType: "visible-password"`. On Android it and `secureTextEntry` set the same input-type variation bits, the keyboard wins, and the value renders in the clear while every prop claims it is hidden. Use `MASKED_SECRET_INPUT_PROPS` for masked fields, `SECRET_INPUT_PROPS` for secrets that are visible by design (seed phrase, 2FA note, recovery codes).
 - Audit log is append-only. No update or delete path may exist.
-- Identity verification (Didit) is mandatory and blocking for owners at onboarding, and for heirs at claim time; the death certificate name must match the owner's verified legal name.
+- Identity verification (Didit) is mandatory and blocking for owners at onboarding, and for heirs before any delivery opens; the death certificate name must match the owner's verified legal name.
+- An heir's ID number is optional at registration but strongly urged; without it, delivery needs a staff identity decision.
 <!-- END:wassiya-product -->

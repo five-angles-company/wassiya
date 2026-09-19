@@ -38,13 +38,14 @@ pnpm --filter @workspace/crypto test
    HEIR RELEASE — heirs never see MK, only the DEKs routed to them ───────┘
    ┌──────────────────────────────────────────────────────────────────────────┐
    │  bundleₕ = Enc(K_h, { routed DEKs, message keys })                       │
-   │  K_h     = S_server_h ⊕ S_guardian_h                                     │
+   │  K_h     = fresh random bytes per rebuild                                │
    │                                                                          │
-   │  S_server_h   held by the backend, released ONLY when a claim reaches     │
-   │               "released" (verified heir + certificate name match +        │
-   │               guardian confirmation + veto window elapsed)                │
-   │  S_guardian_h sealed to the guardian's X25519 pubkey. This is the ONLY    │
-   │               place a guardian holds key material — recovery has none.    │
+   │  lockedₕ = RSA-OAEP-SHA256(escrow public key, { ownerId, heirId, K_h })  │
+   │            locked on the owner's device with a key pinned in the app;    │
+   │            the private half lives in a key vault (Cloud KMS in prod)     │
+   │  Unlocked ONLY by the release action, after certificate + staff match +  │
+   │            veto window + the heir's own Didit match, then sealed to a    │
+   │            one-time X25519 key in the heir's browser (`seal.ts`).        │
    │                                                                          │
    │  Rebuilt by the owner's device on every routing change.                   │
    └──────────────────────────────────────────────────────────────────────────┘
@@ -60,28 +61,23 @@ validates mod-97 before saving a bank account.
 
 ## Which side runs what
 
-| Function                                                   | Owner's device  | Guardian's device |  Heir's client  | Convex backend |
-| ---------------------------------------------------------- | :-------------: | :---------------: | :-------------: | :------------: |
-| `generateMk`, `generateDek`                                |       ✅        |         —         |        —        |    ❌ never    |
-| `wrap` / `unwrap`, `seal` / `open`                         |       ✅        |        ✅         |       ✅        |    ❌ never    |
-| `splitRecovery`, `rotatePaperShare`, `rotateGuardianShare` |       ✅        |         —         |        —        |    ❌ never    |
-| `recoverMk`                                                | ✅ (new device) |         —         |        —        |    ❌ never    |
-| `encodePaperCode`                                          |   ✅ (print)    |         —         |        —        |    ❌ never    |
-| `decodePaperCode`                                          |  ✅ (recovery)  |         —         |        —        |    ❌ never    |
-| `generateGuardianKeypair`, `guardianPublicKey`             |        —        |  ✅ (at accept)   |        —        |       —        |
-| `sealToGuardian`                                           |       ✅        |         —         |        —        |    ❌ never    |
-| `openFromGuardian`                                         |        —        |        ✅         |        —        |    ❌ never    |
-| `makeHeirShares`, `heirKey`                                |       ✅        |         —         | ✅ (at release) |    ❌ never    |
-| `buildReleaseBundle`                                       |       ✅        |         —         |        —        |    ❌ never    |
-| `openReleaseBundle`                                        |        —        |         —         |       ✅        |    ❌ never    |
-| `encryptAsset` / `encryptChunk`                            |       ✅        |         —         |        —        |    ❌ never    |
-| `decryptAsset` / `decryptChunk`                            |       ✅        |         —         |       ✅        |    ❌ never    |
+| Function                                                   | Owner's device  |  Heir's client  | Convex backend        |
+| ---------------------------------------------------------- | :-------------: | :-------------: | :-------------------: |
+| `generateMk`, `generateDek`                                |       ✅        |        —        |       ❌ never        |
+| `wrap` / `unwrap`, `seal` / `open`                         |       ✅        |       ✅        |       ❌ never        |
+| `splitRecovery`, `rotatePaperShare`                        |       ✅        |        —        |       ❌ never        |
+| `recoverMk`                                                | ✅ (new device) |        —        |       ❌ never        |
+| `encodePaperCode` / `decodePaperCode`                      |       ✅        |        —        |       ❌ never        |
+| `generateHeirKey`, `buildReleaseBundle`, `lockHeirKey`     |       ✅        |        —        |       ❌ never        |
+| `parseUnlockedHeirKey`, `sealKeyTo`                        |        —        |        —        | ✅ `escrow.ts` only  |
+| `generateSealKeypair`, `openSealedKey`, `openReleaseBundle` |        —        | ✅ (at release) |       ❌ never        |
+| `encryptAsset` / `encryptChunk`                            |       ✅        |        —        |       ❌ never        |
+| `decryptAsset` / `decryptChunk`                            |       ✅        |       ✅        |       ❌ never        |
 
-What the backend _does_ touch is only ever ciphertext: `mkWrappedByRecovery`,
-`guardianShareSealed`, `dekWrappedByMk`, the release bundle blob, and — as the
-single exception with a real secret in it — `serverShare`, which is one half of
-`K_h` and useless without the guardian's half. See
-`packages/backend/convex/release.ts` for the one gated read path.
+What the backend _does_ touch is ciphertext — `mkWrappedByRecovery`,
+`dekWrappedByMk`, the release bundle blob — and `lockedKey`, which it cannot
+read without the key vault. The one place K_h exists server-side is the memory
+of `convex/escrow.ts`'s release action; see AGENTS.md "Escrowed release".
 
 ## Primitives
 
@@ -89,14 +85,15 @@ single exception with a real secret in it — `serverShare`, which is one half o
 | ----------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AEAD              | XChaCha20-Poly1305 (`@noble/ciphers`) | 24-byte nonce, so random nonces need no counter state that must survive an app restart                                                                                    |
 | Share combination | XOR                                   | a 2-of-2 split with one uniformly random operand is information-theoretically perfect and has no failure mode to get subtly wrong                                         |
-| Key agreement     | X25519 sealed box (`@noble/curves`)   | the owner has only the guardian's public key; the ephemeral secret is discarded, so even the sealer cannot reopen it                                                      |
+| Key agreement     | X25519 sealed box (`@noble/curves`)   | hands K_h to a one-time browser key; the ephemeral secret is discarded, so even the sealer cannot reopen it                                                              |
+| Escrow lock       | RSA-OAEP-SHA256, ≥ 3072-bit (BigInt)  | the parameters Cloud KMS unlocks; encryption-only, so no private-key arithmetic lives on the device                                                                       |
 | KDF               | HKDF-SHA-256 (`@noble/hashes`)        | turns the raw ECDH point into a uniform key, and derives per-chunk nonces                                                                                                 |
 | Paper checksum    | CRC-16/CCITT-FALSE                    | detects **all** burst errors ≤ 16 bits; a mistyped Base32 character is a ≤ 13-bit burst, so single-character typos are caught with certainty rather than with probability |
 
 ## Format notes
 
 **Envelope** — every ciphertext this package produces is `nonce(24) ‖ ct‖tag(16)`.
-`sealToGuardian` prefixes an extra `ephPub(32)`.
+`sealKeyTo` prefixes an extra `ephPub(32)`.
 
 **Paper code** — `WSY<version>-XXXX-…`, 14 groups of 4. The payload is
 `version(1) ‖ S_paper(32) ‖ CRC-16(2)` = 280 bits, which divides by 5 exactly,
@@ -149,8 +146,9 @@ Rotation is re-wrapping, never re-keying MK — the assets stay readable.
   moment the new wrapper lands — and not a moment before, which is why the
   caller must show the new code and get it acknowledged *first*. Saving on the
   way in turns a theft mitigation into a total-loss bug: the wrapper would then
-  stand under a code printed nowhere, with no guardian to fall back on.
-- New guardian → nothing to re-wrap for recovery; they hold no share of K_rec.
-  Re-seal each heir's `S_guardian_h` to the new guardian's key instead.
-- Routing change → `makeHeirShares()` + `buildReleaseBundle` for every affected
-  heir, then `release.saveBundles`. Old bundles and old shares stop matching.
+  stand under a code printed nowhere, with nothing to fall back on.
+- Routing change → `generateHeirKey()` + `buildReleaseBundle` + `lockHeirKey`
+  for every affected heir, then `release.saveBundles`. The old K_h opens
+  nothing newer.
+- New escrow key version → pin it in `apps/mobile/lib/escrow-key.ts` and set
+  `ESCROW_KEY_ID`; devices re-lock on their next rebuild.

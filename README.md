@@ -92,7 +92,11 @@ pnpm dev                      # turbo: web + admin + convex dev (+ native if sta
 | `*_CONVEX_URL` | — | ✅ (`NEXT_PUBLIC_`) | ✅ (`EXPO_PUBLIC_`) |
 | `NEXT_PUBLIC_CLERK_SIGN_{IN,UP}_URL` | — | ✅ `/sign-in`, `/sign-up` | — |
 | `RESEND_FROM`, `RESEND_TEST_MODE` | ✅ (email.ts) | — | — |
-| `APP_URL` | ✅ (email.ts) | — | — |
+| `APP_URL` | ✅ (email.ts, deliveries) | — | — |
+| `ESCROW_BACKEND`, `ESCROW_KEY_ID`, `ESCROW_DEV_PRIVATE_KEY`, `GCP_SERVICE_ACCOUNT`, `WASSIYA_ENV` | ✅ (escrow.ts) | — | — |
+| `IDENTITY_HASH_SECRET` | ✅ (identityHash) | — | — |
+| `OUTREACH_PROVIDER`, `TWILIO_*` | ✅ (outreach.ts) | — | — |
+| `EXPO_PUBLIC_WASSIYA_ENV` | — | — | ✅ (escrow-key.ts) |
 
 `APP_URL` is where `apps/web` lives (`http://localhost:3001` in dev). Outbound mail appends a link built from it; unset, the mail still sends without one. It is **not** `CONVEX_SITE_URL`, which is this deployment's own origin — using that would mail people a link to the backend. And `RESEND_TEST_MODE` keeps test mode **on** unless it is exactly `"false"`, so a deployment that has never set it delivers nothing.
 
