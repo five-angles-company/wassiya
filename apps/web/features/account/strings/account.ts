@@ -3,7 +3,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
 /**
  * The account screen.
  *
- * Short on purpose. There is almost nothing an heir or a guardian can change
+ * Short on purpose. There is almost nothing an heir or a reporter can change
  * here — the profile is synced from Clerk, the identity verdict comes from
  * Didit, and the vault is somewhere else entirely. What the screen is actually
  * for is answering *"what does this service know about me?"*, which on a
@@ -36,8 +36,8 @@ export const ACCOUNT = {
     en: "{n} attempts remaining",
   },
   identityWhy: {
-    ar: "نطلب التحقق مرة واحدة، عند تقديم بلاغ وفاة. لا نطلبه من الأوصياء.",
-    en: "We ask for verification once, when a death report is filed. We never ask guardians for it.",
+    ar: "نطلب التحقق عند تقديم بلاغ وفاة، ويتحقّق الوارث مرة أخرى قبل أن يُفتح ما تُرك له.",
+    en: "We ask for verification when a death report is filed, and an heir verifies again before what was left to them opens.",
   },
 
   // The line the page exists for.

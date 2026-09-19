@@ -13,40 +13,35 @@ import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { HOME } from "@/features/overview/strings/home"
 
-type HeirCase = {
+type ReportRow = {
   id: string
   subjectName: string | null
   status: string
   submittedAt: number
 }
 
-type GuardianDuty = {
-  claimId: string
-  duty: "confirm" | "handover"
+type DeliveryRow = {
+  deliveryId: string
+  status: "awaiting_heir" | "identity_pending" | "ready" | "rejected" | "expired"
   subjectName: string | null
-  heirLinked: boolean
+  expiresAt: number
 }
 
 /**
- * Everything in flight, in one list.
+ * Everything in flight, in one list: reports this person filed and deliveries
+ * waiting for them. One list rather than two sections — a person who is both
+ * has one set of things waiting, not two roles to sort themselves into.
  *
- * **One list, not two sections.** A person who is both an heir and a guardian
- * has one set of obligations, not two jobs — and asking them to sort themselves
- * into a role before they can see what needs them is the dashboard thinking this
- * rework exists to remove. A guardian duty and a released box sit next to each
- * other because on any given morning they are the same kind of thing: something
- * waiting.
- *
- * Only reached when there is more than one. With exactly one, `/` goes straight
- * into it — a list of one is a menu with a single item.
+ * Only reached when there is more than one. With exactly one, `/` goes
+ * straight into it.
  */
 export function CaseList({
   cases,
-  duties,
+  deliveries,
   name,
 }: {
-  cases: readonly HeirCase[]
-  duties: readonly GuardianDuty[]
+  cases: readonly ReportRow[]
+  deliveries: readonly DeliveryRow[]
   name: string | null
 }) {
   const locale = useLocale()
@@ -68,28 +63,25 @@ export function CaseList({
       </Prose>
 
       <Rows>
-        {duties.map((duty) => {
-          // A confirm with no heir linked cannot be actioned — `guardianConfirm`
-          // throws on it. It stays in the list rather than being filtered out: a
-          // guardian who was emailed and then finds nothing here has been told
-          // the app is broken.
-          const blocked = duty.duty === "confirm" && !duty.heirLinked
+        {deliveries.map((row) => {
+          const closed = row.status === "rejected" || row.status === "expired"
           return (
             <RowLink
-              key={`${duty.claimId}-${duty.duty}`}
-              href={`/guardian/${duty.claimId}`}
-              title={(duty.duty === "confirm"
-                ? labels.dutyConfirm
-                : labels.dutyHandover
-              ).replace("{name}", duty.subjectName ?? "—")}
-              status={
-                blocked
-                  ? labels.dutyBlockedBody
-                  : duty.duty === "confirm"
-                    ? labels.dutyConfirmBody
-                    : labels.dutyHandoverBody
+              key={row.deliveryId}
+              href={`/delivery/${row.deliveryId}`}
+              title={
+                row.subjectName === null
+                  ? labels.deliveryUnknown
+                  : labels.deliveryTitle.replace("{name}", row.subjectName)
               }
-              tone={blocked ? "quiet" : "attention"}
+              status={
+                closed
+                  ? labels.deliveryClosed
+                  : row.status === "ready"
+                    ? labels.deliveryReady
+                    : labels.deliveryChecking
+              }
+              tone={closed ? "quiet" : row.status === "ready" ? "settled" : "attention"}
             />
           )
         })}
@@ -114,7 +106,7 @@ export function CaseList({
 
       {/* Filing belongs to no report, so it has no step to live in. This is the
           screen where somebody looking at their own reports would reach for
-          "another one", and it is the primary home for the action. */}
+          "another one". */}
       <p>
         <Link
           href="/file"

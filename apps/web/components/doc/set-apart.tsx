@@ -18,7 +18,7 @@ import type { ElementType, ReactNode } from "react"
  * ## ⚠️ Why it exists as a component at all
  *
  * `border-border border-y py-7` was written out by hand in four places — twice
- * in the file-a-report form, once on the guardian accept page, once in the
+ * in the file-a-report form, once on the delivery page, once in the
  * mechanism diagram — while `Ask` carried the same string as the only named
  * version of the idea. Four copies of a rule is four places for it to drift by a
  * pixel, and it already had: the headings above them were 19px where `Ask`'s is

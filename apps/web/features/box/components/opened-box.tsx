@@ -1,60 +1,55 @@
 "use client"
 
 import { api } from "@workspace/backend/api"
+import type { Id } from "@workspace/backend/dataModel"
+import { MESSAGE_KEY_ID } from "@workspace/crypto/message"
 import { useQuery } from "convex/react"
 
 import { Paper } from "@/components/doc/paper"
 import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
-import { fmtNumber } from "@/lib/format"
+import { fmtDate, fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { AssetRow, type BoxItem } from "@/features/box/components/asset-row"
+import { HeirMessage } from "@/features/box/components/heir-message"
 import { labelFor, type OpenedBundle } from "@/features/box/lib/open-box"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
 
 /**
- * After the halves meet: what was actually left to this heir.
+ * What was actually left to this heir.
  *
- * ## Why this query is separate from the bundle
- *
- * The bundle carries keys and nothing else — `assetId → DEK`. Until
- * `release.assetsForHeir` existed there was no list to decrypt them against, so
- * an opened box could report a key count and not one thing anyone could
- * receive. This joins the two: the server's list of ciphertext, the heir's map
- * of keys, and `openLabel` in between.
- *
- * `assetsForHeir` is a query, not a mutation, precisely so this can re-run
- * freely — it hands over no key material, and the ciphertext it names is
- * useless without the DEK the reader is already holding in this tab.
- *
- * ## Order
+ * The bundle carries keys and nothing else — `assetId → DEK` — so this joins
+ * it to `release.assetsForDelivery`: the server's list of ciphertext, the
+ * heir's map of keys, and `openLabel` in between. That query hands over no key
+ * material, so it may re-run freely.
  *
  * Rows the bundle has a key for come first. A row it cannot name is not an
- * error the reader can act on, and putting it at the bottom keeps it from being
- * the first thing they see in a box they have waited a month to open.
+ * error the reader can act on, and should not be the first thing they see.
  */
 export function OpenedBox({
-  claimId,
+  deliveryId,
   bundle,
+  expiresAt,
 }: {
-  claimId: string
+  deliveryId: Id<"deliveries">
   bundle: OpenedBundle
+  expiresAt: number
 }) {
   const locale = useLocale()
   const labels = t(HEIR_BOX, locale)
-  const contents = useQuery(api.release.assetsForHeir, { claimId })
+  const contents = useQuery(api.release.assetsForDelivery, { deliveryId })
 
   if (contents === undefined) {
     return (
       <div className="border-border h-40 animate-pulse border-y" aria-hidden />
     )
   }
-  // The five preconditions are re-asserted inside the query, so `null` here
-  // means the claim stopped qualifying between opening the bundle and asking
-  // for the list — a vetoed claim, or a session that changed hands.
+  // The preconditions are re-asserted inside the query, so `null` here means
+  // the delivery stopped qualifying between opening the bundle and asking for
+  // the list — it expired, or the session changed hands.
   if (contents === null) {
     return (
-      <DocSection title={labels.notReleased}>
+      <DocSection title={labels.gateTitle}>
         <p className="text-muted-foreground text-[14px] leading-[1.7]">
           {labels.failed}
         </p>
@@ -90,20 +85,19 @@ export function OpenedBox({
           {labels.itemCount.replace("{n}", fmtNumber(items.length, locale))}
         </p>
         <p className="text-muted-foreground mt-5 text-[13px] leading-[1.65]">
-          {labels.expiry}
+          {labels.closesOn.replace("{date}", fmtDate(new Date(expiresAt), locale))}
         </p>
       </DocSection>
 
       {/* A personal message is not an asset — it has its own key map and no
           `assetRecipients` row — so it gets its own card rather than a row that
           would need every column to be optional. */}
-      {contents.messageKind !== null &&
-        Object.keys(bundle.messageKeys).length > 0 && (
-          <DocSection title={labels.messageTitle}>
-            <p className="text-muted-foreground text-[14px] leading-[1.7]">
-              {labels.messageBody}
-            </p>
-          </DocSection>
+      {contents.messageUrl !== null &&
+        bundle.messageKeys[MESSAGE_KEY_ID] !== undefined && (
+          <HeirMessage
+            url={contents.messageUrl}
+            messageKey={bundle.messageKeys[MESSAGE_KEY_ID]}
+          />
         )}
 
       <Paper>

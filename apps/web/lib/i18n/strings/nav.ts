@@ -21,7 +21,6 @@ export const NAV = {
    * missing. Naming the role makes the row self-explanatory to the reader it is
    * not for.
    */
-  guardianKey: { ar: "مفتاح الوصاية", en: "Guardian key" },
 
   // "Manage account" and "Account" sat next to each other in the old menu and
   // read as the same thing. This one is Clerk's modal — email, password, the

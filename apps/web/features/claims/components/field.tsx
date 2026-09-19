@@ -19,7 +19,7 @@ export type FieldProps = {
  *
  * The input itself is `TextInput` — this component owns only the three-part
  * arrangement around it. It used to own the input too, which is how the claim
- * form's fields and the four code inputs on the guardian and box screens ended
+ * form's fields and the four code inputs on the box screens ended
  * up as five different controls; a reader meets several of them minutes apart.
  *
  * `dir="ltr"` maps to the input's `mono` treatment, because those two always

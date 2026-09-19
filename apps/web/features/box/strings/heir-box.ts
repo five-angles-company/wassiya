@@ -3,14 +3,10 @@ import type { Dictionary } from "@/lib/i18n/locale"
 /**
  * ٧.٦ — the heir's box, and the gate in front of it.
  *
- * The whole screen exists to make one fact feel like custody rather than an
- * obstacle: **the guardian holding half the key is the reason nobody — this
- * company included — can open the box alone.** The closing line is the
- * design in three words: *"اثنان لا واحد"*, two and never one.
- *
- * After the gate the copy stops explaining and starts delivering. Everything
- * below `openTitle` is about *things* — named, sized, downloadable — because
- * the moment the halves meet is the moment the product stops being a promise.
+ * The gate asks for nothing: identity was proved before the delivery became
+ * ready, so opening is one action. What it states instead is the one fact a
+ * reader should know before the contents appear — they decrypt on this device
+ * and nowhere else, and the delivery closes on a date.
  */
 export const HEIR_BOX = {
   // ---- the index ---------------------------------------------------------
@@ -18,66 +14,26 @@ export const HEIR_BOX = {
 
   // ---- the gate ----------------------------------------------------------
   gateTitle: {
-    ar: "يحتاج فتح الصندوق نصفين",
-    en: "Opening the box takes two halves",
+    ar: "ما تركه لك جاهز",
+    en: "What was left to you is ready",
   },
   gateBody: {
-    ar: "لا نستطيع فتح صندوقك وحدنا — وهذا مقصود. نحفظ نصف المفتاح ولم نُطلقه إلا الآن بعد اكتمال البلاغ، والنصف الآخر عند الوصي.",
-    en: "We can't open your box alone — by design. We hold one half of the key and only released it now that the report is complete; the other half is with the guardian.",
+    ar: "تحقّقنا من هويتك ومن الوفاة. عند الفتح يُفكّ التشفير على جهازك هذا فقط — لا يمرّ المحتوى بخدمتنا مفتوحاً في أي لحظة.",
+    en: "We have verified your identity and the death. When you open it, it decrypts on this device only — the contents never pass through our service in the clear.",
   },
-  shareLabel: {
-    ar: "أدخل نصف المفتاح من الوصي",
-    en: "Enter the key half from the guardian",
-  },
-  sharePlaceholder: { ar: "····", en: "····" },
-  unlock: { ar: "افتح الصندوق", en: "Open the box" },
+  unlock: { ar: "افتح", en: "Open" },
   unlocking: { ar: "جارٍ الفتح…", en: "Opening…" },
   onDevice: {
     ar: "يُفتح على جهازك — لا يمرّ بخدمتنا",
     en: "Decrypted on your device, never on our service",
   },
-
-  badShare: {
-    ar: "لم يفتح هذا النصف الصندوق. تأكّد أنك نسخته كاملاً كما أعطاك إياه الوصي.",
-    en: "That half didn't open the box. Check you copied all of it, exactly as the guardian gave it to you.",
-  },
   failed: {
-    ar: "تعذّر فتح الصندوق الآن. حاول مرة أخرى بعد قليل.",
-    en: "We couldn't open the box just now. Try again shortly.",
+    ar: "تعذّر الفتح الآن. حاول مرة أخرى بعد قليل.",
+    en: "We couldn't open it just now. Try again shortly.",
   },
-  notReleased: {
-    ar: "لم يُسلَّم هذا الصندوق بعد.",
-    en: "This box hasn't been released yet.",
-  },
-
-  askTitle: { ar: "لا تعرف كيف تطلبه؟", en: "Not sure how to ask for it?" },
-  askBody: {
-    ar: "أبلغنا الوصي بأن صندوقك جاهز، وطلبنا منه تسليم نصفه. اتصل به أو أرسل له رسالة — النصف مكتوب على ورقة معه، ويستطيع نسخه من صفحته.",
-    en: "We've told the guardian your box is ready and asked them to hand over their half. Call or message them — the half is on a printed sheet they keep, and they can copy it from their own page.",
-  },
-
-  // The mechanism, drawn. This is the one place in the product where exposing
-  // how the cryptography works builds trust instead of confusing — because the
-  // reader is standing in front of the exact gate it explains.
-  howTitle: { ar: "كيف يُفتح صندوقك", en: "How your box opens" },
-  ourHalf: { ar: "نصفنا", en: "Our half" },
-  ourHalfMeta: {
-    ar: "أُطلق بعد اكتمال البلاغ",
-    en: "released once the report completed",
-  },
-  guardianHalf: { ar: "نصف الوصي", en: "Guardian's half" },
-  guardianHalfMeta: { ar: "على ورقة عنده", en: "on a sheet they keep" },
-  opensHere: {
-    ar: "يُفتح صندوقك على جهازك",
-    en: "Your box opens on your device",
-  },
-  opensHereMeta: {
-    ar: "لا يمرّ محتواه بخدمتنا في أي لحظة",
-    en: "Its contents never pass through our service",
-  },
-  twoNotOne: {
-    ar: "لهذا لا نستطيع فتح صندوقك بأمر منّا وحدنا، ولا يستطيع الوصي فتحه وحده. اثنان لا واحد.",
-    en: "This is why we cannot open your box on our own say-so, and the guardian cannot open it on theirs. Two, never one.",
+  closesOn: {
+    ar: "يبقى متاحاً حتى {date}، ثم يُتلف مفتاحه نهائياً ولا يستطيع أحد فتحه — ولا نحن. نزّل ما تحتاجه قبل ذلك.",
+    en: "It stays available until {date}; then its key is destroyed for good and nobody can open it, us included. Download what you need before then.",
   },
 
   // ---- opened ------------------------------------------------------------
@@ -87,10 +43,6 @@ export const HEIR_BOX = {
     en: "Decrypted on your device. This is your copy alone — you can't see what was left to anyone else, and no one else can see what was left to you.",
   },
   itemCount: { ar: "{n} عنصراً", en: "{n} items" },
-  expiry: {
-    ar: "يبقى هذا الصندوق متاحاً ٩٠ يوماً من تاريخ التسليم.",
-    en: "This box stays available for 90 days from release.",
-  },
 
   // A routed asset the bundle carries no key for. Not an error the reader can
   // act on, and not something to hide either: the row stays, named by its type,
@@ -129,8 +81,8 @@ export const HEIR_BOX = {
   typeNote: { ar: "ملاحظة", en: "Note" },
 
   messageTitle: { ar: "رسالة تركها لك", en: "A message left for you" },
-  messageBody: {
-    ar: "سجّل صاحب الخزنة رسالة شخصية موجّهة إليك. مفتاحها في هذه الحزمة.",
-    en: "The vault's owner recorded a personal message addressed to you. Its key is in this bundle.",
+  messageFailed: {
+    ar: "تعذّر فتح الرسالة. حاول مرة أخرى بعد قليل.",
+    en: "We couldn't open the message. Try again shortly.",
   },
 } as const satisfies Dictionary

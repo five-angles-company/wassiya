@@ -318,9 +318,9 @@
      as discoloured patches, which is what the shadows were for; --border is 26%
      now and defines the edge on its own.
 
-     ⚠️ **Web only, deliberately.** `apps/mobile/global.css` still has #ebddc5.
-     Mobile leans on cards far more heavily than this app does, so moving it is
-     that app's decision to make, not a side effect of this one. */
+     ⚠️ **Shared with mobile.** `apps/mobile/global.css` carries the same value,
+     and the same 26% hairline — the two apps briefly diverged here and the
+     cards stopped looking like one product. Change both or neither. */
   --card: #fdfaf4;
   --card-foreground: #201e1d;
   --popover: #fdfaf4;
@@ -341,23 +341,10 @@
   --ring: #ea5b48;
 
   /* ---------------------------------------------------------------------
-     Wayfinding — which of the two worlds you are standing in.
-
-     An heir and a guardian share one deployment, one bar and one account, and
-     they are not the same reader: an heir is mid-bereavement in a ten-minute
-     flow, a guardian is doing admin they last thought about four years ago.
-     This is what lets the shell say which one it is currently serving.
-
-     It is deliberately **not** `--primary`. Terracotta means "this needs you"
-     and olive means "settled" everywhere in the product, on both apps, and that
-     must not change meaning depending on which section you are in — so asks,
-     CTAs and status keep reading from `--primary`/`--secondary`, and only
-     *chrome* reads from here: the bar's active rule, the phone menu's rule, a
-     section's count.
-
-     The default is terracotta, which is the heir's world and the neutral one.
-     `[data-surface="guardian"]` below is the only override — see
-     `apps/web/lib/surface.ts`, which decides which routes are which.
+     The chrome's accent — the bar's active rule, a section's count, an ask's
+     eyebrow. Deliberately **not** `--primary`: terracotta means "this needs
+     you" and olive means "settled" everywhere, so asks, CTAs and status keep
+     reading from `--primary`/`--secondary` and only chrome reads from here.
      --------------------------------------------------------------------- */
   --surface-accent: #ea5b48;
   --surface-accent-foreground: #fff6f0;
@@ -371,17 +358,6 @@
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-body-wassiya);
-}
-
-/* The guardian's world is olive, because olive already means settled and safe
-   here and a guardian is never being asked to act urgently — the invitation
-   copy makes the same argument in words. Nothing else needs to know: the tokens
-   above are read by the chrome, so the whole shell follows one attribute. */
-.wassiya [data-surface="guardian"] {
-  --surface-accent: #7a8a5e;
-  --surface-accent-foreground: #f0fae1;
-  --surface-accent-soft: #e1eecc;
-  --surface-accent-ink: #56633f;
 }
 
 .wassiya h1,
@@ -648,14 +624,6 @@
   /* Up the ramp, not down: the 700s that read on sand vanish on near-black. */
   --tone-settled: #ccdbb2;
   --tone-attention: #f7bbb0;
-}
-
-.wassiya.dark [data-surface="guardian"],
-.dark .wassiya [data-surface="guardian"] {
-  --surface-accent: #aebf92;
-  --surface-accent-foreground: #272e1b;
-  --surface-accent-soft: #3d472b;
-  --surface-accent-ink: #ccdbb2;
 }
 
 .wassiya-admin.dark,

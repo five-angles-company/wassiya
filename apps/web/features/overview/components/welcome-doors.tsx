@@ -51,17 +51,17 @@ export function WelcomeDoors({ name }: { name: string | null }) {
       </section>
 
       {/* The door that is really an instruction. Deliberately not a link: a
-          guardianship opens from the invitation's own token, so a button here
-          could only lead to a screen saying "we need your link". */}
+          delivery opens from the link we sent the heir, so a button here could
+          only lead to a screen saying "we need your link". */}
       <section className="border-border flex flex-col gap-3 border-t pt-7">
         <h2 className="font-heading text-[19px] leading-tight font-extrabold">
-          {labels.doorGuardianTitle}
+          {labels.doorHeirTitle}
         </h2>
         <Prose>
-          <p className="text-muted-foreground">{labels.doorGuardianBody}</p>
+          <p className="text-muted-foreground">{labels.doorHeirBody}</p>
         </Prose>
         <p className="text-tone-settled text-[14px] font-semibold">
-          {labels.doorGuardianMeta}
+          {labels.doorHeirMeta}
         </p>
       </section>
 

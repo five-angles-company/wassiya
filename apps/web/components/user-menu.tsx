@@ -102,18 +102,6 @@ export function UserMenu() {
           <Link href="/account">{nav.account}</Link>
         </DropdownMenuItem>
 
-        {/*
-          🚨 **Unconditional, and that is deliberate.** Asking the header for a
-          guardianship would mean a Convex subscription on every page in the app
-          to decide whether to draw one row — and this row is the only way a
-          guardian mid-duty can reach their key at all, so the cost of hiding it
-          wrongly is far higher than the cost of showing it to somebody who
-          guards nothing. `/guardian/key` answers them with an empty state.
-        */}
-        <DropdownMenuItem asChild className={`${row} border-border border-b`}>
-          <Link href="/guardian/key">{nav.guardianKey}</Link>
-        </DropdownMenuItem>
-
         <DropdownMenuItem
           className={`${row} border-border border-b`}
           onSelect={() => openUserProfile()}

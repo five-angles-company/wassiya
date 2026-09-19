@@ -30,7 +30,6 @@ const FEATURES = [
   "account",
   "box",
   "claims",
-  "guardian",
   "notifications",
   "overview",
 ]

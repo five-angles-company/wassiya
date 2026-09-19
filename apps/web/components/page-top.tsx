@@ -44,10 +44,6 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * this is an Arabic-first RTL product: the name beside the mark is localised
  * text, so an Arabic reader gets وصيّة and an English one Wassiya.
  *
- * It does **not** take the surface accent. Everything else on a guardian's
- * screen turns olive; a logo that changed colour with the page would be the one
- * thing on it that is not wayfinding.
- *
  * The **mark** is the only route to `/`. The **language switch** is a form POST
  * that must work with no JavaScript on every surface, including the signed-out
  * ones, so it cannot go inside the avatar menu — a signed-out reader has no

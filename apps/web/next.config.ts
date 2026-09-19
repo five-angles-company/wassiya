@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
    * is cached by browsers in a way that is painful to take back mid-rework.
    *
    * They matter more than usual here because the two links that reach this app
-   * arrive by **email** — a guardian's invitation and an heir's box — and mail
+   * arrive by **message** — a report's case page and an heir's delivery — and mail
    * sits in an inbox for months. A link sent today must still work after the
    * route under it moves.
    */
@@ -32,23 +32,21 @@ const nextConfig: NextConfig = {
       // find the same rows.
       { source: "/claims", destination: "/", permanent: false },
       { source: "/claims/:id", destination: "/case/:id", permanent: false },
-      // 🚨 **`/guardian/key` is a real route again, so there is no redirect here.**
-      // It was folded into the guardian standing page for a good reason —
-      // "somebody checking their sheet should not have to discharge a duty first
-      // to reach it" — and the fold did not deliver it: the page it folded into
-      // was itself reachable only from `case-router`, on the one row where a
-      // guardian has *nothing* waiting. So the key became unreachable in exactly
-      // the week it matters, which is the opposite of what the fold intended.
-      //
-      // The key is its own page now, reached from the account menu, which is what
-      // that comment was asking for. ⚠️ **A config redirect runs before routing**,
-      // so leaving this line in would have shadowed the new page silently — the
-      // route existed, typechecked and served a 307 to somewhere else.
+      // The box moved behind a delivery, and a reporter never opens one — the
+      // case page says what happened instead.
       {
         source: "/box/:claimId",
-        destination: "/case/:claimId/box",
+        destination: "/case/:claimId",
         permanent: false,
       },
+      {
+        source: "/case/:claimId/box",
+        destination: "/case/:claimId",
+        permanent: false,
+      },
+      // Guardians were removed; an old invitation or duty link lands at home.
+      { source: "/guardian", destination: "/", permanent: false },
+      { source: "/guardian/:path*", destination: "/", permanent: false },
     ]
   },
 }

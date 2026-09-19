@@ -7,9 +7,8 @@ export const COMMON = {
   themeDark: { ar: "التبديل إلى الوضع الداكن", en: "Switch to dark" },
   themeLight: { ar: "التبديل إلى الوضع الفاتح", en: "Switch to light" },
 
-  // The record's vocabulary, shared because the heir's report and the
-  // guardian's duty are the same ceremony read from two sides — and the one
-  // thing worse than a shared primitive is the same three words spelled twice.
+  // The record's vocabulary, shared by every ledger in the app — the one thing
+  // worse than a shared primitive is the same three words spelled twice.
   stepNow: { ar: "جارٍ", en: "In progress" },
   stepDone: { ar: "تم", en: "Done" },
   askEyebrow: { ar: "مطلوب منك الآن", en: "Asked of you now" },
@@ -69,7 +68,8 @@ export const COMMON = {
   // heading can never drift apart.
   statusSubmitted: { ar: "قيد المراجعة", en: "Under review" },
   statusAwaitingVeto: { ar: "مدة الاعتراض", en: "Objection period" },
-  statusGuardianReview: { ar: "بانتظار الوصي", en: "Awaiting the guardian" },
+  // A status no report enters any more; kept so older rows still render.
+  statusGuardianReview: { ar: "قيد المراجعة", en: "In review" },
   statusReleased: { ar: "جاهز", en: "Ready" },
   statusVetoed: { ar: "مُغلق", en: "Closed" },
   statusLocked: { ar: "موقوف", en: "Barred" },

@@ -6,7 +6,6 @@ import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 import { AuthGate } from "@/components/auth-gate"
 import { PageTop } from "@/components/page-top"
-import { SurfaceScope } from "@/components/surface-scope"
 import { UserMenu } from "@/components/user-menu"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
@@ -27,9 +26,9 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * load-bearing one.
  *
  * **The bounce carries the destination.** The two links that matter most arrive
- * by email — a guardian's `/guardian/accept?token=…` and an heir's box — and
+ * by message — an heir's delivery link and a report's case page — and
  * both are opened by someone not signed in, so a bare `/sign-in` would drop the
- * token. A Server Component cannot read its own URL, so the path comes from
+ * destination. A Server Component cannot read its own URL, so the path comes from
  * `x-pathname`, which `proxy.ts` sets for this and for the language switch.
  *
  * The document scrolls and the bar sticks. Pinning the shell to one viewport and
@@ -65,19 +64,14 @@ export default async function AppLayout({
           {nav.skipToContent}
         </a>
 
-{/* The mark and the page under it have to agree about which world the
-            reader is in, and it is rendered here — above the `(heir)` and
-            `(guardian)` groups — so it can never inherit their attribute. */}
-        <SurfaceScope>
-          <PageTop locale={locale} theme={theme} trailing={<UserMenu />} />
+        <PageTop locale={locale} theme={theme} trailing={<UserMenu />} />
 
-          <main
-            id="content"
-            className="mx-auto w-full max-w-[920px] px-4 pt-8 pb-20 md:px-6"
-          >
-            {children}
-          </main>
-        </SurfaceScope>
+        <main
+          id="content"
+          className="mx-auto w-full max-w-[920px] px-4 pt-8 pb-20 md:px-6"
+        >
+          {children}
+        </main>
 
         <Toaster position="bottom-center" richColors />
       </TooltipProvider>

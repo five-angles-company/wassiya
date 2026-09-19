@@ -9,10 +9,9 @@ import type { ReactNode } from "react"
  * and `Ask` stay on the bare ground: boxing the primary content while the prose
  * around it stays bare sends the eye to the attachment instead of the letter.
  *
- * One exception, and it proves the rule: the guardian invitation sets two
- * bounded lists side by side to be read *against* each other. A comparison of
- * two closed sets is nearer to data than to prose, and the card edge is what
- * tells the eye where one set ends — which is otherwise four hairlines' work.
+ * One exception: two bounded lists set side by side to be read *against* each
+ * other are nearer to data than to prose, and the card edge is what tells the
+ * eye where one set ends — which is otherwise four hairlines' work.
  *
  * A hairline and no shadow. The fill is `--card`, which sits *above* the ground
  * rather than below it, so this reads as paper laid on a desk.

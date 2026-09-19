@@ -15,7 +15,7 @@ import { AuthLoading, Authenticated, useQuery } from "convex/react"
  * of a flicker.
  *
  * Unlike the console's, there is **no role check**. Every signed-in person
- * belongs here — an heir, a guardian, or someone about to become one by opening
+ * belongs here — an heir, a reporter, or someone about to become one by opening
  * an invitation. What differs between them is which sections the sidebar
  * renders, not whether they may enter.
  *

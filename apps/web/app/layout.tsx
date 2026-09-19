@@ -26,7 +26,7 @@ const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
  *
  * They used to live one layer down, when the funnel was the only Arabic thing
  * here and the rest of the app was English. Both halves of that are now false:
- * the whole site follows the reader's locale, and the guardian screens are a
+ * the whole site follows the reader's locale, and the delivery screens are a
  * second Arabic-first surface. Inter has no Arabic glyphs at all, so without
  * these every Arabic string falls back to whatever the OS happens to have.
  */

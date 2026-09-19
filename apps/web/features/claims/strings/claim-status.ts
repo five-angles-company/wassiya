@@ -53,18 +53,15 @@ export const CLAIM_STATUS = {
     ar: "تنتهي {date}. توجد هذه المدة لسبب واحد: إن كان صاحب الخزنة على قيد الحياة، فمن حقه أن يعترض.",
     en: "Ends {date}. This period exists for one reason: if the account holder is alive, they have the right to object.",
   },
-  stepGuardian: { ar: "تأكيد الوصي", en: "Guardian confirmation" },
-  // The guardian is asked BEFORE the period, and their confirmation is what
-  // starts it — `guardianConfirm` sets `vetoDeadline` in the same mutation.
-  // This line used to say the opposite.
-  stepGuardianMeta: {
-    ar: "تأكيده هو ما يبدأ مدة الاعتراض — لا يحتاج منك شيئاً",
-    en: "Their confirmation is what starts the objection period — nothing needed from you",
+  stepReview: { ar: "مراجعة الشهادة", en: "Certificate review" },
+  stepReviewMeta: {
+    ar: "نطابق الاسم في الشهادة باسم صاحب الخزنة الموثّق — لا يحتاج منك شيئاً",
+    en: "We match the name on the certificate to the account holder's verified name — nothing needed from you",
   },
-  stepRelease: { ar: "تسليم صندوقك", en: "Your box is released" },
+  stepRelease: { ar: "التواصل مع الورثة", en: "Heirs contacted" },
   stepReleaseMeta: {
-    ar: "يُرسل إليك رابط الصندوق على بريدك",
-    en: "A link to your box is emailed to you",
+    ar: "نتواصل مباشرةً مع كل وارث سمّاه صاحب الخزنة",
+    en: "We contact each heir the account holder named, directly",
   },
 
   // Where things stand, as one line. Each is a sentence about the report, not a
@@ -74,20 +71,24 @@ export const CLAIM_STATUS = {
     en: "We need proof of who you are before we can go on.",
   },
   headCertificate: {
-    ar: "بقيت شهادة الوفاة، ثم ينتقل البلاغ إلى الوصي.",
-    en: "The death certificate is what's left, then the report goes to the guardian.",
+    ar: "بقيت شهادة الوفاة، ثم نراجع البلاغ.",
+    en: "The death certificate is what's left, then we review the report.",
   },
-  headGuardian: {
-    ar: "البلاغ عند الوصي للتأكيد.",
-    en: "The report is with the guardian for confirmation.",
+  headReview: {
+    ar: "نراجع شهادة الوفاة.",
+    en: "We are reviewing the death certificate.",
   },
   headVeto: {
-    ar: "أكّد الوصي الوفاة، ومدة الاعتراض تسري الآن.",
-    en: "The guardian confirmed the death, and the objection period is now running.",
+    ar: "اكتملت المراجعة، ومدة الاعتراض تسري الآن.",
+    en: "Review is complete, and the objection period is now running.",
   },
   headReleased: {
-    ar: "صندوقك جاهز.",
-    en: "Your box is ready.",
+    ar: "انتهت مدة الاعتراض، ونتواصل الآن مع الورثة.",
+    en: "The objection period has ended, and we are contacting the heirs.",
+  },
+  releasedBody: {
+    ar: "لا يستلم من يبلّغ شيئاً بمجرد البلاغ. كل وارث سمّاه صاحب الخزنة تصله رسالة منّا، ويُثبت هويته ليستلم ما تُرك له. إن كنت أحدهم، ستصلك رسالتك.",
+    en: "Filing a report does not receive anything. Each heir the account holder named gets a message from us and proves their identity to receive what was left to them. If you are one of them, your message will reach you.",
   },
   writeOn: { ar: "سنراسلك في {date}.", en: "We'll write to you on {date}." },
 
@@ -100,12 +101,11 @@ export const CLAIM_STATUS = {
 
   othersTitle: { ar: "هل يعرف الآخرون؟", en: "Do other heirs see this?" },
   othersBody: {
-    ar: "كل وارث يرى بلاغه وصندوقه فقط. لا نكشف أسماء الورثة الآخرين ولا ما استلموه.",
-    en: "Each heir sees only their own report and box. We never reveal the other heirs' names or what they received.",
+    ar: "كل وارث يستلم ما تُرك له وحده. لا نكشف أسماء الورثة الآخرين ولا ما استلموه.",
+    en: "Each heir receives only what was left to them. We never reveal the other heirs' names or what they received.",
   },
 
   // Terminal states.
-  openBox: { ar: "افتح صندوقك", en: "Open your box" },
 
   vetoedHeading: { ar: "أُغلق هذا البلاغ", en: "This report was closed" },
   vetoedBody: {

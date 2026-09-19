@@ -1,15 +1,16 @@
-import { concatBytes, hexToBytes } from "@workspace/crypto/bytes"
+import { concatBytes } from "@workspace/crypto/bytes"
 import { decryptAsset } from "@workspace/crypto/asset"
-import { heirKey, openReleaseBundle, type KeyMap } from "@workspace/crypto/heir"
+import { openReleaseBundle, type KeyMap } from "@workspace/crypto/heir"
 import { openLabel, type AssetLabel } from "@workspace/crypto/label"
+import { generateSealKeypair, openSealedKey } from "@workspace/crypto/seal"
 
 /**
  * The crypto half of the box, kept out of the components.
  *
- * Everything here runs in the browser. `@workspace/crypto` is platform-neutral
- * by design, so the bundle is fetched and opened client-side and the server
- * never sees K_h, either half of it, or any DEK it protects — which is the
- * entire point of having withheld one half.
+ * Everything here runs in the browser. K_h reaches this page only sealed to a
+ * one-time key generated here, so the response carrying it is useless to
+ * anyone who is not this tab — and K_h, the one-time secret and every DEK are
+ * zeroed as soon as they are no longer needed.
  *
  * ## `v.bytes()` arrives as an `ArrayBuffer`
  *
@@ -26,23 +27,36 @@ export type OpenedBundle = {
 }
 
 /**
- * Derive K_h and open the bundle.
+ * Ask for this delivery's K_h, sealed to a fresh one-time key, and open the
+ * bundle with it. `request` is the `escrow.openDelivery` action.
  *
- * The two halves are zeroed by the caller in a `finally`, not here: a throw
- * between deriving K_h and opening the bundle would otherwise leave both
- * sitting in memory for the life of the page.
+ * K_h and the one-time secret are zeroed in `finally`, so a throw anywhere
+ * between receiving the key and opening the bundle cannot leave either in
+ * memory for the life of the page. The DEKs inside the bundle survive: every
+ * row on the screen decrypts against them.
  */
-export function deriveHeirKey(
-  serverShare: ArrayBuffer,
-  guardianShareText: string
-): { kH: Uint8Array; guardianShare: Uint8Array } {
-  const guardianShare = hexToBytes(guardianShareText.trim().replace(/[\s-]/g, ""))
-  return { kH: heirKey(new Uint8Array(serverShare), guardianShare), guardianShare }
-}
-
-export function openBundle(blob: Uint8Array, kH: Uint8Array): OpenedBundle {
-  const contents = openReleaseBundle(blob, kH)
-  return { deks: contents.deks, messageKeys: contents.messageKeys }
+export async function openDelivery(
+  request: (
+    browserPublicKey: ArrayBuffer
+  ) => Promise<{ bundleUrl: string; sealedKey: ArrayBuffer }>
+): Promise<OpenedBundle> {
+  const oneTime = generateSealKeypair()
+  let kH: Uint8Array | undefined
+  try {
+    const publicKey = oneTime.publicKey.slice().buffer
+    const { bundleUrl, sealedKey } = await request(publicKey)
+    kH = openSealedKey(new Uint8Array(sealedKey), oneTime.secretKey)
+    const response = await fetch(bundleUrl)
+    if (!response.ok) throw new Error(`Bundle fetch failed: ${response.status}`)
+    const contents = openReleaseBundle(
+      new Uint8Array(await response.arrayBuffer()),
+      kH
+    )
+    return { deks: contents.deks, messageKeys: contents.messageKeys }
+  } finally {
+    kH?.fill(0)
+    oneTime.secretKey.fill(0)
+  }
 }
 
 /**

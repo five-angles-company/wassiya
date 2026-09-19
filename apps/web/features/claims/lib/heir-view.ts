@@ -10,7 +10,6 @@ export type HeirCaseFacts = {
   submittedAt: number
   vetoDeadline: number | null
   certificateReceived: boolean
-  guardianConfirmed: boolean
   /**
    * ⚠️ The **live** value, never `claim.claimantIdentityStatus`.
    *
@@ -30,7 +29,7 @@ export type HeirCaseFacts = {
 }
 
 /** Which errand the reader owes. `null` is the commonest answer by far. */
-export type HeirAsk = "identity" | "certificate" | "box" | null
+export type HeirAsk = "identity" | "certificate" | null
 
 export type HeirView = {
   /** One sentence about the report — never a status name. */
@@ -44,36 +43,23 @@ export type HeirView = {
 }
 
 /**
- * The heir's report as a page: where it stands, what is owed, what is on record.
+ * A report as a page: where it stands, what is owed, what is on record.
  *
  * A pure function — no hooks, no Convex, no clock, no JSX — so the whole of
- * "what does this reader see, and where are they" can be read in one place and
- * reasoned about without a browser.
+ * "what does this reader see" can be read in one place without a browser.
  *
- * ## The order follows the state machine
- *
- * The guardian confirms **before** the objection period, because
- * `guardianConfirm` requires `guardian_review` and sets `vetoDeadline` in the
- * same mutation. Their confirmation is not something that happens after the
- * wait; it is what starts it.
- *
- * ## A terminal report has no future
- *
- * `vetoed`, `locked` and `closed` stop the record where they happened rather
- * than listing three steps that will never run. A step shown greyed out is a
- * step the reader is still waiting for.
- *
- * ## At most one ask
- *
- * A reader who is grieving will act on one thing or none. Everything not
- * currently owed is a row in the record.
+ *  - **The order follows the state machine:** staff review sets the objection
+ *    deadline, and release is when Wassiya contacts the heirs. The reporter
+ *    receives nothing by reporting, so there is no box step here.
+ *  - **A terminal report has no future.** `vetoed`, `locked` and `closed`
+ *    stop the record where they happened; a greyed step is one still awaited.
+ *  - **At most one ask.** A grieving reader acts on one thing or none.
  */
 export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
   const labels = t(CLAIM_STATUS, locale)
   const common = t(COMMON, locale)
   const { status, isMine, identityVerified, certificateReceived } = facts
 
-  const inGuardian = status === "guardian_review"
   const inVeto = status === "awaiting_veto"
   const released = status === "released"
   const ended =
@@ -116,7 +102,7 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
     row(
       "notified",
       labels.stepNotified,
-      certificateReceived || inGuardian || inVeto || released
+      certificateReceived || inVeto || released
         ? "done"
         : "future",
       filed
@@ -146,27 +132,27 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
   const ledger: LedgerEntry[] = [
     ...paperwork,
     row(
-      "guardian",
-      labels.stepGuardian,
-      facts.guardianConfirmed ? "done" : inGuardian ? "now" : "future",
+      "review",
+      labels.stepReview,
+      inVeto || released
+        ? "done"
+        : certificateReceived && identityVerified
+          ? "now"
+          : "future",
       on(facts.reviewedAt)
     ),
-    // Undated until the guardian confirms, because until then there is no
-    // deadline. An invented one would be the product asserting what it cannot
-    // prove.
+    // Undated until review sets the deadline. An invented date would be the
+    // product asserting what it cannot prove.
     row(
       "veto",
       labels.stepVeto,
       inVeto ? "now" : released ? "done" : "future",
       ends
     ),
-    // One row, not two. Getting the guardian's half and opening the box are a
-    // prerequisite and its action, and splitting them marks two rows at once —
-    // which reads as two things owed, by a reader who owes exactly one.
     row(
-      "box",
+      "release",
       labels.stepRelease,
-      released ? "now" : "future",
+      released ? "done" : "future",
       on(facts.releasedAt)
     ),
   ]
@@ -180,18 +166,14 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
       ? "identity"
       : !certificateReceived
         ? "certificate"
-        : released
-          ? "box"
-          : null
+        : null
 
   const askTitle =
     ask === "identity"
       ? labels.stepIdentity
       : ask === "certificate"
         ? labels.stepCertificate
-        : ask === "box"
-          ? labels.stepRelease
-          : null
+        : null
 
   const standing = !identityVerified
     ? { headline: labels.headIdentity, tone: "attention" as const, body: [] }
@@ -202,7 +184,11 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
           body: [],
         }
       : released
-        ? { headline: labels.headReleased, tone: "attention" as const, body: [] }
+        ? {
+            headline: labels.headReleased,
+            tone: "settled" as const,
+            body: [labels.releasedBody],
+          }
         : inVeto
           ? {
               headline: labels.headVeto,
@@ -213,7 +199,7 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
                   : [labels.writeOn.replace("{date}", ends), labels.nothingBody],
             }
           : {
-              headline: labels.headGuardian,
+              headline: labels.headReview,
               tone: "settled" as const,
               body: [labels.nothingBody],
             }

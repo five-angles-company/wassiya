@@ -135,10 +135,6 @@ const COPY: Record<string, Copy> = {
   "claim.blocked_by_lockout": { title: "claimBlocked", body: "claimBlockedBody" },
   "claim.veto_window_open": { title: "claimVetoOpen", body: "claimVetoOpenBody" },
   "claim.vetoed": { title: "claimVetoed", body: "claimVetoedBody" },
-  "claim.guardian_review": {
-    title: "claimGuardianReview",
-    body: "claimGuardianReviewBody",
-  },
   "claim.released": { title: "claimReleased", body: "claimReleasedBody" },
   // The claimant's own six. Before these the heir saw exactly two rows in this
   // feed across a whole claim, both at the very end.
@@ -155,10 +151,6 @@ const COPY: Record<string, Copy> = {
   "claim.review_failed": {
     title: "claimReviewFailed",
     body: "claimReviewFailedBody",
-  },
-  "claim.guardian_confirmed": {
-    title: "claimGuardianConfirmed",
-    body: "claimGuardianConfirmedBody",
   },
   "recovery.attempted": { title: "recovery", body: "recoveryBody" },
 }

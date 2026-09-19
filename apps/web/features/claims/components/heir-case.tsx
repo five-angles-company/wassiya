@@ -10,7 +10,6 @@ import { Ledger } from "@/components/doc/ledger"
 import { Prose } from "@/components/doc/prose"
 import { StatusLine } from "@/components/doc/status-line"
 import { DocTitle } from "@/components/doc/title"
-import { HowItOpens } from "@/components/how-it-opens"
 import { useLocale } from "@/components/locale-provider"
 import { RecordNotFound } from "@/components/record-not-found"
 import { shortRef } from "@/lib/claim-ref"
@@ -21,7 +20,6 @@ import { CertificatePanel } from "@/features/claims/components/certificate-panel
 import { IdentityPanel } from "@/features/claims/components/identity-panel"
 import { VetoCountdown } from "@/features/claims/components/veto-countdown"
 import { heirView } from "@/features/claims/lib/heir-view"
-import { CLAIM_STATUS } from "@/features/claims/strings/claim-status"
 import { CLAIMS } from "@/features/claims/strings/claims"
 
 /**
@@ -55,7 +53,6 @@ export function HeirCase({ claimId }: { claimId: string }) {
   const locale = useLocale()
   const labels = t(CLAIMS, locale)
   const common = t(COMMON, locale)
-  const status = t(CLAIM_STATUS, locale)
 
   const { isAuthenticated } = useConvexAuth()
   const claim = useQuery(api.claims.publicStatus, { claimId })
@@ -94,7 +91,6 @@ export function HeirCase({ claimId }: { claimId: string }) {
       submittedAt: claim.submittedAt,
       vetoDeadline: claim.vetoDeadline,
       certificateReceived: claim.certificateReceived,
-      guardianConfirmed: claim.guardianConfirmed,
       identityVerified,
       isMine,
       certificateAttachedAt: own?.certificateAttachedAt,
@@ -158,16 +154,6 @@ export function HeirCase({ claimId }: { claimId: string }) {
           )}
           {view.ask === "certificate" && (
             <CertificatePanel claimId={claimId} />
-          )}
-          {view.ask === "box" && (
-            <>
-              <HowItOpens />
-              <div>
-                <ButtonLink href={`/case/${claimId}/box`}>
-                  {status.openBox}
-                </ButtonLink>
-              </div>
-            </>
           )}
         </Ask>
       )}

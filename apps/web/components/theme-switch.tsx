@@ -18,7 +18,7 @@ import { applyTheme, type Theme } from "@/lib/theme"
  * do it cost a full re-render, a fresh Convex socket with every `useQuery` on
  * the page re-subscribing, and — the part that was a bug rather than a cost —
  * any client state the reader had: three typed fields on the filing form, a
- * half-entered guardian key, a chosen certificate.
+ * half-typed report, a chosen certificate.
  *
  * ## It still works with JavaScript off
  *

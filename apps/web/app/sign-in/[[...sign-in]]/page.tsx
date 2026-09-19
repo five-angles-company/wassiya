@@ -17,7 +17,7 @@ import { safePath } from "@/lib/safe-path"
  * by whoever composed the link. Without it this component is an open redirect
  * wearing our own domain.
  *
- * The same value rides along on `signUpUrl`, because most guardians and heirs
+ * The same value rides along on `signUpUrl`, because most reporters and heirs
  * have no account yet.
  */
 export default async function Page({
