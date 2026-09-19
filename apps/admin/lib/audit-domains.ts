@@ -27,7 +27,7 @@ export type AuditDomain = (typeof AUDIT_DOMAINS)[number]
  * The subset that ever appears as a *notification* kind.
  *
  * Three, not twelve: only the escalation ladder (`checkin.*`), the claim
- * machine (`claim.*`, the guardian review included) and a recovery attempt
+ * machine (`claim.*`) and a recovery attempt
  * (`recovery.attempted`) insert into `notifications` at all. Mirrors
  * `NOTIFICATION_DOMAINS` in `convex/admin.ts`, which validates against the
  * same three — a facet for a domain nothing can write is a filter that always

@@ -36,10 +36,10 @@ function itemLabel(key: string, locale: Locale): string {
   const map: Record<string, string> = {
     identity: labels.itemIdentity,
     key: labels.itemKey,
-    guardian: labels.itemGuardian,
     sheet: labels.itemSheet,
     heirs: labels.itemHeirs,
     routing: labels.itemRouting,
+    delivery: labels.itemDelivery,
     checkin: labels.itemCheckin,
   }
   return map[key] ?? key

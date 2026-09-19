@@ -124,29 +124,32 @@ export function releasedColumns(
         </Link>
       ),
     }),
-    // Three states, not two: a released claim fails to deliver two different
-    // ways and naming them the same blames the wrong half of the system.
-    released.accessor("delivery", {
+    // What reached the heirs. Zero deliveries on a released report means the
+    // owner's device never built a bundle — nobody receives anything.
+    released.accessor("deliveries", {
       id: "delivery",
       enableSorting: false,
       header: () => labels.colDelivery,
       cell: ({ row }) => {
-        if (row.original.delivery === "delivered") {
-          return <Badge variant="secondary">{labels.deliveryDelivered}</Badge>
+        const d = row.original.deliveries
+        if (d.total === 0) {
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="whitespace-nowrap">
+                  {labels.deliveryNone}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">{labels.deliveryNoneHint}</TooltipContent>
+            </Tooltip>
+          )
         }
-        const [label, hint] =
-          row.original.delivery === "no-bundle"
-            ? [labels.deliveryNoBundle, labels.deliveryNoBundleHint]
-            : [labels.deliveryNoHeir, labels.deliveryNoHeirHint]
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive" className="whitespace-nowrap">
-                {label}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">{hint}</TooltipContent>
-          </Tooltip>
+          <Link href="/deliveries" className="whitespace-nowrap tabular-nums hover:underline">
+            {labels.deliverySummary
+              .replace("{ready}", fmtNumber(d.ready, locale))
+              .replace("{total}", fmtNumber(d.total, locale))}
+          </Link>
         )
       },
     }),

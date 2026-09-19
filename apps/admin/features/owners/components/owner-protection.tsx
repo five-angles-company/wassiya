@@ -9,11 +9,6 @@ import {
   FactsEmpty,
   OwnerFacts,
 } from "@/features/owners/components/owner-facts"
-import {
-  guardianStateLabel,
-  guardianStateVariant,
-  type GuardianState,
-} from "@/lib/guardian-state"
 import { OWNERS } from "@/features/owners/strings/owners"
 import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -27,7 +22,7 @@ import { t, type Locale } from "@/lib/i18n/locale"
 type Detail = NonNullable<FunctionReturnType<typeof api.admin.ownerDetail>>
 
 /**
- * The vault, the check-in and the guardians — the three things that decide
+ * The vault, the check-in and the deliveries — the three things that decide
  * whether anything this owner stored ever reaches anyone.
  *
  * ## What the vault card deliberately does not show
@@ -46,22 +41,12 @@ type Detail = NonNullable<FunctionReturnType<typeof api.admin.ownerDetail>>
 export function OwnerProtection({
   detail,
   locale,
-  now,
 }: {
   detail: Detail
   locale: Locale
-  /**
-   * Captured once by the caller, not read here.
-   *
-   * `Date.now()` in a render body is an impure call: React may render twice
-   * and get two answers, and a guardian could flip between `invited` and
-   * `expired` between them. Taking it as a prop makes the boundary a value the
-   * component is given rather than a clock it reaches for.
-   */
-  now: number
 }) {
   const labels = t(OWNERS, locale)
-  const { vault, checkin, guardians } = detail
+  const { vault, checkin, heirs } = detail
 
   return (
     <div className="flex flex-col gap-4">
@@ -130,39 +115,36 @@ export function OwnerProtection({
         )}
       </OwnerFacts>
 
-      <OwnerFacts title={labels.sectionGuardians}>
-        {guardians.length === 0 ? (
-          <FactsEmpty>{labels.guardiansNone}</FactsEmpty>
+      <OwnerFacts title={labels.sectionDelivery}>
+        {heirs.length === 0 ? (
+          <FactsEmpty>{labels.deliveryNone}</FactsEmpty>
         ) : (
-          guardians.map((guardian) => {
-            // The same derived state the guardians list shows, rebuilt from the
-            // same three facts so the two screens cannot disagree about who is
-            // actually usable.
-            const state: GuardianState =
-              guardian.status === "revoked"
-                ? "revoked"
-                : guardian.status === "accepted"
-                  ? guardian.hasPublicKey
-                    ? "live"
-                    : "accepted"
-                  : guardian.inviteExpiresAt < now
-                    ? "expired"
-                    : "invited"
-            return (
-              <Fact
-                key={guardian.id}
-                label={guardian.relation}
-                value={
-                  <span className="flex items-center justify-end gap-2">
-                    <span>{guardian.name}</span>
-                    <Badge variant={guardianStateVariant(state)}>
-                      {guardianStateLabel(state, locale)}
+          heirs.map((heir) => (
+            <Fact
+              key={heir.id}
+              label={heir.relation}
+              value={
+                <span className="flex items-center justify-end gap-2">
+                  <span>{heir.name}</span>
+                  {heir.bundleRebuiltAt === null ? (
+                    <Badge variant="destructive">{labels.bundleNever}</Badge>
+                  ) : heir.bundleStale ? (
+                    <Badge variant="outline">{labels.bundleStale}</Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      {labels.bundleBuilt.replace(
+                        "{date}",
+                        fmtDate(heir.bundleRebuiltAt, locale)
+                      )}
                     </Badge>
-                  </span>
-                }
-              />
-            )
-          })
+                  )}
+                  {!heir.hasIdNumber && (
+                    <Badge variant="outline">{labels.noIdNumber}</Badge>
+                  )}
+                </span>
+              }
+            />
+          ))
         )}
       </OwnerFacts>
     </div>

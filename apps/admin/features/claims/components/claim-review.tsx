@@ -21,7 +21,7 @@ import {
 import { useLocale } from "@/components/locale-provider"
 import { RecordNotFound } from "@/components/record-not-found"
 import { ClaimVerdict } from "@/features/claims/components/claim-verdict"
-import { ClaimHeirLink } from "@/features/claims/components/claim-heir-link"
+import { ClaimHeirs } from "@/features/claims/components/claim-heirs"
 import { ClaimHistory } from "@/features/claims/components/claim-history"
 import { IdentityBadge } from "@/components/identity-badge"
 import {
@@ -169,12 +169,7 @@ export function ClaimReview({ claimId }: { claimId: string }) {
           </CardContent>
         </Card>
 
-        <ClaimHeirLink
-          claimId={claim.id}
-          linkedHeirId={claim.heirId}
-          heirs={heirs}
-          locale={locale}
-        />
+        <ClaimHeirs heirs={heirs} locale={locale} />
       </div>
 
       {/* A prior veto the backend's contact-string lockout may have missed. */}

@@ -3,7 +3,7 @@ import {
   ClipboardCheckIcon,
   CreditCardIcon,
   FileClockIcon,
-  GavelIcon,
+  PackageOpenIcon,
   HeartPulseIcon,
   LayoutDashboardIcon,
   MailIcon,
@@ -60,8 +60,8 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { key: "dashboard", icon: LayoutDashboardIcon, href: "/" },
       { key: "claims", icon: ClipboardCheckIcon, href: "/claims" },
+      { key: "deliveries", icon: PackageOpenIcon, href: "/deliveries" },
       { key: "identity", icon: ShieldCheckIcon, href: "/identity" },
-      { key: "guardians", icon: GavelIcon, href: "/guardians" },
     ],
   },
   {

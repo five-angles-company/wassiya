@@ -5,7 +5,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  *
  * The groups follow the backend's own seams rather than a generic admin
  * template: **Review** is the human-judgement path a claim walks
- * (`claims.adminSetNameMatch`, Didit, the guardian), **Accounts** is the owner's
+ * (`claims.adminSetNameMatch`, Didit, deliveries), **Accounts** is the owner's
  * record, **Operations** is what runs without anyone watching (the two crons,
  * escalation email, release), and **Records** is the append-only material.
  *
@@ -15,9 +15,9 @@ import type { Dictionary } from "@/lib/i18n/locale"
 export const NAV = {
   groupReview: { ar: "المراجعة", en: "Review" },
   dashboard: { ar: "لوحة التحكم", en: "Dashboard" },
+  deliveries: { ar: "التسليمات", en: "Deliveries" },
   claims: { ar: "المطالبات", en: "Claims" },
   identity: { ar: "التحقق من الهوية", en: "Identity" },
-  guardians: { ar: "الأوصياء", en: "Guardians" },
 
   groupAccounts: { ar: "الحسابات", en: "Accounts" },
   owners: { ar: "المالكون", en: "Owners" },

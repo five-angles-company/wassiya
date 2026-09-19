@@ -4,7 +4,6 @@ import { CLAIMS } from "@/features/claims/strings/claims"
 /** The seven statuses, in lifecycle order — the order the filter renders them. */
 export const CLAIM_STATUSES = [
   "submitted",
-  "guardian_review",
   "awaiting_veto",
   "released",
   "vetoed",
@@ -31,7 +30,6 @@ export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
   const labels = t(CLAIMS, locale)
   const map: Record<ClaimStatus, string> = {
     submitted: labels.statusSubmitted,
-    guardian_review: labels.statusGuardianReview,
     awaiting_veto: labels.statusAwaitingVeto,
     released: labels.statusReleased,
     vetoed: labels.statusVetoed,
@@ -46,8 +44,7 @@ export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
  *
  * Used only for emphasis in the filter. `released`, `vetoed`, `locked` and
  * `closed` are `TERMINAL_STATUSES` in `model/claimFlow.ts`; `awaiting_veto` is
- * waiting on a clock rather than a person, and `guardian_review` is waiting on
- * someone this console cannot reach.
+ * waiting on a clock rather than a person.
  *
  * Note a `submitted` claim with no vault attached needs a human *more* than an
  * ordinary one — see `admin.unmatchedClaims` — but it is the same status, so

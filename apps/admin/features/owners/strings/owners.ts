@@ -39,7 +39,7 @@ export const OWNERS = {
   sectionVault: { ar: "الخزنة", en: "Vault" },
   sectionCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
   sectionHeirs: { ar: "الورثة", en: "Heirs" },
-  sectionGuardians: { ar: "الأوصياء", en: "Guardians" },
+  sectionDelivery: { ar: "التسليم للورثة", en: "Delivery to heirs" },
   sectionDevices: { ar: "الأجهزة", en: "Devices" },
   sectionClaims: { ar: "الطلبات", en: "Claims" },
 
@@ -67,7 +67,14 @@ export const OWNERS = {
   nextDue: { ar: "التالي", en: "Next due" },
 
   heirsNone: { ar: "لم يُضف ورثة", en: "No heirs" },
-  guardiansNone: { ar: "لا أوصياء", en: "No guardians" },
+  deliveryNone: {
+    ar: "لا ورثة — لا شيء يُسلَّم عند الوفاة.",
+    en: "No heirs — nothing is delivered at death.",
+  },
+  bundleNever: { ar: "لم تُبنَ حزمته", en: "Never built" },
+  bundleStale: { ar: "حزمته قديمة", en: "Out of date" },
+  bundleBuilt: { ar: "بُنيت {date}", en: "Built {date}" },
+  noIdNumber: { ar: "بلا رقم هوية", en: "No ID number" },
   devicesNone: { ar: "لا أجهزة", en: "No devices" },
   claimsNone: { ar: "لا طلبات", en: "No claims" },
   deviceRevoked: { ar: "مُلغى", en: "Revoked" },

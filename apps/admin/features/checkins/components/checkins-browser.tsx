@@ -6,18 +6,13 @@ import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
-import {
   createColumnHelper,
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table"
 import type { FunctionReturnType } from "convex/server"
 import { useQuery } from "convex/react"
-import { HeartPulseIcon, InfoIcon } from "lucide-react"
+import { HeartPulseIcon } from "lucide-react"
 import { parseAsArrayOf, parseAsStringLiteral, useQueryState } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
@@ -98,23 +93,6 @@ function checkinColumns(
             >
               {escalationLabel(state, locale)}
             </Badge>
-            {/* The rung whose email promises something nothing does. Marked on
-                the row rather than in a footnote, because an operator reading
-                four owners in this state should not have to know that
-                separately. */}
-            {state === "day14" && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <InfoIcon
-                    className="size-3.5 shrink-0 text-muted-foreground"
-                    aria-label={labels.day14Gap}
-                  />
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  {labels.day14Gap}
-                </TooltipContent>
-              </Tooltip>
-            )}
           </span>
         )
       },

@@ -69,7 +69,7 @@ function stageLabel(key: string, locale: Locale): string {
     vaultCreated: labels.stageVaultCreated,
     sheetPrinted: labels.stageSheetPrinted,
     heirNamed: labels.stageHeirNamed,
-    guardianLive: labels.stageGuardianLive,
+    deliveryPrepared: labels.stageDeliveryPrepared,
     checkinConfigured: labels.stageCheckinConfigured,
   }
   return map[key] ?? key

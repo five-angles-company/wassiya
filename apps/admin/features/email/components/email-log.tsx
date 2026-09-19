@@ -39,8 +39,9 @@ const helper = createColumnHelper<DataTableFeatures, EmailRow>()
 function kindLabel(kind: string, locale: Locale): string {
   const labels = t(EMAIL_LOG, locale)
   if (kind === "escalation") return labels.kindEscalation
-  if (kind === "guardian claim notice") return labels.kindGuardianClaim
   if (kind === "recovery notice") return labels.kindRecovery
+  if (kind === "delivery ready") return labels.kindDeliveryReady
+  if (kind === "delivery expiring") return labels.kindDeliveryExpiring
   return kind
 }
 
@@ -98,7 +99,7 @@ function emailColumns(
  * What the system sent, to whom, and when.
  *
  * Until `send()` started recording, every outbound message vanished — the
- * escalation ladder, the guardian notice, the recovery alert — so *"did this
+ * escalation ladder, the report notices, the recovery alert — so *"did this
  * owner actually get the day-14 warning?"* had no answer short of the Resend
  * dashboard.
  *

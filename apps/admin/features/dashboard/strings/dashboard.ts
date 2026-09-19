@@ -22,12 +22,6 @@ export const DASHBOARD = {
     en: "Claims that do not move at all until a reviewer rules on the name match.",
   },
 
-  guardianReview: { ar: "عند الوصي", en: "With the guardian" },
-  guardianReviewHint: {
-    ar: "اجتازت المراجعة، وتنتظر تأكيد الوصي.",
-    en: "Past review, waiting on the guardian's confirmation.",
-  },
-
   vetoWindow: { ar: "في مهلة الاعتراض", en: "In the veto window" },
   vetoWindowHint: {
     ar: "المالك ما زال قادراً على الاعتراض. بعدها يقع الإفراج تلقائياً.",

@@ -21,7 +21,7 @@ export type IdentityStatus = (typeof IDENTITY_STATUSES)[number]
  * One identity state, in words.
  *
  * App-level rather than feature-level because three screens now read it — the
- * claims workspace, the identity queue and the guardians list all render a
+ * claims workspace, the identity queue and the owners list all render a
  * claimant's or an owner's verification state. A badge and a filter option that
  * disagree about what "pending" is called is the exact drift that makes an
  * operator think they are two different things.

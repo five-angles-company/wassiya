@@ -11,7 +11,7 @@ export type RiskData = FunctionReturnType<typeof api.admin.risk>
 /**
  * Owns the risk query and hands the result to the table.
  *
- * It used to render three stat tiles above the table as well — "no guardian",
+ * It used to render three stat tiles above the table as well — "no sheet",
  * "never printed", "heirs with nothing" — but those were three of the eleven
  * boxes that made the page unreadable, and each was just a count of the rows
  * directly underneath it. The one number worth keeping, heirs who would receive

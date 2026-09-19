@@ -4,10 +4,9 @@ import type { Dictionary } from "@/lib/i18n/locale"
 export const RELEASES = {
   pageTitle: { ar: "التسليم", en: "Releases" },
 
-  // States what the screen is not, because the nav item implies otherwise.
   intro: {
-    ar: "ليست قائمة حزم — لم تُبنَ أي حزمة بعد. هذه خطوط الأنابيب: ما ينتظر انقضاء المهلة، وما انقضت مهلته وما الذي يصل الوارث فعلاً.",
-    en: "Not a list of bundles — none has ever been built. This is the pipeline: what is waiting for its veto window, what has passed it, and what an heir would actually get.",
+    ar: "ما ينتظر انقضاء مهلة الاعتراض، وما انقضت مهلته وكم من ورثته استلم فعلاً.",
+    en: "What is waiting for its objection period, what has passed it, and how many of its heirs have actually received.",
   },
 
   bandCounting: { ar: "في المهلة", en: "Counting down" },
@@ -24,18 +23,12 @@ export const RELEASES = {
   remainingToday: { ar: "أقل من يوم", en: "Under a day" },
   overdueSweep: { ar: "انقضت — بانتظار المهمة", en: "Elapsed — awaiting the job" },
 
-  // The three delivery states. Two different failures, named separately.
-  deliveryDelivered: { ar: "جاهزة", en: "Delivered" },
-  deliveryNoBundle: { ar: "لا توجد حزمة", en: "No bundle" },
-  deliveryNoHeir: { ar: "لا وارث مرتبط", en: "No heir linked" },
-  deliveryNoBundleHint: {
-    ar: "الوارث مرتبط، لكن لم تُبنَ له حزمة — لا يستطيع فتح شيء.",
-    en: "An heir is linked but nothing was built for them. They can open nothing.",
+  deliveryNone: { ar: "لا تسليمات", en: "No deliveries" },
+  deliveryNoneHint: {
+    ar: "لم يبنِ جهاز صاحب الخزنة أي حزمة، فلا شيء يصل لأي وارث.",
+    en: "The owner's device never built a bundle, so nothing reaches any heir.",
   },
-  deliveryNoHeirHint: {
-    ar: "لم يُربط وارث بهذا الطلب، فلا شيء يمكن بناؤه أصلاً.",
-    en: "No heir was linked to this claim, so nothing could be built at all.",
-  },
+  deliverySummary: { ar: "{ready} من {total} جاهزة", en: "{ready} of {total} ready" },
 
   emptyCounting: { ar: "لا طلبات في المهلة", en: "Nothing counting down" },
   emptyReleased: { ar: "لم يُفرج عن أي طلب", en: "Nothing released yet" },

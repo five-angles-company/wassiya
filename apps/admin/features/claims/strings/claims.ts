@@ -25,7 +25,6 @@ export const CLAIMS = {
 
   // Status labels, matching what the claimant is shown for the same state.
   statusSubmitted: { ar: "قيد المراجعة اليدوية", en: "Manual review" },
-  statusGuardianReview: { ar: "بانتظار تأكيد الوصي", en: "With the guardian" },
   statusAwaitingVeto: { ar: "مدة الاعتراض جارية", en: "Veto window running" },
   statusReleased: { ar: "تم الإفراج", en: "Released" },
   statusVetoed: { ar: "أُغلق الطلب", en: "Owner objected" },
@@ -54,8 +53,6 @@ export const CLAIMS = {
   certificateView: { ar: "فتح الملف", en: "Open file" },
   certificateNone: { ar: "لم تصل", en: "Not received" },
   ownerNameNone: { ar: "—", en: "—" },
-  heirLinked: { ar: "مربوط", en: "Linked" },
-  heirNotLinked: { ar: "غير مربوط", en: "Not linked" },
 
   openMenu: { ar: "فتح القائمة", en: "Open menu" },
   actionCopyId: { ar: "نسخ معرّف الطلب", en: "Copy claim id" },
@@ -95,18 +92,16 @@ export const CLAIMS = {
     en: "Recorded at submit as “{stored}” — the decision uses the current value.",
   },
 
-  heirTitle: { ar: "الوريث المستلم", en: "Receiving heir" },
+  heirTitle: { ar: "الورثة المستلمون", en: "Receiving heirs" },
   heirHint: {
-    ar: "لا يُفرج عن شيء قبل ربط الطلب بسجل وريث.",
-    en: "Nothing can be released until the claim is linked to an heir record.",
+    ar: "بعد مدة الاعتراض يستلم كل وارث بُنيت له حزمة تسليماً خاصاً به، ويُثبت هويته بنفسه.",
+    en: "After the objection period every heir with a built bundle gets their own delivery and proves their own identity.",
   },
-  heirPlaceholder: { ar: "اختر الوريث", en: "Choose the heir" },
   heirAssets: { ar: "{n} أصل", en: "{n} assets" },
   heirNone: {
-    ar: "لا يوجد ورثة مسجّلون لهذا المالك — لا شيء يمكن ربط الطلب به.",
-    en: "This owner has no heirs on record, so there is nothing to link the claim to.",
+    ar: "لا يوجد ورثة مسجّلون لهذا المالك — لن يُسلَّم شيء لأحد.",
+    en: "This owner has no heirs on record — nothing will be delivered to anyone.",
   },
-  linkHeir: { ar: "اربط الوريث", en: "Link heir" },
 
   priorTitle: {
     ar: "طلبات سابقة من نفس الشخص",
@@ -127,8 +122,8 @@ export const CLAIMS = {
 
   approveDialogTitle: { ar: "تأكيد التطابق؟", en: "Confirm the match?" },
   approveDialogBody: {
-    ar: "سينتقل الطلب إلى الوصي لتأكيده، ثم تبدأ مدة اعتراض مدتها ٣٠ يوماً يستطيع المالك خلالها إيقافه.",
-    en: "The claim moves to the guardian for confirmation, then a 30-day window opens in which the owner can stop it.",
+    ar: "تبدأ مدة اعتراض مدتها ٣٠ يوماً يستطيع المالك خلالها إيقافه، ثم نتواصل مع ورثته.",
+    en: "A 30-day window opens in which the owner can stop it; after it, we contact their heirs.",
   },
   approveConfirm: { ar: "نعم، الاسمان متطابقان", en: "Yes, they match" },
 
@@ -153,21 +148,9 @@ export const CLAIMS = {
     ar: "يمكن تغيير الربط لاحقاً ما لم يقع الإفراج.",
     en: "This can be changed later, any time before release.",
   },
-  linkConfirm: { ar: "اربط", en: "Link" },
   cancel: { ar: "تراجع", en: "Cancel" },
 
-  // Why an action is unavailable — the same four reasons the mutation throws.
-  //
-  // `blockedNoGuardian` is the one the reviewer cannot act on, so it says whose
-  // job it is instead of leaving them hunting for a button they do not have.
-  blockedNoGuardian: {
-    ar: "لا وصي على هذه الخزنة يستطيع تأكيد الوفاة، والموافقة ستُعلّق الطلب بلا مخرج. على صاحب الخزنة تعيين وصي وعلى ذلك الشخص قبول الدعوة — لا يمكن إصلاحه من هنا.",
-    en: "This vault has no guardian who can confirm the death, so approving would strand the claim with no way out. The owner must appoint one and that person must accept — it cannot be fixed from here.",
-  },
-  blockedNoHeir: {
-    ar: "اربط وريثاً أولاً: لا يستطيع الوصي تأكيد طلب بلا سجل وريث.",
-    en: "Link an heir first: the guardian cannot confirm a claim with no heir record.",
-  },
+  // Why an action is unavailable — the same reasons the mutation throws.
   blockedIdentity: {
     ar: "هوية مقدّم الطلب غير موثّقة بعد. الموافقة الآن ستغلق الطلب نهائياً بدل تمريره — انتظر التوثيق.",
     en: "The claimant is not verified yet. Approving now would close the claim for good instead of passing it on — wait for verification.",
@@ -178,26 +161,22 @@ export const CLAIMS = {
   },
 
   toastApproved: {
-    ar: "انتقل الطلب إلى الوصي.",
-    en: "The claim moved to the guardian.",
+    ar: "بدأت مدة الاعتراض.",
+    en: "The objection period has started.",
   },
   toastRejected: { ar: "أُغلق الطلب.", en: "The claim is closed." },
-  toastLinked: { ar: "رُبط الوريث.", en: "Heir linked." },
   toastFailed: {
     ar: "تعذّر تنفيذ الإجراء. لم يتغيّر شيء.",
     en: "That did not go through. Nothing changed.",
   },
 
-  // What approving sets in motion. This replaced a note saying the guardian had
-  // no screen and received no notification — both were true once and neither is
-  // now, and a console that describes the product's *previous* behaviour is
-  // worse than one that says nothing.
-  guardianNextTitle: {
+  // What approving sets in motion, stated before it is set in motion.
+  approveNextTitle: {
     ar: "ماذا يحدث بعد الموافقة",
     en: "What approving does",
   },
-  guardianNextBody: {
-    ar: "ينتقل الطلب إلى وصي الخزنة، ويصله إشعار في التطبيق وبريد. تأكيده يبدأ مهلة اعتراض مدّتها ثلاثون يوماً، وبعدها يُفرَج عن الصندوق تلقائياً ما لم يعترض صاحب الخزنة.",
-    en: "The claim moves to the vault's guardian, who is notified in the app and by email. Their confirmation starts a thirty-day objection period, after which the box is released automatically unless the owner objects.",
+  approveNextBody: {
+    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وارث بُنيت له حزمة ونتواصل معه ليُثبت هويته.",
+    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every heir with a built bundle and contact each one to prove their identity.",
   },
 } as const satisfies Dictionary

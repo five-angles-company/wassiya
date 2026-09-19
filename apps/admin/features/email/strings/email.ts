@@ -19,8 +19,9 @@ export const EMAIL_LOG = {
 
   // The `what` labels `send()` passes, in the operator's language.
   kindEscalation: { ar: "تصعيد التحقق من الحياة", en: "Check-in escalation" },
-  kindGuardianClaim: { ar: "إشعار الوصي", en: "Guardian claim notice" },
   kindRecovery: { ar: "تنبيه الاسترداد", en: "Recovery alert" },
+  kindDeliveryReady: { ar: "تسليم جاهز", en: "Delivery ready" },
+  kindDeliveryExpiring: { ar: "تسليم يقترب من الإغلاق", en: "Delivery closing soon" },
 
   // Only sends recorded since the log started exist. Said once, at the top,
   // so an empty screen is not read as "nothing was ever sent".

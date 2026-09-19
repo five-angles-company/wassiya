@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -38,10 +37,6 @@ import { t } from "@/lib/i18n/locale"
 export function OwnerDetail({ userId }: { userId: string }) {
   const locale = useLocale()
   const labels = t(OWNERS, locale)
-  // Once per mount. An invitation's expiry is measured in days, so a boundary
-  // that is stale by minutes is not an inaccuracy — and reading the clock in a
-  // render body would let two renders disagree about the same guardian.
-  const [now] = useState(() => Date.now())
   // No cast: the server takes the raw path segment and normalises it, so an id
   // that is malformed and one that names a deleted account both come back as
   // `null` rather than throwing. This screen is linked to from eight places,
@@ -106,7 +101,7 @@ export function OwnerDetail({ userId }: { userId: string }) {
           />
         </OwnerFacts>
 
-        <OwnerProtection detail={detail} locale={locale} now={now} />
+        <OwnerProtection detail={detail} locale={locale} />
 
         <OwnerFacts title={labels.sectionHeirs}>
           {heirs.length === 0 ? (

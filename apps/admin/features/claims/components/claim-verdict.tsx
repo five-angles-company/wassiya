@@ -23,13 +23,11 @@ export type VerdictBlocked = {
   reject: string | null
 }
 
-/** The four refusal reasons, in the operator's language. */
+/** The refusal reasons, in the operator's language. */
 function blockedLabel(
   reason: string | null,
   labels: ReturnType<typeof t<typeof CLAIMS>>
 ): string | undefined {
-  if (reason === "no-guardian") return labels.blockedNoGuardian
-  if (reason === "no-heir") return labels.blockedNoHeir
   if (reason === "identity-not-verified") return labels.blockedIdentity
   if (reason === "past-review") return labels.blockedPastReview
   return undefined
@@ -115,15 +113,11 @@ export function ClaimVerdict({
           </p>
         )}
 
-        {/* What approving sets in motion, stated before it is set in motion.
-            This used to say the guardian had no screen and no notification — it
-            now has both, and `blocked.approve` above refuses outright when a
-            vault has no guardian who could act. */}
         <div className="flex gap-2 border-t pt-3 text-xs leading-relaxed text-muted-foreground">
           <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
           <span>
-            <span className="font-medium">{labels.guardianNextTitle}. </span>
-            {labels.guardianNextBody}
+            <span className="font-medium">{labels.approveNextTitle}. </span>
+            {labels.approveNextBody}
           </span>
         </div>
       </CardContent>

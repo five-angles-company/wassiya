@@ -18,8 +18,6 @@ const DEFAULT_SORTING: SortingState = [{ id: "submittedAt", desc: true }]
 /** The two columns the server can order by. */
 const SORTABLE = ["submittedAt", "claimantName"] as const
 
-const HEIR_SIDES = ["linked", "unlinked"] as const
-
 type ClaimSort = "newest" | "oldest" | "nameAsc" | "nameDesc"
 
 /**
@@ -47,8 +45,6 @@ export function useClaimQueryState() {
       identity: parseAsArrayOf(
         parseAsStringLiteral(IDENTITY_STATUSES)
       ).withDefault([]),
-      /** Absent is "either" — see `toggleHeir`. */
-      heir: parseAsStringLiteral(HEIR_SIDES),
     },
     { history: "replace", clearOnDefault: true }
   )
@@ -56,7 +52,7 @@ export function useClaimQueryState() {
   const url = useTableUrlState({
     defaultSorting: DEFAULT_SORTING,
     sortableIds: SORTABLE,
-    facetKey: `${facets.status.join(",")}|${facets.identity.join(",")}|${facets.heir}`,
+    facetKey: `${facets.status.join(",")}|${facets.identity.join(",")}`,
   })
 
   const sort = useMemo<ClaimSort>(() => {
@@ -66,17 +62,14 @@ export function useClaimQueryState() {
     return first.desc ? "newest" : "oldest"
   }, [url.sorting])
 
-  const heirLinked = facets.heir === null ? undefined : facets.heir === "linked"
-
   const filters = useMemo(
     () => ({
       statuses: facets.status,
       identity: facets.identity,
-      heirLinked,
       search: url.search,
       sort,
     }),
-    [facets.status, facets.identity, heirLinked, url.search, sort]
+    [facets.status, facets.identity, url.search, sort]
   )
 
   const toggleIn = useCallback(
@@ -112,30 +105,6 @@ export function useClaimQueryState() {
       () => void setFacets({ identity: [] }),
       [setFacets]
     ),
-    /**
-     * Heir linkage is one boolean, worn as a two-value facet.
-     *
-     * Ticking both is the same question as ticking neither — "either" — so both
-     * collapse to absent rather than sending a contradiction to a filter that
-     * can only express one side.
-     */
-    heirSelection: useMemo(
-      () => new Set<string>(facets.heir === null ? [] : [facets.heir]),
-      [facets.heir]
-    ),
-    toggleHeir: useCallback(
-      (value: string, checked: boolean) => {
-        void setFacets((current) => {
-          const side = value as (typeof HEIR_SIDES)[number]
-          if (!checked) return { heir: current.heir === side ? null : current.heir }
-          return {
-            heir: current.heir === null || current.heir === side ? side : null,
-          }
-        })
-      },
-      [setFacets]
-    ),
-    clearHeir: useCallback(() => void setFacets({ heir: null }), [setFacets]),
     pageNumber: url.pageNumber,
     canPrev: url.canPrev,
     prevPage: url.prevPage,

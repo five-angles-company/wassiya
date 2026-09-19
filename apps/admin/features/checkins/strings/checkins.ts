@@ -19,13 +19,6 @@ export const CHECKINS = {
   dueIn: { ar: "بعد {n} يوماً", en: "in {n} days" },
   dueToday: { ar: "اليوم", en: "Today" },
 
-  // The note on every day-14 row. Not decoration: the email those owners
-  // received says a guardian will be contacted, and nothing does it.
-  day14Gap: {
-    ar: "وعد هذه الرتبة بالتواصل مع الوصي — ولا يحدث ذلك بعد: لا توجد شاشة للوصي، والإشعار موقوف حتى تُبنى.",
-    en: "This rung's email promises the guardian will be contacted. Nothing does it yet — the guardian has no screen, and the notice is held until one exists.",
-  },
-
   empty: { ar: "لا أحد متأخر", en: "Nobody is overdue" },
   emptyHint: {
     ar: "لا توجد حسابات مطابقة لهذه التصفية.",

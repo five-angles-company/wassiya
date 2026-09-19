@@ -122,21 +122,6 @@ export function ClaimsBrowser() {
     />
   )
 
-  const heirFilter = (
-    <FacetedFilter
-      title={labels.colHeir}
-      options={[
-        { value: "linked", label: labels.heirLinked },
-        { value: "unlinked", label: labels.heirNotLinked },
-      ]}
-      selected={query.heirSelection}
-      onToggle={query.toggleHeir}
-      onClear={query.clearHeir}
-      count={() => undefined}
-      clearLabel={tableLabels.resetFilters}
-    />
-  )
-
   // Only the very first load, when there is genuinely nothing to show yet.
   if (page === undefined) {
     return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
@@ -156,7 +141,6 @@ export function ClaimsBrowser() {
         <>
           {statusFilter}
           {identityFilter}
-          {heirFilter}
         </>
       }
       server={{
@@ -192,11 +176,6 @@ export function ClaimsBrowser() {
           {
             header: labels.certificateNameLabel,
             value: (row) => row.certificateName,
-          },
-          {
-            header: labels.colHeir,
-            value: (row) =>
-              row.heirLinked ? labels.heirLinked : labels.heirNotLinked,
           },
           {
             header: labels.colSubmitted,

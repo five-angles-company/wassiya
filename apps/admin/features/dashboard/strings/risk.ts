@@ -5,7 +5,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  *
  * The seven item labels are the same seven the app shows an owner about
  * themselves (`use-protection-score.ts`). Worded from the operator's side —
- * "no guardian" rather than "appoint a guardian" — but naming the same fact, so
+ * "heirs with no bundle" rather than "open the app" — but naming the same fact, so
  * a support conversation and the owner's own screen cannot describe different
  * problems.
  */
@@ -24,21 +24,16 @@ export const RISK = {
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
-  itemGuardian: { ar: "الوصي", en: "Guardian" },
   itemSheet: { ar: "ورقة الاسترجاع", en: "Recovery sheet" },
   itemHeirs: { ar: "الورثة", en: "Heirs" },
   itemRouting: { ar: "التوجيه", en: "Routing" },
+  itemDelivery: { ar: "حزم التسليم", en: "Delivery bundles" },
   itemCheckin: { ar: "نبض الحياة", en: "Check-in" },
 
-  noGuardian: { ar: "بلا وصي فعّال", en: "No live guardian" },
-  noGuardianHint: {
-    ar: "دعوة مقبولة دون حصّة مختومة ليست وصياً — لا يستطيع استرجاع شيء.",
-    en: "An accepted invite with no sealed share is not a guardian: they can recover nothing.",
-  },
   neverPrinted: { ar: "لم تُطبع الورقة", en: "Sheet never printed" },
   neverPrintedHint: {
-    ar: "بلا ورقة وبلا وصي، لا طريق للاسترجاع إن فُقد الجهاز.",
-    en: "With no sheet and no guardian there is no recovery path if the device is lost.",
+    ar: "بلا ورقة، لا طريق للاسترجاع إن فُقد الجهاز.",
+    en: "With no sheet there is no recovery path if the device is lost.",
   },
   heirsNothing: { ar: "ورثة لن يستلموا شيئاً", en: "Heirs who get nothing" },
   heirsNothingHint: {

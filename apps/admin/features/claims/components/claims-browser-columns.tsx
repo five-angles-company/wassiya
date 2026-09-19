@@ -118,25 +118,6 @@ export function claimBrowserColumns(
         ),
     }),
 
-    // Stored as a boolean, faceted as a string: a facet's values have to be
-    // comparable and labellable, and `true`/`false` are neither in Arabic.
-    helper.accessor((row) => (row.heirLinked ? "linked" : "unlinked"), {
-      id: "heirLinked",
-      filterFn: "arrIncludesSome",
-      enableGlobalFilter: false,
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={labels.colHeir} />
-      ),
-      cell: ({ row }) => (
-        <Badge
-          variant={row.original.heirLinked ? "secondary" : "outline"}
-          className="whitespace-nowrap"
-        >
-          {row.original.heirLinked ? labels.heirLinked : labels.heirNotLinked}
-        </Badge>
-      ),
-    }),
-
     helper.accessor("submittedAt", {
       id: "submittedAt",
       sortFn: "datetime",
@@ -215,7 +196,6 @@ export function claimBrowserColumnLabels(
     status: labels.colStatus,
     claimantIdentityStatus: labels.colIdentity,
     subjectVerifiedName: labels.colOwner,
-    heirLinked: labels.colHeir,
     submittedAt: labels.colSubmitted,
     actions: labels.colActions,
   }

@@ -23,10 +23,7 @@ import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 /**
  * ٧ — the release pipeline.
  *
- * **Not a list of bundles**, because none exists: `releaseBundles` has never
- * held a row, since `makeHeirShares`, `buildReleaseBundle` and
- * `release.saveBundles` have no caller in any app. What exists is a pipeline,
- * and this screen shows where it stops.
+ * What is counting down to release, and what each released report delivered.
  *
  * Two panels stacked rather than side by side — one is a countdown and the other
  * a history, with different columns and different questions, and side-by-side

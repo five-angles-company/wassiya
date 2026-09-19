@@ -13,7 +13,7 @@ export const ACTIVATION = {
   stageVaultCreated: { ar: "أنشأ الخزنة", en: "Vault created" },
   stageSheetPrinted: { ar: "طبع ورقة الاسترجاع", en: "Sheet printed" },
   stageHeirNamed: { ar: "سمّى وريثاً", en: "Heir named" },
-  stageGuardianLive: { ar: "وصي فعّال", en: "Guardian live" },
+  stageDeliveryPrepared: { ar: "حزمة تسليم مبنية", en: "Delivery prepared" },
   stageCheckinConfigured: { ar: "فعّل نبض الحياة", en: "Check-in configured" },
 
   // Stated on the page rather than quietly omitted: the app's own setup meter

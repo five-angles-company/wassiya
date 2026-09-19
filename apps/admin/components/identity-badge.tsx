@@ -18,7 +18,7 @@ import type { Locale } from "@/lib/i18n/locale"
  * The claimant's Didit state.
  *
  * This is not decoration — it is half of the rule the reviewer is applying.
- * `nameMatchOutcome` sends a claim to `guardian_review` only when the name
+ * `nameMatchOutcome` sends a claim to `awaiting_veto` only when the name
  * matches **and** the claimant is `verified`; every other combination is
  * `locked`. So a reviewer looking at an unverified claimant is looking at a
  * claim they cannot usefully approve yet, and the badge has to make that
