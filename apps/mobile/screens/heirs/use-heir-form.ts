@@ -15,7 +15,13 @@ export type HeirFormValues = {
   name: string
   relation: string
   phone: string
+  /** Typed this session; "" means none given. Never read back from the server. */
+  idNumber: string
+  /** "YYYY-MM-DD" or "". */
+  birthDate: string
 }
+
+const BIRTH_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export type HeirForm = ReturnType<typeof useHeirForm>
 
@@ -36,6 +42,13 @@ export function useHeirForm(
   const [name, setName] = useState(initial.name)
   const [relation, setRelation] = useState(initial.relation)
   const [phone, setPhone] = useState(initial.phone)
+  const [idNumber, setIdNumber] = useState(initial.idNumber)
+  const [birthDate, setBirthDate] = useState(initial.birthDate)
+
+  const idDigits = idNumber.replace(/[^0-9A-Za-z]/g, "")
+  const idInvalid = idDigits.length > 0 && idDigits.length < 4
+  const birthDateInvalid =
+    birthDate.trim().length > 0 && !BIRTH_DATE.test(birthDate.trim())
 
   // The owner's own country decides the number format — an heir is almost
   // always in the same country, and 5.2 shows one dial code, not a picker.
@@ -62,12 +75,16 @@ export function useHeirForm(
     name: name.trim(),
     relation,
     phone: e164,
+    idNumber: idDigits,
+    birthDate: birthDate.trim(),
   }
 
   const dirty =
     values.name !== initial.name.trim() ||
     values.relation !== initial.relation ||
-    values.phone !== initial.phone
+    values.phone !== initial.phone ||
+    values.idNumber !== "" ||
+    values.birthDate !== initial.birthDate
 
   return {
     name,
@@ -76,12 +93,23 @@ export function useHeirForm(
     setRelation,
     phone,
     setPhone,
+    idNumber,
+    setIdNumber,
+    idInvalid,
+    birthDate,
+    setBirthDate,
+    birthDateInvalid,
     country,
     check,
     duplicate,
     values,
     dirty,
     canSubmit:
-      values.name.length > 0 && relation.length > 0 && usable && !duplicate,
+      values.name.length > 0 &&
+      relation.length > 0 &&
+      usable &&
+      !duplicate &&
+      !idInvalid &&
+      !birthDateInvalid,
   }
 }

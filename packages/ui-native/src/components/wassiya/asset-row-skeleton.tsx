@@ -22,7 +22,7 @@ export function AssetRowSkeleton({ count = 3, className }: AssetRowSkeletonProps
       {Array.from({ length: count }, (_, index) => (
         <View
           key={index}
-          className="bg-card flex-row items-center gap-3 rounded-row px-4 py-3.5">
+          className="bg-card border border-border flex-row items-center gap-3 rounded-row px-4 py-3.5">
           <Skeleton className="size-10 shrink-0 rounded-full" />
           <View className="flex-1 gap-1.5">
             <Skeleton className="h-3.5 w-2/5 rounded-full" />

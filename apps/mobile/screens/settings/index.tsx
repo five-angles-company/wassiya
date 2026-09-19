@@ -127,13 +127,6 @@ export function SettingsScreen() {
           divider
           onPress={() => router.push("/settings/devices")}
         />
-        {/*
-          The app's second persona used to have a row here — the guardian's
-          recovery ceremony. Both halves of the reason it existed are gone: a
-          guardian is no longer part of recovery, and a guardian is no longer a
-          user of *this* app. Mobile is the owner's app; everything a guardian
-          does happens on the web. So this is a deletion, not a move.
-        */}
         {/* Named for what it does. The row deliberately does not say "view" or
             "download": `S_paper` is never persisted, so the code on the current
             sheet cannot be shown again — the screen behind this offers status

@@ -34,7 +34,7 @@ export type TimelineStepsProps = LabelledProps<TimelineLabelKey> & {
 /**
  * The vertical escalation timeline: check-in escalation on the owner's side,
  * and the claim/veto sequence on the heir's side (report → notify → veto
- * window → guardian confirmation → release).
+ * window → release).
  *
  * The point of showing it is that these delays are a **feature**, not latency.
  * The veto window exists so a living owner can object, and someone reading

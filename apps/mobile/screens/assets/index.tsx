@@ -34,8 +34,8 @@ import {
   ASSET_TYPE_ROUTE,
   type AssetType,
 } from "@/lib/asset-types"
-import { AssetFilterChips } from "@/screens/assets/components/asset-filter-chips"
-import { AssetSearchField } from "@/screens/assets/components/asset-search-field"
+import { FilterChips, type FilterChip } from "@/components/filter-chips"
+import { SearchField } from "@/components/search-field"
 import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
@@ -89,22 +89,23 @@ export function AssetsScreen() {
    * so selecting a chip does not renumber the others.
    */
   const unrouted = total - routedTotal
-  const chips: { type: AssetFilter; label: string; count: number }[] = [
-    { type: null, label: t.filterAll!, count: total },
+  const chips: FilterChip<NonNullable<AssetFilter>>[] = [
+    { key: null, label: t.filterAll!, count: total },
     // Second, not last: it is the only chip that can be urgent, and a chip you
     // may need is worth more than one more category you already know you have.
     // Absent at zero — see the component's own note.
     ...(unrouted > 0
       ? [
           {
-            type: "unrouted" as const,
+            key: "unrouted" as const,
             label: t.filterUnrouted!,
             count: unrouted,
+            urgent: true,
           },
         ]
       : []),
     ...ASSET_TYPES.map((type) => ({
-      type,
+      key: type,
       label: t[FILTER_KEY[type]]!,
       count: byType[type],
     })),
@@ -236,7 +237,7 @@ export function AssetsScreen() {
       </View>
 
       {searching ? (
-        <AssetSearchField
+        <SearchField
           value={search}
           onChangeText={setSearch}
           placeholder={t.searchPlaceholder!}
@@ -244,7 +245,7 @@ export function AssetsScreen() {
         />
       ) : null}
 
-      <AssetFilterChips chips={chips} selected={filter} onSelect={setFilter} />
+      <FilterChips chips={chips} selected={filter} onSelect={setFilter} />
 
       {/* The same banner Home uses for its own alarm. One per screen, and gone
           at zero rather than turning olive — "everything is fine" is not news. */}

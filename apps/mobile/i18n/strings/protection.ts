@@ -2,8 +2,8 @@
  * ٦ — الحماية.
  *
  * The behaviour these strings describe is fixed by AGENTS.md's locked security
- * model and by `convex/checkin.ts` and `convex/guardians.ts` — the ladder, the
- * cadence and what a guardian is for are not copy decisions. The wording and the
+ * model and by `convex/checkin.ts` and `convex/claims.ts` — the ladder, the
+ * cadence and the objection period are not copy decisions. The wording and the
  * arrangement are ours.
  */
 import type { LabelSet } from "@workspace/ui-native/lib/labels"
@@ -25,7 +25,6 @@ export const PROTECTION = {
   itemIdentity: { ar: "التحقق من الهوية", en: "Identity verified" },
   itemKey: { ar: "مفتاح الخزنة", en: "Vault key" },
   itemSheet: { ar: "وثيقة الاسترداد مطبوعة", en: "Recovery sheet printed" },
-  itemGuardian: { ar: "الوصي", en: "Guardian" },
   itemHeirs: { ar: "الورثة", en: "Heirs" },
   itemRouting: { ar: "توجيه الأصول", en: "Asset routing" },
   itemCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
@@ -33,101 +32,7 @@ export const PROTECTION = {
   needed: { ar: "مطلوب", en: "Needed" },
   later: { ar: "لاحقاً", en: "Later" },
 
-  // This used to read "without a guardian, the printed sheet alone cannot
-  // recover your vault" — which became false the moment K_rec stopped needing
-  // a second share. The urgency is real but it was pointed at the wrong risk:
-  // a guardian now protects *delivery*, and a vault without one releases a box
-  // no heir can open.
-  guardianUrgent: {
-    ar: "بدون وصي، لا يستطيع ورثتك فتح ما تركته لهم.",
-    en: "Without a guardian, your heirs cannot open what you leave them.",
-  },
 } satisfies LabelSet<string>
-
-/** ٦.٢ — the guardian, owner side. */
-export const GUARDIAN = {
-  title: { ar: "الوصي", en: "Your guardian" },
-  intro: {
-    ar: "الوصي شخص تثق به يحتفظ بنصف مفتاح التسليم لكل وارث. لا يرى محتوى خزنتك أبداً، وهو من يبلّغ عن وفاتك ويقدّم شهادة الوفاة.",
-    en: "A guardian is someone you trust who holds half of the delivery key for each heir. They never see your vault's contents, and they are the person who reports your death and provides the certificate.",
-  },
-  // The half-sentence that makes the model legible in one read. It used to
-  // describe recovery; recovery is the sheet alone now, so this is delivery.
-  howItWorks: {
-    ar: "نصيب الوصي + نصيب الخادم = فتح صندوق الوارث. لا خزنتك ولا استعادتك تمرّان به.",
-    en: "Your guardian's share + the server's share = an heir's box opens. Neither your vault nor your recovery passes through them.",
-  },
-
-  nameLabel: { ar: "اسم الوصي", en: "Guardian's name" },
-  namePlaceholder: { ar: "خالد المنصوري", en: "Khaled Al-Mansouri" },
-  relationLabel: { ar: "صلة القرابة", en: "Relationship" },
-  relationPlaceholder: { ar: "أخ", en: "Brother" },
-  invite: { ar: "أنشئ دعوة", en: "Create invitation" },
-  inviting: { ar: "جارٍ الإنشاء…", en: "Creating…" },
-
-  // The token travels out of band, deliberately — the server never sees a
-  // channel it could also intercept.
-  inviteReady: { ar: "الدعوة جاهزة", en: "Invitation ready" },
-  inviteBody: {
-    ar: "أرسل هذا الرمز إلى {name} بطريقة تثق بها. يصلح مرة واحدة، وينتهي خلال ٧ أيام.",
-    en: "Send this code to {name} by a channel you trust. It works once, and expires in 7 days.",
-  },
-  share: { ar: "أرسل الدعوة", en: "Send the invitation" },
-  // Points at the website, not the app: a guardian has no reason to install
-  // the mobile app, which is the owner's.
-  // ⚠️ Carries the **link**, not a bare code. It used to say "open the Wassiya
-  // website and enter this code" — and that page has no field to enter one, so
-  // an invited guardian reached a screen that could not take what they were
-  // holding. The code stays in the message underneath, for a messaging app that
-  // mangles a long URL; the accept page can take it pasted.
-  // ⚠️ Carries the **link**, not a bare code. It used to say "open the Wassiya
-  // website and enter this code" — and that page has no field to enter one, so
-  // an invited guardian reached a screen that could not take what they were
-  // holding. The code stays underneath, for a messaging app that mangles a long
-  // URL; the accept page takes it pasted.
-  inviteMessage: {
-    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح هذا الرابط:\n{link}\n\nإن لم يعمل الرابط، افتح موقع وصيّة وألصق هذا الرمز:\n{token}",
-    en: "You have been asked to be a guardian for a Wassiya vault. Open this link:\n{link}\n\nIf the link does not work, open the Wassiya website and paste this code:\n{token}",
-  },
-  // No link to give, because `EXPO_PUBLIC_APP_URL` is unset. Naming the site
-  // beats a message that names none.
-  inviteMessageNoLink: {
-    ar: "دعوتك لتكون وصياً على خزنة وصيّة. افتح موقع وصيّة، واذهب إلى صفحة قبول الوصاية، وألصق هذا الرمز:\n{token}",
-    en: "You have been asked to be a guardian for a Wassiya vault. Open the Wassiya website, go to the guardian acceptance page, and paste this code:\n{token}",
-  },
-
-  statusInvited: { ar: "بانتظار القبول", en: "Waiting to accept" },
-  statusAccepted: { ar: "قبل الدعوة", en: "Accepted" },
-  statusActive: { ar: "مفعّل", en: "Active" },
-  statusRevoked: { ar: "مُلغى", en: "Revoked" },
-
-  // The seal ceremony that used to live here is gone: it sealed the *recovery*
-  // share, and there is no such share. What is left is a wait, and the copy
-  // says whose it is — the owner has nothing to do and no way to hurry it.
-  awaitingAcceptance: {
-    ar: "الدعوة جاهزة — أرسلها لوصيّك بنفسك. يقبلها من الرابط، ثم لا شيء مطلوب منك.",
-    en: "The invitation is ready — send it to your guardian yourself. They accept from the link, and nothing more is needed from you.",
-  },
-  acceptedBody: {
-    ar: "قبل وصيّك ونشر مفتاحه. أصبح بإمكان ورثتك استلام ما تركته لهم.",
-    en: "Your guardian accepted and published their key. Your heirs can now receive what you leave them.",
-  },
-
-  revoke: { ar: "ألغِ الوصي", en: "Remove guardian" },
-  revokeTitle: { ar: "إلغاء الوصي؟", en: "Remove this guardian?" },
-  // No longer mentions reissuing the sheet: the sheet has nothing to do with
-  // the guardian now, and telling an owner to reprint would be busywork that
-  // also puts a live recovery code on a printer for no reason.
-  revokeBody: {
-    ar: "لن يعود بإمكانه تأكيد وفاتك أو مساعدة ورثتك على الفتح. اختر وصياً بديلاً.",
-    en: "They will no longer be able to confirm your death or help your heirs open their box. Choose a replacement.",
-  },
-  revokeConfirm: { ar: "ألغِ", en: "Remove" },
-  cancel: { ar: "إلغاء", en: "Cancel" },
-
-  emptyTitle: { ar: "لم تختر وصياً بعد", en: "No guardian yet" },
-} satisfies LabelSet<string>
-
 
 /** ٦.٤ — the life check-in. */
 export const CHECKIN = {
@@ -236,8 +141,8 @@ export const CLAIM_VETO = {
   // The other half of the honesty: doing nothing is also a decision.
   ignoreTitle: { ar: "إن لم تفعل شيئاً", en: "If you do nothing" },
   ignoreBody: {
-    ar: "سيمضي الطلب في مساره: تأكيد الوصي، ثم الإفراج عمّا خُصّص لمقدّم الطلب وحده.",
-    en: "The claim continues: your guardian confirms, then what's routed to that person alone is released.",
+    ar: "سيمضي الطلب في مساره: بعد انتهاء المدة نتواصل مع ورثتك، ويستلم كلٌّ منهم ما خُصّص له وحده بعد التحقّق من هويته.",
+    en: "The claim continues: when the period ends we contact your heirs, and each receives only what was routed to them once their identity is verified.",
   },
   none: { ar: "لا توجد طلبات على حسابك.", en: "No claims against your account." },
 } satisfies LabelSet<string>

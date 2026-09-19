@@ -18,8 +18,7 @@ export const HEIRS = {
   // nothing about which asset goes where. The coverage strip, the unrouted
   // warning and the routing CTA moved out at the owner's direction — routing is
   // asset division, and it stays reachable from Home's التوجيه tile and the
-  // vault's own alert. The guardian left for the same reason: a guardian
-  // *verifies*, it does not inherit, and Home already carries a الوصي tile.
+  // vault's own alert.
   title: { ar: "الورثة", en: "Heirs" },
   countZero: { ar: "لا ورثة بعد", en: "No heirs yet" },
   countOne: { ar: "وارث واحد", en: "1 heir" },
@@ -38,6 +37,29 @@ export const HEIRS = {
   withMessage: { ar: "رسالة مرفقة", en: "Message attached" },
 
   add: { ar: "أضف وارثاً", en: "Add an heir" },
+
+  // Search and filter, mirroring the vault's row exactly — the two lists an
+  // owner moves between most should not work differently.
+  searchPlaceholder: { ar: "ابحث في الورثة", en: "Search your heirs" },
+  filterAll: { ar: "الكل", en: "All" },
+  // The mirror of the vault's "بلا مستلم": a state, not a relation, and the
+  // only chip that can be urgent. Absent at zero.
+  filterNoAssets: { ar: "بلا أصول", en: "No assets" },
+  // Plural, like the vault's chips — a chip names a category, not a person.
+  filterDaughter: { ar: "بنات", en: "Daughters" },
+  filterSon: { ar: "أبناء", en: "Sons" },
+  filterHusband: { ar: "زوج", en: "Husband" },
+  filterWife: { ar: "زوجات", en: "Wives" },
+  filterFather: { ar: "أب", en: "Father" },
+  filterMother: { ar: "أم", en: "Mother" },
+  filterSibling: { ar: "إخوة", en: "Siblings" },
+  filterOther: { ar: "آخرون", en: "Others" },
+  noResultsTitle: { ar: "لا يوجد ما يطابق بحثك", en: "Nothing matches" },
+  noResultsBody: {
+    ar: "جرّب اسماً آخر، أو أزل عامل التصفية.",
+    en: "Try another name, or clear the filter.",
+  },
+  clearFilters: { ar: "أظهر كل الورثة", en: "Show all heirs" },
   emptyTitle: { ar: "لم تضف ورثة بعد", en: "No heirs yet" },
   emptySubtitle: { ar: "لا أحد بعد", en: "Nobody yet" },
   // One sentence that teaches how to *choose*, the same job `assets.emptyLead`
@@ -95,6 +117,30 @@ export const HEIR_NEW = {
     en: "You already have an heir with this number.",
   },
 
+  // Optional by product decision, strongly urged: with it, a delivery opens as
+  // soon as the heir's verified ID matches; without it, a person decides.
+  idNumberLabel: { ar: "رقم الهوية الوطنية أو الإقامة", en: "National ID or residency number" },
+  idNumberPlaceholder: { ar: "1023456789", en: "1023456789" },
+  idNumberHint: {
+    ar: "اختياري، لكنه يسرّع التسليم: نطابقه بهوية الوارث الموثّقة. لا نحفظ الرقم نفسه.",
+    en: "Optional, but it speeds up delivery: we match it to the heir's verified ID. We never store the number itself.",
+  },
+  idNumberRegistered: {
+    ar: "مسجّل — اكتب رقماً جديداً لاستبداله",
+    en: "Registered — type a new number to replace it",
+  },
+  idNumberInvalid: { ar: "الرقم قصير جداً.", en: "That number is too short." },
+  noIdNotice: {
+    ar: "بلا رقم هوية، يراجع فريقنا هوية الوارث يدوياً قبل أن يُفتح له شيء.",
+    en: "Without an ID number, our team checks the heir's identity by hand before anything opens.",
+  },
+  birthDateLabel: { ar: "تاريخ الميلاد (اختياري)", en: "Date of birth (optional)" },
+  birthDatePlaceholder: { ar: "YYYY-MM-DD", en: "YYYY-MM-DD" },
+  birthDateInvalid: {
+    ar: "اكتبه بهذا الشكل: 1990-04-21",
+    en: "Write it like this: 1990-04-21",
+  },
+
   submit: { ar: "أضف الوارث", en: "Add heir" },
   saving: { ar: "جارٍ الإضافة…", en: "Adding…" },
   failed: { ar: "تعذّرت الإضافة. حاول مرة أخرى.", en: "Could not add. Try again." },
@@ -141,12 +187,11 @@ export const RECIPIENTS = {
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
   saveFailed: { ar: "تعذّر الحفظ. لم يتغيّر شيء.", en: "Could not save. Nothing changed." },
 
-  // Routing is recorded, but the key envelopes that make it deliverable need a
-  // guardian — section ٦. Said plainly rather than implied, because "saved"
-  // must not be mistaken for "will be delivered".
+  // "Saved" must not be mistaken for "will be delivered": the delivery keys
+  // are rebuilt on this device, while the vault is open.
   pendingBundles: {
-    ar: "التوجيه محفوظ. تجهيز مفاتيح التسليم يحتاج وصياً، ويصل مع شاشة الحماية.",
-    en: "Routing is saved. Preparing the delivery keys needs a guardian, and arrives with the protection screen.",
+    ar: "التوجيه محفوظ. تُحدَّث مفاتيح التسليم تلقائياً على جهازك وخزنتك مفتوحة.",
+    en: "Routing is saved. Delivery keys are updated automatically on this device while your vault is open.",
   },
 } satisfies LabelSet<string>
 
@@ -179,6 +224,29 @@ export const HEIR_PREVIEW = {
  * edit form *is* the add form with values in it. Only what is genuinely new to
  * editing lives here — the title, the two links out, and the delete sheet.
  */
+/** ٥.٤ — a personal message to one heir. */
+export const HEIR_MESSAGE = {
+  title: { ar: "رسالة إلى {name}", en: "A message to {name}" },
+  lede: {
+    ar: "تُشفَّر على جهازك وتصل إليه وحده بعد الإفراج، مع ما وجّهته له. لا نستطيع قراءتها.",
+    en: "Encrypted on your device and delivered to them alone after release, with what you routed to them. We cannot read it.",
+  },
+  placeholder: { ar: "اكتب ما تريد أن يقرأه…", en: "Write what you want them to read…" },
+  save: { ar: "احفظ الرسالة", en: "Save message" },
+  saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
+  saved: { ar: "حُفظت الرسالة.", en: "Message saved." },
+  failed: { ar: "تعذّر الحفظ. لم يتغيّر شيء.", en: "Could not save. Nothing changed." },
+  remove: { ar: "احذف الرسالة", en: "Delete message" },
+  locked: {
+    ar: "افتح خزنتك أولاً — تُشفَّر الرسالة بمفتاحها.",
+    en: "Unlock your vault first — the message is encrypted with its key.",
+  },
+  loadFailed: {
+    ar: "تعذّر فتح الرسالة المحفوظة.",
+    en: "Could not open the saved message.",
+  },
+} satisfies LabelSet<string>
+
 export const HEIR_EDIT = {
   title: { ar: "تعديل وارث", en: "Edit heir" },
   /** Deleted from another device while this list was open. */
@@ -189,6 +257,11 @@ export const HEIR_EDIT = {
     ar: "تعذّر حفظ التعديل. حاول مرة أخرى.",
     en: "Could not save. Try again.",
   },
+
+  // The personal message: one row here, its own screen behind it.
+  messageRow: { ar: "رسالة شخصية", en: "Personal message" },
+  messageNone: { ar: "لم تكتب له رسالة بعد", en: "No message yet" },
+  messageSet: { ar: "مكتوبة — تُسلَّم معه", en: "Written — delivered with them" },
 
   deleteHeir: { ar: "حذف الوارث", en: "Delete heir" },
   deleteTitle: { ar: "حذف {name}؟", en: "Delete {name}?" },

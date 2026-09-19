@@ -5,10 +5,12 @@
  *
  * The array order below is the ranking: exactly one `needed` item is promoted
  * to amber and the rest fall to `later`, because a screen where six things are
- * urgent ranks nothing. A `blocked` item is waiting on somebody else — a
- * guardian accepts on the web, where they mint their own key — so it stays
- * `later` and is skipped for `topGap`, never accusing the owner of a step that
- * is not theirs. It still counts against the score.
+ * urgent ranks nothing. A `blocked` item is waiting on somebody else, so it
+ * stays `later` and is skipped for `topGap`, never accusing the owner of a
+ * step that is not theirs. It still counts against the score.
+ *
+ * The order is `admin.ts`'s `PROTECTION_ITEMS`; the console and this screen
+ * must name the same seven gaps in the same order.
  *
  * Every input is server metadata, so this renders before any decryption.
  */
@@ -18,15 +20,13 @@ import { api } from "@workspace/backend/api"
 import type { ProtectionItem } from "@workspace/ui-native/components/wassiya/protection-score-list"
 import type { Href } from "expo-router"
 
-import { isGuardianLive, isGuardianPending } from "@/lib/guardian"
-
 export type ProtectionId =
   | "identity"
   | "key"
-  | "guardian"
   | "sheet"
   | "heirs"
   | "routing"
+  | "delivery"
   | "checkin"
 
 export type ProtectionEntry = ProtectionItem & {
@@ -54,16 +54,11 @@ export function useProtectionScore(
 ): ProtectionScoreResult {
   const me = useQuery(api.users.me)
   const keyring = useQuery(api.keyring.get)
-  const guardians = useQuery(api.guardians.list)
   const heirs = useQuery(api.heirs.list)
+  const stale = useQuery(api.routing.staleHeirs)
   const checkin = useQuery(api.checkin.get)
 
   const items = useMemo((): ProtectionEntry[] => {
-    // Shared with the plan tab — see `lib/guardian.ts` for why this predicate
-    // may exist in exactly one place.
-    const guardianLive = isGuardianLive(guardians) === true
-    const guardianPending = isGuardianPending(guardians) === true
-
     return [
       {
         id: "identity",
@@ -72,20 +67,11 @@ export function useProtectionScore(
         href: "/setup/kyc",
       },
       { id: "key", label: labels.key, done: keyring !== null },
-      // The sheet outranks the guardian now: it is the whole of recovery, while
-      // the guardian is delivery, which only matters after there are heirs.
       {
         id: "sheet",
         label: labels.sheet,
         done: keyring?.paperPrintedAt != null,
         href: "/setup/recovery-kit",
-      },
-      {
-        id: "guardian",
-        label: labels.guardian,
-        done: guardianLive,
-        blocked: guardianPending,
-        href: "/protection/guardian",
       },
       {
         id: "heirs",
@@ -101,6 +87,15 @@ export function useProtectionScore(
         // that same list, grouped and filtered, and ٤.١ now does both itself.
         href: "/assets?filter=unrouted",
       },
+      // Every heir has a delivery bundle built since their routing last
+      // changed. The device builds them itself while the vault is open, so
+      // this only stays amber if a rebuild is failing.
+      {
+        id: "delivery",
+        label: labels.delivery,
+        done: (heirs?.length ?? 0) > 0 && stale?.length === 0,
+        href: "/heirs",
+      },
       {
         id: "checkin",
         label: labels.checkin,
@@ -108,7 +103,7 @@ export function useProtectionScore(
         href: "/protection/checkin",
       },
     ]
-  }, [me, keyring, guardians, heirs, checkin, labels])
+  }, [me, keyring, heirs, stale, checkin, labels])
 
   const ranked = useMemo(() => {
     let promoted = false
@@ -133,8 +128,8 @@ export function useProtectionScore(
     loading:
       me === undefined ||
       keyring === undefined ||
-      guardians === undefined ||
       heirs === undefined ||
+      stale === undefined ||
       checkin === undefined,
   }
 }

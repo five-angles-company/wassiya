@@ -43,13 +43,13 @@ import {
   HEIRS,
   HEIR_NEW,
   HEIR_EDIT,
+  HEIR_MESSAGE,
   HEIR_PREVIEW,
   RECIPIENTS,
 } from "@/i18n/strings/heirs"
 import {
   CHECKIN,
   CLAIM_VETO,
-  GUARDIAN,
   PROTECTION,
 } from "@/i18n/strings/protection"
 
@@ -98,14 +98,11 @@ export const SCREEN_STRINGS = {
   heirs: HEIRS,
   "heirs/new": HEIR_NEW,
   "heirs/edit": HEIR_EDIT,
+  "heirs/message": HEIR_MESSAGE,
   "assets/recipients": RECIPIENTS,
   "heirs/preview": HEIR_PREVIEW,
 
   protection: PROTECTION,
-  // The owner's own screen. The guardian-side sets that used to sit beside it
-  // — accept, claim, and the recovery approval — left with those screens:
-  // guardians are web users, and mobile is the owner's app.
-  "protection/guardian": GUARDIAN,
   "protection/checkin": CHECKIN,
   "protection/claim": CLAIM_VETO,
 

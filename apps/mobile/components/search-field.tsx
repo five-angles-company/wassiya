@@ -4,7 +4,7 @@ import { Input } from "@workspace/ui-native/components/ui/input"
 import { Search, X } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
-export type AssetSearchFieldProps = {
+export type SearchFieldProps = {
   value: string
   onChangeText: (value: string) => void
   placeholder: string
@@ -20,13 +20,13 @@ export type AssetSearchFieldProps = {
  * reading start in both directions. The `Search` glyph is symmetrical enough
  * not to need `<Icon flip />`; the clear button is a circle, likewise.
  */
-export function AssetSearchField({
+export function SearchField({
   value,
   onChangeText,
   placeholder,
   clearLabel,
   className,
-}: AssetSearchFieldProps) {
+}: SearchFieldProps) {
   return (
     <View className={cn("relative justify-center", className)}>
       <View className="pointer-events-none absolute start-4 z-10">

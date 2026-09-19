@@ -78,7 +78,9 @@ export function Surface({
     <View
       className={cn(
         RADIUS[as],
-        tone === 'card' ? 'bg-card' : TONE_SOFT_BG[tone],
+        // Only the plain card takes an edge. The tinted tones are notices, and web
+        // leaves those unbordered too — a border would read as a second card.
+        tone === 'card' ? 'bg-card border border-border' : TONE_SOFT_BG[tone],
         GAP[gap],
         padded && (row ? 'px-4 py-3.5' : 'p-4'),
         clip && 'overflow-hidden',

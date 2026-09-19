@@ -34,9 +34,11 @@ export type HeirFieldsProps = {
   t: ReturnType<typeof useStrings<"heirs/new">>["t"]
   /** Shown under the fields when a save failed. */
   error?: string
+  /** An ID number is already registered — the number itself is never shown. */
+  hasIdNumber?: boolean
 }
 
-export function HeirFields({ form, t, error }: HeirFieldsProps) {
+export function HeirFields({ form, t, error, hasIdNumber = false }: HeirFieldsProps) {
   const { check, duplicate } = form
 
   return (
@@ -85,6 +87,35 @@ export function HeirFields({ form, t, error }: HeirFieldsProps) {
               ? t.phoneInvalid
               : undefined
         }
+      />
+
+      <Field
+        label={t.idNumberLabel}
+        placeholder={hasIdNumber ? t.idNumberRegistered : t.idNumberPlaceholder}
+        value={form.idNumber}
+        onChangeText={form.setIdNumber}
+        keyboardType="number-pad"
+        // Latin digits, LTR — an ID number is copied from a card, not read.
+        className="text-left"
+        hint={t.idNumberHint}
+        error={form.idInvalid ? t.idNumberInvalid : undefined}
+      />
+      {/* The consequence of leaving it empty, stated once, in the one colour
+          this screen reserves for something the owner can still fix. */}
+      {!hasIdNumber && form.idNumber.length === 0 ? (
+        <Text variant="metaSm" className="text-terracotta-700 leading-[1.6]">
+          {t.noIdNotice}
+        </Text>
+      ) : null}
+
+      <Field
+        label={t.birthDateLabel}
+        placeholder={t.birthDatePlaceholder}
+        value={form.birthDate}
+        onChangeText={form.setBirthDate}
+        keyboardType="numbers-and-punctuation"
+        className="text-left"
+        error={form.birthDateInvalid ? t.birthDateInvalid : undefined}
       />
 
       {/* Not a choice any more. Every heir is silent, so the screen states the

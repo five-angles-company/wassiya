@@ -3,6 +3,7 @@ import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { FieldLink } from "@workspace/ui-native/components/wassiya/field-link"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
 import { Pressable } from "react-native"
@@ -22,6 +23,9 @@ export type HeirEditFormProps = {
     relation: string
     phone: string
     routedAssetCount: number
+    hasIdNumber: boolean
+    birthDate: string | null
+    messageKind: string | null
   }
 }
 
@@ -32,7 +36,10 @@ export function HeirEditForm({ heir }: HeirEditFormProps) {
   const { t: common } = useStrings("common")
 
   const update = useMutation(api.heirs.update)
-  const form = useHeirForm(heir, heir.id)
+  const form = useHeirForm(
+    { ...heir, idNumber: "", birthDate: heir.birthDate ?? "" },
+    heir.id
+  )
 
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -43,7 +50,14 @@ export function HeirEditForm({ heir }: HeirEditFormProps) {
     setSaving(true)
     setFailed(false)
     try {
-      await update({ heirId: heir.id, ...form.values })
+      const { idNumber, birthDate, ...rest } = form.values
+      await update({
+        heirId: heir.id,
+        ...rest,
+        // Only a newly typed number replaces the registered one.
+        idNumber: idNumber === "" ? undefined : idNumber,
+        birthDate: birthDate === (heir.birthDate ?? "") ? undefined : birthDate,
+      })
       router.back()
     } catch {
       setFailed(true)
@@ -61,6 +75,17 @@ export function HeirEditForm({ heir }: HeirEditFormProps) {
         form={form}
         t={fields}
         error={failed ? t.failed : undefined}
+        hasIdNumber={heir.hasIdNumber}
+      />
+
+      <FieldLink
+        label={t.messageRow!}
+        value={heir.messageKind === null ? "" : t.messageSet!}
+        placeholder={t.messageNone}
+        chevron="forward"
+        onPress={() =>
+          router.push({ pathname: "/heirs/[id]/message", params: { id: heir.id } })
+        }
       />
 
       {/* Save appears only once something changed — the same rule the asset

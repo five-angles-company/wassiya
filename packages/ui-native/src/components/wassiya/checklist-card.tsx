@@ -47,7 +47,7 @@ export function ChecklistCard({
   const suffix = remaining === 1 ? t.lastStep : t.progress;
 
   return (
-    <View className={cn('bg-card gap-3 rounded-card p-4', className)}>
+    <View className={cn('bg-card border border-border gap-3 rounded-card p-4', className)}>
       <View className="flex-row items-baseline gap-2.5">
         <Text variant="sectionLabel" className="flex-1">
           {title}

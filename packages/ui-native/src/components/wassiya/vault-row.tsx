@@ -54,7 +54,7 @@ export function VaultRow({
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
       className={cn(
-        'rounded-card bg-card flex-row items-center gap-3 px-4 py-3.5',
+        'rounded-card bg-card border border-border flex-row items-center gap-3 px-4 py-3.5',
         onPress && 'active:bg-sand-300',
         className
       )}>

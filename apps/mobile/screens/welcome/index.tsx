@@ -105,7 +105,7 @@ export function WelcomeScreen() {
           title={t.releaseTitle}
           body={t.releaseBody}
         >
-          {[t.gateIdentity, t.gateCertificate, t.gateGuardian, t.gateVeto].map(
+          {[t.gateIdentity, t.gateCertificate, t.gateReview, t.gateVeto].map(
             (gate) => (
               <View key={gate} className="flex-row gap-2.25">
                 <Text className="font-body-bold text-olive-700">·</Text>

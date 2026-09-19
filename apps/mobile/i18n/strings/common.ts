@@ -34,8 +34,8 @@ export const TABS = {
   //
   // الوصيّة → خطتي → الورثة. The tab was named for a legal document it never
   // held, then for a plan broad enough to absorb anything; it now names the one
-  // thing it actually manages. Routing and the guardian left with the rename —
-  // both are reachable from Home.
+  // thing it actually manages. Routing left with the rename —
+  // it is reachable from Home.
   home: { ar: "الرئيسية", en: "Home" },
   assets: { ar: "الخزنة", en: "Vault" },
   heirs: { ar: "الورثة", en: "Heirs" },

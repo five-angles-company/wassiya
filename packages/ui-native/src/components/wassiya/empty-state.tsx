@@ -23,7 +23,7 @@ export type EmptyStateProps = {
 };
 
 /**
- * The template for every empty list in the app — assets, heirs, guardians,
+ * The template for every empty list in the app — assets, heirs,
  * notifications.
  *
  * Three rules: a **sage** disc (never terracotta — an

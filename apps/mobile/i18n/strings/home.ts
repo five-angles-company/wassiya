@@ -41,10 +41,12 @@ export const HOME = {
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
-  itemGuardian: { ar: "الوصي", en: "Guardian" },
   itemSheet: { ar: "الوثيقة", en: "Sheet" },
   itemHeirs: { ar: "الورثة", en: "Heirs" },
   itemRouting: { ar: "التوجيه", en: "Routing" },
+  itemDelivery: { ar: "التسليم", en: "Delivery" },
+  stateDeliveryReady: { ar: "جاهز للورثة", en: "Ready for heirs" },
+  stateDeliveryStale: { ar: "يحتاج تحديثاً", en: "Needs updating" },
   itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
   notSet: { ar: "غير مفعّل", en: "not on" },
 
@@ -146,28 +148,14 @@ export const NOTIFICATIONS = {
     ar: "تأكيد واحد بالبصمة",
     en: "One confirmation with your fingerprint",
   },
-  openGuardianClaim: { ar: "افتح الطلب", en: "Open the claim" },
   openCheckin: { ar: "افتح التأكيد", en: "Open check-in" },
 
-  guardianAccepted: { ar: "قبِل {name} دعوة الوصاية", en: "{name} accepted the guardian invitation" },
   claimSubmitted: { ar: "طلب وراثة على حسابك", en: "An inheritance claim on your account" },
   claimBlocked: {
     ar: "حُجبت محاولة طلب وراثة",
     en: "An inheritance claim attempt was blocked",
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },
-  // Addressed to a **guardian**, not to an owner — the only notification in
-  // this list that is. It says "someone you guard", never whose vault or who
-  // filed: a notification row is readable from a lock screen, and neither fact
-  // belongs there.
-  claimGuardianReview: {
-    ar: "طلب ينتظر تأكيدك كوصي",
-    en: "A claim is waiting on you as guardian",
-  },
-  claimGuardianReviewBody: {
-    ar: "خزنة أنت وصيٌّ عليها. راجع الطلب وأكّده إن كنت تعلم بالوفاة.",
-    en: "A vault you guard. Review the claim and confirm it if you know of the death.",
-  },
   bundlesRebuilt: { ar: "حُدّثت مفاتيح التسليم", en: "Delivery keys were updated" },
   generic: { ar: "تحديث في خزنتك", en: "An update in your vault" },
 } satisfies LabelSet<string>

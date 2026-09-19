@@ -1,8 +1,8 @@
 /**
  * ٣.٣ — الإشعارات. Two bands, never one flat feed: actionable security events
  * pin to the top with inline actions, the rest is history. A single
- * reverse-chronological list buries a recovery attempt under "your guardian
- * accepted" within a day.
+ * reverse-chronological list buries a recovery attempt under routine history
+ * within a day.
  *
  * `NEEDS_ACTION` events stay in the top band whether or not they carry a
  * `readAt`. Marking read is a *reading* gesture and must not dismiss something
@@ -24,7 +24,7 @@ import { AuditRow } from "@workspace/ui-native/components/wassiya/audit-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { BellOff, KeyRound, ShieldCheck, Users } from "lucide-react-native"
+import { BellOff, KeyRound, Users } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -37,10 +37,6 @@ import { useStrings } from "@/i18n/use-strings"
  * should have to be *chosen* into the attention band, because the band's value
  * is entirely in how rarely it is used.
  */
-// `claim.guardian_review` used to sit here too. It is addressed to a *guardian*,
-// and guardians are web users — mobile is the owner's app — so it no longer
-// reaches this screen at all. It stays mapped in `titleFor` because history
-// rows written before the split are still readable.
 const NEEDS_ACTION = new Set(["recovery.attempted", "checkin.due"])
 
 export function NotificationsScreen() {
@@ -152,18 +148,11 @@ function titleFor(
       return t.recoveryAttempt!
     case "checkin.due":
       return t.checkinDue!
-    case "guardian.accepted":
-      return t.guardianAccepted!.replace(
-        "{name}",
-        typeof payload.name === "string" ? payload.name : ""
-      )
     // Claims appear as history only. The interrupt is a screen, never a row.
     case "claim.submitted":
       return t.claimSubmitted!
     case "claim.blocked_by_lockout":
       return t.claimBlocked!
-    case "claim.guardian_review":
-      return t.claimGuardianReview!
     case "claim.vetoed":
       return t.claimVetoed!
     case "release.bundles_rebuilt":
@@ -208,7 +197,6 @@ function actionsFor(kind: string, t: Record<string, string>): React.ReactNode {
 }
 
 function iconFor(kind: string) {
-  if (kind.startsWith("guardian")) return ShieldCheck
   if (kind.startsWith("claim")) return Users
   return KeyRound
 }

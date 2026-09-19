@@ -66,10 +66,10 @@ export function HomeScreen() {
   const score = useProtectionScore({
     identity: t.itemIdentity,
     key: t.itemKey,
-    guardian: t.itemGuardian,
     sheet: t.itemSheet,
     heirs: t.itemHeirs,
     routing: t.itemRouting,
+    delivery: t.itemDelivery,
     checkin: t.itemCheckin,
   })
 
@@ -186,10 +186,10 @@ export function HomeScreen() {
           />
           <StatTile
             icon={ShieldCheck}
-            label={t.itemGuardian}
-            value={has("guardian") ? t.stateOn : t.stateOff}
-            tone={has("guardian") ? "olive" : "terracotta"}
-            onPress={() => router.push("/protection/guardian")}
+            label={t.itemDelivery}
+            value={has("delivery") ? t.stateDeliveryReady : t.stateDeliveryStale}
+            tone={has("delivery") ? "olive" : "terracotta"}
+            onPress={() => router.push("/heirs")}
           />
           <StatTile
             icon={FileText}

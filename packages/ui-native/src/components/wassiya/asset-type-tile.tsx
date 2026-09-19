@@ -39,7 +39,7 @@ export function AssetTypeTile({
       className={cn(
         // `StatTile`'s metrics, so a type tile and a Home tile are the same
         // object rather than two things that merely resemble each other.
-        'bg-card active:bg-sand-300 rounded-card flex-1 gap-2.5 px-4 py-3.5',
+        'bg-card border border-border active:bg-sand-300 rounded-card flex-1 gap-2.5 px-4 py-3.5',
         className
       )}>
       <View

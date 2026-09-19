@@ -3,10 +3,9 @@
  * constraints it has to honour:
  *
  *  - **Two keys, two jobs, not interchangeable.** The device key opens the vault
- *    daily, the printed sheet opens it when the device is gone, and the guardian
- *    is not a key to *your* vault at all — they hold half of what each heir
- *    receives. Copy implying "any two of three" contradicts the security model,
- *    not merely its tone.
+ *    daily and the printed sheet opens it when the device is gone. Heirs never
+ *    open it: they receive only what is routed to them, after a verified death.
+ *    Copy implying a third key contradicts the security model, not its tone.
  *  - `kyc.blockingNotice` is the promise that no vault exists before identity
  *    passes. `keyring.save` enforces it server-side; this string is how the user
  *    learns it, and it must stay true.
@@ -128,12 +127,12 @@ export const EXPLAINER = {
     ar: "تفتح خزنتك إذا فقدت جهازك. من يحملها يفتحها — فاحفظها كما تحفظ وصيّتك",
     en: "Opens your vault if you lose your device. Whoever holds it can open it — keep it as you keep your will",
   },
-  // Deliberately not called a third key: a guardian cannot open this vault at
-  // all. Naming them here is what stops "why did I appoint one?" later.
-  guardianTitle: { ar: "ووصيّك، لاحقاً", en: "And your guardian, later" },
-  guardianBody: {
-    ar: "لا يفتح خزنتك أبداً — يحفظ نصف ما يستلمه ورثتك",
-    en: "Never opens your vault — they hold half of what your heirs receive",
+  // Deliberately not a third key: heirs never open this vault. Naming them here
+  // is what makes routing, later, feel like the point rather than a chore.
+  heirsTitle: { ar: "وورثتك، لاحقاً", en: "And your heirs, later" },
+  heirsBody: {
+    ar: "لا يفتحون خزنتك أبداً — يستلم كلٌّ منهم ما خصّصته له فقط، بعد التحقّق من الوفاة ومن هويته",
+    en: "They never open your vault — each receives only what you route to them, after your death and their identity are verified",
   },
   cta: { ar: "فهمت، أكمل", en: "Got it, continue" },
 } satisfies LabelSet<string>

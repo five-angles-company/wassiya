@@ -2,7 +2,7 @@ import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { KeyCard } from "@workspace/ui-native/components/wassiya/key-card"
 import { router } from "expo-router"
-import { Fingerprint, Printer, Shield } from "lucide-react-native"
+import { Fingerprint, Printer, Users } from "lucide-react-native"
 
 import { View } from "react-native"
 
@@ -16,20 +16,12 @@ import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
  *
  * A pure comprehension screen with no side effects, and the **only** place the
  * recovery model is explained. Each card pre-names a later step: the device leg
- * is 2.3, the printed sheet is 2.4, and the guardian arrives in section ٦.
+ * is 2.3, the printed sheet is 2.4, and heirs arrive in section ٥.
  *
- * ## Two keys, and a third card that is not a key
- *
- * This taught a 2-of-3 where any two of three keys opened the vault. It is not
- * that any more: the device opens the vault daily, the **sheet opens it alone**
- * when the device is gone, and the guardian cannot open it at all — they hold
- * half of what each *heir* receives.
- *
- * The guardian card stays, because an owner who is never told why they are
- * appointing one will not appoint one, and then their heirs receive a box that
- * does not open. But it is framed as a later, different thing rather than a
- * third key, and the copy must not drift back: describing the guardian as a way
- * into this vault would describe a weaker system than the crypto implements.
+ * Two keys and a card that is not a key. The device opens the vault daily and
+ * the **sheet opens it alone** when the device is gone; heirs never open it.
+ * The copy must not drift into describing heirs as a way into this vault —
+ * that would describe a weaker system than the crypto implements.
  */
 export function ExplainerScreen() {
   const { t, locale } = useStrings("setup/explainer")
@@ -62,12 +54,12 @@ export function ExplainerScreen() {
           title={t.paperTitle}
           description={t.paperBody}
         />
-        {/* Pending: no guardian exists until section ٦, and dimming the card is
-            how the screen stays honest about which keys are actually live. */}
+        {/* Pending: dimmed because it is not a key, and the screen stays honest
+            about which keys are actually live. */}
         <KeyCard
-          icon={Shield}
-          title={t.guardianTitle}
-          description={t.guardianBody}
+          icon={Users}
+          title={t.heirsTitle}
+          description={t.heirsBody}
           pending
         />
       </View>

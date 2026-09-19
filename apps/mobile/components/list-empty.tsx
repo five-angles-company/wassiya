@@ -6,7 +6,7 @@ import { View } from "react-native"
 import { GhostRow } from "@/components/ghost-row"
 
 /**
- * ٥.١b — the heirs list with nobody in it yet.
+ * An owner list with nobody in it yet — ٥.١b heirs, and any list that follows its pattern.
  *
  * Deliberately the twin of `assets-empty.tsx`: same block, same sizes, same
  * ghost cards. These are the two lists an owner meets first, and they were
@@ -25,7 +25,7 @@ import { GhostRow } from "@/components/ghost-row"
  * `AssetsEmpty` does. A bare `<Screen>` collapses them and the two screens
  * stop matching.
  */
-export type HeirsEmptyProps = {
+export type ListEmptyProps = {
   title: string
   subtitle: string
   /** The one sentence. */
@@ -34,13 +34,13 @@ export type HeirsEmptyProps = {
   onAdd: () => void
 }
 
-export function HeirsEmpty({
+export function ListEmpty({
   title,
   subtitle,
   lead,
   addLabel,
   onAdd,
-}: HeirsEmptyProps) {
+}: ListEmptyProps) {
   return (
     <>
       <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">

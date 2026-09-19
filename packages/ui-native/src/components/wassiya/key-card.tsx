@@ -18,7 +18,7 @@ export type KeyCardProps = {
 /**
  * One of the three keys to the vault, in the 2-of-3 explainer.
  *
- * The three cards **are** the three keys — device, printed sheet, guardian —
+ * The cards **are** the explainer's subjects — device, printed sheet, heirs —
  * and each one names a later step in setup, so the explainer doubles as a map
  * of what is coming. Copy must never describe the vault as having "one key":
  * the whole recovery model is that no single key opens it.
@@ -27,7 +27,7 @@ export function KeyCard({ icon, title, description, pending, className }: KeyCar
   return (
     <View
       className={cn(
-        'bg-card flex-row gap-3 rounded-row px-4 py-3.5',
+        'bg-card border border-border flex-row gap-3 rounded-row px-4 py-3.5',
         pending && 'opacity-60',
         className
       )}>

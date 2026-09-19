@@ -59,7 +59,7 @@ export const WELCOME = {
     ar: "شهادة وفاة رسمية تُطابق هويتك",
     en: "An official certificate matched to your ID",
   },
-  gateGuardian: { ar: "موافقة وصيّك", en: "Your guardian's confirmation" },
+  gateReview: { ar: "مراجعة بشرية للشهادة", en: "A human review of the certificate" },
   gateVeto: {
     ar: "مدة اعتراض تملك إيقافها بضغطة",
     en: "A veto window you can stop with one tap",

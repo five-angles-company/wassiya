@@ -53,7 +53,7 @@ export function StatTile({
       // `basis-[47%]` + `grow` is what puts two on a row with a gap between
       // them: a hard 50% cannot fit alongside the gap and wraps to one column.
       className={cn(
-        'rounded-card bg-card grow basis-[47%] gap-2.5 px-4 py-3.5',
+        'rounded-card bg-card border border-border grow basis-[47%] gap-2.5 px-4 py-3.5',
         onPress !== undefined && 'active:bg-sand-300',
         className
       )}

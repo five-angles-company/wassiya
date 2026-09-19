@@ -21,7 +21,13 @@ import { useHeirForm } from "@/screens/heirs/use-heir-form"
 export function NewHeirScreen() {
   const { t } = useStrings("heirs/new")
   const add = useMutation(api.heirs.add)
-  const form = useHeirForm({ name: "", relation: "", phone: "" })
+  const form = useHeirForm({
+    name: "",
+    relation: "",
+    phone: "",
+    idNumber: "",
+    birthDate: "",
+  })
 
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -31,7 +37,12 @@ export function NewHeirScreen() {
     setSaving(true)
     setFailed(false)
     try {
-      await add(form.values)
+      const { idNumber, birthDate, ...rest } = form.values
+      await add({
+        ...rest,
+        idNumber: idNumber === "" ? undefined : idNumber,
+        birthDate: birthDate === "" ? undefined : birthDate,
+      })
       router.back()
     } catch {
       setFailed(true)

@@ -151,9 +151,9 @@
       /* Paper ground and ink. */
       --color-background: hsl(37.2 59.2% 90.4%); /* #f5ead8 */
       --color-foreground: hsl(20 4.9% 12%); /* #201e1d */
-      --color-card: hsl(37.9 48.7% 84.7%); /* #ebddc5 */
+      --color-card: hsl(40 69.2% 97.5%); /* #fdfaf4 */
       --color-card-foreground: hsl(20 4.9% 12%);
-      --color-popover: hsl(37.9 48.7% 84.7%);
+      --color-popover: hsl(40 69.2% 97.5%); /* #fdfaf4 */
       --color-popover-foreground: hsl(20 4.9% 12%);
 
       /* Terracotta = action / identity. */
@@ -176,8 +176,8 @@
       --color-destructive: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
       --color-destructive-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
-      --color-border: hsl(20 4.9% 12% / 0.16);
-      --color-input: hsl(20 4.9% 12% / 0.16);
+      --color-border: hsl(20 4.9% 12% / 0.26);
+      --color-input: hsl(20 4.9% 12% / 0.3);
       --color-ring: hsl(7 79.4% 60%); /* #ea5b48 */
 
       /* Terracotta ramp — action, attention, "needs you". */
@@ -231,9 +231,9 @@
     @variant dark {
       --color-background: hsl(37.2 59.2% 90.4%);
       --color-foreground: hsl(20 4.9% 12%);
-      --color-card: hsl(37.9 48.7% 84.7%);
+      --color-card: hsl(40 69.2% 97.5%); /* #fdfaf4 */
       --color-card-foreground: hsl(20 4.9% 12%);
-      --color-popover: hsl(37.9 48.7% 84.7%);
+      --color-popover: hsl(40 69.2% 97.5%); /* #fdfaf4 */
       --color-popover-foreground: hsl(20 4.9% 12%);
 
       --color-primary: hsl(7 79.4% 60%); /* #ea5b48 */
@@ -251,8 +251,8 @@
       --color-destructive: hsl(8.6 54.7% 39.8%); /* #9d3e2e */
       --color-destructive-foreground: hsl(24 100% 97.1%); /* #fff6f0 */
 
-      --color-border: hsl(20 4.9% 12% / 0.16);
-      --color-input: hsl(20 4.9% 12% / 0.16);
+      --color-border: hsl(20 4.9% 12% / 0.26);
+      --color-input: hsl(20 4.9% 12% / 0.3);
       --color-ring: hsl(7 79.4% 60%); /* #ea5b48 */
 
       --color-terracotta-100: hsl(24 100% 97.1%); /* #fff6f0 */

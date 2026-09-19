@@ -92,7 +92,7 @@ export function StorageMeter({
   }));
 
   return (
-    <View className={cn('bg-card gap-row rounded-card p-4', className)}>
+    <View className={cn('bg-card border border-border gap-row rounded-card p-4', className)}>
       <View className="flex-row items-baseline gap-2">
         <Text variant="sectionLabel" className="flex-1">
           {t.title}

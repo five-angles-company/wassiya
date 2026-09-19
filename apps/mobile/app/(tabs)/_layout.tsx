@@ -9,6 +9,7 @@ import {
 
 import { TabBarIcon } from "@/components/tab-bar-icon"
 import { TabBarLabel } from "@/components/tab-bar-label"
+import { useReleaseBundles } from "@/hooks/use-release-bundles"
 import { useVaultAutoLock } from "@/hooks/use-vault-autolock"
 import { useStrings } from "@/i18n/use-strings"
 
@@ -22,13 +23,12 @@ import { useStrings } from "@/i18n/use-strings"
  * الحماية was removed because it duplicated الرئيسية outright — both rendered
  * the same protection-score object, so "how protected am I?" was answered in two
  * places and owned by neither. Home's tile grid is that answer;
- * `/protection/checkin`, `/protection/claim` and `/protection/guardian` are
+ * `/protection/checkin` and `/protection/claim` are
  * pushed destinations reached from the tab that owns them.
  *
  * خطتي owns **people you name to receive**, and nothing else. Routing is asset
- * division and belongs to ٤.١, which groups by type and filters by "بلا مستلم";
- * the guardian verifies rather than inherits, and is reached from Home. (The
- * the original ٤.١ design drew five tabs — the owner directed a ground-up
+ * division and belongs to ٤.١, which groups by type and filters by "بلا مستلم".
+ * (The original ٤.١ design drew five tabs — the owner directed a ground-up
  * redesign that supersedes it; see `.claude/plans/`.)
  *
  * This layout gates only on having a session. The vault-readiness gate lives on
@@ -45,6 +45,7 @@ export default function TabsLayout() {
   const { isAuthenticated, isLoading } = useConvexAuth()
 
   useVaultAutoLock()
+  useReleaseBundles()
 
   if (!isLoading && !isAuthenticated) return <Redirect href="/" />
 
