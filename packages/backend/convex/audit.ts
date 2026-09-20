@@ -23,6 +23,8 @@ export type AuditEntry = {
   userId: Id<"users">
   event: string
   deviceId?: Id<"devices">
+  /** The staff member who did this, when that is not the subject. */
+  actorUserId?: Id<"users">
   meta?: AuditMeta
   at?: number
 }
@@ -41,8 +43,41 @@ export async function writeAudit(
     userId: entry.userId,
     event: entry.event,
     deviceId: entry.deviceId,
+    actorUserId: entry.actorUserId,
     meta: entry.meta ?? {},
     at: entry.at ?? Date.now(),
+  })
+}
+
+/**
+ * One staff action, recorded against the account it was taken on.
+ *
+ * The subject stays `userId` — an owner's own timeline must show what staff did
+ * to them — and the actor goes in its own indexed column. The console asks
+ * "everything this staff member has done", which `meta.adminUserId` could
+ * render but never answer: `meta` is a `v.record` and therefore unindexable.
+ *
+ * ⚠️ Nothing backfills the old rows. The log is append-only, so the actor
+ * filter genuinely begins at the RBAC cutover and the screen says so; a
+ * migration here would need a `patch` on `auditLog`, which is the one thing
+ * this table does not have.
+ */
+export async function writeStaffAudit(
+  ctx: MutationCtx,
+  entry: {
+    actor: { _id: Id<"users"> }
+    subject: Id<"users">
+    event: string
+    meta?: AuditMeta
+    at?: number
+  }
+): Promise<void> {
+  await writeAudit(ctx, {
+    userId: entry.subject,
+    actorUserId: entry.actor._id,
+    event: entry.event,
+    meta: entry.meta,
+    at: entry.at,
   })
 }
 
@@ -52,6 +87,7 @@ export const append = internalMutation({
     userId: v.id("users"),
     event: v.string(),
     deviceId: v.optional(v.id("devices")),
+    actorUserId: v.optional(v.id("users")),
     meta: v.optional(
       v.record(
         v.string(),

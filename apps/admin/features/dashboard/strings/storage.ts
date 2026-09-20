@@ -44,18 +44,15 @@ export const STORAGE = {
     en: "A hand-maintained counter, bumped on add and remove and clamped at zero. Credential types carry no size and have never been counted at all. Read it as a floor, not a measurement.",
   },
 
-  // The whole billing story, in one line. The long version said the same thing
-  // in a paragraph nobody would read twice.
+  // The whole billing story, in one line. It has to stay true as the story
+  // changes: there is a catalogue and a staff grant now, and what is still
+  // missing is the store. Saying "no plan catalogue" once that existed was the
+  // kind of stale copy an operator reads as fact.
   billingShort: {
-    ar: "لا فوترة موصولة: لا شيء يكتب خطة أو تاريخ تجديد، فالفراغ يعني «لم يُسأل أحد أن يدفع».",
-    en: "Billing is not wired: nothing writes a plan or a renewal date, so empty means nobody has been asked to pay.",
+    ar: "لا متجر موصول: كل خطة مدفوعة هنا مُنحت يدوياً، فالفراغ يعني «لم يُسأل أحد أن يدفع».",
+    en: "No store connected: every paid plan here was granted by hand, so empty means nobody has been asked to pay.",
   },
 
-  billingTitle: { ar: "لا فوترة موصولة", en: "Billing is not wired" },
-  billingBody: {
-    ar: "لا شيء في هذا النظام يكتب خطة أو تاريخ تجديد: لا مكوّن فوترة، ولا مسار دفع، ولا كتالوج خطط. القاعدة التي تمنع الإضافة عند انتهاء الاشتراك موجودة وسليمة — لكنها لم تعمل ولا مرّة، لأن ما تقرأه لا يُكتب أبداً. الفراغ هنا يعني «لم يُسأل أحد أن يدفع»، لا «لا أحد يدفع».",
-    en: "Nothing in this system writes a plan or a renewal date: no billing component, no payment route, no plan catalogue. The rule that pauses adding assets on lapse exists and is correct — but it has never once fired, because the field it reads is never written. Empty here means nobody has been asked to pay, not that nobody is paying.",
-  },
   planLabel: { ar: "الخطة", en: "Plan" },
   planNone: { ar: "بلا خطة", en: "No plan" },
   ownersOnPlan: { ar: "مالك", en: "owners" },

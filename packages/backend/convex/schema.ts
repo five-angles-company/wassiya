@@ -63,9 +63,39 @@ export default defineSchema({
     // and a user who merely dismisses the hosted flow has not failed anything.
     identityAttempts: v.optional(v.number()),
 
-    // "admin" gates the claims-review functions used by apps/admin. Assigned
-    // out of band (dashboard / CLI), never by anything a client can call.
+    // ⚠️ Two different words called "owner" live in this schema. **This column
+    // says what kind of account the row is**: "owner" is a vault-owning
+    // customer, "admin" is a staff account. It is not authority — it is what
+    // the console's owner metrics exclude, which is why `admin.ts` filters on
+    // it. What a staff member may actually *do* is `staffPermissions` below,
+    // and the seeded staff role called "Owner" is a superuser, not a customer.
+    // Compare this field only through `isStaffAccount` / `excludeStaff` in
+    // `model/access.ts`; `verify-invariants.mjs` fails the build on a raw
+    // comparison anywhere else.
     role: v.optional(v.union(v.literal("owner"), v.literal("admin"))),
+
+    /**
+     * Staff authority: the roles this person holds, and the union of their
+     * permission keys.
+     *
+     * `staffPermissions` is **denormalised** from `staffRoles`, deliberately.
+     * Resolving roles per call would put every role document into every gated
+     * query's read set, so renaming a role would invalidate the whole console;
+     * this way a gated query depends on exactly one document — this one — and
+     * revoking a role re-runs the victim's open tabs within the round trip.
+     *
+     * ⚠️ The price: **whatever edits a role must recompute its holders in the
+     * same mutation** (`recomputeHolders` in `model/staff.ts`). A missed
+     * fan-out leaves an open console running on rights that were taken away,
+     * and nothing surfaces it. `verify-invariants.mjs` enforces the pairing.
+     *
+     * `["*"]` is the system Owner role and matches every key, including keys
+     * added by a later deploy — an enumeration would lock the administrator
+     * out of each new permission on the day it shipped.
+     */
+    staffRoleIds: v.optional(v.array(v.id("staffRoles"))),
+    staffPermissions: v.optional(v.array(v.string())),
+    staffSince: v.optional(v.number()),
 
     /** Name + email, for the console's owner search. See the index below. */
     searchText: v.optional(v.string()),
@@ -129,6 +159,10 @@ export default defineSchema({
     // but the funnel reports its total as the sum of the buckets rather than a
     // separate table count so the two can never disagree.
     .index("by_identityStatus", ["identityStatus"])
+    // Staff are tens of rows in a table of customers. Without this, listing
+    // them is a scan that gets slower as the product succeeds — and the role
+    // fan-out above needs the same read on every role edit.
+    .index("by_role", ["role"])
     /**
      * Name and email in one column, for the console's owner lookup.
      *
@@ -140,6 +174,68 @@ export default defineSchema({
      * and nothing else, so there is one place to keep in step rather than two.
      */
     .searchIndex("search_owner", { searchField: "searchText" }),
+
+  /**
+   * What a staff role may do.
+   *
+   * The split that shapes this table: **permission keys are code**
+   * (`model/permissions.ts`, a deploy), **which keys a role holds is data**
+   * (this table, an Owner in the console), and **which roles a person holds**
+   * is `users.staffRoleIds`. A role is therefore editable without a deploy,
+   * while the set of things that can be gated is not — nobody can invent
+   * authority by typing a new string into a form.
+   *
+   * `permissions` is `v.string()` rather than the catalogue union on purpose:
+   * a row written today must keep validating after a key is renamed in code.
+   * The *mutation* rejects unknown keys, and resolution drops them, so an
+   * orphan is inert rather than a schema failure on an unrelated deploy.
+   *
+   * Names are stored rather than kept in the console's string dictionaries
+   * because the roles are the operator's, not ours — a role they created has
+   * no key for a dictionary to be written against.
+   */
+  staffRoles: defineTable({
+    /** Stable slug for the seeded roles; absent on an operator-made role. */
+    key: v.optional(v.string()),
+    name: v.object({ ar: v.string(), en: v.string() }),
+    description: v.optional(v.object({ ar: v.string(), en: v.string() })),
+    /** Catalogue keys, or the single entry `"*"` on the system Owner role. */
+    permissions: v.array(v.string()),
+    /** The Owner role: immutable, undeletable, and the only holder of `"*"`. */
+    system: v.boolean(),
+    createdBy: v.optional(v.id("users")),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  /**
+   * A pending staff invitation.
+   *
+   * Staff are onboarded by email: an Owner names an address and the roles it
+   * should get, and the invitation binds when a *Clerk-verified* account with
+   * that address appears — see `bindInvitation` in `model/staff.ts`, which is
+   * the only thing that may turn one of these into authority.
+   *
+   * Expiry is computed from `expiresAt`, never stored as a status. A sweep to
+   * write "expired" would earn a row in the `jobs.ts` registry, and an
+   * invitation nobody accepted is not worth one.
+   */
+  staffInvitations: defineTable({
+    /** Normalised `trim().toLowerCase()`; the binding compares on this. */
+    email: v.string(),
+    roleIds: v.array(v.id("staffRoles")),
+    invitedBy: v.id("users"),
+    invitedAt: v.number(),
+    expiresAt: v.number(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("revoked")
+    ),
+    acceptedUserId: v.optional(v.id("users")),
+    acceptedAt: v.optional(v.number()),
+  })
+    .index("by_email_and_status", ["email", "status"])
+    .index("by_status_and_invitedAt", ["status", "invitedAt"]),
 
   // Device inventory for the settings screen and for revocation. The enclave
   // wrap of MK never leaves the device, so there is no ciphertext column here —
@@ -163,6 +259,38 @@ export default defineSchema({
     maxFileBytes: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+
+  // Deployment settings an operator can change without the CLI.
+  //
+  // **One row.** A key/value table would give up Convex's validators and the
+  // typed form that comes with them, and this is configuration, not data.
+  //
+  // **Settings only — never a credential.** Every field here is safe to read
+  // off a database export: a sender address, a toggle, a phone number, a URL.
+  // API keys, webhook signing secrets, the identity HMAC and the escrow private
+  // key stay in the deployment env, where a leaked table cannot reach them.
+  // `settings.status` reports whether each of those is present, as a boolean,
+  // and never returns one.
+  //
+  // Every field is optional and falls back to its environment variable — see
+  // `model/settings.ts`. A fresh deployment with no row runs entirely on env,
+  // which is what makes this safe to add to a live deployment.
+  settings: defineTable({
+    /** The envelope sender, e.g. "Wassiya <no-reply@wassiya.sa>". */
+    emailFrom: v.optional(v.string()),
+    /** Resend's own guard. On until someone deliberately goes live. */
+    emailTestMode: v.optional(v.boolean()),
+    outreachProvider: v.optional(
+      v.union(v.literal("off"), v.literal("twilio"))
+    ),
+    /** An E.164 sender, or a Twilio Messaging Service SID ("MG…"). */
+    twilioFrom: v.optional(v.string()),
+    /** Where apps/web is. Every link in every email is built from it. */
+    appUrl: v.optional(v.string()),
+    /** Where apps/admin is. Only a staff invitation links there. */
+    consoleUrl: v.optional(v.string()),
+    updatedAt: v.number(),
+  }),
 
   devices: defineTable({
     userId: v.id("users"),
@@ -358,10 +486,7 @@ export default defineSchema({
     // bucket the sweep is draining. A plain `by_nextDueAt` index cannot do
     // that: an already-correct row stays at the front of the overdue window
     // forever and starves everything behind it. See `checkin.sweep`.
-    .index("by_escalationState_and_nextDueAt", [
-      "escalationState",
-      "nextDueAt",
-    ])
+    .index("by_escalationState_and_nextDueAt", ["escalationState", "nextDueAt"])
     // The console's overdue list. The compound index above cannot serve it:
     // its first key is the state, so ordering by due date across *several*
     // states — or none — is not a range it can express. One key, one order,
@@ -554,7 +679,9 @@ export default defineSchema({
     contactEmail: v.optional(v.string()),
     heirUserId: v.optional(v.id("users")),
     boundAt: v.optional(v.number()),
-    identityMatch: v.optional(v.union(v.literal("id_number"), v.literal("staff"))),
+    identityMatch: v.optional(
+      v.union(v.literal("id_number"), v.literal("staff"))
+    ),
     readyAt: v.optional(v.number()),
     lastOpenedAt: v.optional(v.number()),
     // Release + one year. After it the locked key and bundle are destroyed.
@@ -606,10 +733,23 @@ export default defineSchema({
     userId: v.id("users"),
     event: v.string(),
     deviceId: v.optional(v.id("devices")),
+    /**
+     * Who did it, when that is not the subject — a staff member acting on an
+     * account. Absent on everything an owner or a cron does to itself.
+     *
+     * A column because `meta` is a `v.record` and therefore unindexable: the
+     * actor used to be `meta.adminUserId`, which renders but cannot be asked
+     * for. Rows written before this existed keep that key and nothing
+     * backfills them — the table is append-only, so "every action by this
+     * person" genuinely starts at the RBAC cutover, and the console says so
+     * rather than letting an operator read silence as innocence.
+     */
+    actorUserId: v.optional(v.id("users")),
     meta: scalarRecord,
     at: v.number(),
   })
     .index("by_userId_and_at", ["userId", "at"])
+    .index("by_actorUserId_and_at", ["actorUserId", "at"])
     // Read across every account, newest first — the console's email log, and
     // the Records group's audit view after it. Without it "what happened
     // recently" is a full scan of the one table that only ever grows.

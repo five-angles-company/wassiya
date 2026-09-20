@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { AuditLog } from "@/features/audit/components/audit-log"
 import { AUDIT } from "@/features/audit/strings/audit"
@@ -11,11 +12,13 @@ export default async function Page() {
   const labels = t(AUDIT, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <AuditLog />
-    </FillScreen>
+    <RequirePermission need="audit.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <AuditLog />
+      </FillScreen>
+    </RequirePermission>
   )
 }

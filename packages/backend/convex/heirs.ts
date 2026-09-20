@@ -180,7 +180,8 @@ export const update = mutation({
       ...(birthDate === undefined
         ? {}
         : {
-            birthDate: birthDate === "" ? undefined : assertBirthDate(birthDate),
+            birthDate:
+              birthDate === "" ? undefined : assertBirthDate(birthDate),
           }),
     })
     // A number added after the heir already bound a delivery must be able to
@@ -194,7 +195,8 @@ export const update = mutation({
       for (const delivery of waiting) {
         if (delivery.heirUserId === undefined) continue
         const bound = await ctx.db.get("users", delivery.heirUserId)
-        if (bound !== null) await evaluateDeliveryIdentity(ctx, delivery, bound, now)
+        if (bound !== null)
+          await evaluateDeliveryIdentity(ctx, delivery, bound, now)
       }
     }
 
@@ -283,7 +285,8 @@ export const message = query({
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) return null
     const meta = heir.messageMeta
-    if (meta === undefined || meta.messageKeyWrappedByMk === undefined) return null
+    if (meta === undefined || meta.messageKeyWrappedByMk === undefined)
+      return null
     return {
       kind: meta.kind,
       url: await ctx.storage.getUrl(meta.storageId),

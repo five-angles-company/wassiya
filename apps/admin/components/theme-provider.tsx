@@ -47,7 +47,13 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // `key` is typed `string` but is not guaranteed to be one at runtime:
+      // anything can dispatch `new Event("keydown")` at the window — password
+      // managers and browser extensions do — and that event reaches this
+      // listener with no `key` at all. Reading it directly threw a TypeError
+      // out of a global listener, which React surfaces as a runtime error
+      // overlay on whatever screen the operator happened to be on.
+      if (typeof event.key !== "string" || event.key.toLowerCase() !== "d") {
         return
       }
 

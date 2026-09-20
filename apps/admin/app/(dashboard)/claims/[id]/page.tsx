@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { ClaimReview } from "@/features/claims/components/claim-review"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
@@ -21,11 +22,13 @@ export default async function ClaimReviewPage({
   const labels = t(CLAIMS, locale)
 
   return (
-    <>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.reviewTitle}
-      </h1>
-      <ClaimReview claimId={id} />
-    </>
+    <RequirePermission need="claims.read">
+      <>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.reviewTitle}
+        </h1>
+        <ClaimReview claimId={id} />
+      </>
+    </RequirePermission>
   )
 }

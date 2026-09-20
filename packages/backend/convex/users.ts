@@ -8,6 +8,7 @@ import {
   type QueryCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { bindInvitation } from "./model/staff"
 
 // Protected query. A non-null result proves the Clerk JWT reached Convex and
 // `auth.config.ts` validated it. `email`/`name` come from the synced `users`
@@ -54,15 +55,27 @@ export const upsertFromClerk = internalMutation({
       searchText: [name, email].filter(Boolean).join(" "),
     }
 
-    const user = await userByExternalId(ctx, data.id)
-    if (user === null) {
-      await ctx.db.insert("users", {
-        ...attributes,
-        role: "owner" as const,
-        identityStatus: "unverified" as const,
-      })
-    } else {
-      await ctx.db.patch("users", user._id, attributes)
+    const existing = await userByExternalId(ctx, data.id)
+    const userId =
+      existing === null
+        ? await ctx.db.insert("users", {
+            ...attributes,
+            role: "owner" as const,
+            identityStatus: "unverified" as const,
+          })
+        : (await ctx.db.patch("users", existing._id, attributes), existing._id)
+
+    // Staff invitations bind here, on both paths — an address can be invited
+    // before the account exists (insert) or after it changed its email
+    // (update). Deliberately a second patch rather than part of `attributes`,
+    // so the rule above still holds: a Clerk sync cannot touch a Wassiya field.
+    //
+    // ⚠️ Only a **verified** address may bind. `primaryEmail` does not check,
+    // because nothing else cares; an invitation does, or signing up as someone
+    // else's address is a way into the console.
+    if (verifiedPrimaryEmail(data) !== null) {
+      const user = await ctx.db.get("users", userId)
+      if (user !== null) await bindInvitation(ctx, user)
     }
   },
 })
@@ -123,7 +136,9 @@ export const me = query({
       criticalContacts: user.criticalContacts ?? [],
       identityStatus: user.identityStatus ?? "unverified",
       identityVerifiedName: user.identityVerifiedName ?? null,
-      role: user.role ?? "owner",
+      // `role` is deliberately absent. It used to be here for the console's
+      // gate, which now reads `staff.me` — and this query is subscribed by
+      // every owner's phone, where staff authority is noise at best.
       // The plan is not here: it is `plans.current`, which serves the limits
       // and the usage beside it so a screen cannot read one without the other.
     }
@@ -177,4 +192,21 @@ function primaryEmail(data: UserJSON): string | null {
   return (
     primary?.email_address ?? data.email_addresses[0]?.email_address ?? null
   )
+}
+
+/**
+ * The primary address, but only once Clerk says it was proved.
+ *
+ * Used by exactly one caller: staff invitation binding. Everything else in the
+ * product is content for the account's own owner, where an unverified address
+ * costs a bounced email; an invitation is authority, and an unverified one
+ * would hand the console to whoever typed the address first.
+ */
+function verifiedPrimaryEmail(data: UserJSON): string | null {
+  const primary = data.email_addresses.find(
+    (address) => address.id === data.primary_email_address_id
+  )
+  return primary?.verification?.status === "verified"
+    ? primary.email_address
+    : null
 }

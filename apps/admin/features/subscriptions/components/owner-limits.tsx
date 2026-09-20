@@ -5,19 +5,12 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Button } from "@workspace/ui/components/button"
 import { Checkbox } from "@workspace/ui/components/checkbox"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@workspace/ui/components/sheet"
 import { useMutation } from "convex/react"
 import { UserCogIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { SheetBody, SheetDot, SheetShell } from "@/components/sheet-shell"
+import { usePermissions } from "@/hooks/use-permissions"
 import { LimitField } from "@/features/subscriptions/components/limit-field"
 import { SUBSCRIPTIONS } from "@/features/subscriptions/strings/subscriptions"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -61,6 +54,8 @@ export function OwnerLimits({
 }) {
   const labels = t(SUBSCRIPTIONS, locale)
   const setOverride = useMutation(api.billing.adminSetOverride)
+  const { has } = usePermissions()
+  const canManage = has("billing.manage")
 
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<Override>({})
@@ -93,9 +88,15 @@ export function OwnerLimits({
     setDraft((prev) => prune({ ...prev, ...patch }))
   }
 
+  // Nothing to show a reader: this component *is* the override editor, and an
+  // override is the quietest way to give the product away.
+  if (!canManage) return null
+
   return (
-    <Sheet open={open} onOpenChange={start}>
-      <SheetTrigger asChild>
+    <SheetShell
+      open={open}
+      onOpenChange={start}
+      trigger={
         <Button
           variant={override === null ? "ghost" : "secondary"}
           size="icon-xs"
@@ -104,82 +105,20 @@ export function OwnerLimits({
           <span className="sr-only">{labels.override}</span>
           <UserCogIcon />
         </Button>
-      </SheetTrigger>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>{labels.overrideTitle}</SheetTitle>
-          <SheetDescription>
-            {name}
-            {" — "}
-            {labels.overrideBody}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="flex flex-col gap-3 px-4">
-          <LimitField
-            inheritable
-            label={labels.fieldStorage}
-            unit={labels.megabytes}
-            unlimitedLabel={labels.unlimited}
-            inheritLabel={labels.inherit}
-            value={draft.storageBytes}
-            onChange={(next) => edit({ storageBytes: next })}
-          />
-          <LimitField
-            inheritable
-            label={labels.fieldAssets}
-            unlimitedLabel={labels.unlimited}
-            inheritLabel={labels.inherit}
-            value={draft.assets}
-            onChange={(next) => edit({ assets: next })}
-          />
-          <LimitField
-            inheritable
-            label={labels.fieldHeirs}
-            unlimitedLabel={labels.unlimited}
-            inheritLabel={labels.inherit}
-            value={draft.heirs}
-            onChange={(next) => edit({ heirs: next })}
-          />
-          <LimitField
-            inheritable
-            label={labels.fieldMaxFile}
-            unit={labels.megabytes}
-            unlimitedLabel={labels.unlimited}
-            inheritLabel={labels.inherit}
-            value={draft.maxFileBytes}
-            onChange={(next) => edit({ maxFileBytes: next })}
-          />
-
-          {/* Three states again, and a checkbox only has two: unchecked has to
-              mean "photos are off for this account", not "not overridden", or
-              opening the sheet and closing it would quietly deny photos to
-              everyone it touched. The link is how the third state is reached. */}
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={draft.photos === true}
-                onCheckedChange={(checked) =>
-                  edit({ photos: checked === true })
-                }
-              />
-              {labels.fieldPhotos}
-            </label>
-            {draft.photos !== undefined && (
-              <button
-                type="button"
-                className="text-xs text-muted-foreground underline"
-                onClick={() => setDraft((prev) => prune({ ...prev, photos: undefined }))}
-              >
-                {labels.inherit}
-              </button>
-            )}
-          </div>
-        </div>
-
-        <SheetFooter className="flex-row justify-between">
+      }
+      title={labels.overrideTitle}
+      description={
+        <>
+          <span>{name}</span>
+          <SheetDot />
+          <span>{labels.overrideBody}</span>
+        </>
+      }
+      footer={
+        <>
           <Button
             variant="ghost"
+            className="me-auto text-destructive"
             disabled={busy || override === null}
             onClick={() => void save(true)}
           >
@@ -188,9 +127,71 @@ export function OwnerLimits({
           <Button disabled={busy} onClick={() => void save(false)}>
             {busy ? labels.saving : labels.save}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </>
+      }
+    >
+      <SheetBody>
+        <LimitField
+          inheritable
+          label={labels.fieldStorage}
+          unit={labels.megabytes}
+          unlimitedLabel={labels.unlimited}
+          inheritLabel={labels.inherit}
+          value={draft.storageBytes}
+          onChange={(next) => edit({ storageBytes: next })}
+        />
+        <LimitField
+          inheritable
+          label={labels.fieldAssets}
+          unlimitedLabel={labels.unlimited}
+          inheritLabel={labels.inherit}
+          value={draft.assets}
+          onChange={(next) => edit({ assets: next })}
+        />
+        <LimitField
+          inheritable
+          label={labels.fieldHeirs}
+          unlimitedLabel={labels.unlimited}
+          inheritLabel={labels.inherit}
+          value={draft.heirs}
+          onChange={(next) => edit({ heirs: next })}
+        />
+        <LimitField
+          inheritable
+          label={labels.fieldMaxFile}
+          unit={labels.megabytes}
+          unlimitedLabel={labels.unlimited}
+          inheritLabel={labels.inherit}
+          value={draft.maxFileBytes}
+          onChange={(next) => edit({ maxFileBytes: next })}
+        />
+
+        {/* Three states again, and a checkbox only has two: unchecked has to
+              mean "photos are off for this account", not "not overridden", or
+              opening the sheet and closing it would quietly deny photos to
+              everyone it touched. The link is how the third state is reached. */}
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={draft.photos === true}
+              onCheckedChange={(checked) => edit({ photos: checked === true })}
+            />
+            {labels.fieldPhotos}
+          </label>
+          {draft.photos !== undefined && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground underline"
+              onClick={() =>
+                setDraft((prev) => prune({ ...prev, photos: undefined }))
+              }
+            >
+              {labels.inherit}
+            </button>
+          )}
+        </div>
+      </SheetBody>
+    </SheetShell>
   )
 }
 

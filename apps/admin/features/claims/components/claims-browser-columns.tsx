@@ -65,7 +65,10 @@ export function claimBrowserColumns(
         >
           <span className="font-medium">{row.original.claimantName}</span>
           {/* An email or phone stays LTR inside Arabic prose. */}
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.claimantContact}
           </span>
         </Link>

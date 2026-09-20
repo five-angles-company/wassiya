@@ -27,15 +27,17 @@ import {
   type MutationCtx,
   type QueryCtx,
 } from "./_generated/server"
-import { writeAudit } from "./audit"
+import { writeAudit, writeStaffAudit } from "./audit"
 import {
   appLink,
   sendDeliveryExpiring,
   sendDeliveryInvite,
   sendDeliveryReady,
 } from "./email"
-import { requireAdmin } from "./model/access"
+import { requirePermission } from "./model/access"
 import { DAY_MS, DELIVERY_WINDOW_DAYS } from "./model/claimFlow"
+import { recordJobRun } from "./model/jobRuns"
+import { settingsFor } from "./model/settings"
 import { getCurrentUserOrThrow } from "./users"
 
 const TOKEN_BYTES = 24
@@ -66,7 +68,9 @@ async function logContact(
 ): Promise<void> {
   await ctx.db.insert("deliveryContacts", entry)
   if (entry.outcome === "sent" || entry.outcome === "reached") {
-    await ctx.db.patch("deliveries", entry.deliveryId, { contactedAt: entry.at })
+    await ctx.db.patch("deliveries", entry.deliveryId, {
+      contactedAt: entry.at,
+    })
   }
 }
 
@@ -81,7 +85,7 @@ async function inviteHeir(
 ): Promise<void> {
   const heir = await ctx.db.get("heirs", delivery.heirId)
   const { email } = contactOf(delivery, heir)
-  const link = appLink(deliveryPath(delivery.contactToken))
+  const link = await appLink(ctx, deliveryPath(delivery.contactToken))
   const now = Date.now()
 
   if (channels.email && email !== null && link !== undefined) {
@@ -172,7 +176,11 @@ export async function evaluateDeliveryIdentity(
   await writeAudit(ctx, {
     userId: delivery.subjectUserId,
     event: "delivery.ready",
-    meta: { deliveryId: delivery._id, heirId: delivery.heirId, match: "id_number" },
+    meta: {
+      deliveryId: delivery._id,
+      heirId: delivery.heirId,
+      match: "id_number",
+    },
     at: now,
   })
   await sendDeliveryReady(ctx, heirUser._id, delivery._id, delivery.expiresAt)
@@ -320,15 +328,20 @@ export const mine = query({
 export const adminTable = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
-    const rows = await ctx.db.query("deliveries").order("desc").take(ADMIN_TABLE_CAP + 1)
+    await requirePermission(ctx, "deliveries.read")
+    const rows = await ctx.db
+      .query("deliveries")
+      .order("desc")
+      .take(ADMIN_TABLE_CAP + 1)
 
     const table = await Promise.all(
       rows.slice(0, ADMIN_TABLE_CAP).map(async (row) => {
         const heir = await ctx.db.get("heirs", row.heirId)
         const subject = await ctx.db.get("users", row.subjectUserId)
         const bound =
-          row.heirUserId === undefined ? null : await ctx.db.get("users", row.heirUserId)
+          row.heirUserId === undefined
+            ? null
+            : await ctx.db.get("users", row.heirUserId)
         const last = await ctx.db
           .query("deliveryContacts")
           .withIndex("by_deliveryId", (q) => q.eq("deliveryId", row._id))
@@ -360,7 +373,7 @@ export const adminTable = query({
 export const adminDetail = query({
   args: { deliveryId: v.id("deliveries") },
   handler: async (ctx, { deliveryId }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "deliveries.read")
     const delivery = await ctx.db.get("deliveries", deliveryId)
     if (delivery === null) return null
     const heir = await ctx.db.get("heirs", delivery.heirId)
@@ -376,7 +389,9 @@ export const adminDetail = query({
       .take(50)
     const staffIds = [
       ...new Set(
-        contacts.flatMap((row) => (row.staffUserId === undefined ? [] : [row.staffUserId]))
+        contacts.flatMap((row) =>
+          row.staffUserId === undefined ? [] : [row.staffUserId]
+        )
       ),
     ]
     const staff = new Map<string, string | null>()
@@ -416,7 +431,7 @@ export const adminDetail = query({
                 heir?.idNumberHash !== undefined &&
                 (bound.identityDocHashes ?? []).includes(heir.idNumberHash),
             },
-      link: appLink(deliveryPath(delivery.contactToken)) ?? null,
+      link: (await appLink(ctx, deliveryPath(delivery.contactToken))) ?? null,
       identityMatch: delivery.identityMatch ?? null,
       staffNote: delivery.staffNote ?? null,
       timeline: contacts.map((row) => ({
@@ -425,7 +440,10 @@ export const adminDetail = query({
         channel: row.channel,
         outcome: row.outcome,
         note: row.note ?? null,
-        staffName: row.staffUserId === undefined ? null : (staff.get(row.staffUserId) ?? null),
+        staffName:
+          row.staffUserId === undefined
+            ? null
+            : (staff.get(row.staffUserId) ?? null),
       })),
       createdAt: delivery._creationTime,
       readyAt: delivery.readyAt ?? null,
@@ -470,7 +488,7 @@ export const adminLogContact = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { deliveryId, channel, outcome, note }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "deliveries.contact")
     const delivery = await requireLiveDelivery(ctx, deliveryId)
     const now = Date.now()
     await logContact(ctx, {
@@ -479,12 +497,13 @@ export const adminLogContact = mutation({
       channel,
       outcome,
       note: note?.trim() || undefined,
-      staffUserId: admin._id,
+      staffUserId: actor._id,
     })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: delivery.subjectUserId,
       event: "delivery.contact_logged",
-      meta: { deliveryId, channel, outcome, adminUserId: admin._id },
+      meta: { deliveryId, channel, outcome },
       at: now,
     })
     return null
@@ -503,7 +522,7 @@ export const adminUpdateContact = mutation({
     email: v.optional(v.string()),
   },
   handler: async (ctx, { deliveryId, phone, email }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "deliveries.contact")
     const delivery = await requireLiveDelivery(ctx, deliveryId)
     const cleanPhone = phone?.replace(/[\s-]/g, "")
     const cleanEmail = email?.trim().toLowerCase()
@@ -514,17 +533,21 @@ export const adminUpdateContact = mutation({
       throw new Error("That is not an email address")
     }
     await ctx.db.patch("deliveries", deliveryId, {
-      ...(cleanPhone === undefined ? {} : { contactPhone: cleanPhone || undefined }),
-      ...(cleanEmail === undefined ? {} : { contactEmail: cleanEmail || undefined }),
+      ...(cleanPhone === undefined
+        ? {}
+        : { contactPhone: cleanPhone || undefined }),
+      ...(cleanEmail === undefined
+        ? {}
+        : { contactEmail: cleanEmail || undefined }),
     })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: delivery.subjectUserId,
       event: "delivery.contact_updated",
       meta: {
         deliveryId,
         phone: cleanPhone !== undefined,
         email: cleanEmail !== undefined,
-        adminUserId: admin._id,
       },
     })
     return null
@@ -538,7 +561,7 @@ export const adminResend = mutation({
     channel: v.union(v.literal("sms"), v.literal("email")),
   },
   handler: async (ctx, { deliveryId, channel }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "deliveries.contact")
     const delivery = await requireLiveDelivery(ctx, deliveryId)
     if (delivery.status === "ready" || delivery.status === "rejected") {
       throw new Error("There is nothing left to invite this heir to")
@@ -546,16 +569,25 @@ export const adminResend = mutation({
     const heir = await ctx.db.get("heirs", delivery.heirId)
     const contact = contactOf(delivery, heir)
     if ((channel === "sms" ? contact.phone : contact.email) === null) {
-      throw new Error(`No ${channel === "sms" ? "phone number" : "email"} to send to`)
+      throw new Error(
+        `No ${channel === "sms" ? "phone number" : "email"} to send to`
+      )
     }
-    if (channel === "sms" && process.env.OUTREACH_PROVIDER !== "twilio") {
-      throw new Error("No SMS provider is configured — copy the link and send it by hand")
+    const { outreachProvider } = await settingsFor(ctx)
+    if (channel === "sms" && outreachProvider !== "twilio") {
+      throw new Error(
+        "No SMS provider is configured — copy the link and send it by hand"
+      )
     }
-    await inviteHeir(ctx, delivery, { email: channel === "email", sms: channel === "sms" })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
+    await inviteHeir(ctx, delivery, {
+      email: channel === "email",
+      sms: channel === "sms",
+    })
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: delivery.subjectUserId,
       event: "delivery.resent",
-      meta: { deliveryId, channel, adminUserId: admin._id },
+      meta: { deliveryId, channel },
     })
     return null
   },
@@ -570,10 +602,12 @@ export const adminResend = mutation({
 export const adminReissueLink = mutation({
   args: { deliveryId: v.id("deliveries") },
   handler: async (ctx, { deliveryId }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "deliveries.contact")
     const delivery = await requireLiveDelivery(ctx, deliveryId)
     if (delivery.status === "ready") {
-      throw new Error("This delivery was already received — its link can no longer bind anyone")
+      throw new Error(
+        "This delivery was already received — its link can no longer bind anyone"
+      )
     }
     await ctx.db.patch("deliveries", deliveryId, {
       contactToken: randomToken(),
@@ -582,10 +616,11 @@ export const adminReissueLink = mutation({
       boundAt: undefined,
       identityMatch: undefined,
     })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: delivery.subjectUserId,
       event: "delivery.link_reissued",
-      meta: { deliveryId, releasedBinding: delivery.heirUserId !== undefined, adminUserId: admin._id },
+      meta: { deliveryId, releasedBinding: delivery.heirUserId !== undefined },
     })
     const fresh = await ctx.db.get("deliveries", deliveryId)
     if (fresh !== null) await inviteHeir(ctx, fresh)
@@ -604,10 +639,13 @@ export const adminDecideIdentity = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { deliveryId, approve, note }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "deliveries.decide")
     const delivery = await ctx.db.get("deliveries", deliveryId)
     if (delivery === null) throw new Error("Not found")
-    if (delivery.status !== "identity_pending" || delivery.heirUserId === undefined) {
+    if (
+      delivery.status !== "identity_pending" ||
+      delivery.heirUserId === undefined
+    ) {
       throw new Error("This delivery is not waiting for an identity decision")
     }
     const bound = await ctx.db.get("users", delivery.heirUserId)
@@ -622,15 +660,21 @@ export const adminDecideIdentity = mutation({
       readyAt: approve ? now : undefined,
       staffNote: note,
     })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: delivery.subjectUserId,
       event: approve ? "delivery.ready" : "delivery.rejected",
-      meta: { deliveryId, match: "staff", adminUserId: admin._id },
+      meta: { deliveryId, match: "staff" },
       at: now,
     })
     // The heir was told on the page that we would write when it is ready.
     if (approve) {
-      await sendDeliveryReady(ctx, delivery.heirUserId, deliveryId, delivery.expiresAt)
+      await sendDeliveryReady(
+        ctx,
+        delivery.heirUserId,
+        deliveryId,
+        delivery.expiresAt
+      )
     }
     return null
   },
@@ -644,7 +688,10 @@ export const contactDetails = internalQuery({
   handler: async (ctx, { deliveryId }) => {
     const delivery = await ctx.db.get("deliveries", deliveryId)
     if (delivery === null) return null
-    if (delivery.status !== "awaiting_heir" && delivery.status !== "identity_pending") {
+    if (
+      delivery.status !== "awaiting_heir" &&
+      delivery.status !== "identity_pending"
+    ) {
       return null
     }
     const heir = await ctx.db.get("heirs", delivery.heirId)
@@ -652,7 +699,7 @@ export const contactDetails = internalQuery({
     if (phone === null) return null
     return {
       phone,
-      link: appLink(deliveryPath(delivery.contactToken)) ?? null,
+      link: (await appLink(ctx, deliveryPath(delivery.contactToken))) ?? null,
     }
   },
 })
@@ -679,9 +726,13 @@ export const recordSms = internalMutation({
  * after a year nobody — Wassiya included — can open it again.
  */
 export const expire = internalMutation({
-  args: {},
-  handler: async (ctx) => {
+  // Set by the reschedule below, absent on the pass the cron itself started —
+  // the same contract `checkin.sweep` uses, so `recordJobRun` prunes once per
+  // logical sweep rather than once per batch.
+  args: { continued: v.optional(v.boolean()) },
+  handler: async (ctx, { continued }) => {
     const now = Date.now()
+    let reminded = 0
 
     for (const status of ["identity_pending", "ready"] as const) {
       const closing = await ctx.db
@@ -694,11 +745,20 @@ export const expire = internalMutation({
         )
         .take(EXPIRE_BATCH)
       for (const delivery of closing) {
-        if (delivery.remindedAt !== undefined || delivery.heirUserId === undefined) {
+        if (
+          delivery.remindedAt !== undefined ||
+          delivery.heirUserId === undefined
+        ) {
           continue
         }
         await ctx.db.patch("deliveries", delivery._id, { remindedAt: now })
-        await sendDeliveryExpiring(ctx, delivery.heirUserId, delivery._id, delivery.expiresAt)
+        await sendDeliveryExpiring(
+          ctx,
+          delivery.heirUserId,
+          delivery._id,
+          delivery.expiresAt
+        )
+        reminded += 1
       }
     }
 
@@ -734,14 +794,34 @@ export const expire = internalMutation({
         expired += 1
       }
     }
-    if (expired === EXPIRE_BATCH) {
-      await ctx.scheduler.runAfter(0, internal.deliveries.expire, {})
+    const rescheduled = expired === EXPIRE_BATCH
+    if (rescheduled) {
+      await ctx.scheduler.runAfter(0, internal.deliveries.expire, {
+        continued: true,
+      })
     }
+
+    // The heartbeat, written on every pass including the ones that destroy
+    // nothing. This sweep is the one that makes a delivery unopenable forever,
+    // so "it has not run since Tuesday" and "nothing was due since Tuesday"
+    // must not look the same from the console. They did: this job was missing
+    // from `JOB_NAMES` entirely and recorded no runs at all.
+    await recordJobRun(ctx, {
+      name: "deliveries.expire",
+      ranAt: now,
+      scanned: reminded + expired,
+      changed: expired,
+      rescheduled,
+      continued: continued === true,
+    })
+
     return { expired }
   },
 })
 
 function randomToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(TOKEN_BYTES))
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    ""
+  )
 }

@@ -20,8 +20,8 @@ import {
   query,
   type MutationCtx,
 } from "./_generated/server"
-import { writeAudit } from "./audit"
-import { requireAdmin } from "./model/access"
+import { writeAudit, writeStaffAudit } from "./audit"
+import { requirePermission } from "./model/access"
 import { getCurrentUser } from "./users"
 import { notify, patchClaim } from "./claims"
 import { reevaluateDeliveriesFor } from "./deliveries"
@@ -208,10 +208,16 @@ export const applyWebhookResult = internalMutation({
       identityStatus: args.status,
       identityVerifiedAt: args.status === "verified" ? Date.now() : undefined,
       identityAttempts: attempts,
-      ...(args.verifiedName === undefined ? {} : { identityVerifiedName: args.verifiedName }),
+      ...(args.verifiedName === undefined
+        ? {}
+        : { identityVerifiedName: args.verifiedName }),
       ...(args.docType === undefined ? {} : { identityDocType: args.docType }),
-      ...(args.docHashes === undefined ? {} : { identityDocHashes: args.docHashes }),
-      ...(args.birthDate === undefined ? {} : { identityBirthDate: args.birthDate }),
+      ...(args.docHashes === undefined
+        ? {}
+        : { identityDocHashes: args.docHashes }),
+      ...(args.birthDate === undefined
+        ? {}
+        : { identityBirthDate: args.birthDate }),
     })
     await writeAudit(ctx, {
       userId: user._id,
@@ -317,7 +323,7 @@ async function resolveSubject(
 export const adminResetAttempts = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "identity.reset")
     const user = await ctx.db.get("users", userId)
     if (user === null) {
       throw new Error("Not found")
@@ -330,10 +336,11 @@ export const adminResetAttempts = mutation({
 
     const from = user.identityAttempts ?? 0
     await ctx.db.patch("users", userId, { identityAttempts: 0 })
-    await writeAudit(ctx, {
-      userId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: userId,
       event: "identity.attempts_reset",
-      meta: { from, adminUserId: admin._id },
+      meta: { from },
     })
     return null
   },
@@ -349,7 +356,11 @@ export const refreshDocument = internalAction({
   handler: async (ctx, { userId }) => {
     const user: { sessionId: string | null; status: string } | null =
       await ctx.runQuery(internal.identity.sessionOf, { userId })
-    if (user === null || user.sessionId === null || user.status !== "verified") {
+    if (
+      user === null ||
+      user.sessionId === null ||
+      user.status !== "verified"
+    ) {
       throw new Error("No verified Didit session for this user")
     }
     const document = await verifiedDocument(user.sessionId, true, {})

@@ -86,7 +86,7 @@ export function FacetedFilter({
               >
                 <span className="flex-1">{option.label}</span>
                 {tally !== undefined && (
-                  <span className="ms-2 text-xs tabular-nums text-muted-foreground">
+                  <span className="ms-2 text-xs text-muted-foreground tabular-nums">
                     {tally}
                   </span>
                 )}

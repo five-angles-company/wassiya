@@ -19,9 +19,9 @@ import {
   query,
   type MutationCtx,
 } from "./_generated/server"
-import { writeAudit } from "./audit"
+import { writeAudit, writeStaffAudit } from "./audit"
 import { createDeliveriesForClaim } from "./deliveries"
-import { requireAdmin, requireUser } from "./model/access"
+import { requirePermission, requireUser } from "./model/access"
 import {
   CLAIM_RATE_LIMIT,
   CLAIM_RATE_WINDOW_MS,
@@ -470,7 +470,7 @@ export const veto = mutation({
 export const adminLinkSubject = mutation({
   args: { claimId: v.id("claims"), subjectUserId: v.id("users") },
   handler: async (ctx, { claimId, subjectUserId }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "claims.rule")
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) {
       throw new Error("Not found")
@@ -493,10 +493,11 @@ export const adminLinkSubject = mutation({
 
     // The owner's history starts here rather than at submit, because until now
     // there was no owner for it to belong to.
-    await writeAudit(ctx, {
-      userId: subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: subjectUserId,
       event: "claim.subject_linked",
-      meta: { claimId, adminUserId: admin._id },
+      meta: { claimId },
     })
     await notify(ctx, subjectUserId, "claim.submitted", {}, claimId)
     return null
@@ -517,7 +518,7 @@ export const adminLinkSubject = mutation({
 export const adminCloseClaim = mutation({
   args: { claimId: v.id("claims"), staffNote: v.optional(v.string()) },
   handler: async (ctx, { claimId, staffNote }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "claims.rule")
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) {
       throw new Error("Not found")
@@ -539,10 +540,11 @@ export const adminCloseClaim = mutation({
       now
     )
     if (claim.subjectUserId !== undefined) {
-      await writeAudit(ctx, {
-        userId: claim.subjectUserId,
+      await writeStaffAudit(ctx, {
+        actor,
+        subject: claim.subjectUserId,
         event: "claim.closed",
-        meta: { claimId, adminUserId: admin._id },
+        meta: { claimId },
         at: now,
       })
     }
@@ -667,7 +669,7 @@ export const backfillSubjectEmail = internalMutation({
 export const pendingReview = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
     const rows = await ctx.db
       .query("claims")
       .withIndex("by_status", (q) => q.eq("status", "submitted"))
@@ -704,7 +706,7 @@ export const pendingReview = query({
 export const adminSetNameMatch = mutation({
   args: { claimId: v.id("claims"), nameMatch: v.boolean() },
   handler: async (ctx, { claimId, nameMatch }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "claims.rule")
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) {
       throw new Error("Not found")
@@ -764,10 +766,11 @@ export const adminSetNameMatch = mutation({
       },
       reviewedAt
     )
-    await writeAudit(ctx, {
-      userId: subjectUserId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: subjectUserId,
       event: "claim.name_match_set",
-      meta: { claimId, nameMatch, status, adminUserId: admin._id },
+      meta: { claimId, nameMatch, status },
     })
 
     // The owner's last chance to say they are alive — on every channel the

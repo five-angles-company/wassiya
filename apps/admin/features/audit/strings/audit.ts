@@ -13,6 +13,13 @@ export const AUDIT = {
 
   colEvent: { ar: "الحدث", en: "Event" },
   colSubject: { ar: "الحساب", en: "Account" },
+  colActor: { ar: "من نفّذ", en: "Done by" },
+  filterActor: { ar: "أفعال موظّف", en: "One staff member" },
+  actorNotice: {
+    ar: "يبدأ عمود «من نفّذ» من يوم تفعيل الأدوار. ما قبله يحمل منفّذه داخل التفاصيل ولا يمكن الترشيح به — السجلّ لا يُعدَّل بأثر رجعي.",
+    en: "The “Done by” column starts the day roles were switched on. Older rows carry their actor inside the details and cannot be filtered by it — the log is never rewritten.",
+  },
+  clearActor: { ar: "كل الأفعال", en: "Everyone" },
   colMeta: { ar: "التفاصيل", en: "Details" },
   colAt: { ar: "الوقت", en: "When" },
 

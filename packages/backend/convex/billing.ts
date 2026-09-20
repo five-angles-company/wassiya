@@ -20,8 +20,8 @@
 import { v } from "convex/values"
 
 import { mutation } from "./_generated/server"
-import { writeAudit } from "./audit"
-import { requireAdmin } from "./model/access"
+import { writeStaffAudit } from "./audit"
+import { requirePermission } from "./model/access"
 
 const planArg = v.union(v.literal("free"), v.literal("annual"))
 
@@ -66,7 +66,7 @@ export const adminSetPlan = mutation({
     months: v.optional(v.number()),
   },
   handler: async (ctx, { userId, plan, months }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "billing.manage")
     const user = await ctx.db.get("users", userId)
     if (user === null) {
       throw new Error("Not found")
@@ -81,13 +81,13 @@ export const adminSetPlan = mutation({
       await ctx.db.patch("users", userId, {
         subscription: { plan: "free", source: "staff" },
       })
-      await writeAudit(ctx, {
-        userId,
+      await writeStaffAudit(ctx, {
+        actor,
+        subject: userId,
         event: "billing.plan_set",
         meta: {
           plan,
           from: previous?.plan ?? "free",
-          adminUserId: admin._id,
         },
       })
       return null
@@ -108,15 +108,15 @@ export const adminSetPlan = mutation({
       // would be a lie the next support ticket reads as fact.
       subscription: { plan: "annual", renewsAt, source: "staff" },
     })
-    await writeAudit(ctx, {
-      userId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: userId,
       event: "billing.plan_set",
       meta: {
         plan,
         from: previous?.plan ?? "free",
         months: term,
         renewsAt,
-        adminUserId: admin._id,
       },
     })
     return null
@@ -152,7 +152,7 @@ const limitsArg = v.object({
 export const adminSetLimits = mutation({
   args: { plan: planArg, limits: limitsArg },
   handler: async (ctx, { plan, limits }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "billing.manage")
     const now = Date.now()
 
     const existing = await ctx.db
@@ -169,8 +169,9 @@ export const adminSetLimits = mutation({
     // The subject is the plan, not a person, so this line names the admin in
     // `userId` as well: the audit log has nowhere else to put an event that is
     // about everybody.
-    await writeAudit(ctx, {
-      userId: admin._id,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: actor._id,
       event: "billing.limits_set",
       meta: {
         plan,
@@ -179,7 +180,6 @@ export const adminSetLimits = mutation({
         heirs: limits.heirs,
         photos: limits.photos,
         maxFileBytes: limits.maxFileBytes,
-        adminUserId: admin._id,
       },
     })
     return null
@@ -212,7 +212,7 @@ export const adminSetOverride = mutation({
     ),
   },
   handler: async (ctx, { userId, limits }) => {
-    const admin = await requireAdmin(ctx)
+    const actor = await requirePermission(ctx, "billing.manage")
     const user = await ctx.db.get("users", userId)
     if (user === null) {
       throw new Error("Not found")
@@ -221,13 +221,13 @@ export const adminSetOverride = mutation({
     await ctx.db.patch("users", userId, {
       limitsOverride: limits === null ? undefined : limits,
     })
-    await writeAudit(ctx, {
-      userId,
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: userId,
       event: "billing.override_set",
       meta: {
         cleared: limits === null,
         fields: limits === null ? "" : Object.keys(limits).join(","),
-        adminUserId: admin._id,
       },
     })
     return null

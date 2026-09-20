@@ -34,7 +34,10 @@ export function notificationColumns(
           {/* Raw, like the audit event beside it on the sibling screen: the
               kind is what the writer wrote, and the mobile app switches on
               this exact string to decide how the notice renders. */}
-          <span dir="ltr" className="inline-block font-mono text-xs font-medium">
+          <span
+            dir="ltr"
+            className="inline-block font-mono text-xs font-medium"
+          >
             {row.original.kind}
           </span>
           <Badge variant="outline" className="font-normal">
@@ -76,7 +79,7 @@ export function notificationColumns(
             {labels.unread}
           </Badge>
         ) : (
-          <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+          <span className="text-xs whitespace-nowrap text-muted-foreground tabular-nums">
             {labels.read} · {fmtDate(row.original.readAt, locale)}
           </span>
         ),
@@ -87,7 +90,7 @@ export function notificationColumns(
       enableSorting: false,
       header: () => labels.colAt,
       cell: ({ row }) => (
-        <span className="whitespace-nowrap tabular-nums text-muted-foreground">
+        <span className="whitespace-nowrap text-muted-foreground tabular-nums">
           {fmtDate(row.original.at, locale)}
         </span>
       ),

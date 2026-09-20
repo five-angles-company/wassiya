@@ -34,7 +34,11 @@ export const openDelivery = action({
   handler: async (
     ctx,
     { deliveryId, browserPublicKey }
-  ): Promise<{ bundleUrl: string; sealedKey: ArrayBuffer; expiresAt: number }> => {
+  ): Promise<{
+    bundleUrl: string
+    sealedKey: ArrayBuffer
+    expiresAt: number
+  }> => {
     if (browserPublicKey.byteLength !== SEAL_KEY_BYTES) {
       throw new Error("Not found")
     }
@@ -142,7 +146,9 @@ async function cloudKmsDecrypt(
   if (encoded === undefined) {
     throw new Error("GCP_SERVICE_ACCOUNT is not set on this deployment")
   }
-  const account = JSON.parse(Buffer.from(encoded, "base64").toString("utf8")) as {
+  const account = JSON.parse(
+    Buffer.from(encoded, "base64").toString("utf8")
+  ) as {
     client_email: string
     private_key: string
   }

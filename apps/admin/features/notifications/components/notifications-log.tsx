@@ -144,7 +144,9 @@ export function NotificationsLog() {
               options={domainOptions}
               values={facets.domain}
               onChange={(update) =>
-                void setFacets((current) => ({ domain: update(current.domain) }))
+                void setFacets((current) => ({
+                  domain: update(current.domain),
+                }))
               }
               clearLabel={tableLabels.resetFilters}
             />

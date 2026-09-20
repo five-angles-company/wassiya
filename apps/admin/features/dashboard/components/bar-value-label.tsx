@@ -30,10 +30,7 @@ const GAP = 6
 const num = (value: string | number | undefined): number =>
   typeof value === "number" ? value : Number(value ?? 0)
 
-export function barValueLabel(
-  rtl: boolean,
-  format: (value: number) => string
-) {
+export function barValueLabel(rtl: boolean, format: (value: number) => string) {
   return function BarValueLabel(props: unknown) {
     const { x, y, width, height, value } = (props ?? {}) as BarRect
     const x0 = num(x)

@@ -36,17 +36,22 @@ const helper = createColumnHelper<DataTableFeatures, Row>()
 function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
   const labels = t(DELIVERIES, locale)
   return helper.columns([
-    helper.accessor((row) => `${row.heirName ?? ""} ${row.heirRelation ?? ""}`, {
-      id: "heir",
-      enableSorting: false,
-      header: () => labels.colHeir,
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.original.heirName ?? "—"}</span>
-          <span className="text-xs text-muted-foreground">{row.original.heirRelation}</span>
-        </div>
-      ),
-    }),
+    helper.accessor(
+      (row) => `${row.heirName ?? ""} ${row.heirRelation ?? ""}`,
+      {
+        id: "heir",
+        enableSorting: false,
+        header: () => labels.colHeir,
+        cell: ({ row }) => (
+          <div className="flex flex-col">
+            <span className="font-medium">{row.original.heirName ?? "—"}</span>
+            <span className="text-xs text-muted-foreground">
+              {row.original.heirRelation}
+            </span>
+          </div>
+        ),
+      }
+    ),
     helper.accessor((row) => row.subjectName ?? "", {
       id: "owner",
       enableSorting: false,
@@ -57,13 +62,19 @@ function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
       id: "status",
       filterFn: "arrIncludesSome",
       enableGlobalFilter: false,
-      header: ({ column }) => <DataTableColumnHeader column={column} title={labels.colStatus} />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={labels.colStatus} />
+      ),
       cell: ({ row }) => {
         const needsDecision =
-          row.original.status === "identity_pending" && row.original.boundVerified
+          row.original.status === "identity_pending" &&
+          row.original.boundVerified
         return (
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant={statusVariant(row.original.status)} className="whitespace-nowrap">
+            <Badge
+              variant={statusVariant(row.original.status)}
+              className="whitespace-nowrap"
+            >
               {statusLabel(row.original.status, locale)}
             </Badge>
             {needsDecision && (
@@ -78,18 +89,27 @@ function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
     helper.accessor((row) => row.lastContact?.at ?? 0, {
       id: "contact",
       enableGlobalFilter: false,
-      header: ({ column }) => <DataTableColumnHeader column={column} title={labels.colContact} />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={labels.colContact} />
+      ),
       cell: ({ row }) => {
         const last = row.original.lastContact
         if (last === null) {
-          return <span className="text-sm text-muted-foreground">{labels.neverContacted}</span>
+          return (
+            <span className="text-sm text-muted-foreground">
+              {labels.neverContacted}
+            </span>
+          )
         }
         return (
           <div className="flex flex-col">
             <span className="text-sm">
-              {channelLabel(last.channel, locale)} · {outcomeLabel(last.outcome, locale)}
+              {channelLabel(last.channel, locale)} ·{" "}
+              {outcomeLabel(last.outcome, locale)}
             </span>
-            <span className="text-xs text-muted-foreground">{fmtDate(last.at, locale)}</span>
+            <span className="text-xs text-muted-foreground">
+              {fmtDate(last.at, locale)}
+            </span>
           </div>
         )
       },
@@ -97,7 +117,9 @@ function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
     helper.accessor("expiresAt", {
       id: "expiresAt",
       enableGlobalFilter: false,
-      header: ({ column }) => <DataTableColumnHeader column={column} title={labels.colExpires} />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={labels.colExpires} />
+      ),
       cell: ({ row }) => (
         <span className="whitespace-nowrap tabular-nums">
           {fmtDate(row.original.expiresAt, locale)}
@@ -184,7 +206,9 @@ export function DeliveriesTable() {
           <div className="flex flex-col items-center justify-center gap-2 text-center">
             <PackageOpenIcon className="size-6 text-muted-foreground" />
             <span className="font-medium">{labels.empty}</span>
-            <span className="max-w-sm text-sm text-muted-foreground">{labels.emptyHint}</span>
+            <span className="max-w-sm text-sm text-muted-foreground">
+              {labels.emptyHint}
+            </span>
           </div>
         }
       />

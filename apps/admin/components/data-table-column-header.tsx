@@ -39,12 +39,18 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <span className={cn("text-muted-foreground", className)}>{title}</span>
+    return (
+      <span className={cn("text-muted-foreground", className)}>{title}</span>
+    )
   }
 
   const sorted = column.getIsSorted()
   const Icon =
-    sorted === "asc" ? ArrowUpIcon : sorted === "desc" ? ArrowDownIcon : ArrowUpDownIcon
+    sorted === "asc"
+      ? ArrowUpIcon
+      : sorted === "desc"
+        ? ArrowDownIcon
+        : ArrowUpDownIcon
 
   return (
     <Button

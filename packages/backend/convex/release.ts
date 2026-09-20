@@ -66,7 +66,9 @@ export const saveBundles = mutation({
         throw new Error("Not found")
       }
       if (bundle.escrowKeyId !== currentKeyId) {
-        throw new Error("Locked with an escrow key this deployment does not use")
+        throw new Error(
+          "Locked with an escrow key this deployment does not use"
+        )
       }
       if (!LOCKED_KEY_BYTES.includes(bundle.lockedKey.byteLength)) {
         throw new Error("Malformed locked key")

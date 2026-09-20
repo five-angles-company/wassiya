@@ -54,8 +54,10 @@ RUN addgroup --system --gid 1001 nodejs \
 # standalone bundle (traced node_modules + monorepo layout), then static assets.
 COPY --from=installer --chown=nextjs:nodejs /app/apps/admin/.next/standalone ./
 COPY --from=installer --chown=nextjs:nodejs /app/apps/admin/.next/static ./apps/admin/.next/static
-# NOTE: no `COPY public` — apps/admin has no public/ dir. Add
-# `COPY --from=installer /app/apps/admin/public ./apps/admin/public` if one appears.
+# public/ holds the brand mark. Standalone traces server code only, so static
+# files are copied by hand — and a missing line here is a broken image in
+# production that nothing in the build reports.
+COPY --from=installer --chown=nextjs:nodejs /app/apps/admin/public ./apps/admin/public
 
 USER nextjs
 EXPOSE 3002

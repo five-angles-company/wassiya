@@ -98,7 +98,10 @@ export const save = mutation({
     await writeAudit(ctx, {
       userId: user._id,
       event: existing === null ? "keyring.created" : "keyring.rotated",
-      meta: { paperVersion: args.paperVersion, rotatedPaper: args.rotatingPaper },
+      meta: {
+        paperVersion: args.paperVersion,
+        rotatedPaper: args.rotatingPaper,
+      },
     })
     return { paperVersion: args.paperVersion }
   },

@@ -146,6 +146,7 @@ export const DELIVERIES = {
   timelineEmpty: { ar: "لا محاولات بعد.", en: "No attempts yet." },
   automatic: { ar: "تلقائي", en: "Automatic" },
 
+  loading: { ar: "يفتح…", en: "Opening…" },
   failed: {
     ar: "تعذّر تنفيذ الإجراء. لم يتغيّر شيء.",
     en: "That did not go through. Nothing changed.",

@@ -129,7 +129,10 @@ export async function limitsFor(
   user: Doc<"users">,
   now: number
 ): Promise<PlanLimits> {
-  const base = await limitsOfPlan(ctx, isLapsed(user, now) ? "free" : planOf(user))
+  const base = await limitsOfPlan(
+    ctx,
+    isLapsed(user, now) ? "free" : planOf(user)
+  )
   const override = user.limitsOverride
   if (override === undefined) {
     return base

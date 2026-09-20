@@ -7,6 +7,7 @@ import { useMutation } from "convex/react"
 import { CalendarPlusIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { usePermissions } from "@/hooks/use-permissions"
 import { ConfirmAction } from "@/components/confirm-action"
 import { SUBSCRIPTIONS } from "@/features/subscriptions/strings/subscriptions"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -41,6 +42,7 @@ export function SetPlan({
   locale: Locale
 }) {
   const labels = t(SUBSCRIPTIONS, locale)
+  const { has } = usePermissions()
   const setPlan = useMutation(api.billing.adminSetPlan)
   const paid = plan === "annual"
 
@@ -58,6 +60,10 @@ export function SetPlan({
       )
     }
   }
+
+  // Absent rather than disabled: a greyed-out control invites "why can't I?",
+  // an absent one reads as "not my job". The refusal is in the mutation.
+  if (!has("billing.manage")) return null
 
   return (
     <div className="flex items-center justify-end gap-1">

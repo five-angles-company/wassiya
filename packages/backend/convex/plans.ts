@@ -11,7 +11,7 @@
 import { v } from "convex/values"
 
 import { internalMutation, query } from "./_generated/server"
-import { requireAdmin, requireUser } from "./model/access"
+import { requirePermission, requireUser } from "./model/access"
 import { usageFor } from "./model/entitlements"
 import { limitsFor, limitsOfPlan, PLAN_IDS, planOf } from "./model/plans"
 
@@ -48,7 +48,7 @@ export const current = query({
 export const catalogue = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "billing.read")
     return await Promise.all(
       PLAN_IDS.map(async (key) => ({
         key,

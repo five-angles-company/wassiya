@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { CheckinsBrowser } from "@/features/checkins/components/checkins-browser"
 import { CHECKINS } from "@/features/checkins/strings/checkins"
@@ -11,11 +12,13 @@ export default async function Page() {
   const labels = t(CHECKINS, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <CheckinsBrowser />
-    </FillScreen>
+    <RequirePermission need="owners.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <CheckinsBrowser />
+      </FillScreen>
+    </RequirePermission>
   )
 }

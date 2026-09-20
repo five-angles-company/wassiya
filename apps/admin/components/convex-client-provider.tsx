@@ -10,7 +10,7 @@ import { ConvexProviderWithClerk } from "convex/react-clerk"
 // (including refresh), so there is no fetchAccessToken bridge to write.
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
   const [convex] = useState(
-    () => new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!),
+    () => new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
   )
 
   return (

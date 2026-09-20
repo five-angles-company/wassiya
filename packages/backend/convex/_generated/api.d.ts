@@ -22,6 +22,7 @@ import type * as escrow from "../escrow.js";
 import type * as heirs from "../heirs.js";
 import type * as http from "../http.js";
 import type * as identity from "../identity.js";
+import type * as jobs from "../jobs.js";
 import type * as keyring from "../keyring.js";
 import type * as model_access from "../model/access.js";
 import type * as model_claimFlow from "../model/claimFlow.js";
@@ -30,13 +31,18 @@ import type * as model_emailCopy from "../model/emailCopy.js";
 import type * as model_entitlements from "../model/entitlements.js";
 import type * as model_identityHash from "../model/identityHash.js";
 import type * as model_jobRuns from "../model/jobRuns.js";
+import type * as model_permissions from "../model/permissions.js";
 import type * as model_plans from "../model/plans.js";
+import type * as model_settings from "../model/settings.js";
+import type * as model_staff from "../model/staff.js";
 import type * as notifications from "../notifications.js";
 import type * as outreach from "../outreach.js";
 import type * as plans from "../plans.js";
 import type * as release from "../release.js";
 import type * as routing from "../routing.js";
 import type * as seed from "../seed.js";
+import type * as settings from "../settings.js";
+import type * as staff from "../staff.js";
 import type * as users from "../users.js";
 
 import type {
@@ -60,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   heirs: typeof heirs;
   http: typeof http;
   identity: typeof identity;
+  jobs: typeof jobs;
   keyring: typeof keyring;
   "model/access": typeof model_access;
   "model/claimFlow": typeof model_claimFlow;
@@ -68,13 +75,18 @@ declare const fullApi: ApiFromModules<{
   "model/entitlements": typeof model_entitlements;
   "model/identityHash": typeof model_identityHash;
   "model/jobRuns": typeof model_jobRuns;
+  "model/permissions": typeof model_permissions;
   "model/plans": typeof model_plans;
+  "model/settings": typeof model_settings;
+  "model/staff": typeof model_staff;
   notifications: typeof notifications;
   outreach: typeof outreach;
   plans: typeof plans;
   release: typeof release;
   routing: typeof routing;
   seed: typeof seed;
+  settings: typeof settings;
+  staff: typeof staff;
   users: typeof users;
 }>;
 

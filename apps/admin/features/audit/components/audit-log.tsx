@@ -2,10 +2,17 @@
 
 import { useMemo } from "react"
 import { api } from "@workspace/backend/api"
+import type { Id } from "@workspace/backend/dataModel"
+import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
 import { FileClockIcon } from "lucide-react"
-import { parseAsArrayOf, parseAsStringLiteral, useQueryState } from "nuqs"
+import {
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { useLocale } from "@/components/locale-provider"
@@ -60,6 +67,9 @@ export function AuditLog() {
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
   const [domains, setDomains] = useQueryState("domains", domainsParser)
+  // Set by the Team screen's "their actions" link, and cleared from the banner
+  // below. Not a facet: the options are staff, which this screen may not read.
+  const [actor, setActor] = useQueryState("actor", parseAsString)
   const url = useTableUrlState({
     defaultSorting: [],
     sortableIds: NO_SORTING,
@@ -67,8 +77,12 @@ export function AuditLog() {
   })
 
   const filters = useMemo(
-    () => ({ domains, search: url.search }),
-    [domains, url.search]
+    () => ({
+      domains,
+      search: url.search,
+      actor: (actor ?? undefined) as Id<"users"> | undefined,
+    }),
+    [domains, url.search, actor]
   )
 
   const { data: page, loading } = useLastLoaded(
@@ -84,6 +98,7 @@ export function AuditLog() {
     () => ({
       event: labels.colEvent,
       subject: labels.colSubject,
+      actor: labels.colActor,
       meta: labels.colMeta,
       at: labels.colAt,
     }),
@@ -105,6 +120,21 @@ export function AuditLog() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <p className="max-w-3xl text-sm text-muted-foreground">{labels.intro}</p>
+
+      {actor !== null && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-4 py-3">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            {labels.actorNotice}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void setActor(null)}
+          >
+            {labels.clearActor}
+          </Button>
+        </div>
+      )}
 
       <DataTable<AuditRow>
         columns={columns}

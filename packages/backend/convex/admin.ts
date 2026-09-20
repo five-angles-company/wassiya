@@ -26,8 +26,14 @@ import type { Doc, Id } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
-import { requireAdmin } from "./model/access"
+import {
+  excludeStaff,
+  isStaffAccount,
+  requirePermission,
+} from "./model/access"
 import { planOf, storageUsed } from "./model/plans"
+import { JOB_EVERY_HOURS, JOB_NAMES } from "./model/jobRuns"
+import { settingsFor } from "./model/settings"
 
 /** One day, for bucketing a trend. Matches `model/claimFlow.ts`'s `DAY_MS`. */
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -108,7 +114,7 @@ function setTally(ids: ReadonlySet<string>, hitCap: boolean): Tally {
 export const overview = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "dashboard.read")
 
     const claims: Record<(typeof CLAIM_STATUSES)[number], Tally> = {
       submitted: { count: 0, more: false },
@@ -160,7 +166,8 @@ export const overview = query({
       )
       .take(8)
     const nextReleaseAt =
-      soonest.find((row) => row.vetoDeadline !== undefined)?.vetoDeadline ?? null
+      soonest.find((row) => row.vetoDeadline !== undefined)?.vetoDeadline ??
+      null
 
     return { claims, checkin, nextReleaseAt, countCap: COUNT_CAP }
   },
@@ -202,7 +209,7 @@ const IDENTITY_STATUSES = [
 export const activation = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "dashboard.read")
 
     const identity: Record<(typeof IDENTITY_STATUSES)[number], Tally> = {
       unverified: { count: 0, more: false },
@@ -231,13 +238,14 @@ export const activation = query({
       // team and drift further with every person hired — a growth chart that
       // rises when you make a hire is worse than no chart. `risk` skips them for
       // the same reason.
-      const rows = raw.filter((row) => row.role !== "admin")
+      const rows = raw.filter((row) => !isStaffAccount(row))
       identity[status] = tallyWith(rows, SCAN_CAP)
       if (status === "rejected") {
         attemptsExhausted = rows
           .slice(0, SCAN_CAP)
-          .filter((row) => (row.identityAttempts ?? 0) >= MAX_IDENTITY_ATTEMPTS)
-          .length
+          .filter(
+            (row) => (row.identityAttempts ?? 0) >= MAX_IDENTITY_ATTEMPTS
+          ).length
       }
     }
 
@@ -332,7 +340,7 @@ export const activation = query({
 export const signups = query({
   args: { from: v.number(), to: v.number() },
   handler: async (ctx, { from, to }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "dashboard.read")
 
     const raw = await ctx.db
       .query("users")
@@ -342,7 +350,7 @@ export const signups = query({
       .take(SCAN_CAP + 1)
     // Staff excluded, same as the funnel: a sign-up trend that ticks up when a
     // reviewer is added is measuring the wrong thing.
-    const rows = raw.filter((row) => row.role !== "admin")
+    const rows = raw.filter((row) => !isStaffAccount(row))
 
     // Bucketed in UTC rather than a local zone: the console is read from more
     // than one country, and a chart whose bars shift by a day depending on the
@@ -410,7 +418,7 @@ const RISK_LIMIT_MAX = 400
 export const risk = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "dashboard.read")
 
     const limit = Math.min(args.limit ?? RISK_LIMIT_DEFAULT, RISK_LIMIT_MAX)
     const owners = await ctx.db.query("users").take(limit + 1)
@@ -421,7 +429,7 @@ export const risk = query({
       // Admins are staff, not customers. Scoring the operator's own account as
       // an at-risk vault would put a permanent false row at the top of the one
       // table whose whole value is that every row means something.
-      if (owner.role === "admin") continue
+      if (isStaffAccount(owner)) continue
 
       const keyring = await ctx.db
         .query("keyring")
@@ -548,7 +556,7 @@ type TypeUsage = { count: number; bytes: number }
 export const storage = query({
   args: { limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "dashboard.read")
 
     const limit = Math.min(args.limit ?? 10, 50)
 
@@ -556,7 +564,7 @@ export const storage = query({
     const capped = all.length > SCAN_CAP
     // Staff excluded here too, so "owners on the free plan" is a count of
     // customers and not of everyone with a login.
-    const counted = all.slice(0, SCAN_CAP).filter((row) => row.role !== "admin")
+    const counted = all.slice(0, SCAN_CAP).filter((row) => !isStaffAccount(row))
 
     let totalBytes = 0
     const plans = new Map<string, number>()
@@ -606,9 +614,15 @@ export const storage = query({
       assetCount: Math.min(assets.length, STORAGE_SCAN_CAP),
       assetsCapped,
       unrouted,
-      /** True while no plan anywhere carries a renewal date — i.e. until the store webhook is live. */
+      /**
+       * True while no subscription anywhere came from a store.
+       *
+       * Not "no renewal date": a staff grant writes one, so that test would
+       * report billing as wired the moment support comped a single account —
+       * which is the one situation where the notice is most needed.
+       */
       billingUnwired: counted.every(
-        (owner) => owner.subscription?.renewsAt === undefined
+        (owner) => owner.subscription?.source !== "store"
       ),
     }
   },
@@ -740,7 +754,7 @@ function claimsQuery(ctx: QueryCtx, filters: ClaimFilters) {
 export const claimsPage = query({
   args: { paginationOpts: paginationOptsValidator, ...claimFilterArgs },
   handler: async (ctx, { paginationOpts, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
 
     const result = await claimsQuery(ctx, filters).paginate(paginationOpts)
 
@@ -797,7 +811,7 @@ const CLAIMS_TALLY_CAP = 500
 export const claimsTally = query({
   args: claimFilterArgs,
   handler: async (ctx, filters) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
     const rows = await claimsQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
@@ -857,7 +871,10 @@ function identityQuery(ctx: QueryCtx, filters: IdentityFilters) {
         ? ctx.db
             .query("users")
             .withIndex("by_identityStatus", (q) =>
-              q.eq("identityStatus", filters.statuses[0] as Doc<"users">["identityStatus"])
+              q.eq(
+                "identityStatus",
+                filters.statuses[0] as Doc<"users">["identityStatus"]
+              )
             )
             .order(filters.sort === "oldest" ? "asc" : "desc")
         : ctx.db
@@ -868,7 +885,7 @@ function identityQuery(ctx: QueryCtx, filters: IdentityFilters) {
     const clauses = [
       // Staff are not owners and do not belong in the owners' queue — the same
       // exclusion `risk` and `activation` apply.
-      q.neq(q.field("role"), "admin"),
+      excludeStaff(q),
     ]
     // Already narrowed by the index when exactly one was asked for.
     if (filters.statuses.length > 1) {
@@ -884,9 +901,7 @@ function identityQuery(ctx: QueryCtx, filters: IdentityFilters) {
       clauses.push(q.eq(q.field("identityStatus"), filters.statuses[0]))
     }
     if (filters.stuckOnly) {
-      clauses.push(
-        q.gte(q.field("identityAttempts"), MAX_IDENTITY_ATTEMPTS)
-      )
+      clauses.push(q.gte(q.field("identityAttempts"), MAX_IDENTITY_ATTEMPTS))
     }
     return clauses.length === 1 ? clauses[0]! : q.and(...clauses)
   })
@@ -925,7 +940,7 @@ function identityRow(user: Doc<"users">) {
 export const identityPage = query({
   args: { paginationOpts: paginationOptsValidator, ...identityFilterArgs },
   handler: async (ctx, { paginationOpts, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "identity.read")
     const result = await identityQuery(ctx, filters).paginate(paginationOpts)
     return { ...result, page: result.page.map(identityRow) }
   },
@@ -935,7 +950,7 @@ export const identityPage = query({
 export const identityTally = query({
   args: identityFilterArgs,
   handler: async (ctx, filters) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "identity.read")
     const rows = await identityQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
@@ -943,7 +958,6 @@ export const identityTally = query({
     }
   },
 })
-
 
 // ---------------------------------------------------------------------------
 // Owners — the Accounts group's keystone. Every other item in that group hangs
@@ -984,12 +998,10 @@ function ownersQuery(ctx: QueryCtx, filters: OwnerFilters) {
           .withSearchIndex("search_owner", (q) =>
             q.search("searchText", filters.search)
           )
-      : ctx.db
-          .query("users")
-          .order(filters.sort === "oldest" ? "asc" : "desc")
+      : ctx.db.query("users").order(filters.sort === "oldest" ? "asc" : "desc")
 
   return base.filter((q) => {
-    const clauses = [q.neq(q.field("role"), "admin")]
+    const clauses = [excludeStaff(q)]
     if (filters.identity.length > 0) {
       clauses.push(
         q.or(
@@ -1051,7 +1063,7 @@ function ownerRow(user: Doc<"users">) {
 export const ownersPage = query({
   args: { paginationOpts: paginationOptsValidator, ...ownerFilterArgs },
   handler: async (ctx, { paginationOpts, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const result = await ownersQuery(ctx, filters).paginate(paginationOpts)
     return { ...result, page: result.page.map(ownerRow) }
   },
@@ -1061,7 +1073,7 @@ export const ownersPage = query({
 export const ownersTally = query({
   args: ownerFilterArgs,
   handler: async (ctx, filters) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const rows = await ownersQuery(ctx, filters).take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
@@ -1098,7 +1110,7 @@ export const ownerDetail = query({
   // being trusted.
   args: { userId: v.string() },
   handler: async (ctx, { userId: rawUserId }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const userId = ctx.db.normalizeId("users", rawUserId)
     if (userId === null) return null
     const user = await ctx.db.get("users", userId)
@@ -1179,7 +1191,8 @@ export const ownerDetail = query({
         // it predates the heir's last routing change.
         bundleRebuiltAt: rebuiltFor.get(row._id as string) ?? null,
         bundleStale:
-          (rebuiltFor.get(row._id as string) ?? -1) < (row.routingChangedAt ?? 0),
+          (rebuiltFor.get(row._id as string) ?? -1) <
+          (row.routingChangedAt ?? 0),
       })),
       claims: claims.map((row) => ({
         id: row._id,
@@ -1261,7 +1274,7 @@ const heirFilterArgs = {
 export const heirsPage = query({
   args: { paginationOpts: paginationOptsValidator, ...heirFilterArgs },
   handler: async (ctx, { paginationOpts, sort, unroutedOnly, search }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
@@ -1343,7 +1356,7 @@ export const heirsPage = query({
 export const heirsTally = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const rows = await ctx.db.query("heirs").take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
@@ -1380,9 +1393,7 @@ function devicesQuery(
     .filter((q) => {
       const clauses = []
       if (ownerIds !== null) {
-        clauses.push(
-          q.or(...ownerIds.map((id) => q.eq(q.field("userId"), id)))
-        )
+        clauses.push(q.or(...ownerIds.map((id) => q.eq(q.field("userId"), id))))
       }
       if (filters.platforms.length > 0) {
         clauses.push(
@@ -1416,7 +1427,7 @@ function devicesQuery(
 export const devicesPage = query({
   args: { paginationOpts: paginationOptsValidator, ...deviceFilterArgs },
   handler: async (ctx, { paginationOpts, search, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
@@ -1461,16 +1472,14 @@ export const devicesPage = query({
 export const devicesTally = query({
   args: deviceFilterArgs,
   handler: async (ctx, { search, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { count: 0, more: false }
     }
-    const rows = await devicesQuery(
-      ctx,
-      filters,
-      ownerMatch?.ids ?? null
-    ).take(CLAIMS_TALLY_CAP + 1)
+    const rows = await devicesQuery(ctx, filters, ownerMatch?.ids ?? null).take(
+      CLAIMS_TALLY_CAP + 1
+    )
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
       more: rows.length > CLAIMS_TALLY_CAP,
@@ -1552,7 +1561,7 @@ function checkinsQuery(
 export const checkinsPage = query({
   args: { paginationOpts: paginationOptsValidator, ...checkinFilterArgs },
   handler: async (ctx, { paginationOpts, search, now, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
@@ -1599,14 +1608,16 @@ export const checkinsPage = query({
 export const checkinsTally = query({
   args: checkinFilterArgs,
   handler: async (ctx, { search, now: _now, ...filters }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "owners.read")
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { count: 0, more: false }
     }
-    const rows = await checkinsQuery(ctx, filters, ownerMatch?.ids ?? null).take(
-      CLAIMS_TALLY_CAP + 1
-    )
+    const rows = await checkinsQuery(
+      ctx,
+      filters,
+      ownerMatch?.ids ?? null
+    ).take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
       more: rows.length > CLAIMS_TALLY_CAP,
@@ -1614,24 +1625,57 @@ export const checkinsTally = query({
   },
 })
 
-/** How many rows each release band shows before it says it was cut short. */
+/** How many rows each release band contributes before the table says so. */
 const RELEASE_BAND_CAP = 100
 
 /**
- * The release pipeline: what is counting down, and what already went.
+ * One row of the releases table.
+ *
+ * Declared rather than inferred because the two bands fill different halves of
+ * it: a counting-down report has no release date and a released one has no
+ * countdown. Both halves are `null` on the other side rather than absent, so
+ * the table renders one shape and the column decides what a null means.
+ */
+type ReleaseRow = {
+  id: Id<"claims">
+  band: "counting" | "released"
+  subjectName: string | null
+  subjectEmail: string | null
+  claimantName: string
+  vetoDeadline: number | null
+  remainingMs: number | null
+  heirsWithBundle: number | null
+  releasedAt: number | null
+  deliveries: {
+    total: number
+    awaitingHeir: number
+    identityPending: number
+    ready: number
+    rejected: number
+    expired: number
+  } | null
+}
+
+/**
+ * Releases: what is counting down, and what already went.
+ *
+ * **One row per death report, both bands in one list.** They were two panels
+ * once, which made this the only screen in the console that was not a table —
+ * no search, no column visibility, no export, and two empty states where every
+ * other screen has one. The band is a column now, so it faceting like any other.
  *
  * Bounded rather than paginated: a countdown an operator pages through has
- * stopped being a countdown. Each band says so when it hits the cap.
+ * stopped being a countdown, and the table says when it was cut short.
  *
- * A counting-down report shows how many heirs have a bundle, because a report
+ * A counting-down report carries how many heirs have a bundle, because a report
  * that releases into an owner with none delivers nothing to anyone. A released
- * one shows its deliveries by state — the per-heir work lives on the
- * deliveries screen.
+ * one carries its deliveries by state — the per-heir work lives on the
+ * deliveries screen, and a row here links to it.
  */
-export const releasesPipeline = query({
+export const releasesTable = query({
   args: { now: v.number() },
   handler: async (ctx, { now }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
 
     const pending = await ctx.db
       .query("claims")
@@ -1656,7 +1700,8 @@ export const releasesPipeline = query({
       return subjects.get(key) ?? null
     }
 
-    const counting = []
+    const rows: ReleaseRow[] = []
+
     for (const row of pending.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
       const bundles =
@@ -1666,8 +1711,9 @@ export const releasesPipeline = query({
               .query("releaseBundles")
               .withIndex("by_userId", (q) => q.eq("userId", row.subjectUserId!))
               .take(100)
-      counting.push({
+      rows.push({
         id: row._id,
+        band: "counting",
         subjectName: subject?.name ?? null,
         subjectEmail: subject?.email ?? null,
         claimantName: row.claimantName,
@@ -1675,10 +1721,11 @@ export const releasesPipeline = query({
         /** Negative once the deadline has passed and the sweep has not run. */
         remainingMs: (row.vetoDeadline ?? now) - now,
         heirsWithBundle: bundles.length,
+        releasedAt: null,
+        deliveries: null,
       })
     }
 
-    const released = []
     for (const row of done.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
       const deliveries = await ctx.db
@@ -1687,11 +1734,15 @@ export const releasesPipeline = query({
         .take(100)
       const count = (status: Doc<"deliveries">["status"]) =>
         deliveries.filter((d) => d.status === status).length
-      released.push({
+      rows.push({
         id: row._id,
+        band: "released",
         subjectName: subject?.name ?? null,
         subjectEmail: subject?.email ?? null,
         claimantName: row.claimantName,
+        vetoDeadline: null,
+        remainingMs: null,
+        heirsWithBundle: null,
         releasedAt: row.releasedAt ?? row.vetoDeadline ?? row._creationTime,
         deliveries: {
           total: deliveries.length,
@@ -1705,10 +1756,11 @@ export const releasesPipeline = query({
     }
 
     return {
-      counting,
-      countingCapped: pending.length > RELEASE_BAND_CAP,
-      released,
-      releasedCapped: done.length > RELEASE_BAND_CAP,
+      rows,
+      // One flag, because one table: an operator does not care which half was
+      // truncated, only that what they are reading is not all of it.
+      capped:
+        pending.length > RELEASE_BAND_CAP || done.length > RELEASE_BAND_CAP,
       bandCap: RELEASE_BAND_CAP,
     }
   },
@@ -1728,7 +1780,7 @@ export const releasesPipeline = query({
 export const emailLogPage = query({
   args: { paginationOpts: paginationOptsValidator, search: v.string() },
   handler: async (ctx, { paginationOpts, search }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "ops.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
@@ -1745,9 +1797,7 @@ export const emailLogPage = query({
           ? isEmail
           : q.and(
               isEmail,
-              q.or(
-                ...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id))
-              )
+              q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
             )
       })
       .paginate(paginationOpts)
@@ -1789,8 +1839,8 @@ export const emailLogPage = query({
 export const emailLogTally = query({
   args: { search: v.string() },
   handler: async (ctx, { search }) => {
-    await requireAdmin(ctx)
-    const mailerConfigured = process.env.RESEND_FROM !== undefined
+    await requirePermission(ctx, "ops.read")
+    const mailerConfigured = (await settingsFor(ctx)).emailFrom !== null
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { count: 0, more: false, mailerConfigured }
@@ -1809,12 +1859,11 @@ export const emailLogTally = query({
   },
 })
 
-/** The two crons, by name, in the order they appear in `crons.ts`. */
-const JOB_NAMES = [
-  "checkin.sweep",
-  "claims.advance",
-  "claims.sweepUnmatched",
-] as const
+// The job list lives in `jobs.ts`, beside the registry that can run them, and
+// is imported rather than restated. It was restated once and drifted:
+// `deliveries.expire` was missing here, so the sweep that makes a delivery
+// permanently unopenable was the one piece of machinery the console could not
+// see at all.
 
 /** How many recent runs one job shows. */
 const JOB_RUNS_SHOWN = 20
@@ -1835,7 +1884,7 @@ const JOB_RUNS_SHOWN = 20
 export const jobRunsList = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "jobs.read")
 
     const jobs = []
     for (const name of JOB_NAMES) {
@@ -1847,6 +1896,8 @@ export const jobRunsList = query({
 
       jobs.push({
         name,
+        /** The schedule, so the console can judge late against the right one. */
+        everyHours: JOB_EVERY_HOURS[name],
         lastRun: recent[0] ?? null,
         lastChange: recent.find((row) => row.changed > 0) ?? null,
         /** Whether `lastChange` is merely outside the window shown. */
@@ -1889,10 +1940,12 @@ const AUDIT_DOMAINS = [
   "guardian",
   "heir",
   "identity",
+  "job",
   "keyring",
   "profile",
   "release",
   "routing",
+  "settings",
 ] as const
 
 const auditDomainValidator = v.union(
@@ -1928,6 +1981,16 @@ const auditFilterArgs = {
   domains: v.array(auditDomainValidator),
   /** Matched against the subject of the event — see `ownerIdsMatching`. */
   search: v.string(),
+  /**
+   * One staff member's own actions.
+   *
+   * ⚠️ It can only see forward from the RBAC cutover. `actorUserId` is a
+   * column now, but the rows written before it existed carry the actor in
+   * `meta.adminUserId`, which is a `v.record` and unindexable — and the log
+   * is append-only, so nothing may go back and fix them. The screen says so;
+   * silence here must not read as innocence.
+   */
+  actor: v.optional(v.id("users")),
 }
 
 /**
@@ -1946,17 +2009,20 @@ const auditFilterArgs = {
  */
 export const auditPage = query({
   args: { paginationOpts: paginationOptsValidator, ...auditFilterArgs },
-  handler: async (ctx, { paginationOpts, search, domains }) => {
-    await requireAdmin(ctx)
+  handler: async (ctx, { paginationOpts, search, domains, actor }) => {
+    await requirePermission(ctx, "audit.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { page: [], isDone: true, continueCursor: "" }
     }
 
-    const result = await ctx.db
-      .query("auditLog")
-      .withIndex("by_at")
+    // Same order either way, so the page shape does not change with the filter.
+    const result = await (actor === undefined
+      ? ctx.db.query("auditLog").withIndex("by_at")
+      : ctx.db
+          .query("auditLog")
+          .withIndex("by_actorUserId_and_at", (q) => q.eq("actorUserId", actor)))
       .order("desc")
       .filter((q) => {
         const clauses = []
@@ -1975,11 +2041,17 @@ export const auditPage = query({
       })
       .paginate(paginationOpts)
 
+    // One map for both sides: a staff member appearing fifty times costs one
+    // read, and an actor who has since been deleted resolves to null, which the
+    // row shape already tolerates.
     const subjects = new Map<string, Doc<"users"> | null>()
     for (const row of result.page) {
-      const key = row.userId as string
-      if (!subjects.has(key)) {
-        subjects.set(key, await ctx.db.get("users", row.userId))
+      for (const id of [row.userId, row.actorUserId]) {
+        if (id === undefined) continue
+        const key = id as string
+        if (!subjects.has(key)) {
+          subjects.set(key, await ctx.db.get("users", id))
+        }
       }
     }
 
@@ -1997,6 +2069,13 @@ export const auditPage = query({
           // data out of it deliberately — `claim.certificate_attached` logs the
           // claim id and not the name on the certificate.
           meta: row.meta,
+          actorId: row.actorUserId ?? null,
+          actorName:
+            row.actorUserId === undefined
+              ? null
+              : (subjects.get(row.actorUserId as string)?.name ??
+                subjects.get(row.actorUserId as string)?.email ??
+                null),
           deviceId: row.deviceId ?? null,
           at: row.at,
         }
@@ -2008,15 +2087,17 @@ export const auditPage = query({
 /** Bounded count for the audit filters. See `claimsTally`. */
 export const auditTally = query({
   args: auditFilterArgs,
-  handler: async (ctx, { search, domains }) => {
-    await requireAdmin(ctx)
+  handler: async (ctx, { search, domains, actor }) => {
+    await requirePermission(ctx, "audit.read")
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { count: 0, more: false }
     }
-    const rows = await ctx.db
-      .query("auditLog")
-      .withIndex("by_at")
+    const rows = await (actor === undefined
+      ? ctx.db.query("auditLog").withIndex("by_at")
+      : ctx.db
+          .query("auditLog")
+          .withIndex("by_actorUserId_and_at", (q) => q.eq("actorUserId", actor)))
       .order("desc")
       .filter((q) => {
         const clauses = []
@@ -2102,7 +2183,7 @@ function notificationClause(
 export const notificationsPage = query({
   args: { paginationOpts: paginationOptsValidator, ...notificationFilterArgs },
   handler: async (ctx, { paginationOpts, search, domains, unread }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "ops.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
@@ -2151,7 +2232,7 @@ export const notificationsPage = query({
 export const notificationsTally = query({
   args: notificationFilterArgs,
   handler: async (ctx, { search, domains, unread }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "ops.read")
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
       return { count: 0, more: false }
@@ -2223,7 +2304,7 @@ const HISTORY_SCAN = 400
 export const unmatchedClaims = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
     const page = await ctx.db
       .query("claims")
       .withIndex("by_status_and_subjectUserId", (q) =>
@@ -2251,7 +2332,7 @@ export const claimDetail = query({
   /** `v.string()` + `normalizeId` — see `ownerDetail` for why. */
   args: { claimId: v.string() },
   handler: async (ctx, { claimId: rawClaimId }) => {
-    await requireAdmin(ctx)
+    await requirePermission(ctx, "claims.read")
 
     const claimId = ctx.db.normalizeId("claims", rawClaimId)
     if (claimId === null) return null

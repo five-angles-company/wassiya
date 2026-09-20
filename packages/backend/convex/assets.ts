@@ -29,10 +29,7 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
-import {
-  assertCanAddAsset,
-  assertEditWithinLimits,
-} from "./model/entitlements"
+import { assertCanAddAsset, assertEditWithinLimits } from "./model/entitlements"
 import { storageUsed } from "./model/plans"
 
 const assetType = v.union(
@@ -268,7 +265,8 @@ export const update = mutation({
     // object and drop whatever it omitted — `mimeType` and `itemCount` are the
     // ones that would go. Callers are expected to send a complete `meta`; this
     // merge is the safety net for the day one of them does not.
-    const meta = fields.meta === undefined ? undefined : { ...asset.meta, ...fields.meta }
+    const meta =
+      fields.meta === undefined ? undefined : { ...asset.meta, ...fields.meta }
 
     // An edit that replaces a 1 KB note with a 400 MB file is an add in
     // everything but name, so growth is charged against the same quota — before

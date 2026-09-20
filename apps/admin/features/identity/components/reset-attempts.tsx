@@ -7,6 +7,7 @@ import { useMutation } from "convex/react"
 import { RotateCcwIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { usePermissions } from "@/hooks/use-permissions"
 import { ConfirmAction } from "@/components/confirm-action"
 import { IDENTITY } from "@/features/identity/strings/identity"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -35,7 +36,12 @@ export function ResetAttempts({
   locale: Locale
 }) {
   const labels = t(IDENTITY, locale)
+  const { has } = usePermissions()
   const reset = useMutation(api.identity.adminResetAttempts)
+
+  // Absent rather than disabled: a greyed-out control invites "why can't I?",
+  // an absent one reads as "not my job". The refusal is in the mutation.
+  if (!has("identity.reset")) return null
 
   return (
     <ConfirmAction

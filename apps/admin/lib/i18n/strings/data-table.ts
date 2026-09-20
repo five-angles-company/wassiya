@@ -36,7 +36,10 @@ export const DATA_TABLE = {
 
   // -- Selection ------------------------------------------------------------
   selectRow: { ar: "اختر الصف", en: "Select row" },
-  selectAll: { ar: "اختر كل الصفوف الظاهرة", en: "Select all rows on this page" },
+  selectAll: {
+    ar: "اختر كل الصفوف الظاهرة",
+    en: "Select all rows on this page",
+  },
   selectedCount: { ar: "{n} محدّد", en: "{n} selected" },
   clearSelection: { ar: "ألغِ التحديد", en: "Clear" },
   copyIds: { ar: "انسخ المعرّفات", en: "Copy ids" },

@@ -72,7 +72,10 @@ function checkinColumns(
           className="flex flex-col hover:underline"
         >
           <span className="font-medium">{row.original.ownerName}</span>
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.ownerEmail}
           </span>
         </Link>
@@ -155,7 +158,7 @@ function checkinColumns(
       enableSorting: false,
       header: () => labels.colConfirmed,
       cell: ({ row }) => (
-        <span className="whitespace-nowrap tabular-nums text-muted-foreground">
+        <span className="whitespace-nowrap text-muted-foreground tabular-nums">
           {fmtDate(row.original.lastConfirmedAt, locale)}
         </span>
       ),

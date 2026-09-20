@@ -49,11 +49,7 @@ export function OwnerDetail({ userId }: { userId: string }) {
   }
   if (detail === null) {
     return (
-      <RecordNotFound
-        id={userId}
-        backHref="/owners"
-        backLabel={labels.back}
-      />
+      <RecordNotFound id={userId} backHref="/owners" backLabel={labels.back} />
     )
   }
 

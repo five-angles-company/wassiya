@@ -9,6 +9,10 @@ export const RELEASES = {
     en: "What is waiting for its objection period, what has passed it, and how many of its heirs have actually received.",
   },
 
+  // The band is a column now, not a panel. Same two words: they label the
+  // badge in the row and the facet that filters on it, so an operator reads one
+  // vocabulary in both places.
+  colBand: { ar: "الحالة", en: "State" },
   bandCounting: { ar: "في المهلة", en: "Counting down" },
   bandReleased: { ar: "أُفرج عنها", en: "Released" },
 
@@ -19,9 +23,16 @@ export const RELEASES = {
   colReleased: { ar: "تاريخ الإفراج", en: "Released" },
   colDelivery: { ar: "التسليم", en: "Delivery" },
 
+  searchPlaceholder: { ar: "ابحث باسم صاحب الخزنة", en: "Search by vault owner" },
+
   remainingDays: { ar: "{n} يوماً", en: "{n} days" },
   remainingToday: { ar: "أقل من يوم", en: "Under a day" },
   overdueSweep: { ar: "انقضت — بانتظار المهمة", en: "Elapsed — awaiting the job" },
+
+  // A report counting down with no bundles is the one genuinely alarming row
+  // this screen can show: it will release on schedule and reach nobody.
+  bundlesNone: { ar: "لا حزم", en: "No bundles" },
+  bundlesReady: { ar: "{n} وريثاً جاهزاً", en: "{n} heirs ready" },
 
   deliveryNone: { ar: "لا تسليمات", en: "No deliveries" },
   deliveryNoneHint: {
@@ -30,10 +41,9 @@ export const RELEASES = {
   },
   deliverySummary: { ar: "{ready} من {total} جاهزة", en: "{ready} of {total} ready" },
 
-  emptyCounting: { ar: "لا طلبات في المهلة", en: "Nothing counting down" },
-  emptyReleased: { ar: "لم يُفرج عن أي طلب", en: "Nothing released yet" },
-  capped: {
-    ar: "تعرض أول {n} فقط.",
-    en: "Showing the first {n} only.",
+  empty: { ar: "لا شيء في مسار التسليم", en: "Nothing in the release pipeline" },
+  emptyHint: {
+    ar: "لا طلب وفاة في المهلة ولا طلب أُفرج عنه بعد.",
+    en: "No death report is counting down, and none has been released yet.",
   },
 } as const satisfies Dictionary

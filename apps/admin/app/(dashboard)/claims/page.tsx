@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { ClaimsBrowser } from "@/features/claims/components/claims-browser"
 import { CLAIMS } from "@/features/claims/strings/claims"
@@ -18,11 +19,13 @@ export default async function ClaimsPage() {
   const labels = t(CLAIMS, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <ClaimsBrowser />
-    </FillScreen>
+    <RequirePermission need="claims.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <ClaimsBrowser />
+      </FillScreen>
+    </RequirePermission>
   )
 }

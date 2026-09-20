@@ -7,6 +7,7 @@ import { useMutation } from "convex/react"
 import { InfoIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import { usePermissions } from "@/hooks/use-permissions"
 import { ConfirmAction } from "@/components/confirm-action"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -51,6 +52,7 @@ export function ClaimVerdict({
   locale: Locale
 }) {
   const labels = t(CLAIMS, locale)
+  const { has } = usePermissions()
   const setNameMatch = useMutation(api.claims.adminSetNameMatch)
 
   async function rule(nameMatch: boolean, success: string) {
@@ -64,51 +66,55 @@ export function ClaimVerdict({
     }
   }
 
+  // Absent rather than disabled: a greyed-out control invites "why can't I?",
+  // an absent one reads as "not my job". The refusal is in the mutation.
+  if (!has("claims.rule")) return null
+
   return (
     <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-2">
-          <ConfirmAction
-            tone="neutral"
-            title={labels.approveDialogTitle}
-            body={labels.approveDialogBody}
-            confirmLabel={labels.approveConfirm}
-            cancelLabel={labels.cancel}
-            onConfirm={() => rule(true, labels.toastApproved)}
-            trigger={
-              <Button className="w-full" disabled={blocked.approve !== null}>
-                {labels.approve}
-              </Button>
-            }
-          />
-          <ConfirmAction
-            tone="destructive"
-            title={labels.rejectDialogTitle}
-            body={labels.rejectDialogBody}
-            confirmLabel={labels.rejectConfirm}
-            cancelLabel={labels.cancel}
-            onConfirm={() => rule(false, labels.toastRejected)}
-            trigger={
-              <Button
-                variant="outline"
-                className="w-full text-destructive"
-                disabled={blocked.reject !== null}
-              >
-                {labels.reject}
-              </Button>
-            }
-          />
-        </div>
+      <div className="grid grid-cols-2 gap-2">
+        <ConfirmAction
+          tone="neutral"
+          title={labels.approveDialogTitle}
+          body={labels.approveDialogBody}
+          confirmLabel={labels.approveConfirm}
+          cancelLabel={labels.cancel}
+          onConfirm={() => rule(true, labels.toastApproved)}
+          trigger={
+            <Button className="w-full" disabled={blocked.approve !== null}>
+              {labels.approve}
+            </Button>
+          }
+        />
+        <ConfirmAction
+          tone="destructive"
+          title={labels.rejectDialogTitle}
+          body={labels.rejectDialogBody}
+          confirmLabel={labels.rejectConfirm}
+          cancelLabel={labels.cancel}
+          onConfirm={() => rule(false, labels.toastRejected)}
+          trigger={
+            <Button
+              variant="outline"
+              className="w-full text-destructive"
+              disabled={blocked.reject !== null}
+            >
+              {labels.reject}
+            </Button>
+          }
+        />
+      </div>
 
-        {blockedLabel(blocked.approve, labels) !== undefined && (
-          <p className="text-sm text-muted-foreground">
-            {blockedLabel(blocked.approve, labels)}
-          </p>
-        )}
+      {blockedLabel(blocked.approve, labels) !== undefined && (
+        <p className="text-sm text-muted-foreground">
+          {blockedLabel(blocked.approve, labels)}
+        </p>
+      )}
 
-        <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground">
-          <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-          <span>{labels.approveNextBody}</span>
-        </div>
+      <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground">
+        <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
+        <span>{labels.approveNextBody}</span>
+      </div>
     </div>
   )
 }

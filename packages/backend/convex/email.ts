@@ -24,7 +24,7 @@ import { Resend } from "@convex-dev/resend"
 
 import { components } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
-import type { MutationCtx } from "./_generated/server"
+import type { MutationCtx, QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import {
   CLAIM_CLOSED_COPY,
@@ -38,21 +38,33 @@ import {
   DELIVERY_READY_COPY,
   ESCALATION_COPY,
   RECOVERY_COPY,
+  STAFF_INVITE_COPY,
+  TEST_COPY,
   type LocalisedCopy,
 } from "./model/emailCopy"
+import { settingsFor } from "./model/settings"
 
-export const resend: Resend = new Resend(components.resend, {
-  // On unless explicitly turned off, so the safe state is the default one.
-  testMode: process.env.RESEND_TEST_MODE !== "false",
-})
+/**
+ * Built per send rather than once at module scope.
+ *
+ * `testMode` is a console toggle now, and module scope has no `ctx` with which
+ * to read one — so the client is constructed where the setting can be resolved.
+ * The component itself is still mounted once in `convex.config.ts`; this is
+ * only the thin client over it.
+ *
+ * On unless explicitly turned off, so the safe state stays the default one.
+ */
+function mailer(testMode: boolean): Resend {
+  return new Resend(components.resend, { testMode })
+}
 
 /**
  * Where `apps/web` is, so a notice can point at the thing it is about.
  *
- * ⚠️ This is the **Convex deployment's** env, set with `npx convex env set
- * APP_URL …` — one value per deployment. Putting it in `apps/web/.env.local` or
- * `packages/backend/.env.local` does nothing at all, silently: neither is read
- * here. See the three-env-stores table in AGENTS.md.
+ * Set in the admin console, falling back to the deployment's `APP_URL` — see
+ * `model/settings.ts` for the precedence. Putting it in `apps/web/.env.local`
+ * or `packages/backend/.env.local` does nothing at all, silently: neither is
+ * read here. See the three-env-stores table in AGENTS.md.
  *
  * Not `CONVEX_SITE_URL`, which is on `env` already and looks like the answer.
  * That is the *deployment's* own HTTP origin — using it would mail people a
@@ -64,13 +76,17 @@ export const resend: Resend = new Resend(components.resend, {
  * words and lets the reader find it — which is what every copy block here
  * already does.
  */
-export function appLink(path: string): string | undefined {
-  const base = process.env.APP_URL
-  if (base === undefined || base.length === 0) {
-    console.error(`APP_URL is not set — sending a link-free email for ${path}`)
+export async function appLink(
+  // Reads only, so a query may build a link too — two delivery queries do.
+  ctx: QueryCtx,
+  path: string
+): Promise<string | undefined> {
+  const { appUrl } = await settingsFor(ctx)
+  if (appUrl === null) {
+    console.error(`No app URL is set — sending a link-free email for ${path}`)
     return undefined
   }
-  return `${base.replace(/\/+$/, "")}${path}`
+  return `${appUrl.replace(/\/+$/, "")}${path}`
 }
 
 /**
@@ -92,12 +108,12 @@ async function send(
   link?: string,
   date?: number
 ): Promise<void> {
-  const from = process.env.RESEND_FROM
-  if (from === undefined) {
+  const { emailFrom, emailTestMode } = await settingsFor(ctx)
+  if (emailFrom === null) {
     // Loud in the logs, harmless to the caller: the state change itself already
-    // landed, and a missing sender is a deployment problem to fix, not a reason
-    // to stall a claim or an escalation ladder.
-    console.error(`RESEND_FROM is not set — ${what} email not sent`)
+    // landed, and a missing sender is a configuration problem to fix, not a
+    // reason to stall a claim or an escalation ladder.
+    console.error(`No sender address is set — ${what} email not sent`)
     return
   }
 
@@ -107,7 +123,8 @@ async function send(
     return
   }
   await deliver(ctx, {
-    from,
+    from: emailFrom,
+    testMode: emailTestMode,
     to: user.email,
     english: user.locale?.startsWith("en") === true,
     auditUserId: userId,
@@ -127,6 +144,7 @@ async function deliver(
   ctx: MutationCtx,
   args: {
     from: string
+    testMode: boolean
     to: string
     english: boolean
     auditUserId: Id<"users">
@@ -160,7 +178,7 @@ async function deliver(
   // than the message.
   const body = link === undefined ? withDate : `${withDate}\n\n${link}`
 
-  await resend.sendEmail(ctx, {
+  await mailer(args.testMode).sendEmail(ctx, {
     from,
     to: args.to,
     subject: text.subject,
@@ -237,7 +255,7 @@ export async function sendClaimFiled(
     claimantUserId,
     CLAIM_FILED_COPY,
     "claim filed",
-    appLink(`/claims/${claimId}`)
+    await appLink(ctx, `/claims/${claimId}`)
   )
 }
 
@@ -256,7 +274,7 @@ export async function sendClaimInReview(
     claimantUserId,
     CLAIM_IN_REVIEW_COPY,
     "claim in review",
-    appLink(`/claims/${claimId}`),
+    await appLink(ctx, `/claims/${claimId}`),
     vetoDeadline
   )
 }
@@ -276,7 +294,7 @@ export async function sendClaimReviewFailed(
     claimantUserId,
     CLAIM_REVIEW_FAILED_COPY,
     "claim review failed",
-    appLink(`/claims/${claimId}`)
+    await appLink(ctx, `/claims/${claimId}`)
   )
 }
 
@@ -291,7 +309,7 @@ export async function sendClaimVetoed(
     claimantUserId,
     CLAIM_VETOED_COPY,
     "claim vetoed",
-    appLink(`/claims/${claimId}`)
+    await appLink(ctx, `/claims/${claimId}`)
   )
 }
 
@@ -306,7 +324,7 @@ export async function sendClaimReleased(
     claimantUserId,
     CLAIM_RELEASED_COPY,
     "claim released",
-    appLink(`/claims/${claimId}`)
+    await appLink(ctx, `/claims/${claimId}`)
   )
 }
 
@@ -321,7 +339,7 @@ export async function sendClaimClosed(
     claimantUserId,
     CLAIM_CLOSED_COPY,
     "claim closed",
-    appLink(`/claims/${claimId}`)
+    await appLink(ctx, `/claims/${claimId}`)
   )
 }
 
@@ -342,7 +360,7 @@ export async function sendDeliveryReady(
     heirUserId,
     DELIVERY_READY_COPY,
     "delivery ready",
-    appLink(`/delivery/${deliveryId}`),
+    await appLink(ctx, `/delivery/${deliveryId}`),
     expiresAt
   )
 }
@@ -359,7 +377,7 @@ export async function sendDeliveryExpiring(
     heirUserId,
     DELIVERY_EXPIRING_COPY,
     "delivery expiring",
-    appLink(`/delivery/${deliveryId}`),
+    await appLink(ctx, `/delivery/${deliveryId}`),
     expiresAt
   )
 }
@@ -378,18 +396,68 @@ export async function sendDeliveryInvite(
     link: string
   }
 ): Promise<boolean> {
-  const from = process.env.RESEND_FROM
-  if (from === undefined) {
-    console.error("RESEND_FROM is not set — delivery invite email not sent")
+  const { emailFrom, emailTestMode } = await settingsFor(ctx)
+  if (emailFrom === null) {
+    console.error("No sender address is set — delivery invite email not sent")
     return false
   }
   await deliver(ctx, {
-    from,
+    from: emailFrom,
+    testMode: emailTestMode,
     to: args.to,
     english: args.english,
     auditUserId: args.ownerUserId,
     copy: DELIVERY_INVITE_COPY,
     what: "delivery invite",
+    link: args.link,
+  })
+  return true
+}
+
+/**
+ * The settings page test send.
+ *
+ * Routed through `send` like every other notice, so it exercises the same
+ * sender resolution, the same test-mode switch and the same audit line. A test
+ * that took its own path would prove only that the test works.
+ */
+export async function sendTest(
+  ctx: MutationCtx,
+  userId: Id<"users">
+): Promise<void> {
+  await send(ctx, userId, TEST_COPY, "settings test")
+}
+
+/**
+ * The staff invitation.
+ *
+ * Addressed to someone who may have no account, so it cannot go through `send`
+ * — there is no `users` row to read a locale from, and the audit line is filed
+ * under the Owner who invited them. English when the console's own operators
+ * asked for it; Arabic otherwise, like everything else.
+ */
+export async function sendStaffInvite(
+  ctx: MutationCtx,
+  args: {
+    to: string
+    english: boolean
+    invitedByUserId: Id<"users">
+    link: string
+  }
+): Promise<boolean> {
+  const { emailFrom, emailTestMode } = await settingsFor(ctx)
+  if (emailFrom === null) {
+    console.error("No sender address is set — staff invitation not sent")
+    return false
+  }
+  await deliver(ctx, {
+    from: emailFrom,
+    testMode: emailTestMode,
+    to: args.to,
+    english: args.english,
+    auditUserId: args.invitedByUserId,
+    copy: STAFF_INVITE_COPY,
+    what: "staff invitation",
     link: args.link,
   })
   return true

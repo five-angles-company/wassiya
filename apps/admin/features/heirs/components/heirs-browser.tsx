@@ -67,7 +67,10 @@ function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
           className="flex flex-col hover:underline"
         >
           <span>{row.original.ownerName}</span>
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.ownerEmail}
           </span>
         </Link>

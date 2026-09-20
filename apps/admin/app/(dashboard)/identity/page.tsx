@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { IdentityBrowser } from "@/features/identity/components/identity-browser"
 import { IDENTITY } from "@/features/identity/strings/identity"
@@ -14,11 +15,13 @@ export default async function IdentityPage() {
   const labels = t(IDENTITY, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <IdentityBrowser />
-    </FillScreen>
+    <RequirePermission need="identity.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <IdentityBrowser />
+      </FillScreen>
+    </RequirePermission>
   )
 }

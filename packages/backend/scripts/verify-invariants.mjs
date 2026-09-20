@@ -280,6 +280,106 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   }
 }
 
+// ── 6. Authority has exactly one module ─────────────────────────────────────
+//
+// Three ways to lose RBAC, all of which typecheck. An `admin*` function that
+// forgot its gate is open to every signed-in person. A hand-rolled
+// `user.role === "admin"` is a second definition of authority that drifts from
+// the catalogue — and `role` is *also* how owner metrics exclude staff, so the
+// two readings of one column have to stay visibly apart. And a `staffRoles`
+// writer that edits a role without recomputing its holders leaves every open
+// console session running on permissions that were revoked a minute ago, with
+// nothing anywhere to surface it.
+{
+  const ACCESS = "model/access.ts"
+  const STAFF = "staff.ts"
+
+  // 6.1 — `role` is compared in one file, through isStaffAccount/excludeStaff.
+  const rawRole = /role\s*[!=]==?\s*["'](admin|owner)["']|q\.(neq|eq)\(\s*q\.field\(\s*["']role["']/
+  for (const file of files) {
+    const name = rel(file)
+    if (name === ACCESS || name === "schema.ts") continue
+    // `applyRoles` is the one writer of the column and says so in the model.
+    if (name === "model/staff.ts") continue
+    if (rawRole.test(code(file))) {
+      failures.push(
+        `${name} compares users.role directly — use isStaffAccount/excludeStaff from ${ACCESS}, so a metric filter can never be mistaken for an authority check.`
+      )
+    }
+  }
+
+  // 6.2 — every exported admin* function is gated, and requireAdmin is gone.
+  let gated = 0
+  for (const file of files) {
+    const name = rel(file)
+    const source = code(file)
+    if (source.includes("requireAdmin")) {
+      failures.push(
+        `${name} still uses requireAdmin — authority is a permission now; call requirePermission with the key the function needs.`
+      )
+    }
+    for (const block of source.split(/\nexport const /).slice(1)) {
+      const fn = block.slice(0, block.indexOf(" "))
+      if (!/^admin/.test(fn)) continue
+      if (!block.includes("requirePermission(")) {
+        failures.push(`${name}: ${fn} is exported ungated — it needs a requirePermission call.`)
+      }
+      gated += 1
+    }
+  }
+
+  // 6.3 — every key a gate names exists in the catalogue.
+  const catalogue = read(join(convexDir, "model/permissions.ts"))
+  const keys = [...catalogue.matchAll(/\{ key: "([^"]+)"/g)].map((m) => m[1])
+  if (keys.length === 0) {
+    failures.push("Found no permission keys in model/permissions.ts — check the regex.")
+  }
+  let checked = 0
+  for (const file of files) {
+    for (const [, key] of code(file).matchAll(/requirePermission\(\s*\w+\s*,\s*"([^"]+)"/g)) {
+      checked += 1
+      if (!keys.includes(key)) {
+        failures.push(`${rel(file)} gates on "${key}", which is not in the catalogue.`)
+      }
+    }
+  }
+  console.log(
+    `Checked ${checked} permission gates and ${gated} admin* exports against ${keys.length} catalogue keys.`
+  )
+
+  // 6.4 — a role edit must fan out to its holders, and only staff.ts may write
+  // either side of the denormalisation.
+  for (const file of files) {
+    const name = rel(file)
+    const source = code(file)
+    const writesRoles = /\.(insert|patch|replace|delete)\(\s*["']staffRoles["']/.test(source)
+    if (writesRoles && name !== STAFF) {
+      failures.push(
+        `${name} writes staffRoles — only ${STAFF} may, because every write there has to recompute its holders.`
+      )
+    }
+    if (writesRoles && name === STAFF) {
+      for (const block of source.split(/\nexport const /).slice(1)) {
+        const fn = block.slice(0, block.indexOf(" "))
+        // An insert has no holders yet; only an edit can strand them.
+        if (!/\.(patch|replace)\(\s*["']staffRoles["']/.test(block)) continue
+        if (!block.includes("recomputeHolders(")) {
+          failures.push(
+            `${STAFF}: ${fn} edits a role without calling recomputeHolders — its holders keep the permissions it had before.`
+          )
+        }
+      }
+    }
+    for (const token of ["staffPermissions:", "staffRoleIds:"]) {
+      if (!source.includes(token)) continue
+      if (name === "schema.ts" || name === "model/staff.ts") continue
+      failures.push(
+        `${name} writes ${token.slice(0, -1)} — it is denormalised, so model/staff.ts owns it.`
+      )
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -289,5 +389,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module."
+  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module."
 )

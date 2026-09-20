@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -15,9 +16,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@workspace/ui/components/sidebar"
-import { ShieldCheckIcon } from "lucide-react"
 
+import { BrandMark } from "@/components/brand-mark"
 import { useLocale } from "@/components/locale-provider"
+import { usePermissions } from "@/hooks/use-permissions"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { NAV } from "@/lib/i18n/strings/nav"
@@ -43,6 +45,20 @@ export function AppSidebar() {
   const pathname = usePathname()
   const nav = t(NAV, locale)
   const common = t(COMMON, locale)
+  const { has } = usePermissions()
+
+  // Filtered, not disabled. A console that shows a delivery agent every screen
+  // they cannot open is a console that reads as broken rather than scoped — and
+  // a group heading with nothing under it is worse than no heading, so an empty
+  // group goes with its items.
+  const groups = useMemo(
+    () =>
+      NAV_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => has(item.need)),
+      })).filter((group) => group.items.length > 0),
+    [has]
+  )
 
   return (
     <Sidebar
@@ -55,8 +71,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <ShieldCheckIcon className="size-4" />
+                {/* The mark carries the accent itself, so the tile it used to
+                    sit in is gone — a solid terracotta square here and a solid
+                    terracotta active row below were two accents on one screen.
+                    It narrows to 32px when the rail collapses because that is
+                    what the button becomes, and the button clips. */}
+                <div className="flex w-11 shrink-0 items-center justify-center group-data-[collapsible=icon]:w-8">
+                  <BrandMark />
                 </div>
                 <div className="grid flex-1 text-start leading-tight">
                   <span className="truncate font-heading font-semibold">
@@ -73,7 +94,7 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.key}>
             <SidebarGroupLabel>{nav[group.key]}</SidebarGroupLabel>
             <SidebarGroupContent>

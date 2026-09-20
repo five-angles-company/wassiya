@@ -14,13 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@workspace/ui/components/sheet"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 import type { FunctionReturnType } from "convex/server"
@@ -40,6 +33,13 @@ import {
 import { toast } from "sonner"
 
 import { ConfirmAction } from "@/components/confirm-action"
+import {
+  SheetDot,
+  SheetSection,
+  SheetSections,
+  SheetShell,
+} from "@/components/sheet-shell"
+import { usePermissions } from "@/hooks/use-permissions"
 import {
   MANUAL_CHANNELS,
   MANUAL_OUTCOMES,
@@ -80,63 +80,134 @@ export function DeliverySheet({
     deliveryId === null ? "skip" : { deliveryId }
   )
 
+  const loaded = detail !== undefined && detail !== null
+
   return (
-    <Sheet open={deliveryId !== null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent
-        side={locale === "ar" ? "left" : "right"}
-        className="w-full gap-0 overflow-y-auto p-0 sm:max-w-xl"
-      >
-        {detail === undefined || detail === null ? (
-          <div className="flex flex-col gap-4 p-6">
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
+    <SheetShell
+      open={deliveryId !== null}
+      onOpenChange={(open) => !open && onClose()}
+      size="xl"
+      title={loaded ? (detail.heir.name ?? "—") : labels.loading}
+      badge={
+        loaded ? (
+          <Badge variant={statusVariant(detail.status)}>
+            {statusLabel(detail.status, locale)}
+          </Badge>
+        ) : undefined
+      }
+      description={
+        loaded ? (
+          <>
+            <span>{detail.heir.relation}</span>
+            <SheetDot />
+            <span>{detail.subjectName ?? "—"}</span>
+            <SheetDot />
+            <span>
+              {labels.closesOn.replace(
+                "{date}",
+                fmtDate(detail.expiresAt, locale)
+              )}
+            </span>
+            <Link
+              href={"/claims/" + detail.claimId}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              <ExternalLinkIcon className="size-3" />
+              {labels.openReport}
+            </Link>
+          </>
         ) : (
-          <div key={detail.deliveryId}>
-            <SheetHeader className="gap-1.5 border-b p-6">
-              <div className="flex flex-wrap items-center gap-2">
-                <SheetTitle className="font-heading text-xl">
-                  {detail.heir.name ?? "—"}
-                </SheetTitle>
-                <Badge variant={statusVariant(detail.status)}>
-                  {statusLabel(detail.status, locale)}
-                </Badge>
-              </div>
-              <SheetDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span>{detail.heir.relation}</span>
-                <Dot />
-                <span>{detail.subjectName ?? "—"}</span>
-                <Dot />
-                <span>
-                  {labels.closesOn.replace("{date}", fmtDate(detail.expiresAt, locale))}
-                </span>
-                <Link
-                  href={`/claims/${detail.claimId}`}
-                  className="inline-flex items-center gap-1 text-primary hover:underline"
-                >
-                  <ExternalLinkIcon className="size-3" />
-                  {labels.openReport}
-                </Link>
-              </SheetDescription>
-            </SheetHeader>
+          <Skeleton className="h-3 w-48" />
+        )
+      }
+      // The one decision this sheet exists for sits in the action bar, where
+      // every other sheet keeps its commit — not three sections down, past the
+      // evidence the reviewer has already read.
+      footer={
+        loaded ? <IdentityVerdict detail={detail} labels={labels} /> : undefined
+      }
+    >
+      {!loaded ? (
+        <div className="flex flex-col gap-4 p-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      ) : (
+        <div key={detail.deliveryId}>
+          <StatusCallout detail={detail} labels={labels} />
 
-            <StatusCallout detail={detail} labels={labels} />
-
-            <div className="divide-y">
-              <IdentitySection detail={detail} labels={labels} />
-              <ContactSection detail={detail} labels={labels} />
-              <TimelineSection detail={detail} labels={labels} locale={locale} />
-            </div>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+          <SheetSections>
+            <IdentitySection detail={detail} labels={labels} />
+            <ContactSection detail={detail} labels={labels} />
+            <TimelineSection detail={detail} labels={labels} locale={locale} />
+          </SheetSections>
+        </div>
+      )}
+    </SheetShell>
   )
 }
 
-function Dot() {
-  return <span aria-hidden>·</span>
+/**
+ * Approve or reject the bound person's identity.
+ *
+ * Renders nothing unless there is something to decide — the delivery is waiting
+ * on a staff verdict, the person has actually passed Didit, and the reader is a
+ * delivery agent. An action bar that disappears when there is no action is the
+ * point: it stops the footer becoming a place where a button is always there
+ * and therefore always a little dangerous.
+ */
+function IdentityVerdict({
+  detail,
+  labels,
+}: {
+  detail: Detail
+  labels: Labels
+}) {
+  const decide = useMutation(api.deliveries.adminDecideIdentity)
+  const { has } = usePermissions()
+
+  const pending =
+    detail.status === "identity_pending" &&
+    detail.boundPerson?.identityStatus === "verified" &&
+    has("deliveries.decide")
+
+  async function rule(approve: boolean) {
+    try {
+      await decide({ deliveryId: detail.deliveryId, approve })
+      toast.success(approve ? labels.nextReady : labels.nextRejected)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : labels.failed)
+    }
+  }
+
+  if (!pending) return null
+
+  return (
+    <>
+      <ConfirmAction
+        tone="destructive"
+        title={labels.rejectTitle}
+        body={labels.rejectBody}
+        confirmLabel={labels.reject}
+        cancelLabel={labels.cancel}
+        onConfirm={() => rule(false)}
+        trigger={
+          <Button variant="ghost" className="me-auto text-destructive">
+            {labels.reject}
+          </Button>
+        }
+      />
+      <ConfirmAction
+        title={labels.approveTitle}
+        body={labels.approveBody}
+        confirmLabel={labels.approve}
+        cancelLabel={labels.cancel}
+        onConfirm={() => rule(true)}
+        trigger={<Button>{labels.approve}</Button>}
+      />
+    </>
+  )
 }
 
 /** The one line that says what to do now, in the tone the state deserves. */
@@ -165,7 +236,7 @@ function StatusCallout({ detail, labels }: { detail: Detail; labels: Labels }) {
   return (
     <p
       className={cn(
-        "flex items-start gap-2.5 px-6 py-4 text-sm leading-relaxed",
+        "flex items-start gap-2.5 px-4 py-4 text-sm leading-relaxed",
         tone === "action" && "bg-primary/10 text-foreground",
         tone === "done" && "bg-secondary/15 text-foreground",
         tone === "bad" && "bg-destructive/10 text-foreground",
@@ -185,37 +256,27 @@ function StatusCallout({ detail, labels }: { detail: Detail; labels: Labels }) {
   )
 }
 
-function Section({
-  title,
-  action,
-  children,
-}: {
-  title: string
-  action?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="flex flex-col gap-3 p-6">
-      <div className="flex min-h-8 items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-          {title}
-        </h3>
-        {action}
-      </div>
-      {children}
-    </section>
-  )
-}
-
 /**
  * The comparison, and it *judges*: every row says match, differs, or nothing to
  * compare. A grid of four values with no verdict is the reviewer's work left
  * undone, and the disagreement is what they are looking for.
  */
-function IdentitySection({ detail, labels }: { detail: Detail; labels: Labels }) {
+function IdentitySection({
+  detail,
+  labels,
+}: {
+  detail: Detail
+  labels: Labels
+}) {
   const decide = useMutation(api.deliveries.adminDecideIdentity)
+  const { has } = usePermissions()
   const bound = detail.boundPerson
-  const pending = detail.status === "identity_pending" && bound?.identityStatus === "verified"
+  // The comparison is readable by anyone who may see a delivery; the verdict
+  // is a decision, and only a delivery agent takes it.
+  const pending =
+    detail.status === "identity_pending" &&
+    bound?.identityStatus === "verified" &&
+    has("deliveries.decide")
 
   async function rule(approve: boolean) {
     try {
@@ -240,12 +301,14 @@ function IdentitySection({ detail, labels }: { detail: Detail; labels: Labels })
         : "no"
 
   return (
-    <Section
+    <SheetSection
       title={labels.identityTitle}
       action={
         detail.identityMatch !== null ? (
           <span className="text-xs text-muted-foreground">
-            {detail.identityMatch === "id_number" ? labels.matchedById : labels.approvedByStaff}
+            {detail.identityMatch === "id_number"
+              ? labels.matchedById
+              : labels.approvedByStaff}
           </span>
         ) : undefined
       }
@@ -288,33 +351,7 @@ function IdentitySection({ detail, labels }: { detail: Detail; labels: Labels })
       {bound !== null && bound.identityStatus !== "verified" && (
         <p className="text-sm text-muted-foreground">{labels.notVerifiedYet}</p>
       )}
-
-      {pending && (
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <ConfirmAction
-            title={labels.approveTitle}
-            body={labels.approveBody}
-            confirmLabel={labels.approve}
-            cancelLabel={labels.cancel}
-            onConfirm={() => rule(true)}
-            trigger={<Button className="w-full">{labels.approve}</Button>}
-          />
-          <ConfirmAction
-            tone="destructive"
-            title={labels.rejectTitle}
-            body={labels.rejectBody}
-            confirmLabel={labels.reject}
-            cancelLabel={labels.cancel}
-            onConfirm={() => rule(false)}
-            trigger={
-              <Button variant="outline" className="w-full text-destructive">
-                {labels.reject}
-              </Button>
-            }
-          />
-        </div>
-      )}
-    </Section>
+    </SheetSection>
   )
 }
 
@@ -383,7 +420,11 @@ function Value({
     <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
       <span className="text-xs text-muted-foreground">{caption}</span>
       <span
-        className={cn("font-medium", numeric && "tabular-nums", tone === "bad" && "text-destructive")}
+        className={cn(
+          "font-medium",
+          numeric && "tabular-nums",
+          tone === "bad" && "text-destructive"
+        )}
         dir={numeric ? "ltr" : undefined}
       >
         {value}
@@ -392,15 +433,26 @@ function Value({
   )
 }
 
-function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) {
+function ContactSection({
+  detail,
+  labels,
+}: {
+  detail: Detail
+  labels: Labels
+}) {
   const update = useMutation(api.deliveries.adminUpdateContact)
   const resend = useMutation(api.deliveries.adminResend)
   const reissue = useMutation(api.deliveries.adminReissueLink)
+  const { has } = usePermissions()
+  const canContact = has("deliveries.contact")
   const [editing, setEditing] = useState(false)
   const [phone, setPhone] = useState(detail.contact.phone ?? "")
   const [email, setEmail] = useState(detail.contact.email ?? "")
-  const open = detail.status === "awaiting_heir" || detail.status === "identity_pending"
-  const canReissue = detail.status !== "ready" && detail.status !== "expired"
+  const open =
+    canContact &&
+    (detail.status === "awaiting_heir" || detail.status === "identity_pending")
+  const canReissue =
+    canContact && detail.status !== "ready" && detail.status !== "expired"
 
   async function run(action: Promise<unknown>, success: string) {
     try {
@@ -415,14 +467,18 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
 
   async function save() {
     const ok = await run(
-      update({ deliveryId: detail.deliveryId, phone: phone.trim(), email: email.trim() }),
+      update({
+        deliveryId: detail.deliveryId,
+        phone: phone.trim(),
+        email: email.trim(),
+      }),
       labels.saveContact
     )
     if (ok) setEditing(false)
   }
 
   return (
-    <Section
+    <SheetSection
       title={labels.contactTitle}
       action={
         !editing && detail.status !== "expired" ? (
@@ -435,13 +491,28 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
       {editing ? (
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-xs text-muted-foreground">{labels.phone}</span>
-            <Input dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <span className="text-xs text-muted-foreground">{labels.phoneHint}</span>
+            <span className="text-xs text-muted-foreground">
+              {labels.phone}
+            </span>
+            <Input
+              dir="ltr"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <span className="text-xs text-muted-foreground">
+              {labels.phoneHint}
+            </span>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-xs text-muted-foreground">{labels.email}</span>
-            <Input dir="ltr" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <span className="text-xs text-muted-foreground">
+              {labels.email}
+            </span>
+            <Input
+              dir="ltr"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </label>
           <div className="flex gap-2">
             <Button size="sm" onClick={() => void save()}>
@@ -455,7 +526,9 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
       ) : (
         <div className="flex flex-col divide-y">
           <ContactRow
-            icon={<MessageSquareIcon className="size-4 text-muted-foreground" />}
+            icon={
+              <MessageSquareIcon className="size-4 text-muted-foreground" />
+            }
             label={labels.phone}
             value={detail.contact.phone}
             overridden={detail.contact.phoneOverridden}
@@ -492,7 +565,10 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
                   variant="ghost"
                   onClick={() =>
                     void run(
-                      resend({ deliveryId: detail.deliveryId, channel: "email" }),
+                      resend({
+                        deliveryId: detail.deliveryId,
+                        channel: "email",
+                      }),
                       labels.sent
                     )
                   }
@@ -512,7 +588,7 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
             <p className="text-sm text-destructive">{labels.noAppUrl}</p>
           ) : (
             <>
-              <code dir="ltr" className="line-clamp-2 break-all text-xs">
+              <code dir="ltr" className="line-clamp-2 text-xs break-all">
                 {detail.link}
               </code>
               <div className="flex flex-wrap gap-2">
@@ -536,10 +612,17 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
                     confirmLabel={labels.reissue}
                     cancelLabel={labels.cancel}
                     onConfirm={async () => {
-                      await run(reissue({ deliveryId: detail.deliveryId }), labels.reissued)
+                      await run(
+                        reissue({ deliveryId: detail.deliveryId }),
+                        labels.reissued
+                      )
                     }}
                     trigger={
-                      <Button size="sm" variant="ghost" className="text-destructive">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                      >
                         <RotateCcwIcon />
                         {labels.reissue}
                       </Button>
@@ -551,7 +634,7 @@ function ContactSection({ detail, labels }: { detail: Detail; labels: Labels }) 
           )}
         </div>
       )}
-    </Section>
+    </SheetSection>
   )
 }
 
@@ -607,13 +690,19 @@ function TimelineSection({
   const [logging, setLogging] = useState(false)
 
   return (
-    <Section
+    <SheetSection
       title={labels.timelineTitle}
       action={
         detail.status === "expired" ? undefined : (
-          <Button variant="ghost" size="sm" onClick={() => setLogging((was) => !was)}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLogging((was) => !was)}
+          >
             {logging ? labels.logClose : labels.logToggle}
-            <ChevronDownIcon className={cn("transition-transform", logging && "rotate-180")} />
+            <ChevronDownIcon
+              className={cn("transition-transform", logging && "rotate-180")}
+            />
           </Button>
         )
       }
@@ -632,7 +721,10 @@ function TimelineSection({
       ) : (
         <ol className="flex flex-col gap-4">
           {detail.timeline.map((row) => (
-            <li key={row.id} className="relative flex flex-col gap-0.5 ps-5 text-sm">
+            <li
+              key={row.id}
+              className="relative flex flex-col gap-0.5 ps-5 text-sm"
+            >
               <span
                 aria-hidden
                 className={cn(
@@ -645,20 +737,25 @@ function TimelineSection({
                 )}
               />
               <div className="flex flex-wrap items-baseline gap-x-2">
-                <span className="font-medium">{channelLabel(row.channel, locale)}</span>
+                <span className="font-medium">
+                  {channelLabel(row.channel, locale)}
+                </span>
                 <span className="text-muted-foreground">
                   {outcomeLabel(row.outcome, locale)}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {fmtDate(row.at, locale)} · {row.staffName ?? labels.automatic}
+                  {fmtDate(row.at, locale)} ·{" "}
+                  {row.staffName ?? labels.automatic}
                 </span>
               </div>
-              {row.note !== null && <p className="text-muted-foreground">{row.note}</p>}
+              {row.note !== null && (
+                <p className="text-muted-foreground">{row.note}</p>
+              )}
             </li>
           ))}
         </ol>
       )}
-    </Section>
+    </SheetSection>
   )
 }
 
@@ -674,15 +771,23 @@ function LogAttempt({
   onDone: () => void
 }) {
   const log = useMutation(api.deliveries.adminLogContact)
+  const { has } = usePermissions()
   const [channel, setChannel] = useState<ContactChannel>("call")
   const [outcome, setOutcome] = useState<ContactOutcome>("reached")
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
 
+  if (!has("deliveries.contact")) return null
+
   async function save() {
     setBusy(true)
     try {
-      await log({ deliveryId, channel, outcome, note: note.trim() || undefined })
+      await log({
+        deliveryId,
+        channel,
+        outcome,
+        note: note.trim() || undefined,
+      })
       toast.success(labels.logged)
       setNote("")
       onDone()
@@ -696,7 +801,10 @@ function LogAttempt({
   return (
     <div className="flex flex-col gap-2 pb-1">
       <div className="grid grid-cols-2 gap-2">
-        <Select value={channel} onValueChange={(value) => setChannel(value as ContactChannel)}>
+        <Select
+          value={channel}
+          onValueChange={(value) => setChannel(value as ContactChannel)}
+        >
           <SelectTrigger className="w-full" aria-label={labels.channel}>
             <SelectValue />
           </SelectTrigger>
@@ -708,7 +816,10 @@ function LogAttempt({
             ))}
           </SelectContent>
         </Select>
-        <Select value={outcome} onValueChange={(value) => setOutcome(value as ContactOutcome)}>
+        <Select
+          value={outcome}
+          onValueChange={(value) => setOutcome(value as ContactOutcome)}
+        >
           <SelectTrigger className="w-full" aria-label={labels.outcome}>
             <SelectValue />
           </SelectTrigger>
@@ -729,7 +840,12 @@ function LogAttempt({
         rows={2}
         className="min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
       />
-      <Button size="sm" className="self-start" disabled={busy} onClick={() => void save()}>
+      <Button
+        size="sm"
+        className="self-start"
+        disabled={busy}
+        onClick={() => void save()}
+      >
         {labels.logSave}
       </Button>
     </div>

@@ -1,6 +1,40 @@
 import type { MutationCtx } from "../_generated/server"
 
 /**
+ * The runnable jobs, by the name `recordJobRun` writes and the console shows.
+ *
+ * Mirrors `crons.ts`. A job missing here is one an operator cannot retry; a
+ * job here that is not in `crons.ts` is one that never runs on its own.
+ *
+ * It lives in the model layer rather than in `jobs.ts` because the permission
+ * catalogue mints one key per job — `jobs.ts` gates itself with a key derived
+ * from this list, so the list cannot live in the file it gates.
+ */
+export const JOB_NAMES = [
+  "checkin.sweep",
+  "claims.advance",
+  "claims.sweepUnmatched",
+  "deliveries.expire",
+] as const
+
+export type JobName = (typeof JOB_NAMES)[number]
+
+/**
+ * How often each job runs, in hours, mirroring `crons.ts`.
+ *
+ * The console needs it to judge health: "last ran six hours ago" is a failure
+ * for an hourly sweep and unremarkable for a daily one. Without it the console
+ * assumed hourly for everything, which would have painted both daily sweeps
+ * permanently red the moment they appeared on the screen.
+ */
+export const JOB_EVERY_HOURS: Record<JobName, number> = {
+  "checkin.sweep": 1,
+  "claims.advance": 1,
+  "claims.sweepUnmatched": 24,
+  "deliveries.expire": 24,
+}
+
+/**
  * How many runs of one job are kept.
  *
  * Two jobs on an hourly schedule, each able to reschedule itself several times

@@ -22,10 +22,12 @@ import { requireUser } from "./model/access"
 import { DAY_MS } from "./model/claimFlow"
 
 const MONTH_MS = 30 * DAY_MS
-const SNOOZE_MS = 7 * DAY_MS
+/** How long a snooze pushes the next check-in out. */
+export const SNOOZE_DAYS = 7
+const SNOOZE_MS = SNOOZE_DAYS * DAY_MS
 
 /** Days past `nextDueAt` at which each escalation step fires. */
-const ESCALATION_STEPS = [
+export const ESCALATION_STEPS = [
   { afterDays: 0, state: "day0" as const },
   { afterDays: 7, state: "day7" as const },
   { afterDays: 14, state: "day14" as const },

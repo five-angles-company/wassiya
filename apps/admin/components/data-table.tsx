@@ -239,7 +239,7 @@ export function DataTable<TData extends RowData>({
                     // scroll visibly through the column names.
                     className={cn(
                       "text-start",
-                      fill && "bg-card sticky top-0 z-10"
+                      fill && "sticky top-0 z-10 bg-card"
                     )}
                   >
                     {header.isPlaceholder ? null : (

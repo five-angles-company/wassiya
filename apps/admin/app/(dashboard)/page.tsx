@@ -1,10 +1,13 @@
 import { cookies } from "next/headers"
 
-import { ActivationFunnel } from "@/features/dashboard/components/activation-funnel"
+import { RequirePermission } from "@/components/permission-gate"
+import {
+  ActivationFunnel,
+  SignupsChart,
+  StoragePanel,
+} from "@/features/dashboard/components/charts"
 import { ClaimsQueue } from "@/features/claims/components/claims-queue"
 import { RiskSection } from "@/features/dashboard/components/risk-section"
-import { SignupsChart } from "@/features/dashboard/components/signups-chart"
-import { StoragePanel } from "@/features/dashboard/components/storage-panel"
 import { SummaryBar } from "@/features/dashboard/components/summary-bar"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
 import { DASHBOARD } from "@/features/dashboard/strings/dashboard"
@@ -26,18 +29,20 @@ export default async function DashboardPage() {
   const labels = t(DASHBOARD, locale)
 
   return (
-    <>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.title}
-      </h1>
+    <RequirePermission need="dashboard.read">
+      <>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.title}
+        </h1>
 
-      <SummaryBar />
+        <SummaryBar />
 
-      <ClaimsQueue />
-      <RiskSection />
-      <ActivationFunnel />
-      <SignupsChart />
-      <StoragePanel />
-    </>
+        <ClaimsQueue />
+        <RiskSection />
+        <ActivationFunnel />
+        <SignupsChart />
+        <StoragePanel />
+      </>
+    </RequirePermission>
   )
 }

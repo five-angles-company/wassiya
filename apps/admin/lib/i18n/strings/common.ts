@@ -9,12 +9,12 @@ export const COMMON = {
   // accusation — the likeliest reader is a colleague whose row simply has not
   // been edited yet, not an intruder.
   notAuthorisedTitle: {
-    ar: "هذا الحساب ليس حساب مراجعة",
-    en: "Not a reviewer account",
+    ar: "هذا الحساب لا يملك صلاحية",
+    en: "This account has no access",
   },
   notAuthorisedBody: {
-    ar: "لوحة الإدارة مفتوحة لحسابات المراجعة فقط. صلاحية المراجعة تُمنح من لوحة Convex مباشرةً، ولا يوجد زر يمنحها — وهذا مقصود.",
-    en: "The console is open to reviewer accounts only. The reviewer role is set directly in the Convex dashboard; there is deliberately no button that grants it.",
+    ar: "لوحة الإدارة مفتوحة لمن يحمل دوراً فيها. اطلب من مالك النظام دعوتك أو إسناد دور لحسابك — وتسري الدعوة على البريد نفسه الذي تدخل به.",
+    en: "The console is open to accounts that hold a role in it. Ask an Owner to invite you or assign your account a role — an invitation binds to the same address you sign in with.",
   },
 
   signedInAs: { ar: "مسجّل الدخول باسم", en: "Signed in as" },

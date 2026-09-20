@@ -46,7 +46,10 @@ export function identityColumns(
             )}
           </span>
           {/* An address stays LTR inside Arabic prose. */}
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.email}
           </span>
         </div>

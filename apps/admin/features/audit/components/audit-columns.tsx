@@ -33,7 +33,10 @@ export function auditColumns(
         <div className="flex flex-col items-start gap-1">
           {/* Raw and untranslated: an operator holding this next to the
               deployment's function log must read the same string twice. */}
-          <span dir="ltr" className="inline-block font-mono text-xs font-medium">
+          <span
+            dir="ltr"
+            className="inline-block font-mono text-xs font-medium"
+          >
             {row.original.event}
           </span>
           <Badge variant="outline" className="font-normal">
@@ -56,6 +59,25 @@ export function auditColumns(
       ),
     }),
 
+    helper.accessor("actorName", {
+      id: "actor",
+      enableSorting: false,
+      header: () => labels.colActor,
+      // Empty for everything an owner or a cron did to itself, which is most of
+      // the log. A dash rather than a blank, so "nobody did this to them" and
+      // "the column failed to load" do not read the same.
+      cell: ({ row }) =>
+        row.original.actorId === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <PersonCell
+            id={row.original.actorId}
+            name={row.original.actorName}
+            email={null}
+          />
+        ),
+    }),
+
     helper.display({
       id: "meta",
       header: () => labels.colMeta,
@@ -67,7 +89,7 @@ export function auditColumns(
       enableSorting: false,
       header: () => labels.colAt,
       cell: ({ row }) => (
-        <span className="whitespace-nowrap tabular-nums text-muted-foreground">
+        <span className="whitespace-nowrap text-muted-foreground tabular-nums">
           {fmtDate(row.original.at, locale)}
         </span>
       ),

@@ -1,7 +1,11 @@
 "use client"
 
 import { Checkbox } from "@workspace/ui/components/checkbox"
-import { createColumnHelper, type ColumnDef, type RowData } from "@tanstack/react-table"
+import {
+  createColumnHelper,
+  type ColumnDef,
+  type RowData,
+} from "@tanstack/react-table"
 
 import type { DataTableFeatures } from "@/lib/data-table-features"
 import type { DataTableLabels } from "@/components/data-table-toolbar"

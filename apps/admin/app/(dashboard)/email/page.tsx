@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { EmailLog } from "@/features/email/components/email-log"
 import { EMAIL_LOG } from "@/features/email/strings/email"
@@ -11,11 +12,13 @@ export default async function Page() {
   const labels = t(EMAIL_LOG, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <EmailLog />
-    </FillScreen>
+    <RequirePermission need="ops.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <EmailLog />
+      </FillScreen>
+    </RequirePermission>
   )
 }

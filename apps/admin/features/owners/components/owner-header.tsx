@@ -86,7 +86,7 @@ export function OwnerHeader({
             </AvatarFallback>
           </Avatar>
           <div className="flex min-w-0 flex-col">
-            <h1 className="font-heading truncate text-2xl font-bold tracking-tight">
+            <h1 className="truncate font-heading text-2xl font-bold tracking-tight">
               {owner.name ?? labels.nameNone}
             </h1>
             <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">

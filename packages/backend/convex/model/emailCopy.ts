@@ -86,6 +86,22 @@ export const ESCALATION_COPY = {
  * the recipient needs only "this happened, and here is what to do if it wasn't
  * you."
  */
+/**
+ * The settings page test. Not a notice anyone is waiting for — it exists so an
+ * operator can tell a working sender from a typo before an escalation does it
+ * for them.
+ */
+export const TEST_COPY = {
+  ar: {
+    subject: "وصيّة: رسالة اختبار",
+    body: "هذه رسالة اختبار من لوحة الإدارة. وصولها يعني أن عنوان المُرسِل ومفتاح Resend يعملان.",
+  },
+  en: {
+    subject: "Wassiya: test message",
+    body: "This is a test message from the admin console. Receiving it means the sender address and the Resend key are both working.",
+  },
+} as const satisfies LocalisedCopy
+
 export const RECOVERY_COPY = {
   ar: {
     subject: "مهم: فُتحت خزنتك باستخدام وثيقة الاسترداد",
@@ -263,5 +279,24 @@ export const DELIVERY_INVITE_COPY = {
   en: {
     subject: "Something was left for you at Wassiya",
     body: "Something was left for you at Wassiya. Open the link and verify your identity to receive it. If this message means nothing to you, ignore it — nothing opens without an identity check.",
+  },
+} as const satisfies LocalisedCopy
+
+/**
+ * The staff invitation.
+ *
+ * It names no roles and no account. An invitation goes to an address before
+ * anybody has proved they hold it, so the message is the one place in this file
+ * that must assume a stranger is reading — what the roles are is on the screen,
+ * behind a sign-in.
+ */
+export const STAFF_INVITE_COPY = {
+  ar: {
+    subject: "دعوة للانضمام إلى لوحة وصيّة",
+    body: "دُعيت للعمل على لوحة تحكّم وصيّة. افتح الرابط وسجّل الدخول بالبريد نفسه الذي وصلتك عليه هذه الرسالة. تنتهي الدعوة خلال أسبوعين. إن لم تكن تتوقّع هذه الرسالة، تجاهلها — لا يُمنح شيء قبل تسجيل الدخول.",
+  },
+  en: {
+    subject: "You have been invited to the Wassiya console",
+    body: "You have been invited to work on the Wassiya console. Open the link and sign in with the same address this message reached. The invitation expires in two weeks. If you were not expecting this, ignore it — nothing is granted until you sign in.",
   },
 } as const satisfies LocalisedCopy

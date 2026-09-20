@@ -49,7 +49,10 @@ export function ownerColumns(
               <span className="text-muted-foreground">{labels.nameNone}</span>
             )}
           </span>
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.email}
           </span>
         </Link>

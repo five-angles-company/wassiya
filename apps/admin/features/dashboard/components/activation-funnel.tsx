@@ -96,7 +96,10 @@ export function ActivationFunnel() {
         {activation === undefined ? (
           <Skeleton className="h-72 w-full" />
         ) : (
-          <ChartContainer config={config} className="h-72 w-full [&_svg]:[direction:ltr]">
+          <ChartContainer
+            config={config}
+            className="h-72 w-full [&_svg]:[direction:ltr]"
+          >
             <BarChart
               accessibilityLayer
               layout="vertical"

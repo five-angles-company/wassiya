@@ -1,6 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@workspace/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@workspace/ui/components/card"
 import { ExternalLinkIcon, FileQuestionIcon } from "lucide-react"
 
 import { CLAIMS } from "@/features/claims/strings/claims"
@@ -28,7 +33,9 @@ export function ClaimCertificate({
     // certificate card left a band of empty page under it.
     <Card className="flex h-full min-h-[560px] flex-col gap-0 overflow-hidden py-0">
       <CardHeader className="flex flex-row items-center justify-between gap-3 border-b py-3">
-        <CardTitle className="font-heading text-base">{labels.certificateTitle}</CardTitle>
+        <CardTitle className="font-heading text-base">
+          {labels.certificateTitle}
+        </CardTitle>
         {url !== null && (
           <a
             href={url}

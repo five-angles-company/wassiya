@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { OwnersBrowser } from "@/features/owners/components/owners-browser"
 import { OWNERS } from "@/features/owners/strings/owners"
@@ -11,11 +12,13 @@ export default async function OwnersPage() {
   const labels = t(OWNERS, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <OwnersBrowser />
-    </FillScreen>
+    <RequirePermission need="owners.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <OwnersBrowser />
+      </FillScreen>
+    </RequirePermission>
   )
 }

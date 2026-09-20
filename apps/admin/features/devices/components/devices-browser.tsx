@@ -21,11 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { MoreHorizontalIcon, SmartphoneIcon } from "lucide-react"
-import {
-  parseAsArrayOf,
-  parseAsStringLiteral,
-  useQueryStates,
-} from "nuqs"
+import { parseAsArrayOf, parseAsStringLiteral, useQueryStates } from "nuqs"
 
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
@@ -98,7 +94,10 @@ function deviceColumns(
           className="flex flex-col hover:underline"
         >
           <span>{row.original.ownerName}</span>
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.ownerEmail}
           </span>
         </Link>
@@ -292,7 +291,9 @@ export function DevicesBrowser() {
               void setFacets((current) => {
                 const side = value as (typeof DEVICE_STATES)[number]
                 if (!checked) {
-                  return { state: current.state === side ? null : current.state }
+                  return {
+                    state: current.state === side ? null : current.state,
+                  }
                 }
                 return {
                   state:

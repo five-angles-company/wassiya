@@ -32,11 +32,18 @@ type Labels = ReturnType<typeof t<typeof CLAIMS>>
  * a verdict floating below a band of empty space reads as a different screen
  * from the facts it belongs to.
  */
-export function ClaimDecision({ detail, locale }: { detail: Detail; locale: Locale }) {
+export function ClaimDecision({
+  detail,
+  locale,
+}: {
+  detail: Detail
+  locale: Locale
+}) {
   const labels = t(CLAIMS, locale)
   const { claim, subject, priorClaims, blocked, deliveries } = detail
   const vetoedBefore = priorClaims.some((row) => row.status === "vetoed")
-  const staleIdentity = detail.storedIdentityStatus !== detail.liveIdentityStatus
+  const staleIdentity =
+    detail.storedIdentityStatus !== detail.liveIdentityStatus
 
   return (
     <Card className="flex h-full flex-col gap-0 py-0">
@@ -46,7 +53,10 @@ export function ClaimDecision({ detail, locale }: { detail: Detail; locale: Loca
             label={labels.certificateNameLabel}
             value={claim.certificateName ?? labels.certificateNone}
           />
-          <Name label={labels.ownerNameLabel} value={subject.verifiedName ?? labels.ownerNameNone} />
+          <Name
+            label={labels.ownerNameLabel}
+            value={subject.verifiedName ?? labels.ownerNameNone}
+          />
           <p className="text-xs leading-relaxed text-muted-foreground">
             {labels.comparisonHint}
           </p>
@@ -62,7 +72,10 @@ export function ClaimDecision({ detail, locale }: { detail: Detail; locale: Loca
           </span>
           {staleIdentity && (
             <span className="text-xs text-muted-foreground">
-              {labels.identityStaleWarning.replace("{stored}", detail.storedIdentityStatus)}
+              {labels.identityStaleWarning.replace(
+                "{stored}",
+                detail.storedIdentityStatus
+              )}
             </span>
           )}
           {vetoedBefore && (
@@ -75,18 +88,29 @@ export function ClaimDecision({ detail, locale }: { detail: Detail; locale: Loca
 
         <Block title={labels.decisionTitle} className="flex-1">
           {claim.status === "submitted" ? (
-            <ClaimVerdict claimId={claim.id} blocked={blocked} locale={locale} />
+            <ClaimVerdict
+              claimId={claim.id}
+              blocked={blocked}
+              locale={locale}
+            />
           ) : claim.status === "awaiting_veto" ? (
             <State
               tone="waiting"
               icon={ClockIcon}
               text={labels.stateAwaiting.replace(
                 "{date}",
-                claim.vetoDeadline === null ? "—" : fmtDate(claim.vetoDeadline, locale)
+                claim.vetoDeadline === null
+                  ? "—"
+                  : fmtDate(claim.vetoDeadline, locale)
               )}
             />
           ) : claim.status === "released" ? (
-            <Released detail={detail} deliveries={deliveries} labels={labels} locale={locale} />
+            <Released
+              detail={detail}
+              deliveries={deliveries}
+              labels={labels}
+              locale={locale}
+            />
           ) : (
             <State tone="ended" icon={XCircleIcon} text={labels.stateClosed} />
           )}
@@ -145,7 +169,9 @@ function State({
           tone === "waiting" && "text-primary"
         )}
       />
-      <span className={cn(tone === "ended" && "text-muted-foreground")}>{text}</span>
+      <span className={cn(tone === "ended" && "text-muted-foreground")}>
+        {text}
+      </span>
     </p>
   )
 }
@@ -169,7 +195,9 @@ function Released({
         icon={CheckCircle2Icon}
         text={labels.stateReleased.replace(
           "{date}",
-          detail.claim.releasedAt === null ? "—" : fmtDate(detail.claim.releasedAt, locale)
+          detail.claim.releasedAt === null
+            ? "—"
+            : fmtDate(detail.claim.releasedAt, locale)
         )}
       />
       {deliveries.length === 0 ? (

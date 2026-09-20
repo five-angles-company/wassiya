@@ -19,13 +19,20 @@ const BODY =
 export const contactHeir = internalAction({
   args: { deliveryId: v.id("deliveries") },
   handler: async (ctx, { deliveryId }) => {
-    if (process.env.OUTREACH_PROVIDER !== "twilio") return null
+    // The switch and the sender are settings; the credentials are not. An
+    // action cannot read the database directly, so the resolved pair comes
+    // back through the same internal query that fetches the delivery.
+    const config: { provider: string; from: string | null } =
+      await ctx.runQuery(internal.settings.outreachConfig, {})
+    if (config.provider !== "twilio") return null
 
     const sid = process.env.TWILIO_ACCOUNT_SID
     const token = process.env.TWILIO_AUTH_TOKEN
-    const from = process.env.TWILIO_FROM
+    const from = config.from ?? undefined
     if (sid === undefined || token === undefined || from === undefined) {
-      console.error("Outreach is set to twilio but its credentials are missing")
+      console.error(
+        "Outreach is set to twilio but its credentials or sender are missing"
+      )
       return null
     }
 
@@ -44,7 +51,9 @@ export const contactHeir = internalAction({
         body: new URLSearchParams({
           To: details.phone,
           // A Messaging Service SID ("MG…") or a sender number both work.
-          ...(from.startsWith("MG") ? { MessagingServiceSid: from } : { From: from }),
+          ...(from.startsWith("MG")
+            ? { MessagingServiceSid: from }
+            : { From: from }),
           Body: BODY.replace("{link}", details.link),
         }),
       }

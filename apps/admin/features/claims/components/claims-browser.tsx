@@ -16,10 +16,7 @@ import {
   type BrowsedClaim,
 } from "@/features/claims/components/claims-browser-columns"
 import { useClaimQueryState } from "@/features/claims/lib/use-claim-query-state"
-import {
-  IDENTITY_STATUSES,
-  identityLabel,
-} from "@/lib/identity"
+import { IDENTITY_STATUSES, identityLabel } from "@/lib/identity"
 import {
   CLAIM_STATUSES,
   claimStatusLabel,

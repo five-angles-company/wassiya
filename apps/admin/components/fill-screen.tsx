@@ -20,7 +20,5 @@ import type { ReactNode } from "react"
  * left under the heading.
  */
 export function FillScreen({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-6">{children}</div>
-  )
+  return <div className="flex h-full min-h-0 flex-col gap-6">{children}</div>
 }

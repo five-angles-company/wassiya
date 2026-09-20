@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 
+import { RequirePermission } from "@/components/permission-gate"
 import { FillScreen } from "@/components/fill-screen"
 import { NotificationsLog } from "@/features/notifications/components/notifications-log"
 import { NOTIFICATIONS } from "@/features/notifications/strings/notifications"
@@ -11,11 +12,13 @@ export default async function Page() {
   const labels = t(NOTIFICATIONS, locale)
 
   return (
-    <FillScreen>
-      <h1 className="font-heading text-2xl font-bold tracking-tight">
-        {labels.pageTitle}
-      </h1>
-      <NotificationsLog />
-    </FillScreen>
+    <RequirePermission need="ops.read">
+      <FillScreen>
+        <h1 className="font-heading text-2xl font-bold tracking-tight">
+          {labels.pageTitle}
+        </h1>
+        <NotificationsLog />
+      </FillScreen>
+    </RequirePermission>
   )
 }

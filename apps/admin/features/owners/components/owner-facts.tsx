@@ -48,7 +48,5 @@ export function Fact({ label, value }: { label: string; value: ReactNode }) {
 
 /** An empty section, worded rather than left blank. */
 export function FactsEmpty({ children }: { children: ReactNode }) {
-  return (
-    <p className="px-4 py-4 text-sm text-muted-foreground">{children}</p>
-  )
+  return <p className="px-4 py-4 text-sm text-muted-foreground">{children}</p>
 }

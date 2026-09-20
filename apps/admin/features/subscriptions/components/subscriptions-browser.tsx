@@ -45,7 +45,10 @@ function subscriptionColumns(
           className="flex flex-col hover:underline"
         >
           <span className="font-medium">{row.original.name}</span>
-          <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+          <span
+            dir="ltr"
+            className="inline-block text-xs text-muted-foreground"
+          >
             {row.original.email}
           </span>
         </Link>
@@ -174,10 +177,7 @@ export function SubscriptionsBrowser() {
   // anyone looks at the page — and calling the clock inside a cell would have
   // thirty rows each asking a slightly different question.
   const [now] = useState(() => Date.now())
-  const columns = useMemo(
-    () => subscriptionColumns(locale, now),
-    [locale, now]
-  )
+  const columns = useMemo(() => subscriptionColumns(locale, now), [locale, now])
   const columnLabels = useMemo(
     () => ({
       owner: labels.colOwner,

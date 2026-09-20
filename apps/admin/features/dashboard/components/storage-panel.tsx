@@ -97,7 +97,10 @@ export function StoragePanel() {
             {labels.topEmpty}
           </div>
         ) : (
-          <ChartContainer config={config} className="h-56 w-full [&_svg]:[direction:ltr]">
+          <ChartContainer
+            config={config}
+            className="h-56 w-full [&_svg]:[direction:ltr]"
+          >
             <BarChart
               accessibilityLayer
               layout="vertical"

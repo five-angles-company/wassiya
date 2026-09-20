@@ -1,7 +1,7 @@
-import { UserButton } from "@clerk/nextjs"
 import { Separator } from "@workspace/ui/components/separator"
 import { SidebarTrigger } from "@workspace/ui/components/sidebar"
 
+import { AccountButton } from "@/components/account-button"
 import { LocaleToggle } from "@/components/locale-toggle"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -41,7 +41,7 @@ export function AppHeader() {
           orientation="vertical"
           className="mx-1 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
         />
-        <UserButton />
+        <AccountButton />
       </div>
     </header>
   )

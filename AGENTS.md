@@ -197,7 +197,26 @@ Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi
 - **Plans: free, or one annual plan.** Free starts at 500 MB · 5 assets · 1 heir · no photos; the paid plan lifts all four. Limits resolve in three layers — `users.limitsOverride`, then the `plans` row, then `PLAN_DEFAULTS` in `convex/model/plans.ts`, which is what a deployment with no rows runs on. **No client may restate a limit**, in a component or in a string: they reach the app through `plans.current` and are interpolated. `DEFAULT_QUOTA_BYTES` on ٩.٤ was the first version of that mistake and a paywall sentence reading "٥٠٠ م.ب" would be the second, now that a tier can move without a deploy.
 - **The paywall appears at the limit, never before.** Sign-up, identity verification and the recovery sheet are free, so nothing is sold before the vault has been proved. Paywall copy says what the plan unlocks, never what the owner risks losing — the same reason the lapse banner leads with what still works.
 - **The price is never in this repo.** It is set per storefront (base USD, Saudi pinned by hand) and rendered from the RevenueCat offering's `priceString`. The backend never serves a price; no component may hardcode one.
-- **Entitlement is written in exactly one module, `convex/billing.ts`.** Three things decide who has paid and what they get: `subscription` (the plan), the `plans` table (what a plan allows) and `limitsOverride` (what one account allows). They are not equally loud — a grant is one account, a plan edit is everyone on that plan at once, and an override is the quietest of the three, because nothing about that account looks unusual while it silently stops matching the plan every screen says it is on. All three are `requireAdmin`-gated and audited, and `pnpm --filter @workspace/backend verify` fails the build on a writer anywhere else.
+- **Staff authority is a permission, never a role literal.** Three things are
+  deliberately separate: **which permissions exist** is code
+  (`convex/model/permissions.ts`, a deploy), **which keys a role holds** and
+  **which roles a person holds** are data an Owner edits in the console, and
+  **what one person may do** is the denormalised union on `users.staffPermissions`,
+  which every gate reads. `requirePermission(ctx, key)` in `model/access.ts` is
+  the only gate; `requireAdmin` is gone. Four rules hold it up, and
+  `pnpm --filter @workspace/backend verify` enforces all of them: every exported
+  `admin*` function names a key from the catalogue; **whatever edits a role
+  recomputes its holders in the same mutation** (or open consoles keep rights
+  that were revoked, invisibly); only `model/staff.ts` writes the denormalised
+  columns; and `users.role` — which means *staff account*, not authority, and is
+  what owner metrics exclude — is compared only through `isStaffAccount` /
+  `excludeStaff`. Nobody edits their own roles, nobody grants a key they do not
+  hold, the Owner role is immutable and holds `"*"` so a newly added key cannot
+  lock out the administrator, and the last Owner cannot be removed; the way back
+  is `npx convex run staff:bootstrapOwner`. Staff join by **email invitation**,
+  which binds only to a **Clerk-verified** address — an unverified bind would be
+  an account-takeover path straight into the console.
+- **Entitlement is written in exactly one module, `convex/billing.ts`.** Three things decide who has paid and what they get: `subscription` (the plan), the `plans` table (what a plan allows) and `limitsOverride` (what one account allows). They are not equally loud — a grant is one account, a plan edit is everyone on that plan at once, and an override is the quietest of the three, because nothing about that account looks unusual while it silently stops matching the plan every screen says it is on. All three are gated on the single permission `billing.manage` and audited with their actor, and `pnpm --filter @workspace/backend verify` fails the build on a writer anywhere else.
 - Vault lock policy: the default is **`LOCK_WHILE_OPEN`** (`stores/preferences.ts`) — no session cap, and backgrounding does not lock. The session ends with the process, which is automatic (MK is process memory, `useVault` has no `persist`). This is the owner's explicit choice, made with the trade stated on ٩.٢: anyone holding the unlocked phone can reopen the app and read the vault. **Do not "fix" it back to a timeout.** Choosing a duration in ٩.٢ restores the cap *and* the background lock together.
 - A masked field must never carry `keyboardType: "visible-password"`. On Android it and `secureTextEntry` set the same input-type variation bits, the keyboard wins, and the value renders in the clear while every prop claims it is hidden. Use `MASKED_SECRET_INPUT_PROPS` for masked fields, `SECRET_INPUT_PROPS` for secrets that are visible by design (seed phrase, 2FA note, recovery codes).
 - Audit log is append-only. No update or delete path may exist.

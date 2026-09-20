@@ -50,7 +50,7 @@ export function StatCard({
         {/* Points along the reading direction — flipped for LTR, since the
             console is Arabic-first. */}
         {href !== undefined && (
-          <ArrowLeftIcon className="ms-auto size-3.5 shrink-0 opacity-0 transition-opacity ltr:rotate-180 group-hover:opacity-100" />
+          <ArrowLeftIcon className="ms-auto size-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 ltr:rotate-180" />
         )}
       </div>
       <span className="font-heading text-2xl leading-none tabular-nums">
@@ -81,7 +81,10 @@ export function StatCard({
   if (href === undefined) return card
 
   return (
-    <Link href={href} className="block h-full rounded-xl focus-visible:ring-[3px]">
+    <Link
+      href={href}
+      className="block h-full rounded-xl focus-visible:ring-[3px]"
+    >
       {card}
     </Link>
   )

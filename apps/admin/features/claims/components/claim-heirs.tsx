@@ -35,7 +35,9 @@ export function ClaimHeirs({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-heading text-base">{labels.heirTitle}</CardTitle>
+        <CardTitle className="font-heading text-base">
+          {labels.heirTitle}
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-xs text-muted-foreground">{labels.heirHint}</p>
@@ -44,13 +46,26 @@ export function ClaimHeirs({
         ) : (
           <ul className="flex flex-col divide-y">
             {heirs.map((heir) => (
-              <li key={heir.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+              <li
+                key={heir.id}
+                className="flex items-center justify-between gap-3 py-2 text-sm"
+              >
                 <span>
                   <span className="font-medium">{heir.name}</span>
-                  <span className="text-muted-foreground"> · {heir.relation}</span>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {heir.relation}
+                  </span>
                 </span>
-                <Badge variant={heir.routedAssetCount === 0 ? "outline" : "secondary"}>
-                  {labels.heirAssets.replace("{n}", fmtNumber(heir.routedAssetCount, locale))}
+                <Badge
+                  variant={
+                    heir.routedAssetCount === 0 ? "outline" : "secondary"
+                  }
+                >
+                  {labels.heirAssets.replace(
+                    "{n}",
+                    fmtNumber(heir.routedAssetCount, locale)
+                  )}
                 </Badge>
               </li>
             ))}

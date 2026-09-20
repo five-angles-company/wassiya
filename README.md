@@ -93,12 +93,13 @@ pnpm dev                      # turbo: web + admin + convex dev (+ native if sta
 | `NEXT_PUBLIC_CLERK_SIGN_{IN,UP}_URL` | — | ✅ `/sign-in`, `/sign-up` | — |
 | `RESEND_FROM`, `RESEND_TEST_MODE` | ✅ (email.ts) | — | — |
 | `APP_URL` | ✅ (email.ts, deliveries) | — | — |
+| `CONSOLE_URL` | ✅ (staff invitations) | — | — |
 | `ESCROW_BACKEND`, `ESCROW_KEY_ID`, `ESCROW_DEV_PRIVATE_KEY`, `GCP_SERVICE_ACCOUNT`, `WASSIYA_ENV` | ✅ (escrow.ts) | — | — |
 | `IDENTITY_HASH_SECRET` | ✅ (identityHash) | — | — |
 | `OUTREACH_PROVIDER`, `TWILIO_*` | ✅ (outreach.ts) | — | — |
 | `EXPO_PUBLIC_WASSIYA_ENV` | — | — | ✅ (escrow-key.ts) |
 
-`APP_URL` is where `apps/web` lives (`http://localhost:3001` in dev). Outbound mail appends a link built from it; unset, the mail still sends without one. It is **not** `CONVEX_SITE_URL`, which is this deployment's own origin — using that would mail people a link to the backend. And `RESEND_TEST_MODE` keeps test mode **on** unless it is exactly `"false"`, so a deployment that has never set it delivers nothing.
+`APP_URL` is where `apps/web` lives (`http://localhost:3001` in dev). Outbound mail appends a link built from it; unset, the mail still sends without one. It is **not** `CONVEX_SITE_URL`, which is this deployment's own origin — using that would mail people a link to the backend. And `RESEND_TEST_MODE` keeps test mode **on** unless it is exactly `"false"`, so a deployment that has never set it delivers nothing. `CONSOLE_URL` is where `apps/admin` lives, and only a staff invitation links to it — a separate origin, because an invitation that landed on `APP_URL` would sign the new operator into the owner app. Both URLs can also be set from the console's Integrations screen, which takes precedence over the environment.
 
 `convex dev` only writes `packages/backend/.env.local` — mirror the needed values into each app's `.env.local` yourself. Verify deployment vars with `npx convex env list`.
 

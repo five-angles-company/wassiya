@@ -35,7 +35,8 @@ export function LimitField({
   inheritLabel,
   inheritable = false,
 }: {
-  label: string
+  /** Omit inside a SettingRow, which draws the label itself. */
+  label?: string
   value: LimitValue
   onChange: (next: LimitValue) => void
   /** "MB" turns the box into a size field; absent means a plain count. */
@@ -55,7 +56,9 @@ export function LimitField({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium">{label}</label>
+      {label !== undefined && (
+        <label className="text-sm font-medium">{label}</label>
+      )}
       <div className="flex items-center gap-2">
         <Input
           type="number"
