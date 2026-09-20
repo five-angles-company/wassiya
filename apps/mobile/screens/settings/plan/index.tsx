@@ -11,19 +11,27 @@
  *
  * The banner uses `notice`, not `info` — see the ui-native README for why the
  * two tints could not be collapsed into one name.
+ *
+ * **Every number here comes from `plans.current`.** This screen once carried a
+ * `DEFAULT_QUOTA_BYTES` constant claiming 5 GB while the server enforced
+ * nothing, which is the failure the catalogue exists to make impossible: the
+ * meter and the refusal now read the same row.
  */
 import { useMemo, useState } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { StorageMeter } from "@workspace/ui-native/components/wassiya/storage-meter"
-import { fmtDate } from "@workspace/ui-native/lib/format"
-import { CreditCard } from "lucide-react-native"
+import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
+import type { Locale } from "@workspace/ui-native/lib/labels"
+import { CreditCard, Sparkles } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { usePaywall } from "@/components/paywall"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ASSET_TYPES, type AssetType } from "@/lib/asset-types"
@@ -38,17 +46,16 @@ const CATEGORY_KEY = {
   note: "filterNote",
 } as const satisfies Record<AssetType, string>
 
-/** Free-tier allowance, until a real plan catalogue exists. */
-const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024
+const BYTES_PER_MB = 1_000_000
+const BYTES_PER_GB = 1_000_000_000
 
 export function PlanScreen() {
   const { t, locale } = useStrings("settings/plan")
   const { t: common } = useStrings("common")
-  const me = useQuery(api.users.me)
+  const plan = useQuery(api.plans.current)
   const rows = useQuery(api.assets.list, {})
   const { t: assets } = useStrings("assets")
-
-  const subscription = me?.subscription ?? null
+  const paywall = usePaywall()
 
   /**
    * Per-category segments, which is what `StorageMeter` was built for — a
@@ -59,12 +66,11 @@ export function PlanScreen() {
    * columns. No decryption, and no need for the vault to be unlocked, exactly
    * as on Home.
    *
-   * The meter is drawn from these segments rather than from
-   * `subscription.storageBytesUsed`. The server's counter is the authoritative
-   * total and is what a quota check would use; this breakdown is derived from
-   * the rows and can lag it by a write. Showing the derived version keeps the
-   * bar and its legend telling the same story, which a mismatched pair would
-   * not.
+   * The meter is drawn from these segments rather than from the server's
+   * `storageBytesUsed`. That counter is the authoritative total and is what the
+   * quota check uses; this breakdown is derived from the rows and can lag it by
+   * a write. Showing the derived version keeps the bar and its legend telling
+   * the same story, which a mismatched pair would not.
    */
   const segments = useMemo(() => {
     const byType = new Map<AssetType, number>()
@@ -79,9 +85,10 @@ export function PlanScreen() {
     )
   }, [rows, assets])
 
-  // A live clock against a server timestamp. `users.me` returns `renewsAt`
-  // rather than a boolean precisely so the client can do this — see its note on
-  // why a server-computed boolean would freeze until an unrelated write.
+  // A live clock against a server timestamp. `plans.current` returns
+  // `renewsAt` rather than a boolean precisely so the client can do this — see
+  // its note on why a server-computed boolean would freeze until an unrelated
+  // write.
   //
   // Read once per mount rather than on every render: a renewal date crosses
   // midnight, not milliseconds, so a value seeded at open is accurate for as
@@ -89,7 +96,14 @@ export function PlanScreen() {
   // is impure regardless.
   const [now] = useState(() => Date.now())
   const lapsed =
-    subscription?.renewsAt !== undefined && subscription.renewsAt < now
+    plan !== undefined && plan.renewsAt !== null && plan.renewsAt < now
+
+  const quota = plan?.limits.storageBytes ?? null
+  // The meter formats in GB. A 500 MB allowance in GB reads "٠٫٥", which is a
+  // number nobody thinks in — so a small quota switches the unit and the
+  // formatter together, because the meter shares one formatter between its
+  // header and its legend.
+  const inMb = quota !== null && quota < BYTES_PER_GB
 
   return (
     <Screen>
@@ -111,25 +125,50 @@ export function PlanScreen() {
         <Text variant="metaSm" className="text-muted-foreground">
           {t.planLabel}
         </Text>
-        <Text variant="rowTitle">{subscription?.plan ?? t.freePlan}</Text>
-        {subscription?.renewsAt !== undefined ? (
+        <Text variant="rowTitle">
+          {plan?.plan === "annual" ? t.annualPlan : t.freePlan}
+        </Text>
+        {plan?.renewsAt != null ? (
           <Text variant="metaSm" className="text-muted-foreground">
             {t.renewsAt.replace(
               "{date}",
-              fmtDate(new Date(subscription.renewsAt), locale)
+              fmtDate(new Date(plan.renewsAt), locale)
             )}
           </Text>
         ) : null}
       </View>
 
       <Text variant="sectionLabel" className="mb-2">
+        {t.usageTitle}
+      </Text>
+      <View className="mb-header">
+        <FieldRow label={t.assetsLabel} divider>
+          <Text variant="rowTitle">
+            {countLine(t, locale, plan?.usage.assets, plan?.limits.assets)}
+          </Text>
+        </FieldRow>
+        <FieldRow label={t.heirsLabel}>
+          <Text variant="rowTitle">
+            {countLine(t, locale, plan?.usage.heirs, plan?.limits.heirs)}
+          </Text>
+        </FieldRow>
+      </View>
+
+      <Text variant="sectionLabel" className="mb-2">
         {t.storageTitle}
       </Text>
       <StorageMeter
-        quotaBytes={DEFAULT_QUOTA_BYTES}
+        quotaBytes={quota ?? 0}
         segments={segments}
         empty={segments.length === 0}
         locale={locale}
+        labels={inMb ? { unit: t.unitMb } : undefined}
+        formatSize={
+          inMb
+            ? (bytes, loc) =>
+                fmtNum(bytes / BYTES_PER_MB, loc, { maximumFractionDigits: 0 })
+            : undefined
+        }
       />
       {segments.length === 0 ? (
         <Text variant="metaSm" className="text-muted-foreground mt-2">
@@ -138,6 +177,14 @@ export function PlanScreen() {
       ) : null}
 
       <View className="rounded-card bg-card mt-header overflow-hidden">
+        {plan?.plan === "free" ? (
+          <SettingsRow
+            icon={Sparkles}
+            label={t.upgrade}
+            chevron
+            onPress={() => paywall.open("assets")}
+          />
+        ) : null}
         {/* Billing is not wired. An alert that says so beats a row that looks
             live and does nothing — the same rule the OTP resend taught. */}
         <SettingsRow
@@ -148,4 +195,22 @@ export function PlanScreen() {
       </View>
     </Screen>
   )
+}
+
+/** "٣ من ٥", or "بلا حد" where the plan has no cap. */
+function countLine(
+  t: { ofLimit: string; unlimited: string },
+  locale: Locale,
+  used: number | null | undefined,
+  limit: number | null | undefined
+): string {
+  if (used === undefined || used === null || limit === undefined) {
+    return ""
+  }
+  if (limit === null) {
+    return t.unlimited
+  }
+  return t.ofLimit
+    .replace("{used}", fmtNum(used, locale))
+    .replace("{limit}", fmtNum(limit, locale))
 }

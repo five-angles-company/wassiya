@@ -7,17 +7,14 @@ import type { Dictionary } from "@/lib/i18n/locale"
  */
 export const DELIVERY = {
   // ---- the link, before anyone is signed in -----------------------------
-  receiveTitle: {
-    ar: "ترك لك {name} شيئاً",
-    en: "{name} left something for you",
-  },
+  // ⚠️ Names nobody: whoever holds the link may not be the heir.
   receiveTitleUnknown: {
     ar: "تُرك لك شيء",
     en: "Something was left for you",
   },
   receiveBody: {
-    ar: "نأسف لفقدك. قبل أن يُفتح أي شيء نتحقّق من أنك الشخص الذي سمّاه — بحسابك أولاً، ثم بهويتك الرسمية. يستغرق ذلك دقائق.",
-    en: "We are sorry for your loss. Before anything opens we check that you are the person they named — first with an account, then with your official ID. It takes a few minutes.",
+    ar: "وصلك هذا الرابط لأن شخصاً سمّاك لتستلم ما تركه. لا نذكر اسمه هنا قبل أن نتأكّد أنك المقصود: أنشئ حساباً، ثم أثبت هويتك الرسمية. يستغرق ذلك دقائق.",
+    en: "You have this link because someone named you to receive what they left. We do not name them here until we know you are the right person: create an account, then verify your official ID. It takes a few minutes.",
   },
   receiveSignIn: { ar: "ادخل أو أنشئ حساباً", en: "Sign in or create an account" },
   receiveBinding: { ar: "جارٍ الربط بحسابك…", en: "Linking it to your account…" },

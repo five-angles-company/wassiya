@@ -15,6 +15,8 @@ export type HeirFormValues = {
   name: string
   relation: string
   phone: string
+  /** "" means none. */
+  email: string
   /** Typed this session; "" means none given. Never read back from the server. */
   idNumber: string
   /** "YYYY-MM-DD" or "". */
@@ -22,6 +24,7 @@ export type HeirFormValues = {
 }
 
 const BIRTH_DATE = /^\d{4}-\d{2}-\d{2}$/
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type HeirForm = ReturnType<typeof useHeirForm>
 
@@ -42,9 +45,12 @@ export function useHeirForm(
   const [name, setName] = useState(initial.name)
   const [relation, setRelation] = useState(initial.relation)
   const [phone, setPhone] = useState(initial.phone)
+  const [email, setEmail] = useState(initial.email)
   const [idNumber, setIdNumber] = useState(initial.idNumber)
   const [birthDate, setBirthDate] = useState(initial.birthDate)
 
+  const emailValue = email.trim().toLowerCase()
+  const emailInvalid = emailValue.length > 0 && !EMAIL.test(emailValue)
   const idDigits = idNumber.replace(/[^0-9A-Za-z]/g, "")
   const idInvalid = idDigits.length > 0 && idDigits.length < 4
   const birthDateInvalid =
@@ -75,6 +81,7 @@ export function useHeirForm(
     name: name.trim(),
     relation,
     phone: e164,
+    email: emailValue,
     idNumber: idDigits,
     birthDate: birthDate.trim(),
   }
@@ -83,6 +90,7 @@ export function useHeirForm(
     values.name !== initial.name.trim() ||
     values.relation !== initial.relation ||
     values.phone !== initial.phone ||
+    values.email !== initial.email ||
     values.idNumber !== "" ||
     values.birthDate !== initial.birthDate
 
@@ -93,6 +101,9 @@ export function useHeirForm(
     setRelation,
     phone,
     setPhone,
+    email,
+    setEmail,
+    emailInvalid,
     idNumber,
     setIdNumber,
     idInvalid,
@@ -109,6 +120,7 @@ export function useHeirForm(
       relation.length > 0 &&
       usable &&
       !duplicate &&
+      !emailInvalid &&
       !idInvalid &&
       !birthDateInvalid,
   }

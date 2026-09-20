@@ -124,7 +124,8 @@ export const me = query({
       identityStatus: user.identityStatus ?? "unverified",
       identityVerifiedName: user.identityVerifiedName ?? null,
       role: user.role ?? "owner",
-      subscription: user.subscription ?? null,
+      // The plan is not here: it is `plans.current`, which serves the limits
+      // and the usage beside it so a screen cannot read one without the other.
     }
   },
 })

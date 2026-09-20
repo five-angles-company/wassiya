@@ -267,6 +267,7 @@ export const AUDIT = {
   identityStarted: { ar: "بدأ التحقق من الهوية", en: "Identity check started" },
   identityResult: { ar: "وصلت نتيجة التحقق", en: "Identity check result" },
 
+  planSet: { ar: "تغيّرت خطتك", en: "Your plan changed" },
   generic: { ar: "نشاط في الخزنة", en: "Vault activity" },
 } satisfies LabelSet<string>
 
@@ -276,8 +277,21 @@ export const PLAN = {
   planLabel: { ar: "خطتك", en: "Your plan" },
   renewsAt: { ar: "تتجدّد {date}", en: "Renews {date}" },
   freePlan: { ar: "مجانية", en: "Free" },
+  annualPlan: { ar: "سنوية", en: "Annual" },
+
+  // The two limits a meter cannot draw. Counts come from the server beside the
+  // limits themselves — ٩.٤ is where a number invented on the client would be
+  // discovered last.
+  usageTitle: { ar: "ما في خزنتك", en: "What is in your vault" },
+  assetsLabel: { ar: "الأصول", en: "Assets" },
+  heirsLabel: { ar: "الورثة", en: "Heirs" },
+  ofLimit: { ar: "{used} من {limit}", en: "{used} of {limit}" },
+  unlimited: { ar: "بلا حد", en: "Unlimited" },
+  upgrade: { ar: "وسّع خطتك", en: "See the annual plan" },
 
   storageTitle: { ar: "التخزين", en: "Storage" },
+  /** The meter formats in GB by default; a 500 MB allowance needs its own. */
+  unitMb: { ar: "م.ب", en: "MB" },
   usedLabel: { ar: "مستخدم", en: "Used" },
   freeLabel: { ar: "متاح", en: "Free" },
   emptyStorage: { ar: "لم ترفع شيئاً بعد", en: "Nothing uploaded yet" },

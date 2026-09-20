@@ -25,6 +25,7 @@ export type HeirEditFormProps = {
     routedAssetCount: number
     hasIdNumber: boolean
     birthDate: string | null
+    email: string | null
     messageKind: string | null
   }
 }
@@ -37,7 +38,12 @@ export function HeirEditForm({ heir }: HeirEditFormProps) {
 
   const update = useMutation(api.heirs.update)
   const form = useHeirForm(
-    { ...heir, idNumber: "", birthDate: heir.birthDate ?? "" },
+    {
+      ...heir,
+      idNumber: "",
+      email: heir.email ?? "",
+      birthDate: heir.birthDate ?? "",
+    },
     heir.id
   )
 
@@ -50,10 +56,11 @@ export function HeirEditForm({ heir }: HeirEditFormProps) {
     setSaving(true)
     setFailed(false)
     try {
-      const { idNumber, birthDate, ...rest } = form.values
+      const { idNumber, birthDate, email, ...rest } = form.values
       await update({
         heirId: heir.id,
         ...rest,
+        email: email === (heir.email ?? "") ? undefined : email,
         // Only a newly typed number replaces the registered one.
         idNumber: idNumber === "" ? undefined : idNumber,
         birthDate: birthDate === (heir.birthDate ?? "") ? undefined : birthDate,

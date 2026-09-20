@@ -45,6 +45,16 @@ export const HOME = {
   itemHeirs: { ar: "الورثة", en: "Heirs" },
   itemRouting: { ar: "التوجيه", en: "Routing" },
   itemDelivery: { ar: "التسليم", en: "Delivery" },
+
+  // The yearly contact check. Numbers get recycled and inboxes get abandoned;
+  // the owner is the only person who can fix that while it still matters.
+  contactsTitle: { ar: "هل بيانات ورثتك ما زالت صحيحة؟", en: "Are your heirs' contacts still right?" },
+  contactsBody: {
+    ar: "نتواصل مع ورثتك على الرقم والبريد اللذين سجّلتهما. مرّت سنة — تأكّد أنهما ما زالا لهم.",
+    en: "We reach your heirs on the number and email you registered. It has been a year — check they are still theirs.",
+  },
+  contactsReview: { ar: "راجع الورثة", en: "Review heirs" },
+  contactsConfirm: { ar: "كلها صحيحة", en: "All correct" },
   stateDeliveryReady: { ar: "جاهز للورثة", en: "Ready for heirs" },
   stateDeliveryStale: { ar: "يحتاج تحديثاً", en: "Needs updating" },
   itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },

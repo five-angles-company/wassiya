@@ -249,3 +249,19 @@ export const DELIVERY_EXPIRING_COPY = {
     body: "On {date} the key to what was left to you is destroyed for good, and nobody can open it after that — us included. If you have not downloaded what you need, open it now.",
   },
 } as const satisfies LocalisedCopy
+
+/**
+ * The link to an heir. Names no one and nothing: a phone number or address can
+ * be recycled, and whoever reads this may not be the heir. Everything after
+ * the link asks for sign-in and identity first.
+ */
+export const DELIVERY_INVITE_COPY = {
+  ar: {
+    subject: "تُرك لك شيء لدى وصيّة",
+    body: "تُرك لك شيء لدى وصيّة. افتح الرابط وأثبت هويتك لتستلمه. إن لم تكن تعرف سبب هذه الرسالة، تجاهلها — لا يُفتح شيء دون التحقّق من الهوية.",
+  },
+  en: {
+    subject: "Something was left for you at Wassiya",
+    body: "Something was left for you at Wassiya. Open the link and verify your identity to receive it. If this message means nothing to you, ignore it — nothing opens without an identity check.",
+  },
+} as const satisfies LocalisedCopy

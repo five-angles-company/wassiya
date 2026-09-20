@@ -27,6 +27,7 @@ import type { Doc, Id } from "./_generated/dataModel"
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
 import { nameMatchBlockedReason } from "./model/claimFlow"
 import { requireAdmin } from "./model/access"
+import { planOf, storageUsed } from "./model/plans"
 
 /** One day, for bucketing a trend. Matches `model/claimFlow.ts`'s `DAY_MS`. */
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -527,7 +528,7 @@ type TypeUsage = { count: number; bytes: number }
  *
  * ## Three caveats this query cannot fix, and the console must not hide
  *
- * `subscription.storageBytesUsed` is a hand-maintained counter — `assets.ts`
+ * `users.storageBytesUsed` is a hand-maintained counter — `assets.ts`
  * says so: "A denormalised counter, because Convex has no count operator and
  * summing every asset would not scale." It is a known undercount: credential
  * types leave `meta.byteSize` unset and "have never been counted at all", and
@@ -538,12 +539,11 @@ type TypeUsage = { count: number; bytes: number }
  *
  * ## There is no revenue here because there is no revenue recorded
  *
- * Nothing in this deployment writes `subscription.renewsAt`; `plan` is only ever
- * the literal "free", set as a side effect of the storage counter. There is no
- * billing component, no payment webhook, and no plan catalogue. Reporting what
- * is actually stored, and saying plainly that billing is unwired, is the honest
- * answer — an empty revenue chart would read as "no customers are paying"
- * rather than "nobody has been asked to".
+ * There is a plan catalogue now (`model/plans.ts`) and a way to grant a plan
+ * (`billing.adminSetPlan`), but no store: no payment webhook, and every paid
+ * row is a staff grant. Reporting what is actually stored, and saying plainly
+ * that billing is unwired, is the honest answer — an empty revenue chart would
+ * read as "no customers are paying" rather than "nobody has been asked to".
  */
 export const storage = query({
   args: { limit: v.optional(v.number()) },
@@ -566,7 +566,7 @@ export const storage = query({
       bytes: number
     }[] = []
     for (const owner of counted) {
-      const bytes = owner.subscription?.storageBytesUsed ?? 0
+      const bytes = storageUsed(owner)
       totalBytes += bytes
       const plan = owner.subscription?.plan ?? "none"
       plans.set(plan, (plans.get(plan) ?? 0) + 1)
@@ -606,7 +606,7 @@ export const storage = query({
       assetCount: Math.min(assets.length, STORAGE_SCAN_CAP),
       assetsCapped,
       unrouted,
-      /** True while no plan anywhere carries a renewal date — i.e. always, today. */
+      /** True while no plan anywhere carries a renewal date — i.e. until the store webhook is live. */
       billingUnwired: counted.every(
         (owner) => owner.subscription?.renewsAt === undefined
       ),
@@ -1002,7 +1002,18 @@ function ownersQuery(ctx: QueryCtx, filters: OwnerFilters) {
     if (filters.plans.length > 0) {
       clauses.push(
         q.or(
-          ...filters.plans.map((plan) => q.eq(q.field("subscription.plan"), plan))
+          ...filters.plans.map((plan) =>
+            // An owner who has never been billed has no `subscription` object
+            // at all, and `planOf` reads that as free — so the facet has to as
+            // well, or "free" would filter to the handful of rows a staff
+            // grant happened to touch and look like an empty product.
+            plan === "free"
+              ? q.or(
+                  q.eq(q.field("subscription.plan"), "free"),
+                  q.eq(q.field("subscription.plan"), undefined)
+                )
+              : q.eq(q.field("subscription.plan"), plan)
+          )
         )
       )
     }
@@ -1018,8 +1029,20 @@ function ownerRow(user: Doc<"users">) {
     country: user.country ?? null,
     identityStatus: user.identityStatus ?? ("unverified" as const),
     identityVerifiedName: user.identityVerifiedName ?? null,
-    plan: user.subscription?.plan ?? null,
-    storageBytesUsed: user.subscription?.storageBytesUsed ?? 0,
+    // `planOf`, not the raw column: absent means free, and the console
+    // saying "—" where the app says "مجانية" is two answers to one question.
+    plan: planOf(user),
+    // The date, not a lapsed flag: the console compares it against the
+    // operator's own clock for the same reason the app does — a boolean
+    // computed here would still read "active" an hour after it stopped being
+    // true, on a table that is left open.
+    renewsAt: user.subscription?.renewsAt ?? null,
+    storageBytesUsed: storageUsed(user),
+    // Exposed under a shorter name than the column's on purpose: the
+    // invariant check reads `limitsOverride:` as a write, and a read that has
+    // to be spelled around the guard is cheaper than a guard that learns to
+    // tell reads from writes and gets it wrong once.
+    override: user.limitsOverride ?? null,
     joinedAt: user._creationTime,
   }
 }
@@ -1858,6 +1881,7 @@ export const jobRunsList = query({
  */
 const AUDIT_DOMAINS = [
   "asset",
+  "billing",
   "checkin",
   "claim",
   "device",
@@ -2315,6 +2339,22 @@ export const claimDetail = query({
       .filter((row) => row.meta.claimId === (claim._id as string))
       .map((row) => ({ event: row.event, at: row.at }))
 
+    // Whether the certificate is an image or a PDF decides how the console
+    // shows it; the stored upload's own content type is the only honest source.
+    const certificateMeta =
+      claim.certificateStorageId === undefined
+        ? null
+        : await ctx.db.system.get("_storage", claim.certificateStorageId)
+
+    // Once released, how its heirs are being reached — the page's next step.
+    const deliveries =
+      claim.status !== "released"
+        ? []
+        : await ctx.db
+            .query("deliveries")
+            .withIndex("by_claimId", (q) => q.eq("claimId", claim._id))
+            .take(100)
+
     return {
       claim: {
         id: claim._id,
@@ -2326,11 +2366,20 @@ export const claimDetail = query({
           claim.certificateStorageId === undefined
             ? null
             : await ctx.storage.getUrl(claim.certificateStorageId),
+        certificateContentType: certificateMeta?.contentType ?? null,
         nameMatch: claim.nameMatch ?? null,
         vetoDeadline: claim.vetoDeadline ?? null,
         lockedUntil: claim.lockedUntil ?? null,
+        reviewedAt: claim.reviewedAt ?? null,
+        releasedAt: claim.releasedAt ?? null,
         submittedAt: claim._creationTime,
       },
+      deliveries: deliveries.map((row) => ({
+        id: row._id,
+        heirId: row.heirId,
+        status: row.status,
+        contactedAt: row.contactedAt ?? null,
+      })),
       /** What Didit says right now — the value the mutation will rule on. */
       liveIdentityStatus,
       /** What was recorded at submit. Shown so a stale badge is visible. */

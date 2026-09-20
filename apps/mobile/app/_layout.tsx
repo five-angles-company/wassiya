@@ -14,6 +14,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { PortalHost } from "@rn-primitives/portal"
 
 import { MissingEnv } from "@/components/missing-env"
+import { PaywallProvider } from "@/components/paywall"
 import { SafeAreaShell } from "@/components/safe-area-shell"
 import { useAppFonts } from "@/hooks/use-app-fonts"
 import { initLayoutDirection } from "@/lib/direction"
@@ -113,15 +114,20 @@ export default function RootLayout() {
               {/* Route *gating* is not this layout's job: `index` reads the
                   evidence and redirects, and `auth/` and `setup/` each guard
                   themselves. */}
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="welcome" />
-                <Stack.Screen name="auth" />
-                <Stack.Screen name="setup" />
-                <Stack.Screen name="recovery" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="sso-callback" />
-              </Stack>
+              {/* The paywall is a sheet, not a route: a plan limit is thrown
+                  by a mutation and has to appear over whichever wizard called
+                  it, without six screens each mounting their own. */}
+              <PaywallProvider>
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="welcome" />
+                  <Stack.Screen name="auth" />
+                  <Stack.Screen name="setup" />
+                  <Stack.Screen name="recovery" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="sso-callback" />
+                </Stack>
+              </PaywallProvider>
               {/* Overlay teleport target for dialog / dropdown-menu /
                   popover / select. */}
               <PortalHost />

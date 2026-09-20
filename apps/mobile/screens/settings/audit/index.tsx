@@ -126,6 +126,7 @@ function labelFor(event: string, t: Record<string, string>): string {
     "heir.message_set": t.heirMessageSet!,
     "identity.session_started": t.identityStarted!,
     "identity.webhook": t.identityResult!,
+    "billing.plan_set": t.planSet!,
   }
   return map[event] ?? t.generic!
 }

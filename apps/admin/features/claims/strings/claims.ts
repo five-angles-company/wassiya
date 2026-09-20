@@ -112,6 +112,31 @@ export const CLAIMS = {
     en: "An earlier claim by this person was vetoed. The 90-day bar is matched on the typed contact string alone, so a new claim under a different address can slip past it — check before approving.",
   },
 
+  // The redesigned review: certificate on one side, decision on the other.
+  certificateTitle: { ar: "شهادة الوفاة", en: "Death certificate" },
+  certificateOpen: { ar: "افتح في نافذة جديدة", en: "Open in a new tab" },
+  certificateUnsupported: {
+    ar: "لا يمكن عرض هذا الملف هنا — افتحه في نافذة جديدة.",
+    en: "This file can't be shown here — open it in a new tab.",
+  },
+  decisionTitle: { ar: "القرار", en: "Decision" },
+  stateAwaiting: {
+    ar: "مدة الاعتراض تنتهي {date}. لا شيء مطلوب حتى ذلك.",
+    en: "The objection period ends {date}. Nothing is needed until then.",
+  },
+  stateReleased: { ar: "أُفرج عنه {date}", en: "Released {date}" },
+  stateClosed: { ar: "انتهى هذا الطلب.", en: "This claim has ended." },
+  deliveriesSummary: {
+    ar: "{ready} من {total} ورثة استلموا",
+    en: "{ready} of {total} heirs have received",
+  },
+  deliveriesNone: {
+    ar: "لم تُبنَ أي حزمة تسليم — لا شيء يصل لأي وارث.",
+    en: "No delivery bundle was built — nothing reaches any heir.",
+  },
+  deliveriesOpen: { ar: "تابع التواصل مع الورثة", en: "Follow up with the heirs" },
+  tabHeirs: { ar: "الورثة", en: "Heirs" },
+  tabHistory: { ar: "السجل", en: "History" },
   historyTitle: { ar: "ما حدث لهذا الطلب", en: "What has happened" },
   historyEmpty: { ar: "لا سجل بعد", en: "Nothing recorded yet" },
 

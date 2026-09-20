@@ -3,12 +3,6 @@
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
 import { useMutation } from "convex/react"
 import { InfoIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -71,14 +65,8 @@ export function ClaimVerdict({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-heading text-base">
-          {labels.verdictTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-2">
           <ConfirmAction
             tone="neutral"
             title={labels.approveDialogTitle}
@@ -87,7 +75,7 @@ export function ClaimVerdict({
             cancelLabel={labels.cancel}
             onConfirm={() => rule(true, labels.toastApproved)}
             trigger={
-              <Button disabled={blocked.approve !== null}>
+              <Button className="w-full" disabled={blocked.approve !== null}>
                 {labels.approve}
               </Button>
             }
@@ -100,7 +88,11 @@ export function ClaimVerdict({
             cancelLabel={labels.cancel}
             onConfirm={() => rule(false, labels.toastRejected)}
             trigger={
-              <Button variant="destructive" disabled={blocked.reject !== null}>
+              <Button
+                variant="outline"
+                className="w-full text-destructive"
+                disabled={blocked.reject !== null}
+              >
                 {labels.reject}
               </Button>
             }
@@ -113,14 +105,10 @@ export function ClaimVerdict({
           </p>
         )}
 
-        <div className="flex gap-2 border-t pt-3 text-xs leading-relaxed text-muted-foreground">
+        <div className="flex gap-2 text-xs leading-relaxed text-muted-foreground">
           <InfoIcon className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            <span className="font-medium">{labels.approveNextTitle}. </span>
-            {labels.approveNextBody}
-          </span>
+          <span>{labels.approveNextBody}</span>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }

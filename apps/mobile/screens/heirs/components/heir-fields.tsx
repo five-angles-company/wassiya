@@ -90,6 +90,18 @@ export function HeirFields({ form, t, error, hasIdNumber = false }: HeirFieldsPr
       />
 
       <Field
+        label={t.emailLabel}
+        placeholder={t.emailPlaceholder}
+        value={form.email}
+        onChangeText={form.setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        className="text-left"
+        hint={t.emailHint}
+        error={form.emailInvalid ? t.emailInvalid : undefined}
+      />
+
+      <Field
         label={t.idNumberLabel}
         placeholder={hasIdNumber ? t.idNumberRegistered : t.idNumberPlaceholder}
         value={form.idNumber}

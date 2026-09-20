@@ -40,6 +40,10 @@ export function SettingsScreen() {
   const { t: p } = useStrings("settings/profile")
   const { t: autoLock } = useStrings("settings/lock")
   const me = useQuery(api.users.me)
+  const plan = useQuery(api.plans.current)
+  // Borrowed from the plan screen rather than restated here: two dictionaries
+  // naming the same two plans is two places for them to disagree.
+  const { t: planNames } = useStrings("settings/plan")
   const saveProfile = useMutation(api.users.saveProfile)
   const { signOut } = useClerk()
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
@@ -151,7 +155,13 @@ export function SettingsScreen() {
         <SettingsRow
           icon={Wallet}
           label={t.rowPlan}
-          value={me?.subscription?.plan ?? undefined}
+          value={
+            plan === undefined
+              ? undefined
+              : plan.plan === "annual"
+                ? planNames.annualPlan
+                : planNames.freePlan
+          }
           chevron
           onPress={() => router.push("/settings/plan")}
         />

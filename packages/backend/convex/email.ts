@@ -34,6 +34,7 @@ import {
   CLAIM_REVIEW_FAILED_COPY,
   CLAIM_VETOED_COPY,
   DELIVERY_EXPIRING_COPY,
+  DELIVERY_INVITE_COPY,
   DELIVERY_READY_COPY,
   ESCALATION_COPY,
   RECOVERY_COPY,
@@ -105,8 +106,37 @@ async function send(
     console.error(`recipient has no email on record — ${what} email not sent`)
     return
   }
+  await deliver(ctx, {
+    from,
+    to: user.email,
+    english: user.locale?.startsWith("en") === true,
+    auditUserId: userId,
+    copy,
+    what,
+    link,
+    date,
+  })
+}
 
-  const english = user.locale?.startsWith("en") === true
+/**
+ * The one place a message is formatted, enqueued and logged. `auditUserId`
+ * is whose log records it — the recipient for account mail, the vault's owner
+ * for a message to an heir, who has no account yet.
+ */
+async function deliver(
+  ctx: MutationCtx,
+  args: {
+    from: string
+    to: string
+    english: boolean
+    auditUserId: Id<"users">
+    copy: LocalisedCopy
+    what: string
+    link?: string
+    date?: number
+  }
+): Promise<void> {
+  const { from, english, copy, what, link, date } = args
   const text = copy[english ? "en" : "ar"]
 
   // `{date}` is the one placeholder any copy uses, and it is formatted here
@@ -132,7 +162,7 @@ async function send(
 
   await resend.sendEmail(ctx, {
     from,
-    to: user.email,
+    to: args.to,
     subject: text.subject,
     text: body,
   })
@@ -153,7 +183,7 @@ async function send(
   // identifies the recipient — the address would be a second copy of something
   // the users table holds.
   await writeAudit(ctx, {
-    userId,
+    userId: args.auditUserId,
     event: "email.sent",
     meta: { kind: what },
   })
@@ -332,4 +362,35 @@ export async function sendDeliveryExpiring(
     appLink(`/delivery/${deliveryId}`),
     expiresAt
   )
+}
+
+/**
+ * The first message an heir ever gets, to the address the owner registered or
+ * staff recorded. Names nobody — see `DELIVERY_INVITE_COPY`. Returns whether
+ * it was enqueued, for the contact log.
+ */
+export async function sendDeliveryInvite(
+  ctx: MutationCtx,
+  args: {
+    to: string
+    english: boolean
+    ownerUserId: Id<"users">
+    link: string
+  }
+): Promise<boolean> {
+  const from = process.env.RESEND_FROM
+  if (from === undefined) {
+    console.error("RESEND_FROM is not set — delivery invite email not sent")
+    return false
+  }
+  await deliver(ctx, {
+    from,
+    to: args.to,
+    english: args.english,
+    auditUserId: args.ownerUserId,
+    copy: DELIVERY_INVITE_COPY,
+    what: "delivery invite",
+    link: args.link,
+  })
+  return true
 }

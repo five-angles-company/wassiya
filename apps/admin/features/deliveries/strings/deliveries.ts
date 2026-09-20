@@ -1,50 +1,151 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * Deliveries — what each heir receives once a report is released. Two jobs
- * live here: sending the link by hand until an SMS provider exists, and the
- * identity decision the owner-registered ID number could not make.
+ * Deliveries — what each heir receives once a report is released. Staff do two
+ * jobs here: make sure every heir is reached, and decide an identity the ID
+ * number could not.
  */
 export const DELIVERIES = {
   pageTitle: { ar: "التسليمات", en: "Deliveries" },
-  intro: {
-    ar: "لكل وارث بُنيت له حزمة تسليم واحد بعد انتهاء مدة الاعتراض. أرسل الرابط إلى رقم الوارث، ثم طابق الهوية حين لا يحسمها رقم الهوية المسجّل.",
-    en: "Every heir with a built bundle gets one delivery once the objection period ends. Send the link to the heir's number, then decide identity where the registered ID number could not.",
+  searchPlaceholder: { ar: "ابحث بالوارث أو صاحب الخزنة…", en: "Search by heir or owner…" },
+  empty: { ar: "لا تسليمات بعد", en: "No deliveries yet" },
+  emptyHint: {
+    ar: "يُنشأ تسليم لكل وارث بعد انتهاء مدة الاعتراض على بلاغ.",
+    en: "A delivery is created for each heir once a report's objection period ends.",
   },
-  tabAwaiting: { ar: "بانتظار الوارث", en: "Awaiting heir" },
-  tabIdentity: { ar: "مطابقة الهوية", en: "Identity review" },
-  tabReady: { ar: "جاهزة", en: "Ready" },
-  tabRejected: { ar: "مرفوضة", en: "Rejected" },
-  tabExpired: { ar: "منتهية", en: "Expired" },
-  empty: { ar: "لا شيء هنا.", en: "Nothing here." },
+  filteredToClaim: { ar: "مُصفّى على بلاغ واحد", en: "Filtered to one report" },
+  clearClaim: { ar: "عرض الكل", en: "Show all" },
 
-  from: { ar: "من خزنة {name}", en: "From {name}'s vault" },
-  heirRecord: { ar: "ما سجّله صاحب الخزنة", en: "What the owner registered" },
-  boundPerson: { ar: "من ربط التسليم بحسابه", en: "Who bound the delivery" },
-  noBound: { ar: "لم يربطه أحد بعد", en: "Nobody has bound it yet" },
+  colHeir: { ar: "الوارث", en: "Heir" },
+  colOwner: { ar: "من خزنة", en: "From" },
+  colStatus: { ar: "الحالة", en: "Status" },
+  colContact: { ar: "آخر تواصل", en: "Last contact" },
+  colExpires: { ar: "يُغلق", en: "Closes" },
+  neverContacted: { ar: "لم يُتواصل بعد", en: "Not contacted yet" },
+
+  statusAwaiting: { ar: "بانتظار الوارث", en: "Awaiting heir" },
+  statusIdentity: { ar: "مطابقة الهوية", en: "Identity check" },
+  statusReady: { ar: "جاهز", en: "Ready" },
+  statusRejected: { ar: "مرفوض", en: "Rejected" },
+  statusExpired: { ar: "منتهٍ", en: "Expired" },
+  needsDecision: { ar: "يحتاج قراراً", en: "Needs a decision" },
+
+  // The one line at the top of the sheet that says what to do now.
+  nextSend: { ar: "أرسل الرابط إلى الوارث.", en: "Send the heir their link." },
+  nextWaitOpen: {
+    ar: "أُرسل الرابط — ننتظر أن يفتحه الوارث. إن لم يصل، جرّب قناة أخرى.",
+    en: "The link was sent — waiting for the heir to open it. If it didn't reach them, try another route.",
+  },
+  nextWaitVerify: {
+    ar: "فتح الوارث الرابط وربطه بحسابه، ويُكمل التحقّق من هويته.",
+    en: "The heir opened the link and is completing identity verification.",
+  },
+  nextDecide: {
+    ar: "تحقّقت هويته ولم يحسمها رقم الهوية — قارن وقرّر.",
+    en: "Their identity is verified but the ID number could not decide — compare and decide.",
+  },
+  nextReady: { ar: "استلم الوارث ما تُرك له.", en: "The heir has received what was left to them." },
+  nextRejected: {
+    ar: "رُفضت المطابقة. أعد إصدار الرابط إن وجدت الوارث الصحيح.",
+    en: "The match was rejected. Reissue the link if you find the right heir.",
+  },
+  nextExpired: { ar: "انتهت السنة وأُتلف المفتاح.", en: "The year is over and the key was destroyed." },
+
+  // Section eyebrows and small print.
+  openReport: { ar: "افتح البلاغ", en: "Open report" },
+  closesOn: { ar: "يُغلق {date}", en: "Closes {date}" },
+  matchYes: { ar: "مطابق", en: "match" },
+  matchNo: { ar: "مختلف", en: "differs" },
+  matchUnknown: { ar: "لا مقارنة", en: "no comparison" },
+  logToggle: { ar: "سجّل محاولة تواصل", en: "Log a contact attempt" },
+  logClose: { ar: "إخفاء", en: "Hide" },
+
+  // Identity.
+  identityTitle: { ar: "الهوية", en: "Identity" },
+  registered: { ar: "ما سجّله صاحب الخزنة", en: "Registered by the owner" },
+  verified: { ar: "ما تحقّق منه Didit", en: "Verified by Didit" },
+  name: { ar: "الاسم", en: "Name" },
   birthDate: { ar: "تاريخ الميلاد", en: "Birth date" },
-  verifiedName: { ar: "الاسم الموثّق", en: "Verified name" },
   idNumber: { ar: "رقم الهوية", en: "ID number" },
   idRegistered: { ar: "مسجّل", en: "Registered" },
   idNone: { ar: "غير مسجّل", en: "Not registered" },
-  idMatches: { ar: "يطابق الوثيقة", en: "Matches the document" },
-  idNoMatch: { ar: "لا يطابق الوثيقة", en: "Does not match the document" },
-  notVerified: { ar: "لم يُكمل التحقّق بعد", en: "Has not finished verification" },
-  expires: { ar: "ينتهي {date}", en: "Closes {date}" },
+  idMatches: { ar: "يطابق", en: "Matches" },
+  idNoMatch: { ar: "لا يطابق", en: "Does not match" },
+  notBound: { ar: "لم يفتح أحد الرابط بعد.", en: "Nobody has opened the link yet." },
+  notVerifiedYet: { ar: "لم يُكمل التحقّق بعد.", en: "Has not finished verification yet." },
+  matchedById: { ar: "طابق رقم الهوية تلقائياً", en: "Matched automatically by ID number" },
+  approvedByStaff: { ar: "وافق عليه فريقنا", en: "Approved by staff" },
+  approve: { ar: "الشخص نفسه — افتح", en: "Same person — open it" },
+  reject: { ar: "ليس الشخص نفسه", en: "Not the same person" },
+  approveTitle: { ar: "فتح التسليم لهذا الشخص؟", en: "Open this delivery to this person?" },
+  approveBody: {
+    ar: "سيستطيع فتح ما تُرك للوارث فوراً. لا يمكن التراجع.",
+    en: "They will be able to open what was left to the heir immediately. This cannot be undone.",
+  },
+  rejectTitle: { ar: "رفض هذه المطابقة؟", en: "Reject this match?" },
+  rejectBody: {
+    ar: "يُغلق التسليم لهذا الشخص. يمكنك بعدها إعادة إصدار الرابط للوارث الصحيح.",
+    en: "The delivery closes to this person. You can then reissue the link to the right heir.",
+  },
 
-  link: { ar: "رابط الوارث", en: "Heir link" },
+  // Contact.
+  contactTitle: { ar: "التواصل", en: "Contact" },
+  phone: { ar: "الجوال", en: "Phone" },
+  email: { ar: "البريد", en: "Email" },
+  none: { ar: "—", en: "—" },
+  updatedByStaff: { ar: "حدّثه فريقنا", en: "Updated by staff" },
+  editContact: { ar: "تعديل", en: "Edit" },
+  saveContact: { ar: "حفظ", en: "Save" },
+  cancel: { ar: "تراجع", en: "Cancel" },
+  phoneHint: { ar: "بالصيغة الدولية: ‎+966551234567", en: "International form: +966551234567" },
+  link: { ar: "الرابط", en: "Link" },
   noAppUrl: {
     ar: "APP_URL غير مضبوط على النشر، فلا رابط لعرضه.",
     en: "APP_URL is not set on the deployment, so there is no link to show.",
   },
-  copy: { ar: "انسخ", en: "Copy" },
+  copy: { ar: "نسخ الرابط", en: "Copy link" },
   copied: { ar: "نُسخ الرابط.", en: "Link copied." },
-  markSent: { ar: "أُرسل", en: "Mark sent" },
-  sentOn: { ar: "أُرسل {date}", en: "Sent {date}" },
-  approve: { ar: "الشخص نفسه — افتح", en: "Same person — open it" },
-  reject: { ar: "ليس الشخص نفسه", en: "Not the same person" },
-  approved: { ar: "أصبح التسليم جاهزاً.", en: "The delivery is ready." },
-  rejected: { ar: "رُفض التسليم.", en: "The delivery is rejected." },
+  sendEmail: { ar: "أرسل بريداً", en: "Send email" },
+  sendSms: { ar: "أرسل رسالة", en: "Send SMS" },
+  sent: { ar: "أُرسل.", en: "Sent." },
+  reissue: { ar: "أعد إصدار الرابط", en: "Reissue link" },
+  reissueTitle: { ar: "إصدار رابط جديد؟", en: "Issue a new link?" },
+  reissueBody: {
+    ar: "يتوقّف الرابط الحالي فوراً، ويُفكّ أي ربط لم يكتمل، ويُرسل الرابط الجديد إلى وسائل التواصل الحالية.",
+    en: "The current link stops working at once, any unfinished binding is released, and the new link goes to the current contacts.",
+  },
+  reissued: { ar: "صدر رابط جديد.", en: "A new link was issued." },
+
+  // Logging an attempt.
+  logTitle: { ar: "سجّل محاولة تواصل", en: "Log a contact attempt" },
+  channel: { ar: "القناة", en: "Channel" },
+  outcome: { ar: "النتيجة", en: "Outcome" },
+  note: { ar: "ملاحظة", en: "Note" },
+  notePlaceholder: {
+    ar: "مثلاً: اتصلت بشقيقه وأكّد رقمه الجديد",
+    en: "e.g. Called his brother, who confirmed the new number",
+  },
+  logSave: { ar: "سجّل", en: "Log it" },
+  logged: { ar: "سُجّلت المحاولة.", en: "Attempt logged." },
+
+  channelSms: { ar: "رسالة نصية", en: "SMS" },
+  channelEmail: { ar: "بريد", en: "Email" },
+  channelCall: { ar: "اتصال", en: "Call" },
+  channelWhatsapp: { ar: "واتساب", en: "WhatsApp" },
+  channelVisit: { ar: "زيارة", en: "Visit" },
+  channelOther: { ar: "أخرى", en: "Other" },
+
+  outcomeSent: { ar: "أُرسل", en: "Sent" },
+  outcomeFailed: { ar: "فشل", en: "Failed" },
+  outcomeReached: { ar: "تم الوصول", en: "Reached" },
+  outcomeNoAnswer: { ar: "لا رد", en: "No answer" },
+  outcomeWrongPerson: { ar: "شخص آخر", en: "Wrong person" },
+  outcomeOther: { ar: "أخرى", en: "Other" },
+
+  timelineTitle: { ar: "سجل التواصل", en: "Contact timeline" },
+  timelineEmpty: { ar: "لا محاولات بعد.", en: "No attempts yet." },
+  automatic: { ar: "تلقائي", en: "Automatic" },
+
   failed: {
     ar: "تعذّر تنفيذ الإجراء. لم يتغيّر شيء.",
     en: "That did not go through. Nothing changed.",

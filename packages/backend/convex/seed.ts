@@ -155,10 +155,7 @@ export const demo = internalMutation({
         identityAttempts:
           identityStatus === "rejected" ? (rand() < 0.4 ? 3 : 1) : 0,
         role: "owner" as const,
-        subscription: {
-          plan: "free",
-          storageBytesUsed: Math.floor(rand() * 900_000_000),
-        },
+        storageBytesUsed: Math.floor(rand() * 900_000_000),
       })
       ownerIds.push(userId)
 
@@ -269,7 +266,7 @@ export const demo = internalMutation({
         identityVerifiedAt: now - 30 * DAY_MS,
         identityAttempts: 0,
         role: "owner" as const,
-        subscription: { plan: "free", storageBytesUsed: 12_000_000 },
+        storageBytesUsed: 12_000_000,
       })
 
       // The claimant needs an account, because `adminSetNameMatch` re-reads the

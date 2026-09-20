@@ -53,6 +53,10 @@ export default defineSchema({
     identityDocHashes: v.optional(v.array(v.string())),
     // As printed on the verified document, "YYYY-MM-DD".
     identityBirthDate: v.optional(v.string()),
+    // When the owner last confirmed every heir's phone and email are still
+    // theirs. Numbers get recycled; the yearly prompt is the cheapest defence
+    // against a delivery link reaching a stranger.
+    heirContactsConfirmedAt: v.optional(v.number()),
     diditSessionId: v.optional(v.string()),
     // Failed Didit attempts. Incremented in `applyWebhookResult` on a
     // rejection, not when a session opens — the flow caps *failures* at three,
@@ -66,11 +70,48 @@ export default defineSchema({
     /** Name + email, for the console's owner search. See the index below. */
     searchText: v.optional(v.string()),
 
+    // Entitlement, and nothing else. Written by exactly two paths — the
+    // RevenueCat webhook (`billing.applyStoreEvent`) and the audited staff
+    // grant (`billing.adminSetPlan`) — because any third one is a free
+    // subscription for whoever reads the app bundle. Enforced by
+    // `scripts/verify-invariants.mjs`, which is why usage lives outside this
+    // object: a counter bumped on every upload would have to be an exception
+    // to the rule, and that is how exceptions start.
     subscription: v.optional(
       v.object({
-        plan: v.string(),
+        plan: v.union(v.literal("free"), v.literal("annual")),
         renewsAt: v.optional(v.number()),
+        source: v.optional(v.union(v.literal("store"), v.literal("staff"))),
+        productId: v.optional(v.string()),
+        store: v.optional(
+          v.union(v.literal("app_store"), v.literal("play_store"))
+        ),
+        /** Superseded by the top-level counter; delete once backfilled. */
         storageBytesUsed: v.optional(v.number()),
+      })
+    ),
+    // Denormalised because Convex has no sum operator and adding up every
+    // asset would not scale. Counts are not denormalised — see
+    // `model/entitlements.ts` for why bytes are the only thing that has to be.
+    storageBytesUsed: v.optional(v.number()),
+
+    // This account's limits, overriding its plan's field by field. For a pilot,
+    // a support case, an owner who needs more room than their tier gives.
+    //
+    // An absent field is not an override, and `null` means unlimited — the two
+    // have to stay distinguishable, so this cannot collapse to a plain number.
+    //
+    // It is entitlement, so it has the same two writers `subscription` has and
+    // `verify-invariants` enforces that. An override is the quietest way to
+    // give the product away: nothing about the account looks unusual, and it
+    // stops matching the plan every screen says it is on.
+    limitsOverride: v.optional(
+      v.object({
+        storageBytes: v.optional(v.union(v.number(), v.null())),
+        assets: v.optional(v.union(v.number(), v.null())),
+        heirs: v.optional(v.union(v.number(), v.null())),
+        photos: v.optional(v.boolean()),
+        maxFileBytes: v.optional(v.union(v.number(), v.null())),
       })
     ),
   })
@@ -104,6 +145,25 @@ export default defineSchema({
   // wrap of MK never leaves the device, so there is no ciphertext column here —
   // revoking a row is a UX and audit act, and the device's local copy of MK is
   // what its own OS keystore controls.
+  // The plan catalogue, editable from the console so a tier can move without a
+  // deploy. `model/plans.ts` still holds the defaults and is what a deployment
+  // with no rows runs on — a missing row must never be able to take the product
+  // down, and a fresh deployment has none.
+  //
+  // Prices are deliberately absent. They are set per storefront and rendered
+  // from the store's own `priceString`; a price here would be wrong in every
+  // country but one. `key` is a literal union rather than a string because a
+  // store product points at it: renaming a key orphans every subscriber on it.
+  plans: defineTable({
+    key: v.union(v.literal("free"), v.literal("annual")),
+    storageBytes: v.union(v.number(), v.null()),
+    assets: v.union(v.number(), v.null()),
+    heirs: v.union(v.number(), v.null()),
+    photos: v.boolean(),
+    maxFileBytes: v.union(v.number(), v.null()),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
+
   devices: defineTable({
     userId: v.id("users"),
     // Client-generated, written to the device keystore *before* the first
@@ -217,6 +277,9 @@ export default defineSchema({
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
+    // A second channel at release: if the number was recycled, the email may
+    // still reach the real heir, and the other way round.
+    email: v.optional(v.string()),
     // Keyed hash of the national ID number the owner registered, if any — see
     // `model/identityHash.ts`. Optional by product decision: without it, a
     // delivery needs a staff identity decision instead of an automatic match.
@@ -485,6 +548,10 @@ export default defineSchema({
     ),
     contactToken: v.string(),
     contactedAt: v.optional(v.number()),
+    // Set by staff when the heir is reached some other way; they win over the
+    // heir record's phone and email for every later send.
+    contactPhone: v.optional(v.string()),
+    contactEmail: v.optional(v.string()),
     heirUserId: v.optional(v.id("users")),
     boundAt: v.optional(v.number()),
     identityMatch: v.optional(v.union(v.literal("id_number"), v.literal("staff"))),
@@ -503,6 +570,35 @@ export default defineSchema({
     .index("by_heirId", ["heirId"])
     .index("by_status", ["status"])
     .index("by_status_and_expiresAt", ["status", "expiresAt"]),
+
+  /**
+   * Every attempt to reach an heir, automatic or by staff. Append-only in
+   * practice — nothing edits a past attempt — so it reads as the delivery's
+   * contact timeline. Never carries the link: a note is free text staff type.
+   */
+  deliveryContacts: defineTable({
+    deliveryId: v.id("deliveries"),
+    at: v.number(),
+    channel: v.union(
+      v.literal("sms"),
+      v.literal("email"),
+      v.literal("call"),
+      v.literal("whatsapp"),
+      v.literal("visit"),
+      v.literal("other")
+    ),
+    outcome: v.union(
+      v.literal("sent"),
+      v.literal("failed"),
+      v.literal("reached"),
+      v.literal("no_answer"),
+      v.literal("wrong_person"),
+      v.literal("other")
+    ),
+    note: v.optional(v.string()),
+    // Absent for automatic sends.
+    staffUserId: v.optional(v.id("users")),
+  }).index("by_deliveryId", ["deliveryId"]),
 
   // Append-only. `audit.ts` exposes an internal insert and an owner-only read,
   // and there is deliberately no mutation anywhere that patches or deletes it.

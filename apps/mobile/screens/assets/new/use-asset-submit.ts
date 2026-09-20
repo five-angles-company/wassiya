@@ -9,13 +9,17 @@
  * every wizard would handle it identically.
  */
 import { useCallback, useRef, useState } from "react"
+import { useQuery } from "convex/react"
+import { api } from "@workspace/backend/api"
 import { utf8ToBytes } from "@workspace/crypto/bytes"
 import type { AssetLabel } from "@workspace/crypto/label"
 import type { Id } from "@workspace/backend/dataModel"
 
 import type { UploadProgress } from "@/lib/asset-upload"
 import type { AssetType } from "@/lib/asset-types"
+import { usePaywall } from "@/components/paywall"
 import { useStrings } from "@/i18n/use-strings"
+import { limitBeforeUpload, planLimitOf } from "@/lib/plan-limit"
 import {
   useCreateAsset,
   VaultLockedError,
@@ -48,6 +52,8 @@ export type AssetSubmit = {
 export function useAssetSubmit(): AssetSubmit {
   const { t } = useStrings("assets/new")
   const create = useCreateAsset()
+  const paywall = usePaywall()
+  const plan = useQuery(api.plans.current)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A ref, not the state flag. `setSubmitting(true)` does not take effect until
@@ -67,6 +73,20 @@ export function useAssetSubmit(): AssetSubmit {
       setError(null)
 
       try {
+        // Checked here as well as on the server, because the server's refusal
+        // arrives after an album has been encrypted and uploaded. Every number
+        // compared came from `plans.current`, so this is the same rule read
+        // early, not a second copy of it.
+        const early = limitBeforeUpload(plan, {
+          type,
+          byteSize: meta?.byteSize ?? 0,
+        })
+        if (early !== null) {
+          paywall.open(early)
+          setError(t.quotaExceeded)
+          return null
+        }
+
         const payloads: AssetPayload[] = [
           ...(secret === undefined
             ? []
@@ -75,19 +95,22 @@ export function useAssetSubmit(): AssetSubmit {
         ]
         return await create({ type, label, payloads, meta, onProgress })
       } catch (cause) {
-        // Three outcomes, three sentences. A lapsed subscription and an
-        // auto-locked vault are both normal events with their own remedies;
-        // collapsing them into "something went wrong" would send a user
-        // hunting for a fault that is not theirs.
+        // Three outcomes, three remedies. A plan limit and an auto-locked vault
+        // are both normal events; collapsing them into "something went wrong"
+        // would send an owner hunting for a fault that is not theirs.
         //
-        // The lapse is matched on the message `assertCanAddAssets` throws,
-        // because Convex surfaces a server error as its text rather than a
-        // typed class. Brittle if that string is reworded — so the backend
-        // keeps it, and this comment is why.
+        // A limit opens the paywall rather than printing a line, because the
+        // remedy is a purchase and the wizard has nowhere to put one. The line
+        // is still set: the sheet can be dismissed, and a wizard that then
+        // showed no reason for the failed save would be a dead end.
+        const limit = planLimitOf(cause)
+        if (limit !== null) {
+          paywall.open(limit)
+        }
         setError(
           cause instanceof VaultLockedError
             ? t.vaultLocked
-            : isSubscriptionLapse(cause)
+            : limit !== null
               ? t.quotaExceeded
               : t.saveFailed
         )
@@ -98,15 +121,8 @@ export function useAssetSubmit(): AssetSubmit {
         setSubmitting(false)
       }
     },
-    [create, t.quotaExceeded, t.saveFailed, t.vaultLocked]
+    [create, paywall, plan, t.quotaExceeded, t.saveFailed, t.vaultLocked]
   )
 
   return { submit, submitting, error }
-}
-
-/** Matches `assertCanAddAssets` in `convex/model/access.ts`. */
-function isSubscriptionLapse(cause: unknown): boolean {
-  return (
-    cause instanceof Error && cause.message.includes("Subscription lapsed")
-  )
 }

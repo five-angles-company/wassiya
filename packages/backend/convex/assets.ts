@@ -10,9 +10,14 @@
 // an heir holding a released bundle. Every function below passes it through
 // untouched; nothing here can name an asset, including the audit log.
 //
-// The subscription-lapse rule applies in exactly one place: `create`. Reads,
-// updates and the entire release path never consult the plan, because a lapsed
-// card must not cost anyone their inheritance.
+// The subscription-lapse rule applies in exactly one place: `create`. Reads
+// and the entire release path never consult the plan, because a lapsed card
+// must not cost anyone their inheritance.
+//
+// Plan *limits* are a separate rule with a wider reach: `create` and the
+// growing half of `update` both charge against them, because an edit that
+// swaps a note for a 400 MB file would otherwise be a quota with a door next to
+// it. Shrinking and re-wrapping stay free at any plan.
 import { v } from "convex/values"
 
 import type { Id } from "./_generated/dataModel"
@@ -24,6 +29,11 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
+import {
+  assertCanAddAsset,
+  assertEditWithinLimits,
+} from "./model/entitlements"
+import { storageUsed } from "./model/plans"
 
 const assetType = v.union(
   v.literal("crypto"),
@@ -180,8 +190,14 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
-    // The one gate the subscription state is allowed to close.
-    assertCanAddAssets(user, Date.now())
+    const now = Date.now()
+    // The one gate the subscription state is allowed to close. Called first and
+    // on its own, so a lapsed owner is told to renew rather than to upgrade.
+    assertCanAddAssets(user, now)
+    await assertCanAddAsset(ctx, user, now, {
+      type: args.type,
+      byteSize: args.meta.byteSize ?? 0,
+    })
 
     const assetId = await ctx.db.insert("assets", {
       userId: user._id,
@@ -253,6 +269,23 @@ export const update = mutation({
     // ones that would go. Callers are expected to send a complete `meta`; this
     // merge is the safety net for the day one of them does not.
     const meta = fields.meta === undefined ? undefined : { ...asset.meta, ...fields.meta }
+
+    // An edit that replaces a 1 KB note with a 400 MB file is an add in
+    // everything but name, so growth is charged against the same quota — before
+    // the patch, because refusing after it would leave the row and the counter
+    // telling different stories. Shrinking, renaming, re-routing and re-wrapping
+    // stay free: a vault that cannot be repaired after a plan change would be a
+    // worse outcome than one slightly over its quota.
+    if (meta !== undefined) {
+      const added = (meta.byteSize ?? 0) - (asset.meta.byteSize ?? 0)
+      if (added > 0) {
+        await assertEditWithinLimits(ctx, user, Date.now(), {
+          byteSize: meta.byteSize ?? 0,
+          addedBytes: added,
+        })
+      }
+    }
+
     await ctx.db.patch("assets", assetId, { ...fields, ...(meta && { meta }) })
 
     // Deleted after the patch rather than before it: the row no longer points
@@ -331,15 +364,8 @@ async function bumpStorageUsed(
   if (user === null) {
     return
   }
-  const subscription = user.subscription ?? { plan: "free" }
   await ctx.db.patch("users", userId, {
-    subscription: {
-      ...subscription,
-      storageBytesUsed: Math.max(
-        0,
-        (subscription.storageBytesUsed ?? 0) + delta
-      ),
-    },
+    storageBytesUsed: Math.max(0, storageUsed(user) + delta),
   })
 }
 

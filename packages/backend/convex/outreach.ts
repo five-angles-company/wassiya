@@ -52,11 +52,10 @@ export const contactHeir = internalAction({
     if (!response.ok) {
       // Deliberately no body echo: it can quote the request, link included.
       console.error(`Outreach SMS failed (${response.status})`)
-      return null
     }
-    await ctx.runMutation(internal.deliveries.recordContacted, {
+    await ctx.runMutation(internal.deliveries.recordSms, {
       deliveryId,
-      channel: "sms",
+      sent: response.ok,
     })
     return null
   },

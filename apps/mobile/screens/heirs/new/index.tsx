@@ -13,7 +13,9 @@ import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { router } from "expo-router"
 
+import { usePaywall } from "@/components/paywall"
 import { useStrings } from "@/i18n/use-strings"
+import { planLimitOf } from "@/lib/plan-limit"
 import { WizardFrame } from "@/screens/assets/new/components/wizard-frame"
 import { HeirFields } from "@/screens/heirs/components/heir-fields"
 import { useHeirForm } from "@/screens/heirs/use-heir-form"
@@ -21,10 +23,12 @@ import { useHeirForm } from "@/screens/heirs/use-heir-form"
 export function NewHeirScreen() {
   const { t } = useStrings("heirs/new")
   const add = useMutation(api.heirs.add)
+  const paywall = usePaywall()
   const form = useHeirForm({
     name: "",
     relation: "",
     phone: "",
+    email: "",
     idNumber: "",
     birthDate: "",
   })
@@ -37,15 +41,23 @@ export function NewHeirScreen() {
     setSaving(true)
     setFailed(false)
     try {
-      const { idNumber, birthDate, ...rest } = form.values
+      const { idNumber, birthDate, email, ...rest } = form.values
       await add({
         ...rest,
+        email: email === "" ? undefined : email,
         idNumber: idNumber === "" ? undefined : idNumber,
         birthDate: birthDate === "" ? undefined : birthDate,
       })
       router.back()
-    } catch {
-      setFailed(true)
+    } catch (cause) {
+      // The free plan holds one heir. That refusal has a remedy, so it opens
+      // the paywall instead of turning the form red.
+      const limit = planLimitOf(cause)
+      if (limit !== null) {
+        paywall.open(limit)
+      } else {
+        setFailed(true)
+      }
     } finally {
       setSaving(false)
     }

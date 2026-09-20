@@ -11,6 +11,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  */
 export const AUDIT_DOMAIN_LABELS = {
   asset: { ar: "الأصول", en: "Assets" },
+  billing: { ar: "الاشتراكات", en: "Billing" },
   checkin: { ar: "التحقق من الحياة", en: "Check-in" },
   claim: { ar: "طلبات الوراثة", en: "Claims" },
   device: { ar: "الأجهزة", en: "Devices" },

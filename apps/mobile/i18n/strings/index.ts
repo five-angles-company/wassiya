@@ -27,6 +27,7 @@ import {
   NEW_PHOTOS,
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
+import { PAYWALL } from "@/i18n/strings/paywall"
 import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
 import { RECOVERY } from "@/i18n/strings/recovery"
 import {
@@ -56,6 +57,8 @@ import {
 export const SCREEN_STRINGS = {
   common: COMMON,
   tabs: TABS,
+  // Not a route: the paywall is a sheet that can open over any screen.
+  paywall: PAYWALL,
 
   home: HOME,
   settings: SETTINGS,

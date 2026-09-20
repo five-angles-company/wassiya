@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Badge } from "@workspace/ui/components/badge"
@@ -15,6 +15,8 @@ import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { FacetedFilter } from "@/components/data-table-faceted-filter"
 import { useLocale } from "@/components/locale-provider"
 import { useOwnerQueryState } from "@/lib/use-owner-query-state"
+import { OwnerLimits } from "@/features/subscriptions/components/owner-limits"
+import { SetPlan } from "@/features/subscriptions/components/set-plan"
 import { SUBSCRIPTIONS } from "@/features/subscriptions/strings/subscriptions"
 import type { DataTableFeatures } from "@/lib/data-table-features"
 import { fmtBytes, fmtDate } from "@/lib/format"
@@ -27,7 +29,8 @@ type Row = FunctionReturnType<typeof api.admin.ownersPage>["page"][number]
 const helper = createColumnHelper<DataTableFeatures, Row>()
 
 function subscriptionColumns(
-  locale: Locale
+  locale: Locale,
+  now: number
 ): ColumnDef<DataTableFeatures, Row>[] {
   const labels = t(SUBSCRIPTIONS, locale)
 
@@ -53,12 +56,37 @@ function subscriptionColumns(
       id: "plan",
       enableSorting: false,
       header: () => labels.colPlan,
-      cell: ({ row }) =>
-        row.original.plan === null ? (
-          <span className="text-muted-foreground">{labels.none}</span>
+      // Never blank: an owner with no subscription row is on the free plan,
+      // which is what `planOf` says and what the app shows them.
+      cell: ({ row }) => (
+        <Badge variant="outline">
+          {row.original.plan === "annual" ? labels.planAnnual : labels.planFree}
+        </Badge>
+      ),
+    }),
+
+    helper.accessor("renewsAt", {
+      id: "renews",
+      enableSorting: false,
+      header: () => labels.colRenews,
+      cell: ({ row }) => {
+        const renewsAt = row.original.renewsAt
+        if (renewsAt === null) {
+          return <span className="text-muted-foreground">{labels.none}</span>
+        }
+        // Compared against a clock read once per render pass rather than per
+        // cell: a table of thirty rows should not disagree with itself about
+        // what time it is.
+        return renewsAt < now ? (
+          <Badge variant="outline" className="text-destructive">
+            {labels.lapsed}
+          </Badge>
         ) : (
-          <Badge variant="outline">{row.original.plan}</Badge>
-        ),
+          <span className="whitespace-nowrap tabular-nums">
+            {fmtDate(renewsAt, locale)}
+          </span>
+        )
+      },
     }),
 
     helper.accessor("storageBytesUsed", {
@@ -81,6 +109,28 @@ function subscriptionColumns(
         <span className="whitespace-nowrap tabular-nums">
           {fmtDate(row.original.joinedAt, locale)}
         </span>
+      ),
+    }),
+
+    helper.display({
+      id: "actions",
+      enableHiding: false,
+      header: () => <span className="sr-only">{labels.colActions}</span>,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-1">
+          <SetPlan
+            userId={row.original.id}
+            name={row.original.name ?? row.original.email ?? ""}
+            plan={row.original.plan}
+            locale={locale}
+          />
+          <OwnerLimits
+            userId={row.original.id}
+            name={row.original.name ?? row.original.email ?? ""}
+            override={row.original.override}
+            locale={locale}
+          />
+        </div>
       ),
     }),
   ])
@@ -119,11 +169,20 @@ export function SubscriptionsBrowser() {
     useQuery(api.admin.ownersTally, filters)
   )
 
-  const columns = useMemo(() => subscriptionColumns(locale), [locale])
+  // One clock for the whole table, read when the columns are built. A lapse
+  // crosses a day, not a millisecond, so this is accurate for as long as
+  // anyone looks at the page — and calling the clock inside a cell would have
+  // thirty rows each asking a slightly different question.
+  const [now] = useState(() => Date.now())
+  const columns = useMemo(
+    () => subscriptionColumns(locale, now),
+    [locale, now]
+  )
   const columnLabels = useMemo(
     () => ({
       owner: labels.colOwner,
       plan: labels.colPlan,
+      renews: labels.colRenews,
       storage: labels.colStorage,
       joinedAt: labels.colJoined,
     }),
@@ -148,8 +207,8 @@ export function SubscriptionsBrowser() {
         <FacetedFilter
           title={labels.colPlan}
           options={[
-            { value: "free", label: "free" },
-            { value: "paid", label: "paid" },
+            { value: "free", label: labels.planFree },
+            { value: "annual", label: labels.planAnnual },
           ]}
           selected={query.planSelection}
           onToggle={query.togglePlan}
@@ -182,6 +241,11 @@ export function SubscriptionsBrowser() {
           { header: labels.colOwner, value: (row) => row.name },
           { header: "email", value: (row) => row.email },
           { header: labels.colPlan, value: (row) => row.plan },
+          {
+            header: labels.colRenews,
+            value: (row) =>
+              row.renewsAt === null ? "" : fmtDate(row.renewsAt, locale),
+          },
           { header: "storage bytes", value: (row) => row.storageBytesUsed },
           {
             header: labels.colJoined,

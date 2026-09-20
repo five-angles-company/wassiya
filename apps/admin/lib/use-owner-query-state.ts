@@ -17,14 +17,17 @@ const DEFAULT_SORTING: SortingState = [{ id: "joinedAt", desc: true }]
 const SORTABLE = ["joinedAt"] as const
 
 /**
- * Plan names as the subscription stores them, not a guess at a catalogue.
+ * Plan names as the subscription stores them — `model/plans.ts` is the
+ * catalogue and these must match its keys exactly, because the server filters
+ * on `subscription.plan` by equality. "paid" sat here until the catalogue
+ * existed and matched nothing: the facet looked like a filter with no results
+ * rather than a filter with no such plan.
  *
- * A closed list here rather than `v.array(v.string())`'s freedom, because this
- * is the URL: a hand-edited `?plan=enterprise` should fall out rather than
- * reach the server as a filter that matches nothing and looks like an empty
- * table. Both facets on both screens offer exactly these two.
+ * A closed list rather than `v.array(v.string())`'s freedom, because this is
+ * the URL: a hand-edited `?plan=enterprise` should fall out here rather than
+ * reach the server.
  */
-const PLANS = ["free", "paid"] as const
+const PLANS = ["free", "annual"] as const
 
 /**
  * Every argument the owners list sends, and its cursor bookkeeping.

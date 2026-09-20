@@ -1,8 +1,9 @@
-// Three security invariants that are cheap to state and expensive to lose.
+// The invariants that are cheap to state and expensive to lose.
 //
 // They are enforced here rather than in a code review because each one fails
-// silently: a second `lockedKey` read path, an `auditLog` patch, or a
-// `console.log` of a ciphertext column all typecheck perfectly.
+// silently: a second `lockedKey` read path, an `auditLog` patch, a
+// `console.log` of a ciphertext column, or a mutation that hands out a
+// subscription all typecheck perfectly.
 //
 //   pnpm --filter @workspace/backend verify
 import { readFileSync, readdirSync, statSync } from "node:fs"
@@ -197,6 +198,88 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   }
 }
 
+// ── 5. Entitlement has exactly one module ────────────────────────
+//
+// Three things decide who has paid and what they get: `subscription` (the
+// plan), the `plans` table (what each plan allows) and `limitsOverride` (what
+// one account allows). If any client-callable mutation can write one of them,
+// the app bundle contains the instructions for a free subscription — and
+// unlike a leaked key, nothing about that looks wrong in review.
+//
+// They are not equally loud. A granted subscription is one account; raising the
+// free plan's caps is every account at once, and an override is the quietest of
+// the three — nothing about that account looks unusual and it silently stops
+// matching the plan every screen says it is on. So all three live in
+// `billing.ts`, gated on `requireAdmin` and audited.
+//
+// Usage counters live *outside* `subscription` for this rule's sake —
+// `storageBytesUsed` is bumped on every upload and would otherwise have to be
+// an exception, which is how exceptions start.
+//
+// The match is on the object-literal key, i.e. a write. Reads spell it
+// `user.subscription?.` and are none of this rule's business.
+{
+  const ALLOWED = ["schema.ts", "billing.ts"]
+  const WRITES = ["subscription:", "limitsOverride:"]
+
+  for (const file of files) {
+    const name = rel(file)
+    if (ALLOWED.includes(name)) {
+      continue
+    }
+    const source = code(file)
+    for (const token of WRITES) {
+      const hits = source.split(token).length - 1
+      if (hits > 0) {
+        failures.push(
+          `${name} writes ${token.slice(0, -1)} (${hits} time(s)). Only ${ALLOWED.join(", ")} may — see AGENTS.md "Entitlement has exactly one module".`
+        )
+      }
+    }
+    // The catalogue itself: a plan row is what every owner on that plan is
+    // held to, so writing one is writing everybody's entitlement at once.
+    for (const write of ["insert(\"plans\"", "patch(\"plans\"", "replace(\"plans\"", "delete(\"plans\""]) {
+      if (source.includes(write)) {
+        failures.push(
+          `${name} writes the plans table (${write}…). Only billing.ts may.`
+        )
+      }
+    }
+  }
+
+  // Once the store path exists, keep it internal: a public mutation that
+  // applies a store event is a mutation anyone can call with any event. It
+  // does not exist yet, so the check is conditional on the name appearing.
+  const billingPath = files.find((f) => rel(f) === "billing.ts")
+  if (billingPath !== undefined) {
+    const billing = code(billingPath)
+    if (
+      billing.includes("applyStoreEvent") &&
+      !billing.includes("export const applyStoreEvent = internalMutation(")
+    ) {
+      failures.push(
+        "billing.applyStoreEvent must exist and stay an internalMutation."
+      )
+    }
+    const writers = billing
+      .split("export const ")
+      .slice(1)
+      .filter((declaration) => declaration.includes("subscription:"))
+      .map((declaration) => declaration.slice(0, declaration.indexOf(" ")))
+      .filter(
+        (name) =>
+          name !== "applyStoreEvent" &&
+          name !== "adminSetPlan" &&
+          name !== "adminSetOverride"
+      )
+    if (writers.length > 0) {
+      failures.push(
+        `billing.${writers.join(", billing.")} writes subscription — only applyStoreEvent and adminSetPlan may.`
+      )
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -206,5 +289,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer."
+  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module."
 )

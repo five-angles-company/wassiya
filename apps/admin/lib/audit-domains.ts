@@ -8,6 +8,7 @@ import { AUDIT_DOMAIN_LABELS } from "@/lib/i18n/strings/audit-domains"
  */
 export const AUDIT_DOMAINS = [
   "asset",
+  "billing",
   "checkin",
   "claim",
   "device",

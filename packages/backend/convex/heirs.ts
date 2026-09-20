@@ -13,6 +13,7 @@ import type { Id } from "./_generated/dataModel"
 import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
+import { assertCanAddHeir } from "./model/entitlements"
 import { evaluateDeliveryIdentity } from "./deliveries"
 import { identityNumberHash } from "./model/identityHash"
 
@@ -35,6 +36,7 @@ export const list = query({
       name: row.name,
       relation: row.relation,
       phone: row.phone,
+      email: row.email ?? null,
       // Whether one is registered — the number itself is not stored.
       hasIdNumber: row.idNumberHash !== undefined,
       birthDate: row.birthDate ?? null,
@@ -87,6 +89,15 @@ async function routedCounts(
 }
 
 const BIRTH_DATE = /^\d{4}-\d{2}-\d{2}$/
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000
+
+function cleanEmail(value: string | undefined): string | undefined {
+  const email = value?.trim().toLowerCase()
+  if (email === undefined || email === "") return undefined
+  if (!EMAIL.test(email)) throw new Error("That is not an email address")
+  return email
+}
 
 function assertBirthDate(value: string): string {
   if (!BIRTH_DATE.test(value)) throw new Error("Birth date must be YYYY-MM-DD")
@@ -102,17 +113,20 @@ export const add = mutation({
     name: v.string(),
     relation: v.string(),
     phone: v.string(),
+    email: v.optional(v.string()),
     idNumber: v.optional(v.string()),
     birthDate: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
+    await assertCanAddHeir(ctx, user, Date.now())
     const idNumber = args.idNumber?.trim()
     const heirId = await ctx.db.insert("heirs", {
       userId: user._id,
       name: args.name,
       relation: args.relation,
       phone: args.phone,
+      email: cleanEmail(args.email),
       idNumberHash:
         idNumber === undefined || idNumber === ""
           ? undefined
@@ -140,12 +154,14 @@ export const update = mutation({
     name: v.optional(v.string()),
     relation: v.optional(v.string()),
     phone: v.optional(v.string()),
+    /** Absent leaves it; "" clears it. */
+    email: v.optional(v.string()),
     /** Absent leaves it; "" clears it; anything else replaces its hash. */
     idNumber: v.optional(v.string()),
     /** Absent leaves it; "" clears it. */
     birthDate: v.optional(v.string()),
   },
-  handler: async (ctx, { heirId, idNumber, birthDate, ...fields }) => {
+  handler: async (ctx, { heirId, idNumber, birthDate, email, ...fields }) => {
     const user = await requireUser(ctx)
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) {
@@ -154,6 +170,7 @@ export const update = mutation({
     const trimmed = idNumber?.trim()
     await ctx.db.patch("heirs", heirId, {
       ...fields,
+      ...(email === undefined ? {} : { email: cleanEmail(email) }),
       ...(trimmed === undefined
         ? {}
         : {
@@ -184,6 +201,7 @@ export const update = mutation({
     const changed = [
       ...Object.keys(fields),
       ...(trimmed === undefined ? [] : ["idNumber"]),
+      ...(email === undefined ? [] : ["email"]),
       ...(birthDate === undefined ? [] : ["birthDate"]),
     ]
     await writeAudit(ctx, {
@@ -318,6 +336,48 @@ export const remove = mutation({
       userId: user._id,
       event: "heir.removed",
       meta: { heirId, routesRemoved: routes.length },
+    })
+    return null
+  },
+})
+
+/**
+ * Whether the owner is due to confirm every heir's phone and email are still
+ * theirs — yearly, counted from the last confirmation or, before the first,
+ * from the oldest heir. Numbers get recycled, and the owner is the only person
+ * who can fix a stale one while it still matters.
+ */
+export const contactCheck = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx)
+    const heirs = await ctx.db
+      .query("heirs")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .take(100)
+    if (heirs.length === 0) return { due: false, confirmedAt: null }
+    const since =
+      user.heirContactsConfirmedAt ??
+      Math.min(...heirs.map((heir) => heir._creationTime))
+    return {
+      due: Date.now() - since > YEAR_MS,
+      confirmedAt: user.heirContactsConfirmedAt ?? null,
+    }
+  },
+})
+
+/** The owner confirms every heir's contact details are current. */
+export const confirmContacts = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const user = await requireUser(ctx)
+    const now = Date.now()
+    await ctx.db.patch("users", user._id, { heirContactsConfirmedAt: now })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "heir.contacts_confirmed",
+      meta: {},
+      at: now,
     })
     return null
   },

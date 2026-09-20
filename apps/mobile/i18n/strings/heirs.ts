@@ -117,6 +117,16 @@ export const HEIR_NEW = {
     en: "You already have an heir with this number.",
   },
 
+  // A second channel at release. Optional, but the phone alone is fragile:
+  // numbers get recycled, and a recycled number is a link to a stranger.
+  emailLabel: { ar: "البريد الإلكتروني (اختياري)", en: "Email (optional)" },
+  emailPlaceholder: { ar: "sara@example.com", en: "sara@example.com" },
+  emailHint: {
+    ar: "نراسله أيضاً عند التسليم. قناتان أضمن من واحدة — الأرقام تُعاد تدويرها.",
+    en: "We write here too at delivery. Two channels beat one — numbers get recycled.",
+  },
+  emailInvalid: { ar: "بريد غير صالح.", en: "That is not an email address." },
+
   // Optional by product decision, strongly urged: with it, a delivery opens as
   // soon as the heir's verified ID matches; without it, a person decides.
   idNumberLabel: { ar: "رقم الهوية الوطنية أو الإقامة", en: "National ID or residency number" },

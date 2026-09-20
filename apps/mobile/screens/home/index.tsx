@@ -21,7 +21,7 @@
  */
 import { useRef } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
-import { useQuery } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
@@ -55,6 +55,9 @@ export function HomeScreen() {
   const rows = useQuery(api.assets.list, {})
   const heirs = useQuery(api.heirs.list)
   const claims = useQuery(api.claims.againstMe)
+
+  const contacts = useQuery(api.heirs.contactCheck)
+  const confirmContacts = useMutation(api.heirs.confirmContacts)
 
   const checkin = useCheckInState()
   // The gate. The bar renders the button; this runs the fingerprint.
@@ -114,6 +117,30 @@ export function HomeScreen() {
             <Button size="sm" onPress={() => router.push("/protection/claim")}>
               <Text>{claimCopy.review}</Text>
             </Button>
+          }
+        />
+      ) : null}
+
+      {/* Yearly, and only once a year: an owner who is asked about the same
+          four numbers every week stops reading the question. */}
+      {contacts?.due === true ? (
+        <AlertBanner
+          variant="info"
+          title={t.contactsTitle}
+          description={t.contactsBody}
+          actions={
+            <>
+              <Button size="sm" onPress={() => router.push("/heirs")}>
+                <Text>{t.contactsReview}</Text>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onPress={() => void confirmContacts({})}
+              >
+                <Text>{t.contactsConfirm}</Text>
+              </Button>
+            </>
           }
         />
       ) : null}

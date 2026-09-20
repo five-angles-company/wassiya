@@ -56,15 +56,13 @@ export function ReceiveEntry({ token }: { token: string }) {
     )
   }
 
-  const title =
-    info.subjectName === null
-      ? labels.receiveTitleUnknown
-      : labels.receiveTitle.replace("{name}", info.subjectName)
-
   return (
     <article className="flex flex-col gap-8">
       <div className="flex flex-col gap-4">
-        <DocTitle title={title} />
+        {/* Names nobody. A recycled number or address can put this page in
+            front of a stranger, and they must learn no more than that
+            something is waiting for someone. */}
+        <DocTitle title={labels.receiveTitleUnknown} />
         <Prose>
           <p>{labels.receiveBody}</p>
         </Prose>
