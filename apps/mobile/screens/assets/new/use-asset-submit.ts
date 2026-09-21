@@ -9,7 +9,7 @@
  * every wizard would handle it identically.
  */
 import { useCallback, useRef, useState } from "react"
-import { useQuery } from "convex/react"
+import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { utf8ToBytes } from "@workspace/crypto/bytes"
 import type { AssetLabel } from "@workspace/crypto/label"
@@ -53,7 +53,12 @@ export function useAssetSubmit(): AssetSubmit {
   const { t } = useStrings("assets/new")
   const create = useCreateAsset()
   const paywall = usePaywall()
-  const plan = useQuery(api.plans.current)
+  // Same "skip" as the paywall's: `plans.current` calls `requireUser`, so a
+  // session that lapses while a wizard is open would take the screen down with
+  // a render-time error. Undefined is already the "checked on the server only"
+  // path through `limitBeforeUpload`.
+  const { isAuthenticated } = useConvexAuth()
+  const plan = useQuery(api.plans.current, isAuthenticated ? {} : "skip")
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // A ref, not the state flag. `setSubmitting(true)` does not take effect until

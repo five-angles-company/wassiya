@@ -20,7 +20,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { useQuery } from "convex/react"
+import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
@@ -97,7 +97,13 @@ function Paywall({
 }) {
   const { t, locale } = useStrings("paywall")
   const billing = useBilling()
-  const plan = useQuery(api.plans.current)
+  // "skip" matters: this provider is mounted at the root layout, so it renders
+  // over the welcome and auth screens too, and `plans.current` calls
+  // `requireUser` — which throws as a render-time error, not a null result.
+  // Convex's auth state, never Clerk's: it is what decides whether the query
+  // succeeds.
+  const { isAuthenticated } = useConvexAuth()
+  const plan = useQuery(api.plans.current, isAuthenticated ? {} : "skip")
   const sheet = useRef<TrueSheet>(null)
 
   // Only dismiss something that was actually presented — the same guard every
