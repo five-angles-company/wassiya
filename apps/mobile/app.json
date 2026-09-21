@@ -70,6 +70,13 @@
       "expo-sharing",
       "expo-asset",
       [
+        "expo-audio",
+        {
+          "microphonePermission": "تستخدم وصيّة الميكروفون لتسجيل ملاحظاتك الصوتية، ويُشفَّر التسجيل على جهازك قبل الحفظ.",
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
         "expo-speech-recognition",
         {
           "microphonePermission": "تستخدم وصيّة الميكروفون لإملاء ملاحظاتك، ويجري التعرّف على الكلام على جهازك.",

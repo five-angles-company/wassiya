@@ -172,6 +172,12 @@ function filenameFor(item: BoxItem, typeName: string): string {
 }
 
 const EXTENSION: Record<string, string> = {
+  // A spoken note. Without the extension the file lands with none at all and
+  // Windows offers no player for it — the one asset whose whole point is that
+  // it can be heard.
+  "audio/mp4": ".m4a",
+  "audio/m4a": ".m4a",
+  "audio/mpeg": ".mp3",
   "application/pdf": ".pdf",
   "image/jpeg": ".jpg",
   "image/png": ".png",

@@ -229,6 +229,7 @@ export const ASSET_DETAIL = {
   toLabel: { ar: "إلى", en: "To" },
   lastOpenedLabel: { ar: "آخر فتح", en: "Last opened" },
   filesRowLabel: { ar: "الملفات", en: "Files" },
+  recordingRowLabel: { ar: "تسجيل صوتي", en: "Voice recording" },
   // The live countdown, replacing a static "يختفي بعد ١٠ ثوانٍ" — a timer the
   // owner can watch is one they do not walk away from.
   countdown: { ar: "يختفي بعد {n} ثوانٍ", en: "Hides in {n}s" },

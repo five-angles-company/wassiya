@@ -318,11 +318,40 @@ export const NEW_NOTE = {
   words: { ar: "{n} كلمة", en: "{n} words" },
   readOnRelease: { ar: "تُقرأ عند الإفراج", en: "Read at release" },
 
-  // Toolbar. Labels are for screen readers — the buttons show glyphs only.
-  bold: { ar: "عريض", en: "Bold" },
-  italic: { ar: "مائل", en: "Italic" },
-  list: { ar: "قائمة", en: "List" },
-  wishBlock: { ar: "فقرة وصية", en: "Wish block" },
+  // Written or spoken. The tabs name the act, not the file format — "صوت"
+  // alone would read as a setting rather than as the other way to write this.
+  formatText: { ar: "كتابة", en: "Write" },
+  formatVoice: { ar: "تسجيل صوتي", en: "Record" },
+  voiceHint: {
+    ar: "اضغط لتبدأ التسجيل — حتى {n} دقائق",
+    en: "Tap to start recording — up to {n} minutes",
+  },
+  // Said where the recording is reviewed, because a spoken note is the one
+  // thing in the vault an heir hears in the owner's own voice.
+  voiceNote: {
+    ar: "سيسمع الوارث صوتك كما سجّلته. يُشفَّر التسجيل على جهازك قبل الحفظ.",
+    en: "Your heir will hear this in your own voice. The recording is encrypted on your device before saving.",
+  },
+  rerecord: { ar: "سجّل من جديد", en: "Record again" },
+  // Says why there is no play button over a saved take, rather than leaving
+  // the owner to conclude the recording was lost.
+  voiceStoredNote: {
+    ar: "التسجيل مشفَّر في الخزنة ولا يُفتح هنا. سجّل من جديد إن أردت استبداله.",
+    en: "The recording is encrypted in your vault and is not opened here. Record again to replace it.",
+  },
+  micDenied: {
+    ar: "لم يُسمح لوصيّة باستخدام الميكروفون. فعّل الإذن من إعدادات جهازك، أو اكتب ملاحظتك بدلاً من ذلك.",
+    en: "Wassiya was not allowed to use the microphone. Enable it in your device settings, or write the note instead.",
+  },
+  micFailed: {
+    ar: "تعذّر التسجيل. حاول مرة أخرى.",
+    en: "Could not record. Try again.",
+  },
+  needsVoice: { ar: "سجّل ملاحظتك للمتابعة", en: "Record your note to continue" },
+  needsBody: { ar: "اكتب ملاحظتك للمتابعة", en: "Write your note to continue" },
+  needsTitle: { ar: "أضف عنواناً للمتابعة", en: "Add a title to continue" },
+
+  // Dictation writes *text*; it is not the voice note, and the label says so.
   dictate: { ar: "إملاء", en: "Dictate" },
   dictateStop: { ar: "أوقف الإملاء", en: "Stop dictation" },
 

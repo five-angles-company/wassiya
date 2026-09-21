@@ -1,7 +1,9 @@
 import type { Id } from "@workspace/backend/dataModel"
-import { fmtNum } from "@workspace/ui-native/lib/format"
+import { fmtDuration, fmtNum } from "@workspace/ui-native/lib/format"
 
+import { useVoiceNote, VOICE_MIME_TYPE } from "@/hooks/use-voice-note"
 import { useStrings } from "@/i18n/use-strings"
+import { readFileBytes } from "@/lib/asset-upload"
 import { AssetEditFrame } from "@/screens/assets/detail/edit-frame"
 import { NoteFields } from "@/screens/assets/detail/forms/note-fields"
 import {
@@ -20,9 +22,15 @@ import { useEditForm } from "@/screens/assets/detail/use-edit-form"
  * decrypted note would write plaintext to device storage, and it is a single
  * singleton so it would also clobber a half-written new note. The form lives in
  * local state — see `forms/note.ts`.
+ *
+ * A new take is **staged, not applied**: nothing uploads and nothing is deleted
+ * until Save, so backing out of a mis-tap costs the owner nothing. The recorder
+ * is the only thing holding it, which is why a take counts towards `canSave`
+ * beside `dirty` rather than being copied into the form. The stored recording
+ * is never downloaded — `forms/note-fields.tsx` says why.
  */
 export function NoteEditScreen({ assetId }: { assetId: Id<"assets"> }) {
-  const { locale } = useStrings("assets/detail")
+  const { t, locale } = useStrings("assets/detail")
   const { t: note } = useStrings("assets/new/note")
 
   const { load, save, saving, error } = useAssetEditor(assetId)
@@ -30,11 +38,58 @@ export function NoteEditScreen({ assetId }: { assetId: Id<"assets"> }) {
     load.status === "ready" ? load : null,
     parseNote
   )
+  const voice = useVoiceNote()
+  const take = voice.take
+
+  const formatSize = (bytes: number) => {
+    const mb = bytes / 1024 / 1024
+    return `${fmtNum(Math.round(mb * 10) / 10, locale)} ${locale === "ar" ? "م.ب" : "MB"}`
+  }
 
   async function onSave() {
     if (form === null) return
-    const payload = toNotePayload(form, note, (n) => fmtNum(n, locale))
-    if (await save(payload)) commit()
+    const payload = toNotePayload(
+      form,
+      note,
+      {
+        count: (n) => fmtNum(n, locale),
+        duration: (ms) => fmtDuration(ms / 1000, locale),
+      },
+      VOICE_MIME_TYPE,
+      take
+    )
+
+    const ok = await save({
+      ...payload,
+      ...(form.format !== "voice"
+        ? null
+        : take === null
+          ? {
+              // The payload blob is rewritten on every save, so the recording
+              // has to be put back *after* it — `keep` would place it first and
+              // invert the `[payload, audio]` layout every reader relies on.
+              arrange: (uploaded) =>
+                [...uploaded, ...form.fileIds] as Id<"_storage">[],
+            }
+          : {
+              files: [
+                { read: () => readFileBytes(take.uri), byteSize: take.byteSize },
+              ],
+            }),
+    })
+
+    if (ok) {
+      if (take !== null) {
+        // The plaintext take must not outlive the ciphertext that replaced it,
+        // and the row now describes the new recording.
+        patch({
+          durationMs: take.durationMs,
+          current: { byteSize: take.byteSize },
+        })
+        voice.discard()
+      }
+      commit()
+    }
   }
 
   return (
@@ -43,14 +98,51 @@ export function NoteEditScreen({ assetId }: { assetId: Id<"assets"> }) {
       load={load}
       saving={saving}
       error={error}
-      dirty={dirty}
-      canSave={form !== null && dirty && isNoteValid(form) && !saving}
+      dirty={dirty || take !== null}
+      canSave={
+        form !== null &&
+        (dirty || take !== null) &&
+        isNoteValid(form, take) &&
+        !saving
+      }
       onSave={() => void onSave()}
-      onCancel={reset}
+      onCancel={() => {
+        voice.discard()
+        reset()
+      }}
       kindLine={note.title!}
     >
       {form === null ? null : (
-        <NoteFields value={form} onChange={patch} note={note} locale={locale} />
+        <NoteFields
+          value={form}
+          onChange={patch}
+          note={note}
+          labels={t}
+          locale={locale}
+          formatSize={formatSize}
+          voice={
+            form.format === "voice"
+              ? {
+                  state: voice.state,
+                  durationMs: voice.durationMs,
+                  levels: voice.levels,
+                  playing: voice.playing,
+                  staged: take !== null,
+                  onRecord: voice.start,
+                  onStop: voice.stop,
+                  onPlay: voice.play,
+                  onPause: voice.pause,
+                }
+              : undefined
+          }
+          notice={
+            voice.error === "permission"
+              ? note.micDenied!
+              : voice.error === "failed"
+                ? note.micFailed!
+                : null
+          }
+        />
       )}
     </AssetEditFrame>
   )
