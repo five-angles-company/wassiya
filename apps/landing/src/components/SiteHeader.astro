@@ -1,0 +1,67 @@
+---
+import { Image } from "astro:assets"
+
+import ButtonLink from "@/components/ButtonLink.astro"
+import mark from "@/assets/brand/mark.png"
+import { COMMON } from "@/i18n/strings/common"
+import { other, pathFor, stripLocale, t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const common = t(COMMON, locale)
+const home = pathFor(locale, "/")
+const switchTo = pathFor(other(locale), stripLocale(Astro.url.pathname))
+
+const anchors = [
+  { id: "how", label: common.navHow },
+  { id: "security", label: common.navSecurity },
+  { id: "plans", label: common.navPlans },
+  { id: "faq", label: common.navFaq },
+]
+---
+
+<header class="site-header sticky top-0 z-40 backdrop-blur-xl">
+  <div class="mx-auto flex h-16 w-full max-w-[1200px] items-center gap-2 px-4 md:h-[72px] md:px-8">
+    <a href={home} class="group -ms-1.5 flex min-h-11 shrink-0 items-center gap-2.5 rounded-full px-1.5">
+      <Image
+        src={mark}
+        alt=""
+        width={112}
+        height={56}
+        loading="eager"
+        class="h-7 w-auto transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
+      />
+      <span class="font-heading text-[19px] font-black">{common.appName}</span>
+    </a>
+
+    <nav class="ms-8 hidden items-center gap-0.5 lg:flex" aria-label={common.appName}>
+      {
+        anchors.map((anchor) => (
+          <a
+            href={`${home}#${anchor.id}`}
+            class="text-sand-700 hover:text-foreground rounded-full px-4 py-2 text-[15px] font-semibold transition-colors hover:bg-black/[0.04]"
+          >
+            {anchor.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="ms-auto flex items-center gap-1.5">
+      <a
+        href={switchTo}
+        hreflang={other(locale)}
+        lang={other(locale)}
+        class="text-sand-700 hover:text-foreground flex h-10 items-center rounded-full px-4 text-[14.5px] font-semibold transition-colors hover:bg-black/[0.04]"
+        data-track="language_switch"
+        data-track-label={other(locale)}
+      >
+        {common.switchLanguage}
+      </a>
+      <ButtonLink href={`${home}#download`} size="sm" class="h-10 px-5">{common.download}</ButtonLink>
+    </div>
+  </div>
+</header>

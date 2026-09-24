@@ -69,6 +69,7 @@ const FEATURES = [
   "notifications",
   "releases",
   "subscriptions",
+  "support",
 ]
 
 /** @type {import("eslint").Linter.Config} */

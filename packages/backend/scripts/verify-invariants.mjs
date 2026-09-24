@@ -23,7 +23,7 @@ function sourceFiles(dir = convexDir) {
     const path = join(dir, entry)
     if (statSync(path).isDirectory()) {
       out.push(...sourceFiles(path))
-    } else if (entry.endsWith(".ts")) {
+    } else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts")) {
       out.push(path)
     }
   }
@@ -380,6 +380,56 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   }
 }
 
+// ── 7. Support never touches a vault, and staff-only data stays staff-only ──
+//
+// A support thread is not end-to-end encrypted and is read by staff, so it is
+// the easiest place for vault data or key material to leak from. Support code
+// may not name a vault table at all. Staff notes live in their own table so a
+// requester query cannot return one by forgetting a filter, and the requester
+// module may not even name them — or the staff member who wrote a message.
+{
+  const SUPPORT = (name) =>
+    name.startsWith("support/") || name === "model/support.ts"
+  const VAULT_TOKENS = [
+    "keyring",
+    "releaseBundles",
+    "assetRecipients",
+    "\"assets\"",
+    "\"heirs\"",
+    "dekWrappedByMk",
+    "mkWrappedByRecovery",
+    "messageMeta",
+    "identityDocHashes",
+    "idNumberHash",
+    "@workspace/crypto",
+  ]
+  for (const file of files) {
+    const name = rel(file)
+    const source = code(file)
+    if (SUPPORT(name)) {
+      for (const token of VAULT_TOKENS) {
+        if (source.includes(token)) {
+          failures.push(`${name} mentions ${token} — support code may not touch a vault.`)
+        }
+      }
+    }
+    if (/\.insert\(\s*["']supportMessages["']/.test(source) && name !== "model/support.ts") {
+      failures.push(
+        `${name} inserts supportMessages — only appendMessage in model/support.ts may, so a thread's status and read marks stay in step.`
+      )
+    }
+    if (
+      source.includes("supportNotes") &&
+      !["schema.ts", "support/admin.ts"].includes(name)
+    ) {
+      failures.push(`${name} mentions supportNotes — staff notes are read by support/admin.ts only.`)
+    }
+    if (name === "support/threads.ts" && source.includes("staffUserId")) {
+      failures.push("support/threads.ts mentions staffUserId — a requester never learns which staff member replied.")
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -389,5 +439,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module."
+  "Backend invariants hold: one lockedKey unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault."
 )

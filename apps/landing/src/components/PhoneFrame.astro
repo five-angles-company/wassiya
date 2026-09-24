@@ -1,0 +1,50 @@
+---
+import { Picture } from "astro:assets"
+
+import type { Locale } from "@/i18n/locale"
+import { screenFor, type ScreenName } from "@/lib/screens"
+
+interface Props {
+  locale: Locale
+  name: ScreenName
+  alt: string
+  /** The hero's phone is above the fold; every other one waits. */
+  eager?: boolean
+  class?: string
+}
+
+const { locale, name, alt, eager = false, class: className } = Astro.props
+const shot = screenFor(locale, name)
+---
+
+{/* A real capture wins. Without one the slot draws the screen in HTML at the
+    app's 390 × 845 point size, scaled into the frame with `zoom`: 254 and 294
+    are the frame's inner widths below and above `md`. */}
+<figure
+  class={`relative mx-auto w-[272px] rounded-[48px] bg-[#1c1a19] p-[9px] shadow-[0_40px_80px_-24px_rgb(32_30_29/0.45),0_0_0_1px_rgb(32_30_29/0.08)] md:w-[312px] ${className ?? ""}`}
+>
+  <div class="bg-background relative aspect-[390/845] overflow-hidden rounded-[39px]">
+    {
+      shot ? (
+        <Picture
+          src={shot}
+          alt={alt}
+          formats={["avif", "webp"]}
+          widths={[300, 600, 900]}
+          sizes="312px"
+          loading={eager ? "eager" : "lazy"}
+          fetchpriority={eager ? "high" : "auto"}
+          class="size-full object-cover"
+        />
+      ) : (
+        <div role="img" aria-label={alt} class="h-[845px] w-[390px] [zoom:0.651] md:[zoom:0.754]">
+          <slot />
+        </div>
+      )
+    }
+    <span
+      aria-hidden="true"
+      class="absolute top-[11px] left-1/2 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-[#1c1a19]"
+    ></span>
+  </div>
+</figure>

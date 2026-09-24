@@ -1,19 +1,14 @@
 import Link from "next/link"
-import { ChevronLeftIcon } from "lucide-react"
+import { ChevronLeftIcon, type LucideIcon } from "lucide-react"
 
+import { cn } from "@workspace/ui/lib/utils"
 import { Paper } from "@/components/doc/paper"
+import { IconDisc } from "@/components/icon-disc"
 
-/**
- * A list of things, as rows on one sheet of paper.
- *
- * One frame around the set, not one per row. Every row is the same kind of
- * object, so a card each drew six identical boxes and left the reader to find
- * the difference inside them — and on a phone most of the width went to
- * padding.
- */
+/** A list of things of one kind, as rows on one card — one frame around the set, not one per row. */
 export function Rows({ children }: { children: React.ReactNode }) {
   return (
-    <Paper>
+    <Paper className="rise-in">
       <div className="divide-border divide-y">{children}</div>
     </Paper>
   )
@@ -31,6 +26,7 @@ export function RowLink({
   status,
   tone,
   meta,
+  icon,
 }: {
   href: string
   title: string
@@ -38,37 +34,26 @@ export function RowLink({
   tone: "settled" | "attention" | "quiet"
   /** Provenance — a date, a reference. Never the status. */
   meta?: string
+  icon?: LucideIcon
 }) {
   return (
-    <Link
-      href={href}
-      className="group hover:bg-surface-accent-soft/40 flex items-start gap-4 px-5 py-4 transition-colors"
-    >
+    <Link href={href} className="group hover:bg-foreground/[0.03] flex items-center gap-4 px-5 py-4 transition-colors md:px-6">
+      {icon !== undefined && <IconDisc icon={icon} tone={tone} size="sm" />}
       <div className="min-w-0 flex-1">
-        <p className="font-heading text-[16.5px] leading-tight font-bold">
-          {title}
-        </p>
+        <p className="font-heading text-[17px] leading-tight font-bold">{title}</p>
         <p
-          className={`mt-1.5 text-[14px] font-semibold ${
-            tone === "attention"
-              ? "text-tone-attention"
-              : tone === "settled"
-                ? "text-tone-settled"
-                : "text-muted-foreground"
-          }`}
+          className={cn(
+            "mt-1.5 text-[14px] font-semibold",
+            tone === "attention" && "text-tone-attention",
+            tone === "settled" && "text-tone-settled",
+            tone === "quiet" && "text-muted-foreground"
+          )}
         >
           {status}
         </p>
-        {meta !== undefined && (
-          <p className="text-muted-foreground mt-1 text-[12.5px]">{meta}</p>
-        )}
+        {meta !== undefined && <p className="text-muted-foreground mt-1 text-[12.5px]">{meta}</p>}
       </div>
-
-      <ChevronLeftIcon
-        aria-hidden
-        className="nudge mt-1 size-4 shrink-0 opacity-40 ltr:rotate-180"
-        strokeWidth={2.6}
-      />
+      <ChevronLeftIcon aria-hidden className="nudge text-muted-foreground size-5 shrink-0 ltr:rotate-180" strokeWidth={2.4} />
     </Link>
   )
 }

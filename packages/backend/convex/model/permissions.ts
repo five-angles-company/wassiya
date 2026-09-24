@@ -21,6 +21,7 @@ import type { JobName } from "./jobRuns"
 
 export const PERMISSION_GROUPS = [
   "review",
+  "support",
   "accounts",
   "operations",
   "settings",
@@ -50,6 +51,11 @@ export const PERMISSIONS = [
   { key: "identity.read", group: "review" },
   /** Give an owner their three Didit attempts back. */
   { key: "identity.reset", group: "review" },
+  { key: "support.read", group: "support" },
+  /** Answer a thread, add a staff note, take or resolve a thread. */
+  { key: "support.reply", group: "support" },
+  /** Assign threads to others and edit the help center. */
+  { key: "support.manage", group: "support" },
   { key: "owners.read", group: "accounts" },
   { key: "billing.read", group: "accounts" },
   /**
@@ -72,6 +78,7 @@ export const PERMISSIONS = [
   { key: "jobs.run:claims.advance", group: "operations" },
   { key: "jobs.run:claims.sweepUnmatched", group: "operations" },
   { key: "jobs.run:deliveries.expire", group: "operations" },
+  { key: "jobs.run:support.purgeFiles", group: "operations" },
   { key: "settings.read", group: "settings" },
   { key: "settings.manage", group: "settings" },
   { key: "staff.read", group: "settings" },
@@ -108,6 +115,7 @@ export const JOB_RUN_PERMISSION: Record<JobName, PermissionKey> = {
   "claims.advance": "jobs.run:claims.advance",
   "claims.sweepUnmatched": "jobs.run:claims.sweepUnmatched",
   "deliveries.expire": "jobs.run:deliveries.expire",
+  "support.purgeFiles": "jobs.run:support.purgeFiles",
 }
 
 export function isPermissionKey(value: string): value is PermissionKey {
@@ -190,6 +198,9 @@ export const SEEDED_ROLES = [
       "deliveries.read",
       "identity.read",
       "identity.reset",
+      "support.read",
+      "support.reply",
+      "support.manage",
       "owners.read",
       "billing.read",
       "ops.read",

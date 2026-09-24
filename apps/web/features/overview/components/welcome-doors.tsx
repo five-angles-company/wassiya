@@ -1,79 +1,63 @@
 "use client"
 
+import { HeartHandshakeIcon, MailOpenIcon, ShieldAlertIcon, SmartphoneIcon } from "lucide-react"
+
 import { ButtonLink } from "@/components/button"
-import { Prose } from "@/components/doc/prose"
 import { DocTitle } from "@/components/doc/title"
+import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { HOME } from "@/features/overview/strings/home"
 
 /**
- * The screen for someone who has just arrived and has nothing yet — not a
- * dashboard with zero rows but a fork with exactly two ways forward.
+ * An account with nothing in it yet: the two reasons anyone comes here.
  *
- * The two doors are not peers: one is an action this app can take today, the
- * other an instruction to go and find an email. That difference is carried by
- * heading size and by the single button on the screen, not by boxes — the
- * version this replaced gave each door a card, a coloured medallion and a
- * shadow, which made two unequal things look like a choice between equals.
+ * The two doors are not equal and must not look it — one leads somewhere, the
+ * other is an instruction. The report door holds the screen's only button; the
+ * heir door deliberately has none, because a delivery opens from the link we
+ * sent, and a button here could only lead to "we need your link".
  */
 export function WelcomeDoors({ name }: { name: string | null }) {
   const labels = t(HOME, useLocale())
 
   return (
-    <div className="flex flex-col gap-11">
+    <div className="flex flex-col gap-8">
       <DocTitle
-        title={
-          name === null
-            ? labels.greetingAnonymous
-            : labels.greeting.replace("{name}", name)
-        }
+        title={name === null ? labels.greetingAnonymous : labels.greeting.replace("{name}", name)}
+        lead={labels.chooseBody}
       />
 
-      <Prose>
-        <p>{labels.chooseBody}</p>
-      </Prose>
+      <div className="grid gap-5 md:grid-cols-2">
+        <section className="rise-in bg-card border-border rounded-panel flex flex-col items-start border p-7 shadow-[var(--shadow-raised)] md:p-8">
+          <IconDisc icon={HeartHandshakeIcon} tone="attention" size="lg" />
+          <h2 className="font-heading mt-6 text-[23px] leading-snug font-black">{labels.doorClaimTitle}</h2>
+          <p className="text-foreground/75 mt-3 text-[15.5px] leading-[1.85]">{labels.doorClaimBody}</p>
+          <p className="text-muted-foreground mt-4 text-[13.5px] font-semibold">{labels.doorClaimMeta}</p>
+          <div className="mt-auto pt-7">
+            <ButtonLink href="/file" size="lg">
+              {labels.doorClaimAction}
+            </ButtonLink>
+          </div>
+        </section>
 
-      {/* The door that leads somewhere. */}
-      <section className="border-border flex flex-col gap-4 border-t pt-7">
-        <h2 className="font-heading text-[23px] leading-tight font-extrabold md:text-[26px]">
-          {labels.doorClaimTitle}
-        </h2>
-        <Prose>
-          <p>{labels.doorClaimBody}</p>
-        </Prose>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
-          <ButtonLink href="/file">{labels.doorClaimAction}</ButtonLink>
-          <span className="text-muted-foreground text-[13.5px]">
-            {labels.doorClaimMeta}
-          </span>
-        </div>
-      </section>
+        <section className="rise-in bg-card border-border rounded-panel flex flex-col items-start border p-7 shadow-[var(--shadow-raised)] md:p-8">
+          <IconDisc icon={MailOpenIcon} tone="settled" size="lg" />
+          <h2 className="font-heading mt-6 text-[23px] leading-snug font-black">{labels.doorHeirTitle}</h2>
+          <p className="text-foreground/75 mt-3 text-[15.5px] leading-[1.85]">{labels.doorHeirBody}</p>
+          <p className="text-tone-settled mt-4 text-[14px] font-semibold">{labels.doorHeirMeta}</p>
+          <p className="bg-tone-attention-soft text-tone-attention rounded-row mt-5 flex items-start gap-3 px-4 py-3 text-[14px] leading-[1.7] font-semibold">
+            <ShieldAlertIcon className="mt-0.5 size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            {labels.doorHeirWarning}
+          </p>
+        </section>
+      </div>
 
-      {/* The door that is really an instruction. Deliberately not a link: a
-          delivery opens from the link we sent the heir, so a button here could
-          only lead to a screen saying "we need your link". */}
-      <section className="border-border flex flex-col gap-3 border-t pt-7">
-        <h2 className="font-heading text-[19px] leading-tight font-extrabold">
-          {labels.doorHeirTitle}
-        </h2>
-        <Prose>
-          <p className="text-muted-foreground">{labels.doorHeirBody}</p>
-        </Prose>
-        <p className="text-tone-settled text-[14px] font-semibold">
-          {labels.doorHeirMeta}
+      <div className="bg-card/60 border-border rounded-row flex items-start gap-4 border p-5">
+        <IconDisc icon={SmartphoneIcon} size="sm" />
+        <p className="text-foreground/75 text-[14.5px] leading-[1.75]">
+          <span className="text-foreground font-bold">{labels.ownerTitle}</span> — {labels.ownerBody}
         </p>
-      </section>
-
-      {/* The owner, who is on the wrong device. A footnote, and sized like one:
-          it was a full-width card, which gave it the same weight as the two
-          things the screen is actually for. */}
-      <p className="text-muted-foreground border-border border-t pt-6 text-[13.5px] leading-[1.7]">
-        <span className="text-foreground font-semibold">
-          {labels.ownerTitle}
-        </span>{" "}
-        — {labels.ownerBody}
-      </p>
+      </div>
     </div>
   )
 }

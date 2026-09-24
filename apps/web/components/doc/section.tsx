@@ -1,29 +1,37 @@
 import type { ReactNode } from "react"
+import type { LucideIcon } from "lucide-react"
+
+import { IconDisc } from "@/components/icon-disc"
 
 /**
- * A division of the page, opened by a hairline and a heading.
+ * A division of the page, as its own card.
  *
- * This is what replaced `Panel`. A card says "this is a separate object"; every
- * one of these is part of the same document, and boxing them drew six frames a
- * reader then had to look past. On a phone the frames also spent most of the
- * width on padding.
- *
- * A box survives in exactly one place — around a secret — where it marks
- * something the reader must not confuse with ordinary page text.
+ * ⚠️ Never inside an `Ask` or another card — a card in a card reads as a
+ * mistake. Inside one, use a plain heading.
  */
 export function DocSection({
   title,
   children,
+  icon,
+  description,
 }: {
   title: string
-  children: ReactNode
+  children?: ReactNode
+  icon?: LucideIcon
+  description?: string
 }) {
   return (
-    <section className="border-border flex flex-col gap-4 border-t pt-5">
-      <h2 className="font-heading text-[19.5px] leading-tight font-extrabold">
-        {title}
-      </h2>
-      {children}
+    <section className="rise-in bg-card border-border rounded-card border p-6 shadow-[var(--shadow-raised)] md:p-8">
+      <div className="flex items-start gap-4">
+        {icon !== undefined && <IconDisc icon={icon} size="sm" />}
+        <div className="min-w-0">
+          <h2 className="font-heading text-[20px] leading-snug font-extrabold">{title}</h2>
+          {description !== undefined && (
+            <p className="text-foreground/75 mt-1 text-[15px] leading-[1.8]">{description}</p>
+          )}
+        </div>
+      </div>
+      {children !== undefined && <div className="mt-5 flex flex-col gap-4">{children}</div>}
     </section>
   )
 }

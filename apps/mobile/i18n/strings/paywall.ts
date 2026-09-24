@@ -81,6 +81,7 @@ export const PAYWALL = {
   // row follow: a button that looks live and does nothing is worse than a
   // sentence admitting the truth.
   soonTitle: { ar: "الاشتراك يفتح قريباً", en: "Subscriptions open soon" },
+  contactUs: { ar: "راسلنا", en: "Contact us" },
   soonBody: {
     ar: "لم نفتح الدفع بعد. تواصل معنا وسنرفع حدودك يدوياً في هذه الأثناء.",
     en: "Payments are not open yet. Contact us and we will raise your limits by hand in the meantime.",

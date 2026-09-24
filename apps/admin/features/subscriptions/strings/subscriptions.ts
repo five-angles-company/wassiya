@@ -83,6 +83,12 @@ export const SUBSCRIPTIONS = {
     ar: "الأسعار ليست هنا: تُضبط في App Store Connect وGoogle Play، ويعرض التطبيق سعر المتجر نفسه.",
     en: "Prices are not here: they are set in App Store Connect and Google Play, and the app renders the store's own price.",
   },
+  // wassiya.app is static and prints these limits when it is built, so a save
+  // here reaches the app at once and the public site only at its next build.
+  landingRebuild: {
+    ar: "موقع wassiya.app يطبع هذه الحدود عند بنائه. بعد الحفظ، أعد بناء الموقع ليعرضها.",
+    en: "wassiya.app prints these limits when it is built. After saving, rebuild the site for it to show them.",
+  },
 
   overrideTitle: { ar: "حدود خاصة بهذا الحساب", en: "Limits for this account" },
   overrideBody: {

@@ -1,3 +1,18 @@
+import {
+  BadgeCheckIcon,
+  CircleCheckIcon,
+  FileCheckIcon,
+  FileTextIcon,
+  HourglassIcon,
+  InboxIcon,
+  MailIcon,
+  SearchCheckIcon,
+  ShieldOffIcon,
+  UserCheckIcon,
+  UsersIcon,
+  type LucideIcon,
+} from "lucide-react"
+
 import type { LedgerEntry } from "@/components/doc/ledger"
 import { fmtDate } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
@@ -35,8 +50,11 @@ export type HeirView = {
   /** One sentence about the report — never a status name. */
   headline: string
   tone: "settled" | "attention"
+  icon: LucideIcon
   /** Paragraphs under the headline. Empty when an `Ask` says it better. */
   body: string[]
+  /** A recorded date to show beside the headline — never a countdown. */
+  date?: { label: string; value: string }
   ask: HeirAsk
   askTitle: string | null
   ledger: LedgerEntry[]
@@ -48,8 +66,8 @@ export type HeirView = {
  * A pure function — no hooks, no Convex, no clock, no JSX — so the whole of
  * "what does this reader see" can be read in one place without a browser.
  *
- *  - **The order follows the state machine:** staff review sets the objection
- *    deadline, and release is when Wassiya contacts the heirs. The reporter
+ *  - **The order follows the state machine:** staff review sets the waiting
+ *    period's end, and release is when Wassiya contacts the heirs. The reporter
  *    receives nothing by reporting, so there is no box step here.
  *  - **A terminal report has no future.** `vetoed`, `locked` and `closed`
  *    stop the record where they happened; a greyed step is one still awaited.
@@ -62,8 +80,7 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
 
   const inVeto = status === "awaiting_veto"
   const released = status === "released"
-  const ended =
-    status === "vetoed" || status === "locked" || status === "closed"
+  const ended = status === "vetoed" || status === "locked" || status === "closed"
 
   const on = (ts: number | null | undefined) =>
     ts === null || ts === undefined ? undefined : fmtDate(new Date(ts), locale)
@@ -73,38 +90,32 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
   const row = (
     key: string,
     label: string,
+    icon: LucideIcon,
     state: LedgerEntry["state"],
     value?: string
   ): LedgerEntry => ({
     key,
     label,
+    icon,
     state,
     value: state === "done" ? (value ?? common.stepDone) : value,
   })
 
   const paperwork: LedgerEntry[] = [
-    row("filed", labels.stepReceived, "done", filed),
-    row(
-      "identity",
-      labels.stepIdentity,
-      identityVerified ? "done" : ended ? "future" : "now"
-    ),
+    row("filed", labels.stepReceived, InboxIcon, "done", filed),
+    row("identity", labels.stepIdentity, UserCheckIcon, identityVerified ? "done" : ended ? "future" : "now"),
     row(
       "certificate",
       labels.stepCertificate,
-      certificateReceived
-        ? "done"
-        : !identityVerified || ended
-          ? "future"
-          : "now",
+      FileTextIcon,
+      certificateReceived ? "done" : !identityVerified || ended ? "future" : "now",
       on(facts.certificateAttachedAt)
     ),
     row(
       "notified",
       labels.stepNotified,
-      certificateReceived || inVeto || released
-        ? "done"
-        : "future",
+      MailIcon,
+      certificateReceived || inVeto || released ? "done" : "future",
       filed
     ),
   ]
@@ -112,21 +123,12 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
   if (ended) {
     const closing =
       status === "vetoed"
-        ? {
-            headline: labels.vetoedHeading,
-            body: [labels.vetoedBody, labels.vetoedLockout],
-          }
+        ? { headline: labels.vetoedHeading, body: [labels.vetoedBody, labels.vetoedLockout] }
         : status === "closed"
           ? { headline: labels.closedHeading, body: [labels.closedBody] }
           : { headline: labels.lockedHeading, body: [labels.lockedBody] }
 
-    return {
-      ...closing,
-      tone: "attention",
-      ask: null,
-      askTitle: null,
-      ledger: paperwork,
-    }
+    return { ...closing, tone: "attention", icon: ShieldOffIcon, ask: null, askTitle: null, ledger: paperwork }
   }
 
   const ledger: LedgerEntry[] = [
@@ -134,75 +136,38 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
     row(
       "review",
       labels.stepReview,
-      inVeto || released
-        ? "done"
-        : certificateReceived && identityVerified
-          ? "now"
-          : "future",
+      SearchCheckIcon,
+      inVeto || released ? "done" : certificateReceived && identityVerified ? "now" : "future",
       on(facts.reviewedAt)
     ),
-    // Undated until review sets the deadline. An invented date would be the
-    // product asserting what it cannot prove.
-    row(
-      "veto",
-      labels.stepVeto,
-      inVeto ? "now" : released ? "done" : "future",
-      ends
-    ),
-    row(
-      "release",
-      labels.stepRelease,
-      released ? "done" : "future",
-      on(facts.releasedAt)
-    ),
+    // Undated until review sets the end. An invented date would be the product
+    // asserting what it cannot prove.
+    row("veto", labels.stepVeto, HourglassIcon, inVeto ? "now" : released ? "done" : "future", ends),
+    row("release", labels.stepRelease, UsersIcon, released ? "done" : "future", on(facts.releasedAt)),
   ]
 
   // An errand belongs only to the person who filed. A forwarded link shows the
   // whole record and asks for nothing — the page offers that reader a way in
   // instead, which is the only thing they can actually do.
-  const ask: HeirAsk = !isMine
-    ? null
-    : !identityVerified
-      ? "identity"
-      : !certificateReceived
-        ? "certificate"
-        : null
+  const ask: HeirAsk = !isMine ? null : !identityVerified ? "identity" : !certificateReceived ? "certificate" : null
 
-  const askTitle =
-    ask === "identity"
-      ? labels.stepIdentity
-      : ask === "certificate"
-        ? labels.stepCertificate
-        : null
+  const askTitle = ask === "identity" ? labels.stepIdentity : ask === "certificate" ? labels.stepCertificate : null
 
-  const standing = !identityVerified
-    ? { headline: labels.headIdentity, tone: "attention" as const, body: [] }
+  const standing: Omit<HeirView, "ask" | "askTitle" | "ledger"> = !identityVerified
+    ? { headline: labels.headIdentity, tone: "attention", icon: UserCheckIcon, body: [] }
     : !certificateReceived
-      ? {
-          headline: labels.headCertificate,
-          tone: "attention" as const,
-          body: [],
-        }
+      ? { headline: labels.headCertificate, tone: "attention", icon: FileCheckIcon, body: [] }
       : released
-        ? {
-            headline: labels.headReleased,
-            tone: "settled" as const,
-            body: [labels.releasedBody],
-          }
+        ? { headline: labels.headReleased, tone: "settled", icon: CircleCheckIcon, body: [labels.releasedBody] }
         : inVeto
           ? {
               headline: labels.headVeto,
-              tone: "settled" as const,
-              body:
-                ends === undefined
-                  ? [labels.nothingBody]
-                  : [labels.writeOn.replace("{date}", ends), labels.nothingBody],
+              tone: "settled",
+              icon: HourglassIcon,
+              body: [labels.vetoWhy, labels.nothingBody],
+              date: ends === undefined ? undefined : { label: labels.vetoEnds, value: ends },
             }
-          : {
-              headline: labels.headReview,
-              tone: "settled" as const,
-              body: [labels.nothingBody],
-            }
+          : { headline: labels.headReview, tone: "settled", icon: BadgeCheckIcon, body: [labels.nothingBody] }
 
   return { ...standing, ask, askTitle, ledger }
 }

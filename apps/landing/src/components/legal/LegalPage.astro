@@ -1,0 +1,62 @@
+---
+import { render, type CollectionEntry } from "astro:content"
+import { fmtArabicDate } from "@workspace/ui/lib/format-ar"
+
+import { LEGAL } from "@/i18n/strings/pages"
+import { COMMON } from "@/i18n/strings/common"
+import { fill, pathFor, t, type Locale } from "@/i18n/locale"
+import Layout from "@/layouts/Layout.astro"
+
+interface Props {
+  locale: Locale
+  entry: CollectionEntry<"legal">
+}
+
+const { locale, entry } = Astro.props
+const copy = t(LEGAL, locale)
+const common = t(COMMON, locale)
+const { Content } = await render(entry)
+const slug = entry.id.split("/")[1]
+const updated =
+  locale === "ar"
+    ? fmtArabicDate(entry.data.updated)
+    : entry.data.updated.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+
+const others = [
+  { slug: "terms", label: common.terms },
+  { slug: "privacy", label: common.privacy },
+  { slug: "encryption", label: common.encryption },
+].filter((page) => page.slug !== slug)
+---
+
+<Layout locale={locale} title={`${entry.data.title} — ${common.appName}`} description={entry.data.description}>
+  <article class="mx-auto w-full max-w-[760px] px-4 pt-12 pb-20 md:px-8 md:pt-16">
+    {
+      entry.data.draft && (
+        <p class="border-tone-attention text-tone-attention mb-8 rounded-[18px] border px-5 py-3 text-[14px] leading-[1.8] font-semibold">
+          {copy.draftBanner}
+        </p>
+      )
+    }
+    <h1 class="text-[32px] leading-[1.35] font-black md:text-[42px]">{entry.data.title}</h1>
+    <p class="text-sand-700 mt-3 text-[13.5px]">{fill(copy.updated, { date: updated })}</p>
+
+    <div class="legal-prose mt-10">
+      <Content />
+    </div>
+
+    <nav class="border-border mt-16 border-t pt-6" aria-label={copy.otherPages}>
+      <ul class="flex flex-wrap gap-x-6 gap-y-2 text-[15px] font-semibold">
+        {
+          others.map((page) => (
+            <li>
+              <a href={pathFor(locale, `/legal/${page.slug}`)} class="text-tone-attention underline-offset-4 hover:underline">
+                {page.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </article>
+</Layout>

@@ -1,0 +1,67 @@
+---
+import { SITE } from "@/config/site"
+import { t, type Locale } from "@/i18n/locale"
+import { COMMON } from "@/i18n/strings/common"
+
+interface Props {
+  locale: Locale
+  /** "brand" sits on the terracotta panel, where the sand pill would vanish. */
+  tone?: "sand" | "brand"
+  class?: string
+}
+
+const { locale, tone = "sand", class: className } = Astro.props
+const common = t(COMMON, locale)
+const anyStore = SITE.appStoreUrl !== undefined || SITE.playStoreUrl !== undefined
+---
+
+{
+  anyStore ? (
+    <div class={`flex flex-wrap items-center gap-3 ${className ?? ""}`}>
+      {SITE.appStoreUrl && (
+        <a
+          href={SITE.appStoreUrl}
+          class="lift inline-block rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+          data-track="store_click"
+          data-track-label="ios"
+        >
+          {/* Apple publishes no Arabic badge we could fetch; swap in the ar-sa
+              one from Apple's badge tool when it is to hand. */}
+          <img
+            src="/badges/app-store-en.svg"
+            alt={common.appStoreAlt}
+            width="144"
+            height="48"
+            class="h-12 w-auto"
+          />
+        </a>
+      )}
+      {SITE.playStoreUrl && (
+        <a
+          href={SITE.playStoreUrl}
+          class="lift inline-block rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--ring)]"
+          data-track="store_click"
+          data-track-label="android"
+        >
+          <img
+            src={`/badges/google-play-${locale}.png`}
+            alt={common.playStoreAlt}
+            width="161"
+            height="48"
+            class="h-12 w-auto"
+          />
+        </a>
+      )}
+    </div>
+  ) : (
+    <p
+      class:list={[
+        "inline-flex min-h-12 items-center justify-center rounded-full px-6 py-2 text-center text-[14.5px] leading-snug font-semibold",
+        tone === "brand" ? "border border-white/30 bg-white/15 text-white" : "border-border bg-card/80 text-sand-700 border",
+        className,
+      ]}
+    >
+      {common.storesSoon}
+    </p>
+  )
+}

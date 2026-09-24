@@ -1939,6 +1939,7 @@ const AUDIT_DOMAINS = [
   "email",
   "guardian",
   "heir",
+  "help",
   "identity",
   "job",
   "keyring",
@@ -1946,6 +1947,7 @@ const AUDIT_DOMAINS = [
   "release",
   "routing",
   "settings",
+  "support",
 ] as const
 
 const auditDomainValidator = v.union(

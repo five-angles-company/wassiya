@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 
+import { useLocale } from "@/components/locale-provider"
+import { Placeholder } from "@/components/placeholder"
+import { t } from "@/lib/i18n/locale"
+import { COMMON } from "@/lib/i18n/strings/common"
 import { CaseList } from "@/features/overview/components/case-list"
 import { WelcomeDoors } from "@/features/overview/components/welcome-doors"
 
@@ -33,6 +37,7 @@ import { WelcomeDoors } from "@/features/overview/components/welcome-doors"
 export function CaseRouter() {
   const router = useRouter()
   const sent = useRef(false)
+  const loadingLabel = t(COMMON, useLocale()).loading
 
   const me = useQuery(api.users.me, {})
   const cases = useQuery(api.claims.mine, {})
@@ -55,9 +60,9 @@ export function CaseRouter() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6" aria-hidden>
-        <div className="bg-muted h-8 w-1/2 animate-pulse rounded" />
-        <div className="border-border h-40 animate-pulse border-y" />
+      <div className="flex flex-col gap-6">
+        <Placeholder label={loadingLabel} className="h-12 w-1/2 rounded-full" />
+        <Placeholder label={loadingLabel} />
       </div>
     )
   }
@@ -65,9 +70,7 @@ export function CaseRouter() {
   // Mid-navigation. The skeleton rather than the list, so the list is never
   // shown for a frame to somebody who is being sent past it.
   if (destination !== null) {
-    return (
-      <div className="border-border h-40 animate-pulse border-y" aria-hidden />
-    )
+    return <Placeholder label={loadingLabel} />
   }
 
   if (cases.length === 0 && deliveries.length === 0) {

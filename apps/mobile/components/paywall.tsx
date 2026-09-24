@@ -29,6 +29,7 @@ import type { Locale } from "@workspace/ui-native/lib/labels"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { Sheet } from "@workspace/ui-native/components/wassiya/sheet"
+import { router } from "expo-router"
 import { Check } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
@@ -191,6 +192,16 @@ function Paywall({
           <Text variant="metaSm" className="text-muted-foreground">
             {t.soonBody}
           </Text>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => {
+              onClose()
+              router.push("/settings/help/new?topic=billing")
+            }}
+            className="mt-1 self-start py-1 active:opacity-70"
+          >
+            <Text variant="action">{t.contactUs}</Text>
+          </Pressable>
         </View>
       )}
 

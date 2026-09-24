@@ -1,22 +1,22 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The account screen.
+ * The account screen. Almost nothing here can be changed — the profile comes
+ * from sign-in, the identity result from the verification partner, and the
+ * vault lives elsewhere. What it is for is answering "what does this service
+ * know about me?".
  *
- * Short on purpose. There is almost nothing an heir or a reporter can change
- * here — the profile is synced from Clerk, the identity verdict comes from
- * Didit, and the vault is somewhere else entirely. What the screen is actually
- * for is answering *"what does this service know about me?"*, which on a
- * product that asks people for a passport photo in the week of a funeral is a
- * question worth a page rather than a footnote.
+ * ⚠️ `seeBody` must keep the escrow trade (AGENTS.md): nobody opens a vault
+ * while its owner lives, but at release Wassiya opens what was set aside for
+ * each heir, to hand it over. Never "we cannot open an heir's box".
  */
 export const ACCOUNT = {
-  // The feed has no bell any more; this is its door.
   notificationsLink: { ar: "كل الإشعارات", en: "All notifications" },
-  title: { ar: "الحساب", en: "Account" },
+  notificationsBody: { ar: "كل ما أرسلناه إليك، في مكان واحد.", en: "Everything we've sent you, in one place." },
+  title: { ar: "حسابي", en: "My account" },
   body: {
-    ar: "ما نعرفه عنك، وما لا نعرفه. تُدار بيانات الدخول من نافذة الحساب في الأعلى.",
-    en: "What we know about you, and what we don't. Sign-in details are managed from the account menu at the top.",
+    ar: "ما نعرفه عنك، وما لا نعرفه. بيانات الدخول تجدها في قائمة حسابك أعلى الصفحة.",
+    en: "What we know about you, and what we don't. Your sign-in details are in your account menu at the top.",
   },
 
   profileTitle: { ar: "بياناتك", en: "Your details" },
@@ -24,38 +24,34 @@ export const ACCOUNT = {
   email: { ar: "البريد", en: "Email" },
   notSet: { ar: "غير مُدخل", en: "Not set" },
 
-  identityTitle: { ar: "التحقق من الهوية", en: "Identity verification" },
-  identityUnverified: { ar: "لم يتم التحقق", en: "Not verified" },
-  identityPending: { ar: "قيد المعالجة", en: "Being processed" },
-  identityVerified: { ar: "تم التحقق", en: "Verified" },
-  identityRejected: { ar: "لم يكتمل", en: "Did not complete" },
+  identityTitle: { ar: "التحقق من هويتك", en: "Your identity check" },
+  identityUnverified: { ar: "لم يتم بعد", en: "Not done yet" },
+  identityPending: { ar: "قيد المراجعة", en: "Being checked" },
+  identityVerified: { ar: "تأكدنا من هويتك", en: "Confirmed" },
+  identityRejected: { ar: "لم يكتمل", en: "Didn't go through" },
   identityVerifiedName: { ar: "الاسم في الوثيقة", en: "Name on the document" },
-  identityVerifiedAt: { ar: "بتاريخ", en: "On" },
-  identityAttempts: {
-    ar: "{n} محاولة متبقية",
-    en: "{n} attempts remaining",
-  },
+  identityVerifiedAt: { ar: "التاريخ", en: "Date" },
+  identityAttempts: { ar: "بقيت {n} محاولات", en: "{n} attempts left" },
   identityWhy: {
-    ar: "نطلب التحقق عند تقديم بلاغ وفاة، ويتحقّق الوارث مرة أخرى قبل أن يُفتح ما تُرك له.",
-    en: "We ask for verification when a death report is filed, and an heir verifies again before what was left to them opens.",
+    ar: "نطلب التحقق عند الإبلاغ عن وفاة، ويتحقق الوارث من هويته قبل أن يستلم ما تُرك له.",
+    en: "We ask for this when someone reports a death, and an heir confirms who they are before receiving what was left to them.",
   },
 
-  // The line the page exists for.
-  weCannotTitle: { ar: "ما لا نستطيع رؤيته", en: "What we cannot see" },
-  weCannotBody: {
-    ar: "لا نستطيع قراءة محتوى أي خزنة، ولا أسماء ما فيها، ولا فتح صندوق وارث وحدنا. ما نحفظه نصّ مشفّر لا نملك مفتاحه.",
-    en: "We cannot read the contents of any vault, or the names of what is in it, or open an heir's box on our own. What we hold is ciphertext we have no key for.",
+  seeTitle: { ar: "ما نراه وما لا نراه", en: "What we can and can't see" },
+  seeBody: {
+    ar: "ما دام صاحب الخزنة حيّاً، لا يفتح خزنته أحد — ولا نحن. بعد التأكد من الوفاة ومن هوية الوارث، نفتح فقط ما خصّصه لذلك الوارث لنسلّمه له. وما لم يُخصّص لأحد لا يُفتح أبداً.",
+    en: "While a vault's owner is alive, nobody opens their vault — not even us. After the death and an heir's identity are confirmed, we open only what was set aside for that heir, to hand it over. Anything set aside for no one is never opened.",
   },
 
   languageTitle: { ar: "اللغة", en: "Language" },
   languageBody: {
-    ar: "يُحفظ اختيارك في هذا المتصفّح. يمكنك تبديله من أعلى الصفحة في أي وقت.",
-    en: "Your choice is kept in this browser. You can switch it from the top of the page at any time.",
+    ar: "يُحفظ اختيارك في هذا المتصفّح، ويمكنك تغييره من أعلى الصفحة متى شئت.",
+    en: "Your choice is saved in this browser, and you can change it at the top of the page any time.",
   },
 
-  ownerTitle: { ar: "خزنتك أنت", en: "Your own vault" },
+  ownerTitle: { ar: "إن كانت لديك خزنة", en: "If you have a vault" },
   ownerBody: {
-    ar: "إن كنت صاحب خزنة، فهي على تطبيق الجوّال. لا تُفتح من المتصفّح ولا نحفظ مفتاحها لدينا.",
-    en: "If you own a vault, it lives in the phone app. It can't be opened in a browser and we don't hold its key.",
+    ar: "خزنتك على تطبيق الجوّال. لا تُفتح من المتصفّح، ولا نحفظ مفتاحها.",
+    en: "It lives in the phone app. It can't be opened in a browser, and we don't hold its key.",
   },
 } as const satisfies Dictionary

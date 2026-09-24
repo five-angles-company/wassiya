@@ -15,6 +15,7 @@ export const JOB_NAMES = [
   "claims.advance",
   "claims.sweepUnmatched",
   "deliveries.expire",
+  "support.purgeFiles",
 ] as const
 
 export type JobName = (typeof JOB_NAMES)[number]
@@ -32,6 +33,7 @@ export const JOB_EVERY_HOURS: Record<JobName, number> = {
   "claims.advance": 1,
   "claims.sweepUnmatched": 24,
   "deliveries.expire": 24,
+  "support.purgeFiles": 24,
 }
 
 /**

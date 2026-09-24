@@ -13,6 +13,7 @@ export const JOBS = {
   jobClaimsAdvance: { ar: "تقديم طلبات الوراثة", en: "Advance death claims" },
   jobClaimsUnmatched: { ar: "إغلاق الطلبات بلا خزنة", en: "Close unmatched claims" },
   jobDeliveriesExpire: { ar: "إتلاف التسليمات المنتهية", en: "Expire deliveries" },
+  jobSupportPurge: { ar: "حذف مرفقات الدعم القديمة", en: "Purge old support files" },
 
   lastRun: { ar: "آخر دورة", en: "Last run" },
   lastChange: { ar: "آخر تغيير", en: "Last change" },

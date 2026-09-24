@@ -4,27 +4,30 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@workspace/backend/api"
 import { useConvexAuth, useMutation, useQuery } from "convex/react"
+import { LinkIcon, LogInIcon, MailOpenIcon, ShieldAlertIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
-import { Prose } from "@/components/doc/prose"
-import { SetApart } from "@/components/doc/set-apart"
+import { Ask } from "@/components/doc/ask"
 import { DocTitle } from "@/components/doc/title"
 import { useLocale } from "@/components/locale-provider"
+import { NoticeCard } from "@/components/notice-card"
+import { Placeholder } from "@/components/placeholder"
 import { t } from "@/lib/i18n/locale"
+import { COMMON } from "@/lib/i18n/strings/common"
 import { DELIVERY } from "@/features/box/strings/delivery"
 
 /**
- * The link an heir was sent.
+ * The link from our message to an heir. Signed in, it binds the delivery to
+ * the account on its own and moves on; signed out, it offers a way in.
  *
- * Readable signed out, because the person holding it usually has no account
- * yet. Once Convex sees a signed-in reader it binds the delivery to them and
- * moves on — binding opens nothing; the identity match on the next page does.
- * Gated on Convex's auth state, not Clerk's: `bind` is a Convex mutation and
- * would fail in the window where Clerk is ready and Convex is not.
+ * ⚠️ It names nobody. A recycled number or address can put this page in front
+ * of a stranger, who must learn no more than that something waits for someone.
  */
 export function ReceiveEntry({ token }: { token: string }) {
   const router = useRouter()
-  const labels = t(DELIVERY, useLocale())
+  const locale = useLocale()
+  const labels = t(DELIVERY, locale)
+  const common = t(COMMON, locale)
   const { isAuthenticated, isLoading } = useConvexAuth()
   const info = useQuery(api.deliveries.byToken, { token })
   const bind = useMutation(api.deliveries.bind)
@@ -41,51 +44,43 @@ export function ReceiveEntry({ token }: { token: string }) {
       .catch(() => setFailed(true))
   }, [canBind, bind, token, router])
 
-  if (info === undefined || isLoading) {
-    return <div className="border-border h-40 animate-pulse border-y" aria-hidden />
-  }
+  if (info === undefined || isLoading) return <Placeholder label={common.loading} className="h-72" />
 
   if (info === null || !info.open) {
-    return (
-      <article className="flex flex-col gap-4">
-        <DocTitle title={labels.receiveMissing} />
-        <Prose>
-          <p>{labels.receiveMissingBody}</p>
-        </Prose>
-      </article>
-    )
+    return <NoticeCard icon={LinkIcon} title={labels.receiveMissing} body={labels.receiveMissingBody} headingLevel="h1" />
   }
 
   return (
-    <article className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        {/* Names nobody. A recycled number or address can put this page in
-            front of a stranger, and they must learn no more than that
-            something is waiting for someone. */}
-        <DocTitle title={labels.receiveTitleUnknown} />
-        <Prose>
-          <p>{labels.receiveBody}</p>
-        </Prose>
+    <article className="flex flex-col gap-6">
+      <DocTitle
+        eyebrow={labels.receiveEyebrow}
+        eyebrowIcon={MailOpenIcon}
+        title={labels.receiveTitleUnknown}
+        lead={labels.receiveBody}
+      />
+
+      <div className="mt-4">
+        <Ask eyebrow={common.askEyebrow} title={labels.receiveNextTitle} icon={LogInIcon}>
+          {!isAuthenticated ? (
+            <div>
+              <ButtonLink href={`/sign-in?redirect_url=${encodeURIComponent(`/receive/${token}`)}`} size="lg">
+                {labels.receiveSignIn}
+              </ButtonLink>
+            </div>
+          ) : failed ? (
+            <p className="text-tone-attention max-w-[62ch] text-[15px] leading-[1.75] font-semibold">
+              {labels.receiveBindFailed}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-[15px]">{labels.receiveBinding}</p>
+          )}
+        </Ask>
       </div>
 
-      <SetApart className="flex flex-col gap-4">
-        {!isAuthenticated ? (
-          <div>
-            <ButtonLink
-              href={`/sign-in?redirect_url=${encodeURIComponent(`/receive/${token}`)}`}
-              size="lg"
-            >
-              {labels.receiveSignIn}
-            </ButtonLink>
-          </div>
-        ) : failed ? (
-          <p className="text-tone-attention max-w-[66ch] text-[14px] leading-[1.65]">
-            {labels.receiveBindFailed}
-          </p>
-        ) : (
-          <p className="text-muted-foreground text-[14px]">{labels.receiveBinding}</p>
-        )}
-      </SetApart>
+      <p className="bg-tone-attention-soft text-tone-attention rounded-row flex items-start gap-3 px-5 py-4 text-[14.5px] leading-[1.75] font-semibold">
+        <ShieldAlertIcon className="mt-0.5 size-5 shrink-0" strokeWidth={2.25} aria-hidden />
+        {labels.receiveWarning}
+      </p>
     </article>
   )
 }

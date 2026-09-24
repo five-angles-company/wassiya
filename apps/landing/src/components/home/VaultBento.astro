@@ -1,0 +1,153 @@
+---
+import { AtSign, Bitcoin, EyeOff, File, Image as ImageIcon, Landmark, LockKeyhole, Mic, Play } from "lucide-react"
+
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { MOCK } from "@/i18n/strings/mock"
+import { t, type Locale } from "@/i18n/locale"
+import { fmtNumber } from "@/lib/format"
+import { waveform } from "@/lib/pattern"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const m = t(MOCK, locale)
+const seed = Array.from({ length: 12 }, (_, i) => ({ n: fmtNumber(i + 1, locale), dots: "•".repeat(4 + ((i * 7) % 4)) }))
+const bars = waveform(30)
+const duration = locale === "ar" ? "٠:٤٢" : "0:42"
+
+const tile = "rise-in lift bg-card border-border relative flex flex-col overflow-hidden rounded-[32px] border p-6 md:p-7"
+const disc = "bg-sand-300 text-sand-900 flex size-11 shrink-0 items-center justify-center rounded-2xl"
+---
+
+<section id="vault" class="mx-auto w-full max-w-[1200px] px-4 py-24 md:px-8 lg:py-28">
+  <SectionHead eyebrow={home.vaultEyebrow} title={home.vaultTitle} body={home.vaultBody} align="center" />
+
+  <div class="mt-14 grid gap-4 md:grid-cols-2 lg:mt-20 lg:grid-cols-3 lg:gap-5">
+    <article class={`${tile} md:col-span-2`}>
+      <div class="flex items-start gap-4">
+        <span class={disc}><Bitcoin className="size-[22px]" strokeWidth={2.25} aria-hidden="true" /></span>
+        <div>
+          <h3 class="text-[20px]">{home.vaultCryptoLabel}</h3>
+          <p class="text-sand-700 mt-1 text-[15px] leading-[1.8]">{home.vaultCryptoValue}</p>
+        </div>
+        <span
+          class="ms-auto hidden shrink-0 items-center gap-2 self-start rounded-full bg-[#1c1a19] px-3.5 py-2 text-[12px] font-semibold text-sand-50 shadow-[var(--shadow-overlay)] sm:inline-flex"
+        >
+          <LockKeyhole className="text-terracotta-300 size-3.5" strokeWidth={2.5} aria-hidden="true" />
+          {home.vaultLocked}
+        </span>
+      </div>
+      <div class="relative mt-7 flex-1">
+        <ol class="grid grid-cols-3 gap-2 sm:grid-cols-4" aria-hidden="true">
+          {
+            seed.map((word) => (
+              <li class="bg-background border-border flex items-center gap-2 rounded-full border px-3 py-2 text-[13px]">
+                <span class="text-sand-500 w-4 text-[11px] font-semibold">{word.n}</span>
+                <span class="text-sand-600 tracking-[0.15em]">{word.dots}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </article>
+
+    <article class={tile}>
+      <div class="flex items-start gap-4">
+        <span class={disc}><Landmark className="size-[22px]" strokeWidth={2.25} aria-hidden="true" /></span>
+        <div>
+          <h3 class="text-[20px]">{home.vaultBankLabel}</h3>
+          <p class="text-sand-700 mt-1 text-[15px] leading-[1.8]">{home.vaultBankValue}</p>
+        </div>
+      </div>
+      <div
+        class="mt-7 rounded-[22px] bg-[linear-gradient(135deg,#2e2b25,#1c1a19)] p-5 text-sand-50 shadow-[var(--shadow-overlay)]"
+        aria-hidden="true"
+      >
+        <div class="flex items-center justify-between">
+          <span class="text-[13px] font-semibold text-sand-300">{m.assetBank}</span>
+          <Landmark className="text-terracotta-300 size-4" strokeWidth={2.25} />
+        </div>
+        <p class="mt-6 font-mono text-[14px] tracking-[0.12em]" dir="ltr">SA•• •••• •••• •••• 4821</p>
+      </div>
+    </article>
+
+    <article class={tile}>
+      <div class="flex items-start gap-4">
+        <span class={disc}><File className="size-[22px]" strokeWidth={2.25} aria-hidden="true" /></span>
+        <div>
+          <h3 class="text-[20px]">{home.vaultDocsLabel}</h3>
+          <p class="text-sand-700 mt-1 text-[15px] leading-[1.8]">{home.vaultDocsValue}</p>
+        </div>
+      </div>
+      <div class="relative mt-7 h-[150px]" aria-hidden="true">
+        <div class="bg-background border-border absolute inset-x-8 top-3 bottom-0 rotate-[-6deg] rounded-[18px] border"></div>
+        <div class="bg-sand-50 border-border absolute inset-x-6 top-1 bottom-1 rotate-[4deg] rounded-[18px] border p-4 shadow-[var(--shadow-raised)]">
+          <div class="bg-sand-300 h-2 w-2/3 rounded-full"></div>
+          <div class="bg-sand-200 mt-3 h-2 w-full rounded-full"></div>
+          <div class="bg-sand-200 mt-2 h-2 w-5/6 rounded-full"></div>
+          <div class="bg-sand-200 mt-2 h-2 w-3/4 rounded-full"></div>
+        </div>
+        <div class="border-border absolute start-4 bottom-3 h-[92px] w-[120px] rotate-[-3deg] overflow-hidden rounded-[16px] border-4 border-white bg-[linear-gradient(180deg,#fcddd5,#f7bbb0)] shadow-[var(--shadow-overlay)]">
+          <div class="bg-olive-400 absolute -start-4 -bottom-6 size-24 rounded-full"></div>
+          <div class="bg-olive-600 absolute -end-6 -bottom-8 size-24 rounded-full"></div>
+          <div class="absolute end-4 top-3 size-5 rounded-full bg-[#fff6f0]"></div>
+          <ImageIcon className="absolute start-2 top-2 size-4 text-white/80" strokeWidth={2.5} />
+        </div>
+      </div>
+    </article>
+
+    <article class={tile}>
+      <div class="flex items-start gap-4">
+        <span class={disc}><AtSign className="size-[22px]" strokeWidth={2.25} aria-hidden="true" /></span>
+        <div>
+          <h3 class="text-[20px]">{home.vaultAccountsLabel}</h3>
+          <p class="text-sand-700 mt-1 text-[15px] leading-[1.8]">{home.vaultAccountsValue}</p>
+        </div>
+      </div>
+      <div class="mt-7" aria-hidden="true">
+        <div class="bg-background border-border flex items-center gap-3 rounded-[16px] border px-4 py-3" dir="ltr">
+          <span class="text-sand-600 flex-1 text-[16px] tracking-[0.3em]">••••••••••</span>
+          <EyeOff className="text-sand-500 size-4" strokeWidth={2.25} />
+        </div>
+        <div class="mt-2.5 grid grid-cols-2 gap-2 font-mono text-[12.5px]" dir="ltr">
+          {["••••-••••", "••••-••••", "••••-••••", "••••-••••"].map((code) => (
+            <span class="bg-background border-border text-sand-600 rounded-[12px] border px-3 py-2 text-center">{code}</span>
+          ))}
+        </div>
+      </div>
+    </article>
+
+    <article class={`${tile} md:col-span-2 lg:col-span-1`}>
+      <div class="flex items-start gap-4">
+        <span class={disc}><Mic className="size-[22px]" strokeWidth={2.25} aria-hidden="true" /></span>
+        <div>
+          <h3 class="text-[20px]">{home.vaultNotesLabel}</h3>
+          <p class="text-sand-700 mt-1 text-[15px] leading-[1.8]">{home.vaultNotesValue}</p>
+        </div>
+      </div>
+      <div class="bg-terracotta-100 mt-7 flex items-center gap-4 rounded-[22px] p-4" aria-hidden="true">
+        <span class="bg-primary flex size-12 shrink-0 items-center justify-center rounded-full text-[#f5ead8] shadow-[var(--shadow-raised)]">
+          <Play className="size-5 fill-current" strokeWidth={2} />
+        </span>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline justify-between">
+            <span class="text-terracotta-800 text-[14px] font-bold">{home.voiceTo}</span>
+            <span class="text-terracotta-700 text-[12px] font-semibold" dir="ltr">{duration}</span>
+          </div>
+          <div class="mt-2 flex h-9 items-center gap-[3px] overflow-hidden">
+            {bars.map((height, i) => (
+              <span
+                class:list={["w-[3px] shrink-0 rounded-full", i < 11 ? "bg-primary" : "bg-terracotta-300"]}
+                style={`height:${Math.max(14, height)}%`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

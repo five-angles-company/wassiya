@@ -136,6 +136,28 @@ Two traps worth stating:
 - **The heading face is Cairo 800/900.** Any token declaring Caprasimo is wrong
   — it has no Arabic glyphs.
 
+## Design rules (web + landing)
+
+`apps/web` shares the landing site's look: sticky glass header, cards with
+soft shadows, pill eyebrows, lucide icons in tinted discs, the brand gradient,
+a dot-grid ground. Most of its screens are read by someone who has just lost a
+person, so four rules hold on top of that look:
+
+- **Calm motion only on web.** Soft fade-ins (`rise`, `rise-in`). No floating,
+  pulsing or shimmering — those live in `apps/landing` only, and loading
+  placeholders are static (`components/placeholder.tsx`), never `animate-pulse`.
+- **Dates, never countdowns.** A waiting period shows its end date; a timeline
+  shows recorded dates only, never estimated ones.
+- **One large button per screen**, inside the one `Ask`. Status is a sentence
+  (`StatusBanner`), never a badge.
+- **Tokens, not ramps.** Shared brand surfaces live in
+  `packages/ui/src/styles/surface.css`, driven by tokens in `globals.css` so dark
+  mode flips them. Never copy landing ramp classes (`text-sand-700`,
+  `bg-terracotta-100`, …) into web — they don't flip.
+
+`/dev/preview` (development only) renders the screens that need a session or
+real data, from sample props.
+
 ## Deeper procedures → skills
 - Convex backend work: use the installed `convex` / `convex-setup-auth` skills + `packages/backend/convex/_generated/ai/guidelines.md`.
 - Auth wiring, adding an app, Expo specifics, Astro specifics: see `.claude/skills/` (`auth-wiring`, `add-app`, `mobile-expo`, `astro-landing`).
@@ -220,6 +242,7 @@ Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi
 - Vault lock policy: the default is **`LOCK_WHILE_OPEN`** (`stores/preferences.ts`) — no session cap, and backgrounding does not lock. The session ends with the process, which is automatic (MK is process memory, `useVault` has no `persist`). This is the owner's explicit choice, made with the trade stated on ٩.٢: anyone holding the unlocked phone can reopen the app and read the vault. **Do not "fix" it back to a timeout.** Choosing a duration in ٩.٢ restores the cap *and* the background lock together.
 - A masked field must never carry `keyboardType: "visible-password"`. On Android it and `secureTextEntry` set the same input-type variation bits, the keyboard wins, and the value renders in the clear while every prop claims it is hidden. Use `MASKED_SECRET_INPUT_PROPS` for masked fields, `SECRET_INPUT_PROPS` for secrets that are visible by design (seed phrase, 2FA note, recovery codes).
 - Audit log is append-only. No update or delete path may exist.
+- **Support chat is not end-to-end encrypted, and never touches the vault.** Owners write from mobile ٩.٦, heirs, reporters and guests from web `/help`, and staff answer from the console's `/support` (`support.read` / `support.reply` / `support.manage`). Five rules, and `pnpm --filter @workspace/backend verify` enforces the first three: nothing under `convex/support/` names a vault table or key column; `supportMessages` is inserted only by `appendMessage` in `model/support.ts`; staff notes live in their own table that only `support/admin.ts` reads, and the requester module never names the staff member who replied. **A body that looks like a recovery sheet is refused** on both sides — `looksLikeRecoveryCode` in `@workspace/crypto/papercode` warns in the composers and its mirror in `model/support.ts` refuses on the server; change them together. **A guest is a browser token, not a person**: their name and email are unverified, never linked to an account, and staff must not confirm to anyone that a vault or an heir exists (every heir is silent, including in support). Replies notify by in-app row, email and push after a short delay, and none of them carries the message.
 - Identity verification (Didit) is mandatory and blocking for owners at onboarding, and for heirs before any delivery opens; the death certificate name must match the owner's verified legal name.
 - An heir's ID number is optional at registration but strongly urged; without it, delivery needs a staff identity decision.
 <!-- END:wassiya-product -->

@@ -1,0 +1,45 @@
+---
+import { Plus } from "lucide-react"
+
+import ButtonLink from "@/components/ButtonLink.astro"
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { FAQ } from "@/i18n/strings/faq"
+import { HOME } from "@/i18n/strings/home"
+import { t, webUrl, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+---
+
+<section id="faq" class="mx-auto w-full max-w-[1200px] px-4 pb-24 md:px-8 lg:pb-28">
+  <div class="grid gap-12 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-20">
+    <div class="lg:sticky lg:top-28 lg:self-start">
+      <SectionHead eyebrow={home.faqEyebrow} title={home.faqTitle} />
+      <p class="text-sand-700 mt-6 text-[16px]">{home.faqMore}</p>
+      <ButtonLink href={webUrl(locale, "/help")} variant="outline" class="mt-4">{home.faqMoreAction}</ButtonLink>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      {
+        FAQ.map((item) => (
+          <details class="group border-border bg-card/50 open:bg-card rounded-[24px] border transition-[background-color,box-shadow] open:shadow-[var(--shadow-raised)]">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-6 px-6 py-5 text-[17px] leading-[1.6] font-bold [&::-webkit-details-marker]:hidden">
+              {item.q[locale]}
+              <span
+                aria-hidden="true"
+                class="bg-background group-open:bg-primary flex size-9 shrink-0 items-center justify-center rounded-full transition-[background-color,transform] duration-300 group-open:rotate-45 group-open:text-[#f5ead8]"
+              >
+                <Plus className="size-4" strokeWidth={2.75} />
+              </span>
+            </summary>
+            <p class="text-sand-700 px-6 pb-6 text-[15.5px] leading-[1.95]">{item.a[locale]}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>

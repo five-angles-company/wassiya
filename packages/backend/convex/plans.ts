@@ -44,6 +44,26 @@ export const current = query({
   },
 })
 
+/**
+ * The two tiers as the public site states them, read by `apps/landing` when it
+ * is built. Unauthenticated on purpose: a plan's limits are marketing copy, and
+ * the site has no session to present.
+ *
+ * ⚠️ Only the tier rows, through `limitsOfPlan`. Never an override (that is one
+ * account's business) and never a price.
+ *
+ * ⚠️ The site is static, so what it prints is what this returned at its last
+ * build. Editing a plan does not reach wassiya.app until the landing image is
+ * rebuilt — the console's plan editor says so under the form.
+ */
+export const published = query({
+  args: {},
+  handler: async (ctx) => ({
+    free: await limitsOfPlan(ctx, "free"),
+    annual: await limitsOfPlan(ctx, "annual"),
+  }),
+})
+
 /** The whole catalogue, for the console's editor. */
 export const catalogue = query({
   args: {},

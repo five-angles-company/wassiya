@@ -1,0 +1,12 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["LANDING_URL", "NODE_ENV"]
+    },
+    "lint": {
+      "env": ["LANDING_URL", "NODE_ENV"]
+    }
+  }
+}

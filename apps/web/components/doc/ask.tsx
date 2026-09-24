@@ -1,38 +1,39 @@
 import type { ReactNode } from "react"
+import type { LucideIcon } from "lucide-react"
 
-import { SetApart } from "@/components/doc/set-apart"
+import { IconDisc } from "@/components/icon-disc"
 
 /**
- * The one thing asked of the reader, set apart by hairlines rather than boxed.
+ * The one thing the reader is asked to do on this page.
  *
- * **At most one may be on screen.** Two asks is two obligations, and a reader
- * who is grieving will act on neither. Everything not currently owed belongs in
- * the `Ledger` as a row.
- *
- * It is absent, not empty, when nothing is owed — the waiting state is said in
- * prose above, where it reads as an answer rather than as a missing button.
+ * - **At most one may be on screen**, and it holds the screen's only large
+ *   button. Two asks make the reader choose which is real.
+ * - It is absent, not empty, when nothing is owed.
  */
 export function Ask({
-  eyebrow,
   title,
   children,
+  eyebrow,
+  icon,
 }: {
-  /** "Asked of you now" — names the block's purpose before its content. */
-  eyebrow: string
   title: string
   children: ReactNode
+  eyebrow?: string
+  icon?: LucideIcon
 }) {
   return (
-    <SetApart className="flex flex-col gap-4">
-      <div>
-        <p className="text-surface-accent-ink text-[12px] font-bold tracking-wide uppercase">
-          {eyebrow}
-        </p>
-        <h2 className="font-heading mt-1.5 text-[21px] leading-tight font-extrabold">
-          {title}
-        </h2>
+    <section className="rise-in bg-card border-border rounded-panel relative overflow-hidden border p-6 shadow-[var(--shadow-overlay)] md:p-9">
+      <span aria-hidden className="bg-brand absolute inset-x-0 top-0 h-1" />
+      <div className="flex items-start gap-4">
+        {icon !== undefined && <IconDisc icon={icon} tone="attention" />}
+        <div className="min-w-0">
+          {eyebrow !== undefined && (
+            <p className="text-surface-accent-ink text-[13px] font-bold">{eyebrow}</p>
+          )}
+          <h2 className="font-heading mt-1 text-[23px] leading-snug font-black md:text-[26px]">{title}</h2>
+        </div>
       </div>
-      {children}
-    </SetApart>
+      <div className="mt-6 flex flex-col gap-5">{children}</div>
+    </section>
   )
 }

@@ -300,3 +300,40 @@ export const STAFF_INVITE_COPY = {
     body: "You have been invited to work on the Wassiya console. Open the link and sign in with the same address this message reached. The invitation expires in two weeks. If you were not expecting this, ignore it — nothing is granted until you sign in.",
   },
 } as const satisfies LocalisedCopy
+
+/**
+ * Staff answered a support thread and it is still unread. Never carries the
+ * reply itself: an inbox is an intercepted surface, and the thread may hold
+ * details of an account or a case.
+ */
+export const SUPPORT_REPLY_COPY = {
+  ar: {
+    subject: "وصلك ردّ من فريق وصيّة",
+    body: "ردّ فريق الدعم على رسالتك. افتح المحادثة لقراءته — على تطبيق وصيّة من الإعدادات ← المساعدة، أو من الرابط أدناه إن وُجد. لن نطلب منك أبداً وثيقة الاسترداد أو رموزها.",
+  },
+  en: {
+    subject: "Wassiya support has replied",
+    body: "Our support team replied to your message. Open the conversation to read it — in the Wassiya app under Settings → Help, or from the link below if there is one. We will never ask for your recovery sheet or its code.",
+  },
+} as const satisfies LocalisedCopy
+
+/** The lock-screen notice for the same event. Title and body only, no content. */
+export const SUPPORT_REPLY_PUSH = {
+  ar: { subject: "وصيّة", body: "ردّ فريق الدعم على رسالتك." },
+  en: { subject: "Wassiya", body: "Support replied to your message." },
+} as const satisfies LocalisedCopy
+
+/**
+ * The same, to a guest with no account. The link carries a single-use key that
+ * reopens the conversation in whichever browser follows it.
+ */
+export const SUPPORT_REPLY_GUEST_COPY = {
+  ar: {
+    subject: "وصلك ردّ من فريق وصيّة",
+    body: "ردّ فريق الدعم على رسالتك. افتح الرابط أدناه لقراءة الردّ ومتابعة المحادثة — يعمل الرابط مرة واحدة. إن لم تكن راسلتنا، تجاهل هذه الرسالة.",
+  },
+  en: {
+    subject: "Wassiya support has replied",
+    body: "Our support team replied to your message. Open the link below to read it and carry on the conversation — the link works once. If you did not write to us, ignore this message.",
+  },
+} as const satisfies LocalisedCopy

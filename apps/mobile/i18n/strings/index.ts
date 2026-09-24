@@ -31,6 +31,12 @@ import { PAYWALL } from "@/i18n/strings/paywall"
 import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
 import { RECOVERY } from "@/i18n/strings/recovery"
 import {
+  HELP,
+  SUPPORT_COMMON,
+  SUPPORT_NEW,
+  SUPPORT_THREAD,
+} from "@/i18n/strings/support"
+import {
   AUDIT,
   AUTO_LOCK,
   DEVICES,
@@ -69,6 +75,11 @@ export const SCREEN_STRINGS = {
   "settings/plan": PLAN,
   "settings/devices": DEVICES,
   "settings/legal": LEGAL,
+  "settings/help": HELP,
+  "settings/help/new": SUPPORT_NEW,
+  "settings/help/thread": SUPPORT_THREAD,
+  // Not a route: shared by the two support composers.
+  support: SUPPORT_COMMON,
   lock: LOCK,
   notifications: NOTIFICATIONS,
 

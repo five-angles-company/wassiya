@@ -20,6 +20,10 @@ export const NAV = {
   unmatched: { ar: "طلبات بلا خزنة", en: "Unmatched" },
   identity: { ar: "التحقق من الهوية", en: "Identity" },
 
+  groupSupport: { ar: "الدعم", en: "Support" },
+  support: { ar: "المحادثات", en: "Conversations" },
+  helpCenter: { ar: "مركز المساعدة", en: "Help center" },
+
   groupAccounts: { ar: "الحسابات", en: "Accounts" },
   owners: { ar: "المالكون", en: "Owners" },
   heirs: { ar: "الورثة", en: "Heirs" },

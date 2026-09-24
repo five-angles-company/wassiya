@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./surface.css";
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
@@ -44,6 +45,9 @@
        near-black. These flip; the ramp steps do not. */
     --color-tone-settled: var(--tone-settled);
     --color-tone-attention: var(--tone-attention);
+    --color-tone-settled-soft: var(--tone-settled-soft);
+    --color-tone-attention-soft: var(--tone-attention-soft);
+    --color-band: var(--band);
     --color-surface-accent: var(--surface-accent);
     --color-surface-accent-foreground: var(--surface-accent-foreground);
     --color-surface-accent-soft: var(--surface-accent-soft);
@@ -271,9 +275,11 @@
   --color-olive-800: #3d472b;
   --color-olive-900: #272e1b;
 
-  /* Role-based radii, from the board's screen grammar. */
-  --radius-row: 24px;
-  --radius-card: 26px;
+  /* Role-based radii. */
+  --radius-field: 18px;
+  --radius-row: 22px;
+  --radius-card: 28px;
+  --radius-panel: 32px;
   --radius-sheet: 34px;
 
   /* ---------------------------------------------------------------------
@@ -354,7 +360,21 @@
   /* 5.4:1 and 5.4:1 on the sand ground. */
   --tone-settled: #56633f;
   --tone-attention: #9d3e2e;
+  --tone-settled-soft: #f0fae1;
+  --tone-attention-soft: #fff6f0;
 
+  /* The brand surfaces in surface.css read these; the dark block flips them. */
+  --band: #efe2cb;
+  --dot: rgb(32 30 29 / 0.26);
+  --grain-opacity: 0.2;
+  --grain-blend: multiply;
+  --brand-ink: linear-gradient(100deg, #f5a25d 0%, #ea5b48 48%, #c54d3c 100%);
+  --brand-fill: linear-gradient(135deg, #f08a55 0%, #ea5b48 42%, #b8452f 100%);
+  --header-fill: color-mix(in srgb, var(--background) 82%, transparent);
+  --header-rule: color-mix(in srgb, #201e1d 12%, transparent);
+
+  color-scheme: light;
+  scroll-padding-top: 88px;
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-body-wassiya);
@@ -449,25 +469,6 @@
   transform: translateX(4px);
 }
 
-/* ---------------------------------------------------------------------------
-   The header, which earns its ground only once there is something behind it.
-
-   The bar carries no navigation — the app routes a reader into the one thing
-   they have in flight rather than offering them places to go — so a permanent
-   near-white band with a hairline under it reads as a nav bar that lost its
-   links. At rest it is now nothing: the page ground runs straight up behind the
-   mark.
-
-   It still has to stay legible when content scrolls underneath, so it takes the
-   ground and the hairline **only then**. Driven by `animation-timeline: scroll()`
-   rather than a scroll listener, for the same reason `.rise-in` uses `view()`:
-   this product's pages are required to work with JavaScript disabled, and a
-   browser without the feature simply gets a bar that never fills — legible
-   either way, because the blur and the border box are already in place.
-
-   `border-bottom` is declared transparent at rest rather than absent, so the
-   fill does not move the page by a pixel when it arrives.
-   --------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .wassiya .rise,
   .wassiya .rise-in,
@@ -624,6 +625,23 @@
   /* Up the ramp, not down: the 700s that read on sand vanish on near-black. */
   --tone-settled: #ccdbb2;
   --tone-attention: #f7bbb0;
+  --tone-settled-soft: #272e1b;
+  --tone-attention-soft: #3f1f16;
+
+  --band: #27241f;
+  --dot: rgb(249 244 237 / 0.1);
+  /* Multiply noise vanishes on near-black; soft-light keeps a trace of it. */
+  --grain-opacity: 0.08;
+  --grain-blend: soft-light;
+  --brand-ink: linear-gradient(100deg, #f7bbb0 0%, #f19081 48%, #ea5b48 100%);
+  --header-fill: color-mix(in srgb, var(--background) 82%, transparent);
+  --header-rule: color-mix(in srgb, #f9f4ed 12%, transparent);
+  /* Brown shadows disappear on a brown-black ground; black ones still lift. */
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px -2px rgb(0 0 0 / 0.35);
+  --shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+  --shadow-sheet: 0 24px 64px -24px rgb(0 0 0 / 0.6);
+
+  color-scheme: dark;
 }
 
 .wassiya-admin.dark,

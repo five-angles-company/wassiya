@@ -18,6 +18,7 @@ import {
 } from "@workspace/ui/components/sidebar"
 
 import { BrandMark } from "@/components/brand-mark"
+import { NavBadge } from "@/components/nav-badge"
 import { useLocale } from "@/components/locale-provider"
 import { usePermissions } from "@/hooks/use-permissions"
 import { t } from "@/lib/i18n/locale"
@@ -144,6 +145,7 @@ export function AppSidebar() {
                           <span>{label}</span>
                         </Link>
                       </SidebarMenuButton>
+                      {item.badge !== undefined && <NavBadge kind={item.badge} />}
                     </SidebarMenuItem>
                   )
                 })}

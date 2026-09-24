@@ -1,0 +1,96 @@
+---
+import { Image } from "astro:assets"
+
+import mark from "@/assets/brand/mark.png"
+import { SITE } from "@/config/site"
+import { COMMON } from "@/i18n/strings/common"
+import { fill, other, pathFor, stripLocale, t, webUrl, type Locale } from "@/i18n/locale"
+import { fmtDigits } from "@/lib/format"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const common = t(COMMON, locale)
+const home = pathFor(locale, "/")
+const yearLabel = fmtDigits(String(new Date().getFullYear()), locale)
+
+const columns = [
+  {
+    title: common.footerProduct,
+    links: [
+      { href: `${home}#how`, label: common.navHow },
+      { href: `${home}#security`, label: common.navSecurity },
+      { href: `${home}#plans`, label: common.navPlans },
+      { href: `${home}#faq`, label: common.navFaq },
+    ],
+  },
+  {
+    title: common.footerHelp,
+    links: [
+      { href: webUrl(locale, "/file"), label: common.reportDeath },
+      { href: webUrl(locale, "/help"), label: common.help },
+    ],
+  },
+  {
+    title: common.footerLegal,
+    links: [
+      { href: pathFor(locale, "/legal/terms"), label: common.terms },
+      { href: pathFor(locale, "/legal/privacy"), label: common.privacy },
+      { href: pathFor(locale, "/legal/encryption"), label: common.encryption },
+    ],
+  },
+]
+const link = "text-sand-700 hover:text-foreground text-[14.5px] transition-colors"
+---
+
+<footer class="border-border border-t">
+  <div class="mx-auto grid w-full max-w-[1200px] gap-12 px-4 py-14 md:px-8 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-10 lg:py-16">
+    <div class="max-w-sm">
+      <a href={home} class="inline-flex items-center gap-2.5">
+        <Image src={mark} alt="" width={112} height={56} class="h-7 w-auto" />
+        <span class="font-heading text-[19px] font-black">{common.appName}</span>
+      </a>
+      <p class="text-sand-700 mt-5 text-[14px] leading-[1.85]">{common.notLegal}</p>
+      <a
+        href={pathFor(other(locale), stripLocale(Astro.url.pathname))}
+        hreflang={other(locale)}
+        lang={other(locale)}
+        class="border-border hover:bg-card mt-6 inline-flex h-10 items-center rounded-full border px-4 text-[14px] font-semibold transition-colors"
+      >
+        {common.switchLanguage}
+      </a>
+    </div>
+
+    {
+      columns.map((column) => (
+        <nav aria-label={column.title}>
+          <p class="font-heading text-[15px] font-extrabold">{column.title}</p>
+          <ul class="mt-4 flex flex-col gap-3">
+            {column.links.map((item) => (
+              <li>
+                <a href={item.href} class={link}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+
+  <div class="border-border border-t">
+    <div class="text-sand-700 mx-auto flex w-full max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-6 text-[13.5px] md:px-8">
+      <p>{fill(common.copyright, { year: yearLabel })}</p>
+      {
+        SITE.gaId && (
+          <button type="button" data-consent-open class="hover:text-foreground cursor-pointer transition-colors">
+            {common.cookieSettings}
+          </button>
+        )
+      }
+    </div>
+  </div>
+</footer>

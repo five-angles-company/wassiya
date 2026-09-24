@@ -1,7 +1,7 @@
 // What a plan lets an owner add, enforced at the two chokepoints that can grow
 // a vault: `assets.create`/`assets.update` and `heirs.add`.
 //
-// ## These throw `ConvexError`, and nothing else in this deployment does
+// ## These throw `ConvexError`, as do support's refusals and nothing else
 //
 // Every other failure here is a plain `Error` with a sentence, because every
 // other failure is a bug or a forgery and the client only has to say "no". A

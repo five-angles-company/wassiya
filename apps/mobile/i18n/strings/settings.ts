@@ -115,6 +115,9 @@ export const SETTINGS = {
   groupSecurity: { ar: "الأمان", en: "Security" },
   groupPlan: { ar: "الاشتراك", en: "Subscription" },
   groupLegal: { ar: "قانوني", en: "Legal" },
+  groupHelp: { ar: "المساعدة", en: "Help" },
+  rowHelp: { ar: "المساعدة والدعم", en: "Help & support" },
+  helpNewReply: { ar: "ردّ جديد", en: "New reply" },
 
   rowLanguage: { ar: "اللغة", en: "Language" },
   rowAutoLock: { ar: "القفل التلقائي", en: "Auto-lock" },
@@ -309,6 +312,7 @@ export const PLAN = {
     ar: "إدارة الفوترة تصل قريباً. تواصل معنا في هذه الأثناء.",
     en: "Billing management is coming. Contact us in the meantime.",
   },
+  contactUs: { ar: "راسلنا", en: "Contact us" },
 } satisfies LabelSet<string>
 
 /** The devices list. */

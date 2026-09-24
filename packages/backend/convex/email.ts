@@ -39,6 +39,8 @@ import {
   ESCALATION_COPY,
   RECOVERY_COPY,
   STAFF_INVITE_COPY,
+  SUPPORT_REPLY_COPY,
+  SUPPORT_REPLY_GUEST_COPY,
   TEST_COPY,
   type LocalisedCopy,
 } from "./model/emailCopy"
@@ -458,6 +460,49 @@ export async function sendStaffInvite(
     auditUserId: args.invitedByUserId,
     copy: STAFF_INVITE_COPY,
     what: "staff invitation",
+    link: args.link,
+  })
+  return true
+}
+
+// ── Support ──────────────────────────────────────────────────────────────────
+
+/** A staff reply still unread by an account holder. See `SUPPORT_REPLY_COPY`. */
+export async function sendSupportReply(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  link: string | undefined
+): Promise<void> {
+  await send(ctx, userId, SUPPORT_REPLY_COPY, "support reply", link)
+}
+
+/**
+ * A staff reply still unread by a guest. There is no account to log against,
+ * so the audit line is filed under the staff member who replied — the same
+ * choice `sendStaffInvite` makes for its inviter.
+ */
+export async function sendSupportGuestReply(
+  ctx: MutationCtx,
+  args: {
+    to: string
+    english: boolean
+    staffUserId: Id<"users">
+    link: string
+  }
+): Promise<boolean> {
+  const { emailFrom, emailTestMode } = await settingsFor(ctx)
+  if (emailFrom === null) {
+    console.error("No sender address is set — support reply email not sent")
+    return false
+  }
+  await deliver(ctx, {
+    from: emailFrom,
+    testMode: emailTestMode,
+    to: args.to,
+    english: args.english,
+    auditUserId: args.staffUserId,
+    copy: SUPPORT_REPLY_GUEST_COPY,
+    what: "support guest reply",
     link: args.link,
   })
   return true

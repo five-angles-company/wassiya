@@ -1,0 +1,38 @@
+---
+import { BadgeCheck, FingerprintPattern, KeyRound, ShieldCheck } from "lucide-react"
+
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const home = t(HOME, Astro.props.locale)
+const items = [
+  { icon: ShieldCheck, title: home.proofDeviceTitle, body: home.proofDeviceBody },
+  { icon: FingerprintPattern, title: home.proofFingerprintTitle, body: home.proofFingerprintBody },
+  { icon: KeyRound, title: home.proofVaultTitle, body: home.proofVaultBody },
+  { icon: BadgeCheck, title: home.proofHumanTitle, body: home.proofHumanBody },
+]
+---
+
+<section class="relative z-10 mx-auto -mt-10 -mb-24 w-full max-w-[1200px] px-4 md:px-8 lg:-mt-16 lg:-mb-20">
+  <ul
+    class="bg-border border-border grid grid-cols-1 gap-px overflow-hidden rounded-[28px] border shadow-[var(--shadow-overlay)] sm:grid-cols-2 lg:grid-cols-4"
+  >
+    {
+      items.map((item) => (
+        <li class="bg-card flex items-start gap-4 p-6">
+          <span class="bg-terracotta-100 text-terracotta-700 flex size-11 shrink-0 items-center justify-center rounded-2xl">
+            <item.icon className="size-[22px]" strokeWidth={2} aria-hidden="true" />
+          </span>
+          <span>
+            <span class="font-heading block text-[16.5px] leading-snug font-extrabold">{item.title}</span>
+            <span class="text-sand-700 mt-1 block text-[14px] leading-[1.7]">{item.body}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</section>

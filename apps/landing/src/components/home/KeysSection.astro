@@ -1,0 +1,72 @@
+---
+import { FingerprintPattern, ScrollText, ShieldAlert } from "lucide-react"
+
+import RecoverySheet from "@/components/mock/RecoverySheet.astro"
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { MOCK } from "@/i18n/strings/mock"
+import { t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const m = t(MOCK, locale)
+const keys = [
+  {
+    icon: FingerprintPattern,
+    label: home.keysDeviceLabel,
+    value: home.keysDeviceValue,
+    disc: "bg-terracotta-100 text-terracotta-700",
+  },
+  { icon: ScrollText, label: home.keysPaperLabel, value: home.keysPaperValue, disc: "bg-olive-100 text-olive-800" },
+]
+---
+
+<section id="keys" class="grain band relative overflow-hidden py-24 lg:py-28">
+  <div class="mx-auto grid w-full max-w-[1200px] items-center gap-16 px-4 md:px-8 lg:grid-cols-2 lg:gap-20">
+    <div>
+      <SectionHead eyebrow={home.keysEyebrow} title={home.keysTitle} body={home.keysBody} />
+      <div class="mt-10 flex flex-col gap-3">
+        {
+          keys.map((key) => (
+            <div class="rise-in bg-card border-border flex items-start gap-4 rounded-[24px] border p-5">
+              <span class={`flex size-12 shrink-0 items-center justify-center rounded-2xl ${key.disc}`}>
+                <key.icon className="size-6" strokeWidth={2} aria-hidden="true" />
+              </span>
+              <span>
+                <span class="font-heading block text-[18px] font-extrabold">{key.label}</span>
+                <span class="text-sand-700 mt-1 block text-[15px] leading-[1.8]">{key.value}</span>
+              </span>
+            </div>
+          ))
+        }
+      </div>
+      <p class="bg-terracotta-100 text-terracotta-800 mt-4 flex items-start gap-3 rounded-[20px] px-5 py-4 text-[15px] leading-[1.7] font-semibold">
+        <ShieldAlert className="mt-0.5 size-5 shrink-0" strokeWidth={2.25} aria-hidden="true" />
+        {home.keysNever}
+      </p>
+    </div>
+
+    <div class="rise-in relative mx-auto w-full max-w-[460px] py-8">
+      <div class="bg-card border-border absolute inset-x-6 top-4 bottom-10 rotate-[5deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
+      <div class="relative rotate-[-2.5deg]">
+        <RecoverySheet locale={locale} />
+      </div>
+      <div
+        class="float-a bg-card border-border absolute -bottom-2 -start-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-start-8"
+      >
+        <span class="bg-primary relative isolate flex size-11 items-center justify-center rounded-full text-[#f5ead8]">
+          <span class="pulse-ring bg-terracotta-300 absolute inset-0 -z-10 rounded-full"></span>
+          <FingerprintPattern className="size-6" strokeWidth={2} aria-hidden="true" />
+        </span>
+        <span>
+          <span class="block text-[14px] leading-tight font-bold">{home.keysPhone}</span>
+          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{m.everyDay}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>

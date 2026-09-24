@@ -16,6 +16,7 @@ import type { Dictionary, LabelSet } from "@/lib/i18n/locale"
  */
 export const PERMISSION_GROUPS = {
   review: { ar: "المراجعة", en: "Review" },
+  support: { ar: "الدعم", en: "Support" },
   accounts: { ar: "الحسابات", en: "Accounts" },
   operations: { ar: "التشغيل", en: "Operations" },
   settings: { ar: "الإعدادات", en: "Settings" },
@@ -45,6 +46,18 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
   "identity.reset": {
     ar: "إعادة محاولات التحقّق لمالك",
     en: "Give an owner their verification attempts back",
+  },
+  "support.read": {
+    ar: "قراءة محادثات الدعم ومركز المساعدة",
+    en: "Read support conversations and the help center",
+  },
+  "support.reply": {
+    ar: "الردّ على المحادثات، الملاحظات الداخلية، الإغلاق",
+    en: "Reply to threads, add internal notes, resolve",
+  },
+  "support.manage": {
+    ar: "إسناد المحادثات للآخرين وتحرير مركز المساعدة",
+    en: "Assign threads to others and edit the help center",
   },
   "owners.read": {
     ar: "قراءة الحسابات: الملّاك، الورثة، الأجهزة، النبض",
@@ -78,6 +91,10 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
   "jobs.run:deliveries.expire": {
     ar: "تشغيل إتلاف التسليمات المنتهية — لا رجعة فيه",
     en: "Run delivery expiry — destroys keys, irreversibly",
+  },
+  "jobs.run:support.purgeFiles": {
+    ar: "تشغيل حذف مرفقات الدعم القديمة",
+    en: "Run the support-file purge",
   },
   "settings.read": {
     ar: "قراءة الإعدادات والسياسات",

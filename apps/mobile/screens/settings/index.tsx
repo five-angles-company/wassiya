@@ -18,7 +18,7 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { FileKey, FileText, Fingerprint, Languages, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
+import { FileKey, FileText, Fingerprint, Languages, LifeBuoy, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
 import { Screen } from "@/components/screen"
@@ -47,6 +47,7 @@ export function SettingsScreen() {
   const saveProfile = useMutation(api.users.saveProfile)
   const { signOut } = useClerk()
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
+  const supportUnread = useQuery(api.support.threads.unreadCount)
 
   function confirmSignOut() {
     Alert.alert(t.signOutTitle, t.signOutBody, [
@@ -164,6 +165,17 @@ export function SettingsScreen() {
           }
           chevron
           onPress={() => router.push("/settings/plan")}
+        />
+      </Group>
+
+      <Group label={t.groupHelp}>
+        <SettingsRow
+          icon={LifeBuoy}
+          label={t.rowHelp}
+          value={supportUnread ? t.helpNewReply : undefined}
+          valueTone="action"
+          chevron
+          onPress={() => router.push("/settings/help")}
         />
       </Group>
 

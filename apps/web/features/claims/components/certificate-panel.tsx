@@ -4,11 +4,13 @@ import { useRef, useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
+import { FileCheckIcon, ShieldCheckIcon, UploadIcon } from "lucide-react"
 
 import { Button } from "@/components/button"
+import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
-import { Field } from "@/features/claims/components/field"
+import { Field } from "@/components/field"
 import { CLAIM_CERTIFICATE } from "@/features/claims/strings/claim-certificate"
 
 const MAX_BYTES = 20 * 1024 * 1024
@@ -100,10 +102,8 @@ export function CertificatePanel({
   }
 
   return (
-    <div>
-      <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.7]">
-        {labels.intro}
-      </p>
+    <div className="flex flex-col gap-5">
+      <p className="text-foreground/75 max-w-[62ch] text-[15.5px] leading-[1.85]">{labels.intro}</p>
 
       {file === null ? (
         <div
@@ -118,19 +118,14 @@ export function CertificatePanel({
             const dropped = event.dataTransfer.files[0]
             if (dropped) void upload(dropped)
           }}
-          className={`rounded-card mt-5 flex flex-col items-center gap-2 border-2 border-dashed px-6 py-10 text-center transition-colors ${
-            dragging ? "border-primary bg-muted" : "border-[color:var(--input)]"
+          className={`rounded-row flex flex-col items-center gap-2 border-2 border-dashed px-6 py-10 text-center transition-colors ${
+            dragging ? "border-primary bg-accent/40" : "bg-background/60 border-[color:var(--input)]"
           }`}
         >
-          <p className="text-[15.5px] font-semibold">{labels.dropHere}</p>
-          <p className="text-[13px] opacity-60">{labels.dropHint}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-          >
+          <IconDisc icon={UploadIcon} tone="attention" />
+          <p className="mt-2 text-[16px] font-bold">{labels.dropHere}</p>
+          <p className="text-muted-foreground text-[13.5px]">{labels.dropHint}</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => inputRef.current?.click()} disabled={busy}>
             {busy ? labels.uploading : labels.pickFile}
           </Button>
           <input
@@ -145,53 +140,49 @@ export function CertificatePanel({
           />
         </div>
       ) : (
-        <div className="border-border mt-5 flex items-center gap-4 border-y py-3.5">
+        <div className="bg-tone-settled-soft rounded-row flex items-center gap-4 p-4">
+          <IconDisc icon={FileCheckIcon} tone="settled" size="sm" shape="circle" className="bg-card" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14.5px] font-semibold">{file.name}</p>
-            <p className="text-[12.5px] opacity-60">
-              {(file.size / 1024 / 1024).toFixed(1)} {labels.megabytes} ·{" "}
-              {labels.uploaded}
+            <p className="truncate text-[15px] font-semibold">{file.name}</p>
+            <p className="text-tone-settled text-[13px] font-semibold">
+              {(file.size / 1024 / 1024).toFixed(1)} {labels.megabytes} · {labels.uploaded}
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setFile(null)
               setStorageId(null)
             }}
-            className="text-[13px] font-semibold opacity-60 hover:opacity-100"
           >
             {labels.replace}
-          </button>
+          </Button>
         </div>
       )}
 
-      <div className="mt-5">
-        <Field
-          label={labels.nameLabel}
-          hint={labels.nameHint}
-          value={deceasedName}
-          onChange={setDeceasedName}
-        />
-      </div>
+      <Field label={labels.nameLabel} hint={labels.nameHint} value={deceasedName} onChange={setDeceasedName} />
 
-      {/* Said before they submit, not after a mismatch. Someone whose
-          grandmother's name is spelled three ways across three documents should
-          not spend a month thinking they were caught lying. */}
-      <p className="text-tone-settled mt-5 max-w-[66ch] text-[13.5px] leading-[1.7]">
+      {/* Said before they send, not after a mismatch: someone whose
+          grandmother's name is spelled three ways should not spend a month
+          thinking they were caught lying. */}
+      <p className="text-tone-settled flex items-start gap-2 text-[14px] leading-[1.7] font-semibold">
+        <ShieldCheckIcon className="mt-0.5 size-4 shrink-0" strokeWidth={2.25} aria-hidden />
         {labels.matchNote}
       </p>
 
-      <Button
-        className="mt-5"
-        onClick={() => void send()}
-        disabled={busy || storageId === null || deceasedName.trim().length === 0}
-      >
-        {busy ? labels.submitting : labels.submit}
-      </Button>
-      <p className="mt-2 text-[12.5px] opacity-60">{labels.submitNote}</p>
+      <div className="border-border flex flex-col items-start gap-2 border-t pt-6">
+        <Button
+          size="lg"
+          onClick={() => void send()}
+          disabled={busy || storageId === null || deceasedName.trim().length === 0}
+        >
+          {busy ? labels.submitting : labels.submit}
+        </Button>
+        <p className="text-muted-foreground text-[13px]">{labels.submitNote}</p>
+      </div>
 
-      {error !== null && <p className="mt-4 text-[14px]">{error}</p>}
+      {error !== null && <p className="text-tone-attention text-[14.5px] font-semibold">{error}</p>}
     </div>
   )
 }

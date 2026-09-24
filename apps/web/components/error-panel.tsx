@@ -1,56 +1,53 @@
 "use client"
 
+import { RotateCcwIcon } from "lucide-react"
+
 import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
+import { NoticeCard } from "@/components/notice-card"
+import { PageColumn } from "@/components/page-column"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 
 /**
- * What a thrown query looks like when it is caught.
+ * The error boundary's face. It renders inside the site shell, so the header
+ * and the way home survive the error.
  *
- * Every screen here subscribes to Convex, and a Convex query reports failure by
- * throwing into React. Without a boundary above them that unmounts the whole
- * route, leaving a blank page — and the person on the other side of it is
- * usually bereaved, mid-claim, and in no mood to guess.
- *
- * `reset()` re-renders the segment, which is the right move for what this
- * actually catches: a dropped socket, a deployment mid-push, a session that
- * expired between two clicks. The copy says so, and says nothing was lost,
- * because the fear on this particular site is that a half-finished claim
- * vanished.
- *
- * **The message is not shown.** A Convex error carries a function path and
- * internal text; the digest is enough to find the real thing in the logs.
+ * ⚠️ The error's message is never shown — it can carry internals. Only the
+ * digest, which support can look up.
  */
 export function ErrorPanel({
   error,
   reset,
+  inColumn = true,
 }: {
   error: Error & { digest?: string }
   reset: () => void
+  /** False where a group layout already provides the column. */
+  inColumn?: boolean
 }) {
   const labels = t(COMMON, useLocale())
 
-  return (
-    <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-5 md:px-8">
-      <div className="border-border rounded-card border p-6">
-        <h1 className="font-heading text-[19px] font-extrabold">
-          {labels.errorTitle}
-        </h1>
-        <p className="text-muted-foreground mt-3 text-[15px] leading-[1.75]">
-          {labels.errorBody}
-        </p>
-
-        {error.digest !== undefined && (
-          <p className="text-muted-foreground ltr-isolate mt-4 font-mono text-[12px]">
-            {labels.errorDigest}: {error.digest}
-          </p>
-        )}
-
-        <Button variant="outline" className="mt-6" onClick={reset}>
+  const card = (
+    <NoticeCard
+      icon={RotateCcwIcon}
+      tone="attention"
+      title={labels.errorTitle}
+      body={labels.errorBody}
+      headingLevel="h1"
+      action={
+        <Button variant="outline" onClick={reset}>
           {labels.retry}
         </Button>
-      </div>
-    </div>
+      }
+    >
+      {error.digest !== undefined && (
+        <p className="text-muted-foreground ltr-isolate font-mono text-[12px]">
+          {labels.errorDigest}: {error.digest}
+        </p>
+      )}
+    </NoticeCard>
   )
+
+  return inColumn ? <PageColumn>{card}</PageColumn> : card
 }

@@ -1,0 +1,39 @@
+---
+import DoorsSection from "@/components/home/DoorsSection.astro"
+import FaqSection from "@/components/home/FaqSection.astro"
+import FinalCta from "@/components/home/FinalCta.astro"
+import Hero from "@/components/home/Hero.astro"
+import KeysSection from "@/components/home/KeysSection.astro"
+import PlansSection from "@/components/home/PlansSection.astro"
+import ProofStrip from "@/components/home/ProofStrip.astro"
+import ReleaseSection from "@/components/home/ReleaseSection.astro"
+import SecuritySection from "@/components/home/SecuritySection.astro"
+import StepsSection from "@/components/home/StepsSection.astro"
+import VaultBento from "@/components/home/VaultBento.astro"
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+import Layout from "@/layouts/Layout.astro"
+import { loadPlans } from "@/lib/plans"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const plans = await loadPlans()
+---
+
+<Layout locale={locale} title={home.metaTitle} description={home.metaDescription}>
+  <Hero locale={locale} />
+  <ProofStrip locale={locale} />
+  <StepsSection locale={locale} />
+  <SecuritySection locale={locale} />
+  <VaultBento locale={locale} />
+  <KeysSection locale={locale} />
+  <ReleaseSection locale={locale} />
+  <PlansSection locale={locale} plans={plans} />
+  <DoorsSection locale={locale} />
+  <FaqSection locale={locale} />
+  <FinalCta locale={locale} />
+</Layout>

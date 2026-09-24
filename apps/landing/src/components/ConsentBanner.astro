@@ -1,0 +1,40 @@
+---
+import { buttonClasses } from "@workspace/ui/lib/wassiya-button"
+
+import { CONSENT } from "@/i18n/strings/pages"
+import { pathFor, t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+  gaId: string
+}
+
+const { locale, gaId } = Astro.props
+const copy = t(CONSENT, locale)
+// Equal weight on purpose: under PDPL a refusal must be as easy as consent,
+// so neither choice is the coloured one.
+const choice = `${buttonClasses("outline", "md")} flex-1 cursor-pointer`
+---
+
+<section
+  id="consent"
+  data-ga-id={gaId}
+  hidden
+  aria-label={copy.label}
+  class="bg-card border-border fixed inset-x-4 bottom-4 z-50 rounded-[26px] border p-5 shadow-[var(--shadow-sheet)] md:inset-x-auto md:end-6 md:bottom-6 md:max-w-[420px]"
+>
+  <p class="text-[14.5px] leading-[1.8]">
+    {copy.body}
+    <a href={pathFor(locale, "/legal/privacy")} class="text-tone-attention font-semibold underline underline-offset-4">
+      {copy.more}
+    </a>
+  </p>
+  <div class="mt-4 flex gap-2">
+    <button type="button" data-consent="granted" class={choice}>{copy.accept}</button>
+    <button type="button" data-consent="denied" class={choice}>{copy.decline}</button>
+  </div>
+</section>
+
+<script>
+  import "@/scripts/consent"
+</script>

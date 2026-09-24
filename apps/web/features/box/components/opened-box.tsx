@@ -4,12 +4,16 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { MESSAGE_KEY_ID } from "@workspace/crypto/message"
 import { useQuery } from "convex/react"
+import { CalendarClockIcon, PackageOpenIcon, TriangleAlertIcon } from "lucide-react"
 
 import { Paper } from "@/components/doc/paper"
-import { DocSection } from "@/components/doc/section"
+import { DocTitle } from "@/components/doc/title"
 import { useLocale } from "@/components/locale-provider"
+import { NoticeCard } from "@/components/notice-card"
+import { Placeholder } from "@/components/placeholder"
 import { fmtDate, fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { COMMON } from "@/lib/i18n/strings/common"
 import { AssetRow, type BoxItem } from "@/features/box/components/asset-row"
 import { HeirMessage } from "@/features/box/components/heir-message"
 import { labelFor, type OpenedBundle } from "@/features/box/lib/open-box"
@@ -37,24 +41,15 @@ export function OpenedBox({
 }) {
   const locale = useLocale()
   const labels = t(HEIR_BOX, locale)
+  const common = t(COMMON, locale)
   const contents = useQuery(api.release.assetsForDelivery, { deliveryId })
 
-  if (contents === undefined) {
-    return (
-      <div className="border-border h-40 animate-pulse border-y" aria-hidden />
-    )
-  }
+  if (contents === undefined) return <Placeholder label={common.loading} className="h-72" />
   // The preconditions are re-asserted inside the query, so `null` here means
   // the delivery stopped qualifying between opening the bundle and asking for
   // the list — it expired, or the session changed hands.
   if (contents === null) {
-    return (
-      <DocSection title={labels.gateTitle}>
-        <p className="text-muted-foreground text-[14px] leading-[1.7]">
-          {labels.failed}
-        </p>
-      </DocSection>
-    )
+    return <NoticeCard icon={TriangleAlertIcon} tone="attention" title={labels.gateTitle} body={labels.failed} />
   }
 
   const items: BoxItem[] = contents.items.map((item) => {
@@ -77,30 +72,21 @@ export function OpenedBox({
 
   return (
     <div className="flex flex-col gap-6">
-      <DocSection title={labels.openTitle}>
-        <p className="text-muted-foreground max-w-[66ch] text-[14.5px] leading-[1.72]">
-          {labels.openBody}
-        </p>
-        <p className="bg-secondary text-secondary-foreground mt-5 inline-flex h-11 items-center rounded-full px-6 text-[14.5px] font-bold">
-          {labels.itemCount.replace("{n}", fmtNumber(items.length, locale))}
-        </p>
-        <p className="text-muted-foreground mt-5 text-[13px] leading-[1.65]">
-          {labels.closesOn.replace("{date}", fmtDate(new Date(expiresAt), locale))}
-        </p>
-      </DocSection>
+      <DocTitle eyebrow={labels.itemCount.replace("{n}", fmtNumber(items.length, locale))} eyebrowIcon={PackageOpenIcon} title={labels.openTitle} lead={labels.openBody} />
+
+      <p className="bg-card/70 border-border text-foreground/75 rounded-row mt-2 flex items-start gap-3 border p-4 text-[14px] leading-[1.75]">
+        <CalendarClockIcon className="text-muted-foreground mt-0.5 size-5 shrink-0" strokeWidth={2} aria-hidden />
+        {labels.closesOn.replace("{date}", fmtDate(new Date(expiresAt), locale))}
+      </p>
 
       {/* A personal message is not an asset — it has its own key map and no
           `assetRecipients` row — so it gets its own card rather than a row that
           would need every column to be optional. */}
-      {contents.messageUrl !== null &&
-        bundle.messageKeys[MESSAGE_KEY_ID] !== undefined && (
-          <HeirMessage
-            url={contents.messageUrl}
-            messageKey={bundle.messageKeys[MESSAGE_KEY_ID]}
-          />
-        )}
+      {contents.messageUrl !== null && bundle.messageKeys[MESSAGE_KEY_ID] !== undefined && (
+        <HeirMessage url={contents.messageUrl} messageKey={bundle.messageKeys[MESSAGE_KEY_ID]} />
+      )}
 
-      <Paper>
+      <Paper className="rise-in">
         <ul className="divide-border divide-y">
           {items.map((item) => (
             <AssetRow key={item.assetId} item={item} />

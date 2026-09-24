@@ -8,8 +8,8 @@ export default async function NotificationsPage() {
   const labels = t(NOTIFICATIONS, await getLocale())
 
   return (
-    <div className="flex flex-col gap-11">
-      <DocTitle title={labels.title} meta={labels.body} />
+    <div className="flex flex-col gap-8">
+      <DocTitle title={labels.title} lead={labels.body} />
       <NotificationsList />
     </div>
   )

@@ -20,8 +20,13 @@ import { useStrings } from "@/i18n/use-strings"
 
 const SITE = "https://wassiya.app"
 
+/** The site serves Arabic unprefixed and English under `/en/`. */
+function legalUrl(locale: "ar" | "en", page: string): string {
+  return `${SITE}${locale === "en" ? "/en" : ""}/legal/${page}`
+}
+
 export function LegalScreen() {
-  const { t } = useStrings("settings/legal")
+  const { t, locale } = useStrings("settings/legal")
   const { t: common } = useStrings("common")
 
   return (
@@ -37,20 +42,20 @@ export function LegalScreen() {
           label={t.terms}
           chevron
           divider
-          onPress={() => void Linking.openURL(`${SITE}/legal/terms`)}
+          onPress={() => void Linking.openURL(legalUrl(locale, "terms"))}
         />
         <SettingsRow
           icon={Lock}
           label={t.privacy}
           chevron
           divider
-          onPress={() => void Linking.openURL(`${SITE}/legal/privacy`)}
+          onPress={() => void Linking.openURL(legalUrl(locale, "privacy"))}
         />
         <SettingsRow
           icon={ShieldCheck}
           label={t.encryption}
           chevron
-          onPress={() => void Linking.openURL(`${SITE}/legal/encryption`)}
+          onPress={() => void Linking.openURL(legalUrl(locale, "encryption"))}
         />
       </View>
 

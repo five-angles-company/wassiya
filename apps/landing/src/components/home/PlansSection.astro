@@ -1,0 +1,145 @@
+---
+import { Check, Infinity as InfinityIcon, Minus, ShieldCheck, Smartphone } from "lucide-react"
+
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+import { fmtBytes, fmtNumber } from "@/lib/format"
+import type { PublishedPlans } from "@/lib/plans"
+
+interface Props {
+  locale: Locale
+  /** `null` when the build could not read `plans.published`. */
+  plans: PublishedPlans | null
+}
+
+const { locale, plans } = Astro.props
+const home = t(HOME, locale)
+const units = { mb: home.unitMb, gb: home.unitGb }
+
+type Limits = PublishedPlans["free"]
+type Row = { label: string; value: string; kind: "value" | "unlimited" | "yes" | "no" }
+
+// Every value is interpolated from the fetched row; `null` is "no cap".
+function rowsFor(limits: Limits): Row[] {
+  const count = (value: number | null): Row["kind"] => (value === null ? "unlimited" : "value")
+  return [
+    {
+      label: home.planStorage,
+      value: limits.storageBytes === null ? home.planUnlimited : fmtBytes(limits.storageBytes, locale, units),
+      kind: count(limits.storageBytes),
+    },
+    {
+      label: home.planAssets,
+      value: limits.assets === null ? home.planUnlimited : fmtNumber(limits.assets, locale),
+      kind: count(limits.assets),
+    },
+    {
+      label: home.planHeirs,
+      value: limits.heirs === null ? home.planUnlimited : fmtNumber(limits.heirs, locale),
+      kind: count(limits.heirs),
+    },
+    {
+      label: home.planPhotos,
+      value: limits.photos ? home.planIncluded : home.planNotIncluded,
+      kind: limits.photos ? "yes" : "no",
+    },
+    {
+      label: home.planFileSize,
+      value: limits.maxFileBytes === null ? home.planUnlimited : fmtBytes(limits.maxFileBytes, locale, units),
+      kind: count(limits.maxFileBytes),
+    },
+  ]
+}
+
+const tiers = [
+  {
+    name: home.planFree,
+    tagline: home.planFreeTagline,
+    fallback: home.planFreeFallback,
+    rows: plans ? rowsFor(plans.free) : null,
+    featured: false,
+  },
+  {
+    name: home.planAnnual,
+    tagline: home.planAnnualTagline,
+    fallback: home.planAnnualFallback,
+    rows: plans ? rowsFor(plans.annual) : null,
+    featured: true,
+  },
+]
+---
+
+<section id="plans" class="grain band relative overflow-hidden py-24 lg:py-28">
+  <div class="mx-auto w-full max-w-[1200px] px-4 md:px-8">
+    <SectionHead eyebrow={home.plansEyebrow} title={home.plansTitle} body={home.plansBody} align="center" />
+
+    <div class="mx-auto mt-14 grid max-w-[940px] gap-5 md:grid-cols-2 lg:mt-20">
+      {
+        tiers.map((tier) => (
+          <article
+            class:list={[
+              "rise-in relative flex flex-col overflow-hidden rounded-[32px] p-7 md:p-9",
+              tier.featured
+                ? "bg-[#1c1a19] text-sand-50 shadow-[var(--shadow-overlay)] ring-1 ring-terracotta-400/30"
+                : "bg-card border-border border shadow-[var(--shadow-raised)]",
+            ]}
+          >
+            <h3 class:list={["relative text-[26px]", tier.featured && "text-sand-50"]}>{tier.name}</h3>
+            <p class:list={["relative mt-1 text-[15px]", tier.featured ? "text-sand-300" : "text-sand-700"]}>
+              {tier.tagline}
+            </p>
+
+            {tier.rows ? (
+              <dl class="relative mt-7">
+                {tier.rows.map((row) => (
+                  <div
+                    class:list={[
+                      "flex items-center justify-between gap-4 border-t py-3.5",
+                      tier.featured ? "border-white/10" : "border-border",
+                    ]}
+                  >
+                    <dt class:list={["text-[14.5px]", tier.featured ? "text-sand-300" : "text-sand-700"]}>{row.label}</dt>
+                    <dd class="flex items-center gap-2 text-[15.5px] font-bold">
+                      {row.kind === "unlimited" && (
+                        <InfinityIcon
+                          className={tier.featured ? "text-terracotta-300 size-4" : "text-olive-700 size-4"}
+                          strokeWidth={2.5}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {row.kind === "yes" && (
+                        <Check
+                          className={tier.featured ? "text-terracotta-300 size-4" : "text-olive-700 size-4"}
+                          strokeWidth={3}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {row.kind === "no" && <Minus className="text-sand-500 size-4" strokeWidth={3} aria-hidden="true" />}
+                      <span class:list={[row.kind === "no" && "text-sand-500 font-semibold"]}>{row.value}</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p class:list={["relative mt-7 text-[16.5px] leading-[1.85] font-semibold", tier.featured && "text-sand-100"]}>
+                {tier.fallback}
+              </p>
+            )}
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="text-sand-700 mx-auto mt-10 flex max-w-[940px] flex-col items-center gap-3 text-center text-[14.5px] leading-[1.8] md:flex-row md:justify-center md:gap-8">
+      <p class="inline-flex items-center gap-2">
+        <Smartphone className="size-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
+        {home.plansPrice}
+      </p>
+      <p class="inline-flex items-start gap-2 md:items-center">
+        <ShieldCheck className="text-olive-700 mt-1 size-4 shrink-0 md:mt-0" strokeWidth={2.25} aria-hidden="true" />
+        {home.plansLapse}
+      </p>
+    </div>
+  </div>
+</section>

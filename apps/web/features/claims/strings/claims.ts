@@ -1,137 +1,117 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The heir's reports — the list, the filing form, and the detail page's chrome.
+ * Death reports — the list, the form, and the case page's chrome.
  *
- * The voice: **plain, warm, never euphemistic about death.**
- * "بلاغ وفاة" is a *death report* and the headline says so in two words.
+ * The voice is plain, warm, and never euphemistic about death: "بلاغ وفاة" is
+ * a death report and says so.
  *
- * Two lines are placed rather than merely written. *"We're sorry for your
- * loss"* appears once, on the filing form, and never again — repeated
- * condolence stops reading as sympathy and starts reading as a script. And the
- * no-legal-authority line sits in the reader's path rather than in a footer,
- * where the belief it corrects would already have formed.
+ * - *"We're sorry for your loss"* appears **once**, in `newIntro`, and nowhere
+ *   else in the app — repeated condolence reads as a script.
+ * - The person filing is not a recipient. Nothing here may promise them what
+ *   was left: Wassiya contacts the heirs itself.
  */
 export const CLAIMS = {
   listBody: {
-    ar: "كل بلاغ قدّمته، وأين وصل. نراسلك على بريدك عند كل تغيّر — لا حاجة لمتابعة هذه الصفحة يومياً.",
-    en: "Every report you have filed, and where it stands. We email you at each change — there's no need to watch this page.",
+    ar: "كل بلاغ قدّمته، وأين وصل. نراسلك عند كل خطوة، فلا حاجة لمتابعة هذه الصفحة.",
+    en: "Every report you've filed, and where it stands. We email you at each step, so there's no need to keep checking this page.",
   },
   emptyTitle: { ar: "لا بلاغات بعد", en: "No reports yet" },
   emptyBody: {
-    ar: "إن توفّي شخص ترك لك شيئاً في وصيّة، تبدأ من هنا.",
-    en: "If someone who left you something in Wassiya has died, you start here.",
+    ar: "إن توفّي شخص كان يستخدم وصيّة، تبدأ من هنا.",
+    en: "If someone who used Wassiya has died, this is where you start.",
   },
   newReport: { ar: "بلاغ جديد", en: "New report" },
-  // For a reader who has the link but no session — a relative it was forwarded
-  // to, or the claimant on a new device. The page is fully readable; only the
-  // steps that ask for something swap to this.
-  signInToAct: { ar: "سجّل الدخول للمتابعة", en: "Sign in to continue" },
 
-  // `/file` is readable with no account so the checklist beside it can be read
-  // first. The form itself needs one: a report has to belong to a person, which
-  // is what makes the rate limit and the 90-day lockout mean anything.
-  signInTitle: { ar: "قبل أن تبدأ", en: "Before you start" },
+  // `/file` is readable without an account, so the checklist can be read
+  // first. Sending needs one: a report has to belong to a person, which is what
+  // gives the rate limit and the 90-day lockout their meaning.
+  signInTitle: { ar: "سجّل الدخول لتبدأ", en: "Sign in to start" },
   signInBody: {
-    ar: "نحتاج حساباً لنربط البلاغ بك ونراسلك عند كل تغيّر. الحساب مجاني ويستغرق دقيقة. اقرأ ما تحتاجه على اليمين أولاً — أكثر ما يوقف الناس هو البدء بلا شهادة الوفاة.",
-    en: "We need an account so the report belongs to you and we can email you at each change. It is free and takes a minute. Read what you will need first — the commonest reason people stall is starting without the death certificate.",
+    ar: "نحتاج حساباً ليكون البلاغ باسمك ونراسلك عند كل خطوة. الحساب مجاني ويأخذ دقيقة.",
+    en: "We need an account so the report is in your name and we can email you at each step. It's free and takes a minute.",
   },
   signInAction: { ar: "سجّل الدخول وابدأ", en: "Sign in and start" },
   fileAgain: { ar: "قدّم بلاغاً جديداً", en: "File a new report" },
   otherCases: { ar: "كل بلاغاتك", en: "All your reports" },
 
-  // For a reader who is signed in but is not the claimant — a relative the link
-  // was forwarded to. They may read the whole report, which is what
-  // `publicStatus` is for; they simply cannot act on it. Telling them to sign in
-  // was the bug: they already had.
-  notYoursTitle: { ar: "هذا بلاغ شخص آخر", en: "This is someone else's report" },
+  // A signed-in reader who did not file it — someone the link was forwarded
+  // to. They may read the report; they cannot act on it.
   notYoursBody: {
-    ar: "يمكنك متابعة أين وصل هذا البلاغ، لكن لا يمكن لأحد غير مقدّمه إثبات هويته أو رفع الشهادة أو فتح الصندوق.",
-    en: "You can follow where this report stands, but only the person who filed it can verify their identity, upload the certificate or open the box.",
+    ar: "يمكنك متابعة أين وصل هذا البلاغ، لكن خطواته يقوم بها من قدّمه فقط.",
+    en: "You can follow where this report stands, but only the person who filed it can take its next steps.",
   },
-  unknownVault: { ar: "خزنة", en: "A vault" },
+  unknownVault: { ar: "صاحب خزنة", en: "a vault owner" },
 
-  // ---- filing ------------------------------------------------------------
+  // ---- the form -------------------------------------------------------------
   newTitle: { ar: "بلاغ وفاة", en: "Report a death" },
   newIntro: {
-    ar: "نأسف لفقدك. سنطلب منك إثبات هويتك وشهادة الوفاة، ثم نبدأ إجراءً واضحاً ينتهي بتسليمك ما تركه لك — دون أن نطلع على شيء منه.",
-    en: "We're sorry for your loss. We'll ask you to prove who you are and upload the death certificate, then begin a clear process that ends with you receiving what was left to you — without us seeing any of it.",
+    ar: "نأسف لفقدك. سنطلب منك إثبات هويتك وشهادة الوفاة. بعد أن نتأكد من كل شيء، نتواصل نحن مع الورثة مباشرة — فتقديم البلاغ لا يمنحك شيئاً بنفسه.",
+    en: "We're sorry for your loss. We'll ask you to confirm who you are and to upload the death certificate. Once we've checked everything, we contact the heirs ourselves — filing the report doesn't give you anything by itself.",
   },
   timing: {
-    ar: "نحو عشر دقائق · يمكنك التوقّف والعودة",
-    en: "About ten minutes · you can stop and come back",
+    ar: "نحو عشر دقائق · يمكنك الإكمال لاحقاً",
+    en: "About ten minutes · you can finish later",
   },
 
-  // Three items and no more; the third carries the longest explanation because
-  // "the email they registered" is the one an heir usually has to go and find.
   needTitle: { ar: "جهّز هذه قبل أن تبدأ", en: "Have these ready first" },
   needWhy: {
-    ar: "أكثر ما يوقف الناس هو البدء بلا شهادة الوفاة.",
-    en: "The commonest reason people stall is starting without the certificate.",
+    ar: "أكثر ما يؤخّر الناس هو البدء دون شهادة الوفاة.",
+    en: "What holds people up most is starting without the death certificate.",
   },
-  needIdTitle: { ar: "هويتك أنت", en: "Your own ID" },
+  needIdTitle: { ar: "هويتك", en: "Your ID" },
   needIdBody: {
-    ar: "الهوية الوطنية أو الإقامة أو جواز السفر — صورة وسيلفي حيّة",
-    en: "National ID, iqama or passport — a photo and a liveness selfie",
+    ar: "الهوية الوطنية أو الإقامة أو جواز السفر، وصورة لوجهك بالجوّال",
+    en: "Your national ID, iqama or passport, and a photo of your face taken on your phone",
   },
   needCertificateTitle: { ar: "شهادة الوفاة", en: "The death certificate" },
   needCertificateBody: {
-    ar: "PDF أو صورة واضحة، حتى ٢٠ م.ب",
-    en: "PDF or a clear photo, up to 20 MB",
+    ar: "ملف PDF أو صورة واضحة، حتى ٢٠ م.ب",
+    en: "A PDF or a clear photo, up to 20 MB",
   },
-  needEmailTitle: {
-    ar: "بريد المتوفّى المسجّل",
-    en: "The email they registered",
-  },
+  needEmailTitle: { ar: "بريد المتوفّى في وصيّة", en: "Their Wassiya email" },
   needEmailBody: {
-    ar: "البريد الذي أنشأ به خزنته — غالباً في وثيقة الاسترداد المطبوعة",
-    en: "The address their vault was created with — usually on the printed recovery sheet",
+    ar: "البريد الذي أنشأ به حسابه — تجده غالباً على ورقة الاسترداد المطبوعة",
+    en: "The email they signed up with — often printed on their recovery sheet",
   },
 
-  // The form itself. Three fields and no more — every extra one is a chance to
-  // stall someone who is filling this in the week of a funeral.
-  subjectLabel: {
-    ar: "بريد صاحب الحساب المتوفى",
-    en: "The deceased account holder's email",
-  },
+  // Three fields and no more: every extra one is a chance to stall someone
+  // filling this in during the week of a funeral.
+  formTitle: { ar: "بيانات البلاغ", en: "About the report" },
+  subjectLabel: { ar: "بريد المتوفّى في وصيّة", en: "The email they used with Wassiya" },
   subjectHint: {
-    ar: "البريد الذي كان يستخدمه في وصيّة",
-    en: "The email they used with Wassiya",
+    ar: "كما هو على ورقة الاسترداد إن وجدتها",
+    en: "As printed on their recovery sheet, if you have it",
   },
-  nameLabel: {
-    ar: "اسمك الكامل كما في هويتك",
-    en: "Your full name as it appears on your ID",
-  },
-  // Placeholders, not repeated hints: both fields are Latin machine strings
-  // in an Arabic form, and a shape to match is worth more than another
-  // sentence.
+  nameLabel: { ar: "اسمك الكامل كما في هويتك", en: "Your full name, as on your ID" },
   subjectPlaceholder: { ar: "name@example.com", en: "name@example.com" },
   contactPlaceholder: { ar: "05x xxx xxxx", en: "05x xxx xxxx" },
-  contactLabel: { ar: "رقم جوالك", en: "Your mobile number" },
+  contactLabel: { ar: "رقم جوّالك", en: "Your mobile number" },
   contactHint: {
-    ar: "سنستخدمه للتواصل بشأن البلاغ",
-    en: "We will use it to contact you about the report",
+    ar: "لنتواصل معك بشأن هذا البلاغ فقط",
+    en: "Only to reach you about this report",
   },
-  fileClaim: { ar: "تسجيل البلاغ", en: "File the report" },
-  filing: { ar: "جارٍ التسجيل…", en: "Filing…" },
+  fileClaim: { ar: "أرسل البلاغ", en: "Send the report" },
+  filing: { ar: "جارٍ الإرسال…", en: "Sending…" },
   fileFailed: {
-    ar: "تعذّر تسجيل البلاغ. لم يُحفظ شيء — حاول مرة أخرى.",
-    en: "We could not file the report. Nothing was saved — try again.",
+    ar: "لم يُرسل البلاغ ولم يُحفظ شيء. حاول مرة أخرى.",
+    en: "The report wasn't sent and nothing was saved. Please try again.",
   },
-  // `submit` answers `{ received: true }` whether or not the email matched a
-  // vault, because it must not be an enumeration oracle. So the confirmation
-  // cannot promise a vault was found, and this line is worded not to.
+  // `submit` answers the same whether or not the email matched a vault — it
+  // must not reveal which emails have one — so nothing after it may promise
+  // that a vault was found.
 
   disclaimer: {
-    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات. الأنصبة يحدّدها القانون والفرائض الشرعية — نحن نوصّل ما وُجّه إليك بالاسم، لا أكثر.",
-    en: "Wassiya is not a legal authority and does not divide estates. Shares are set by law and by the fara'id — we only deliver what was routed to you by name.",
+    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات؛ تقسيم الميراث يحكمه الشرع والقانون. نحن نوصل لكل وارث ما خصّصه له صاحب الخزنة باسمه فقط.",
+    en: "Wassiya is not a legal authority and doesn't divide estates — that is set by law. We deliver to each heir only what the vault's owner set aside for them by name.",
   },
   needPrivacy: {
-    ar: "مستنداتك تُستخدم للتحقق من البلاغ فقط، ولا تُسلّم لأي وارث آخر.",
-    en: "Your documents are used to verify this report only, and are never passed to another heir.",
+    ar: "نستخدم مستنداتك للتحقق من البلاغ فقط، ولا نعطيها لأي وارث.",
+    en: "We use your documents only to check this report, and never share them with any heir.",
   },
 
-  // ---- detail chrome -----------------------------------------------------
-  detailTitle: { ar: "بلاغ خزنة {name}", en: "Report for {name}'s vault" },
+  // ---- the case page ----------------------------------------------------------
+  detailEyebrow: { ar: "بلاغ وفاة", en: "Death report" },
+  detailTitle: { ar: "بلاغ عن {name}", en: "Report about {name}" },
   backToList: { ar: "كل البلاغات", en: "All reports" },
 } as const satisfies Dictionary

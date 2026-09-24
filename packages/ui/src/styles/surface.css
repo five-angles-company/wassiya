@@ -1,0 +1,87 @@
+/* Brand surfaces shared by apps/landing and apps/web.
+
+   Decoration only: removing any of it must leave a page readable, so none of
+   it carries text or meaning. Three rules hold it together:
+
+   - Scoped to `.wassiya` and unlayered. Admin (`.wassiya-admin`) never sees
+     it, and a utility on the same element cannot override `.grain`'s
+     positioning.
+   - Every colour is a token from the `.wassiya` blocks in globals.css, so the
+     dark block flips it. Never write a ramp literal here.
+   - Loud motion (floating, pulsing, shimmer) is not here on purpose. It lives
+     in apps/landing only, which is what keeps it off the web app's grief
+     flows. */
+
+/* The shared `@theme inline` declares `--font-heading` as `var(--font-sans)`,
+   so the `font-heading` utility compiles to the body face and no variable can
+   redirect it. Unlayered, this beats the utility. */
+.wassiya .font-heading {
+  font-family: var(--font-heading-wassiya);
+}
+
+/* The logo's own ramp. A word painted with it is a fill, not body text, so it
+   is used only at display sizes (24px and up). */
+.wassiya .text-brand {
+  background: var(--brand-ink);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.wassiya .bg-brand {
+  background: var(--brand-fill);
+}
+
+/* Film grain: flat fills read as a template, a little noise reads as paper. */
+.wassiya .grain {
+  position: relative;
+  isolation: isolate;
+}
+.wassiya .grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: var(--grain-blend);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .13 0 0 0 0 .11 0 0 0 0 .1 0 0 0 .45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* The alternate section ground: a step deeper than the page, so paper-white
+   cards lift off it. */
+.wassiya .band {
+  background-color: var(--band);
+}
+
+/* A fine, even dot grid, faded out from the middle so it has no hard edge. */
+.wassiya .dot-grid {
+  background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.7px);
+  background-size: 24px 24px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 42%, #000 25%, transparent 78%);
+}
+
+/* The sticky header takes its ground only once the page has scrolled under
+   it. Without scroll timelines it is simply always filled. */
+.wassiya .site-header {
+  background-color: var(--header-fill);
+  border-bottom: 1px solid var(--header-rule);
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes wassiya-header-fill {
+    from {
+      background-color: transparent;
+      border-bottom-color: transparent;
+    }
+    to {
+      background-color: var(--header-fill);
+      border-bottom-color: var(--header-rule);
+    }
+  }
+  .wassiya .site-header {
+    animation: wassiya-header-fill linear both;
+    animation-timeline: scroll();
+    animation-range: 0 96px;
+  }
+}

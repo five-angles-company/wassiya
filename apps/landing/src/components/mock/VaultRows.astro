@@ -1,0 +1,38 @@
+---
+import { Bitcoin, File, Landmark } from "lucide-react"
+
+import Faces from "@/components/ui/Faces.astro"
+import { t, type Locale } from "@/i18n/locale"
+import { MOCK } from "@/i18n/strings/mock"
+
+interface Props {
+  locale: Locale
+}
+
+const m = t(MOCK, Astro.props.locale)
+const initial = (name: string) => name.charAt(0)
+
+// The app's `VaultRow`: type icon on a sand disc, recipients as faces.
+const rows = [
+  { icon: Bitcoin, title: m.assetCrypto, to: m.assetCryptoTo, faces: [initial(m.heirSara), initial(m.heirOmar)] },
+  { icon: Landmark, title: m.assetBank, to: m.assetBankTo, faces: [m.allShort] },
+  { icon: File, title: m.assetDeed, to: m.assetDeedTo, faces: [initial(m.heirMohammed)] },
+]
+---
+
+<div class="flex flex-col gap-[9px]">
+  {
+    rows.map((row) => (
+      <div class="bg-card border-border flex items-center gap-3 rounded-[22px] border px-4 py-3">
+        <span class="bg-sand-300 text-sand-900 flex size-9 shrink-0 items-center justify-center rounded-full">
+          <row.icon className="size-[18px]" strokeWidth={2.5} aria-hidden="true" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-[14px] font-semibold">{row.title}</span>
+          <span class="text-muted-foreground block truncate text-[12px]">{row.to}</span>
+        </span>
+        <Faces initials={row.faces} size={28} />
+      </div>
+    ))
+  }
+</div>

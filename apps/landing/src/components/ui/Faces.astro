@@ -1,0 +1,33 @@
+---
+/**
+ * The app's `AvatarStack`: olive-200/300 discs, each after the first
+ * overlapping by a third and cut out of whatever it sits on.
+ */
+interface Props {
+  initials: readonly string[]
+  /** Disc size in px. */
+  size?: number
+  /** The colour of the ground, for the cut-out ring. */
+  ring?: string
+  class?: string
+}
+
+const { initials, size = 29, ring = "#fdfaf4", class: className } = Astro.props
+const overlap = Math.round(size * 0.31)
+---
+
+<span class={`inline-flex items-center ${className ?? ""}`}>
+  {
+    initials.map((initial, index) => (
+      <span
+        class:list={[
+          "text-olive-900 inline-flex shrink-0 items-center justify-center rounded-full font-bold",
+          index % 2 === 0 ? "bg-olive-200" : "bg-olive-300",
+        ]}
+        style={`width:${size}px;height:${size}px;font-size:${Math.round(size * (initial.length > 1 ? 0.34 : 0.4))}px;box-shadow:0 0 0 2px ${ring};margin-inline-start:${index === 0 ? 0 : -overlap}px`}
+      >
+        {initial}
+      </span>
+    ))
+  }
+</span>

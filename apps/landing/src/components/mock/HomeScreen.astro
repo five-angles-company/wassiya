@@ -1,0 +1,123 @@
+---
+import {
+  BadgeCheck,
+  FileText,
+  FingerprintPattern,
+  Heart,
+  House,
+  Route,
+  Settings,
+  ShieldCheck,
+  Users,
+  Wallet,
+} from "lucide-react"
+
+import StatusBar from "@/components/mock/StatusBar.astro"
+import { t, type Locale } from "@/i18n/locale"
+import { MOCK } from "@/i18n/strings/mock"
+import { fmtNumber } from "@/lib/format"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const m = t(MOCK, locale)
+
+// The app's Home in its "due" state, drawn to `CheckInHero` and `StatTile`.
+const tiles = [
+  { icon: Wallet, label: m.tileAssets, value: fmtNumber(12, locale), count: true, settled: false },
+  { icon: Users, label: m.tileHeirs, value: fmtNumber(3, locale), count: true, settled: false },
+  { icon: Route, label: m.tileRouting, value: m.tileRoutingValue, count: false, settled: true },
+  { icon: ShieldCheck, label: m.tileDelivery, value: m.tileDeliveryValue, count: false, settled: true },
+  { icon: FileText, label: m.tileSheet, value: m.tileSheetValue, count: false, settled: true },
+  { icon: BadgeCheck, label: m.tileIdentity, value: m.tileIdentityValue, count: false, settled: true },
+]
+const tabs = [
+  { icon: House, label: m.tabHome, active: true },
+  { icon: Wallet, label: m.tabVault, active: false },
+  { icon: Users, label: m.tabHeirs, active: false },
+  { icon: Settings, label: m.tabAccount, active: false },
+]
+---
+
+<div class="bg-background text-foreground flex h-full flex-col">
+  <StatusBar locale={locale} />
+
+  <div class="flex-1 overflow-hidden px-5 pt-3">
+    <div class="flex items-center gap-3">
+      <span class="bg-sand-300 text-sand-900 flex size-[38px] items-center justify-center rounded-full text-[14.5px] font-bold">
+        {m.ownerInitial}
+      </span>
+      <div>
+        <p class="text-muted-foreground text-[11.5px] leading-[1.45]">{m.greeting}</p>
+        <p class="font-heading text-[19px] leading-[1.25] font-extrabold">{m.ownerName}</p>
+      </div>
+    </div>
+
+    <div class="bg-terracotta-100 mt-4 rounded-[28px] px-5 pt-6 pb-5 text-center">
+      <div class="relative mx-auto size-[60px]">
+        <span class="pulse-ring bg-terracotta-300 absolute inset-0 rounded-full"></span>
+        <span class="bg-primary relative flex size-full items-center justify-center rounded-full shadow-[0_3px_10px_rgb(46_43_37/0.16)]">
+          <Heart className="size-7 fill-[#fff6f0] text-[#fff6f0]" strokeWidth={2.75} aria-hidden="true" />
+        </span>
+      </div>
+      <p class="font-heading text-terracotta-800 mt-4 text-[24px] leading-[1.25] font-extrabold">{m.askTitle}</p>
+      <p class="text-terracotta-700 mt-1 text-[14.5px] leading-[1.7]">{m.askBody}</p>
+      <span class="bg-primary mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-full text-[#f5ead8]">
+        <FingerprintPattern className="size-5" strokeWidth={2.25} aria-hidden="true" />
+        <span class="text-[14.5px] font-bold">{m.askCta}</span>
+      </span>
+      <p class="text-terracotta-700 mt-3.5 text-[11.5px] font-semibold">{m.askSettings}</p>
+    </div>
+
+    <p class="mt-5 text-[13.5px] font-bold">{m.allReady}</p>
+    <div class="mt-3 grid grid-cols-2 gap-[9px]">
+      {
+        tiles.map((tile) => (
+          <div class="bg-card border-border rounded-[26px] border px-4 py-3.5">
+            <div class="flex items-center justify-between gap-2">
+              <span
+                class:list={[
+                  "flex size-9 shrink-0 items-center justify-center rounded-full",
+                  tile.settled ? "bg-olive-200 text-olive-900" : "bg-sand-300 text-sand-900",
+                ]}
+              >
+                <tile.icon className="size-[18px]" strokeWidth={2.75} aria-hidden="true" />
+              </span>
+              <span
+                class:list={[
+                  tile.count ? "font-heading text-[26px] leading-none font-extrabold" : "text-[14.5px] font-semibold",
+                  tile.settled ? "text-olive-800" : "text-sand-800",
+                ]}
+              >
+                {tile.value}
+              </span>
+            </div>
+            <p class="text-muted-foreground mt-2 text-[12.5px]">{tile.label}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="bg-sand-100 grid h-[83px] shrink-0 grid-cols-4 border-t border-[rgb(32_30_29/0.16)] pt-2">
+    {
+      tabs.map((tab) => (
+        <div class="flex flex-col items-center gap-1">
+          <span
+            class:list={[
+              "flex h-7 w-12 items-center justify-center rounded-full",
+              tab.active ? "bg-primary text-[#f5ead8]" : "text-muted-foreground",
+            ]}
+          >
+            <tab.icon className="size-[19px]" strokeWidth={tab.active ? 2.5 : 2} aria-hidden="true" />
+          </span>
+          <span class:list={["text-[12px]", tab.active ? "text-primary font-semibold" : "text-muted-foreground"]}>
+            {tab.label}
+          </span>
+        </div>
+      ))
+    }
+  </div>
+</div>

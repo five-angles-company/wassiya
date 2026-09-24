@@ -1,7 +1,166 @@
-/* Reuse the shared design system (Tailwind v4 theme tokens + shadcn styles). */
 @import "@workspace/ui/globals.css";
+
+@import "@fontsource-variable/cairo/wght.css";
+@import "@fontsource/ibm-plex-sans-arabic/400.css";
+@import "@fontsource/ibm-plex-sans-arabic/500.css";
+@import "@fontsource/ibm-plex-sans-arabic/600.css";
 
 /* The shared globals.css only scans .ts and .tsx files, so it misses utility
    classes written directly in .astro markup. Add Astro files as a content
    source so those classes are generated. */
 @source "./**/*.{astro,ts,tsx}";
+
+/* `.wassiya` resolves its faces through these two names, which the Next.js
+   apps set with next/font. Here they are self-hosted by @fontsource; no font
+   request leaves this site. */
+:root {
+  --font-cairo: "Cairo Variable";
+  --font-plex-arabic: "IBM Plex Sans Arabic";
+  --font-sans: var(--font-plex-arabic), system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing-only surfaces. The shared ones (.text-brand, .bg-brand, .grain,
+   .band, .dot-grid, .site-header) live in packages/ui/src/styles/surface.css;
+   the loud motion below stays here so the web app cannot pick it up. */
+
+/* The same grid in sand, for the dark security section. */
+.dot-grid-light {
+  background-image: radial-gradient(circle, rgb(245 234 216 / 0.16) 1.2px, transparent 1.7px);
+  background-size: 24px 24px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 70% 65% at 50% 35%, #000 20%, transparent 78%);
+}
+
+/* An eight-pointed star lattice (khatam) for the closing brand panel, faded
+   out from the centre. Kept at the edge of visibility. */
+.khatam-light {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'><g fill='none' stroke='%23f5ead8' stroke-opacity='.07' stroke-width='1'><rect x='22' y='22' width='28' height='28'/><rect x='22' y='22' width='28' height='28' transform='rotate(45 36 36)'/><path d='M0 36h8M64 36h8M36 0v8M36 64v8'/></g></svg>");
+  mask-image: radial-gradient(ellipse 60% 70% at 50% 30%, #000 10%, transparent 75%);
+}
+
+@keyframes wassiya-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+.float-a {
+  animation: wassiya-float 7s ease-in-out infinite;
+}
+.float-b {
+  animation: wassiya-float 8.5s ease-in-out -3s infinite;
+}
+
+/* The ciphertext half of the security line shimmers, character by character,
+   so it reads as alive and unreadable rather than as a printout. `--i` is set
+   per character; the negative delays start every glyph mid-cycle. */
+@keyframes wassiya-flicker {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.cipher-flicker span {
+  animation: wassiya-flicker 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * -173ms);
+}
+
+@keyframes wassiya-pulse-ring {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+.pulse-ring {
+  animation: wassiya-pulse-ring 2.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .float-a,
+  .float-b,
+  .cipher-flicker span,
+  .pulse-ring {
+    animation: none;
+  }
+}
+
+/* Markdown from src/content/legal. The typography plugin is not installed; this
+   is the one place long-form prose appears. */
+.legal-prose {
+  font-size: 16px;
+  line-height: 1.95;
+}
+.legal-prose h2 {
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 22px;
+}
+.legal-prose h3 {
+  margin-top: 1.75rem;
+  font-size: 18px;
+}
+.legal-prose h2:first-child {
+  margin-top: 0;
+}
+.legal-prose p,
+.legal-prose ul,
+.legal-prose ol,
+.legal-prose table {
+  margin-top: 1rem;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-inline-start: 1.4rem;
+}
+.legal-prose ol {
+  list-style: decimal;
+  padding-inline-start: 1.4rem;
+}
+.legal-prose li + li {
+  margin-top: 0.5rem;
+}
+.legal-prose strong {
+  font-weight: 700;
+}
+.legal-prose a {
+  color: var(--tone-attention);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.legal-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+.legal-prose th,
+.legal-prose td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+.legal-prose th {
+  font-weight: 700;
+}

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://wassiya.app/sitemap-index.xml

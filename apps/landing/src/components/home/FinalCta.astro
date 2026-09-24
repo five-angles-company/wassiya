@@ -1,0 +1,44 @@
+---
+import { Image } from "astro:assets"
+import { Check } from "lucide-react"
+
+import mark from "@/assets/brand/mark.png"
+import StoreBadges from "@/components/StoreBadges.astro"
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const trust = [home.heroTrustDevice, home.heroTrustPasswords, home.heroTrustFree]
+---
+
+<section id="download" class="mx-auto w-full max-w-[1200px] px-4 pb-24 md:px-8 lg:pb-32">
+  <div class="grain bg-brand relative overflow-hidden rounded-[40px] px-6 py-16 text-center text-white md:px-12 md:py-24">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="khatam-light absolute inset-0 opacity-80"></div>
+    </div>
+
+    <span class="rise-in mx-auto flex size-20 items-center justify-center rounded-[26px] bg-[#fdfaf4] shadow-[0_20px_40px_-12px_rgb(120_48_34/0.28)]">
+      <Image src={mark} alt="" width={128} height={64} class="h-9 w-auto" />
+    </span>
+    <h2 class="rise-in mx-auto mt-8 max-w-[40rem] text-[34px] leading-[1.3] font-black text-balance text-white md:text-[54px] md:leading-[1.2]">
+      {home.finalTitle}
+    </h2>
+    <p class="mx-auto mt-5 max-w-[34rem] text-[17px] leading-[1.9] text-white/85 md:text-[19px]">{home.finalBody}</p>
+    <StoreBadges locale={locale} tone="brand" class="mt-10 justify-center" />
+    <ul class="mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[14.5px] font-medium text-white/85">
+      {
+        trust.map((item) => (
+          <li class="inline-flex items-center gap-2">
+            <Check className="size-4" strokeWidth={3} aria-hidden="true" />
+            {item}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

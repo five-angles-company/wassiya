@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest"
 
 import { KEY_BYTES, randomBytes } from "./bytes"
-import { decodePaperCode, encodePaperCode } from "./papercode"
+import {
+  decodePaperCode,
+  encodePaperCode,
+  looksLikeRecoveryCode,
+} from "./papercode"
 
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 
@@ -91,5 +95,18 @@ describe("paper code", () => {
   it("rejects an out-of-range version and a short share", () => {
     expect(() => encodePaperCode(randomBytes(KEY_BYTES), 0)).toThrow(/version/)
     expect(() => encodePaperCode(randomBytes(16), 1)).toThrow(/32 bytes/)
+  })
+})
+
+describe("looksLikeRecoveryCode", () => {
+  it("a real code, with or without its prefix", () => {
+    const code = encodePaperCode(new Uint8Array(32).fill(7), 1)
+    expect(looksLikeRecoveryCode(`my code is ${code}`)).toBe(true)
+    expect(looksLikeRecoveryCode(code.split("-").slice(1).join(" "))).toBe(true)
+  })
+
+  it("ordinary text", () => {
+    expect(looksLikeRecoveryCode("this will make some very good tree when done")).toBe(false)
+    expect(looksLikeRecoveryCode("رقم الطلب 12345")).toBe(false)
   })
 })

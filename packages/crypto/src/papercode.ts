@@ -218,3 +218,23 @@ function base32Decode(encoded: string, format: CodeFormat): Uint8Array {
   }
   return out
 }
+
+const SHEET_PREFIX = /WSY[A-Z]?\d+\s*-/i
+const SHEET_RUN = /(?:[2-9A-HJ-NP-Z]{4}[\s\-–—]*){8,}/g
+
+/**
+ * Whether free text looks like it carries a recovery code — for the support
+ * composers, which warn before a sheet is pasted into a chat.
+ *
+ * ⚠️ Mirrored by `looksLikeRecoveryCode` in the backend's `model/support.ts`,
+ * which refuses the same text server-side and cannot import this package.
+ * Change the two together. The digit requirement is what keeps a run of
+ * ordinary four-letter words from matching.
+ */
+export function looksLikeRecoveryCode(text: string): boolean {
+  if (SHEET_PREFIX.test(text)) return true
+  for (const match of text.toUpperCase().matchAll(SHEET_RUN)) {
+    if (/[2-9]/.test(match[0])) return true
+  }
+  return false
+}

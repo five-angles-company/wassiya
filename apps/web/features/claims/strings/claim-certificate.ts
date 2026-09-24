@@ -1,55 +1,48 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
-/** ٧.٣ — step 2: the death certificate. */
+/**
+ * The death certificate step.
+ *
+ * Spellings of a name vary far more often than anyone forges a certificate, so
+ * a mismatch goes to a person, never to a rejection — and `matchNote` says so
+ * *before* they send, not after.
+ */
 export const CLAIM_CERTIFICATE = {
-  heading: { ar: "شهادة الوفاة", en: "Death certificate" },
   intro: {
-    ar: "ارفع الشهادة الرسمية. نطابق الاسم مع الهوية التي وثّقها صاحب الحساب عند التسجيل.",
-    en: "Upload the official certificate. We match the name against the ID the account holder verified when they registered.",
+    ar: "ارفع الشهادة الرسمية. نطابق الاسم فيها بالاسم الموثّق لصاحب الخزنة.",
+    en: "Upload the official certificate. We match its name to the vault owner's verified name.",
   },
-
-  dropHere: { ar: "اسحب الملف هنا", en: "Drag the file here" },
-  dropHint: { ar: "PDF أو صورة · حتى ٢٠ م.ب", en: "PDF or image · up to 20 MB" },
+  dropHere: { ar: "اسحب الملف إلى هنا", en: "Drag the file here" },
+  dropHint: { ar: "PDF أو صورة · حتى ٢٠ م.ب", en: "PDF or photo · up to 20 MB" },
   pickFile: { ar: "اختر ملفاً", en: "Choose a file" },
-  uploaded: { ar: "رُفع", en: "Uploaded" },
+  uploaded: { ar: "تم الرفع", en: "Uploaded" },
   replace: { ar: "غيّر الملف", en: "Change the file" },
   tooLarge: {
     ar: "الملف أكبر من ٢٠ م.ب. اختر ملفاً أصغر.",
-    en: "The file is larger than 20 MB. Choose a smaller one.",
+    en: "The file is bigger than 20 MB. Please choose a smaller one.",
   },
-  wrongType: {
-    ar: "نقبل PDF أو صورة فقط.",
-    en: "We accept a PDF or an image only.",
-  },
+  wrongType: { ar: "نقبل ملف PDF أو صورة فقط.", en: "We accept a PDF or a photo only." },
   uploading: { ar: "جارٍ الرفع…", en: "Uploading…" },
 
-  nameLabel: {
-    ar: "اسم المتوفى كما في الشهادة",
-    en: "The deceased's name as it appears on the certificate",
-  },
+  nameLabel: { ar: "اسم المتوفّى كما في الشهادة", en: "Their name, as on the certificate" },
   nameHint: {
-    ar: "انسخه حرفياً من الشهادة، حتى لو اختلف عن نطقه المعتاد",
-    en: "Copy it letter for letter from the certificate, even if it differs from the usual spelling",
+    ar: "اكتبه حرفاً بحرف كما في الشهادة، حتى لو اختلف عن المعتاد",
+    en: "Copy it letter by letter from the certificate, even if it's spelled unusually",
+  },
+  matchNote: {
+    ar: "إن اختلفت كتابة الاسم عمّا لدينا، يراجعه شخص من فريقنا — ولا يُرفض البلاغ.",
+    en: "If the spelling differs from what we have, a person on our team checks it — the report isn't rejected.",
   },
 
-  submit: { ar: "إرسال للمراجعة", en: "Send for review" },
+  submit: { ar: "أرسل للمراجعة", en: "Send for review" },
   submitting: { ar: "جارٍ الإرسال…", en: "Sending…" },
   submitNote: {
-    ar: "يمكنك إغلاق الصفحة بعدها — سنرسل لك رابط المتابعة.",
-    en: "You can close the page afterwards — we will send you a link to follow it.",
+    ar: "يمكنك إغلاق الصفحة بعدها — سنراسلك عند كل خطوة.",
+    en: "You can close the page afterwards — we'll email you at each step.",
   },
   failed: {
-    ar: "تعذّر الإرسال. لم يُحفظ شيء — حاول مرة أخرى.",
-    en: "We could not send it. Nothing was saved — try again.",
+    ar: "لم يُرسل ولم يُحفظ شيء. حاول مرة أخرى.",
+    en: "It wasn't sent and nothing was saved. Please try again.",
   },
-
-  // Transliteration varies far more often than anyone forges a certificate, so
-  // a mismatch is a review queue, never a rejection. Both languages have to say
-  // "not rejected" out loud, because the fear is the same in either.
   megabytes: { ar: "م.ب", en: "MB" },
-
-  matchNote: {
-    ar: "إن اختلف رسم الاسم عن المسجّل لدينا، يذهب الطلب إلى مراجعة بشرية — لا يُرفض.",
-    en: "If the spelling differs from what we hold, the claim goes to a human reviewer — it is not rejected.",
-  },
 } as const satisfies Dictionary

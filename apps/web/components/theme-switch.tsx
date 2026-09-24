@@ -64,9 +64,9 @@ export function ThemeSwitch({
       <button
         type="submit"
         aria-label={next === "dark" ? darkLabel : lightLabel}
-        className="text-muted-foreground hover:text-foreground hover:bg-muted grid size-9 shrink-0 place-items-center rounded-full transition-colors"
+        className="text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] grid size-10 shrink-0 place-items-center rounded-full transition-colors"
       >
-        <Icon className="size-4" strokeWidth={2.2} aria-hidden />
+        <Icon className="size-[18px]" strokeWidth={2.2} aria-hidden />
       </button>
     </form>
   )

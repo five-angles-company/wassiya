@@ -1,21 +1,14 @@
 "use client"
 
 /**
- * The last resort: a throw in the root layout itself.
+ * The last resort: a throw in the root layout itself, which `app/error.tsx`
+ * cannot catch because it lives under that layout. This replaces the whole
+ * document.
  *
- * `app/error.tsx` catches everything below it, but it lives
- * *under* the root layout — so it cannot catch that layout failing, and neither
- * can anything else. This replaces the whole document, `<html>` and `<body>`
- * included, which is why it declares them.
- *
- * Deliberately dependency-free and inline-styled. The root layout is what
- * imports `globals.css`, sets `dir`, and loads the Arabic faces; if it threw,
- * none of that is available and a Tailwind class here would render unstyled.
- * For the same reason the locale is unknowable — `LocaleProvider` is inside the
- * layout that failed — so both languages are shown rather than guessing at one.
- *
- * If this screen is ever seen in production it is a build or provider fault,
- * not a data one, and reloading is genuinely all the reader can do.
+ * ⚠️ Deliberately dependency-free and inline-styled. If the root layout threw,
+ * `globals.css`, the fonts and the locale are all unavailable — a Tailwind class
+ * here would render unstyled. The locale is unknowable too, so both languages
+ * are shown. The colours are the palette's, written out.
  */
 export default function GlobalError({
   error,
@@ -34,28 +27,29 @@ export default function GlobalError({
           alignItems: "center",
           justifyContent: "center",
           padding: "1.5rem",
-          background: "#fff",
-          color: "#171717",
+          background: "#f5ead8",
+          color: "#201e1d",
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        <div style={{ maxWidth: "28rem", display: "grid", gap: "0.75rem" }}>
-          <h1 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600 }}>
-            تعذّر تحميل الصفحة
-          </h1>
-          <p style={{ margin: 0, fontSize: "0.875rem", lineHeight: 1.6 }}>
-            حدث خطأ قبل أن تبدأ الواجهة بالعمل. أعد تحميل الصفحة.
+        <div
+          style={{
+            maxWidth: "30rem",
+            display: "grid",
+            gap: "0.85rem",
+            padding: "2rem",
+            borderRadius: "28px",
+            background: "#fdfaf4",
+            border: "1px solid rgb(32 30 29 / 0.16)",
+            boxShadow: "0 8px 24px -8px rgb(32 30 29 / 0.18)",
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 800 }}>لم تُحمَّل الصفحة</h1>
+          <p style={{ margin: 0, fontSize: "0.95rem", lineHeight: 1.8 }}>
+            حدث خطأ قبل أن تعمل الصفحة. أعد تحميلها.
           </p>
-          <p
-            dir="ltr"
-            style={{
-              margin: 0,
-              fontSize: "0.875rem",
-              lineHeight: 1.6,
-              textAlign: "left",
-            }}
-          >
-            The page failed before the interface started. Reload the page.
+          <p dir="ltr" style={{ margin: 0, fontSize: "0.95rem", lineHeight: 1.7, textAlign: "left" }}>
+            Something went wrong before the page could start. Please reload it.
           </p>
           {error.digest !== undefined && (
             <p
@@ -65,7 +59,7 @@ export default function GlobalError({
                 fontFamily: "ui-monospace, monospace",
                 fontSize: "0.75rem",
                 textAlign: "left",
-                opacity: 0.7,
+                color: "#82796a",
               }}
             >
               {error.digest}
@@ -76,16 +70,19 @@ export default function GlobalError({
             onClick={reset}
             style={{
               justifySelf: "start",
-              padding: "0.5rem 0.875rem",
-              borderRadius: "0.5rem",
-              border: "1px solid currentColor",
-              background: "transparent",
+              marginTop: "0.25rem",
+              padding: "0.75rem 1.5rem",
+              borderRadius: "999px",
+              border: 0,
+              background: "#ea5b48",
+              color: "#f5ead8",
               font: "inherit",
-              fontSize: "0.875rem",
+              fontWeight: 700,
+              fontSize: "0.95rem",
               cursor: "pointer",
             }}
           >
-            أعد المحاولة · Try again
+            حاول مرة أخرى · Try again
           </button>
         </div>
       </body>

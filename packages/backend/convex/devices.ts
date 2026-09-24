@@ -139,3 +139,26 @@ export const revoke = mutation({
     return null
   },
 })
+
+/**
+ * This install's Expo push token, or `null` to stop pushes to it (permission
+ * withdrawn, signed out). Only for a device the caller owns and has not
+ * revoked — a revoked phone must stop hearing about the account.
+ */
+export const setPushToken = mutation({
+  args: { installId: v.string(), token: v.union(v.string(), v.null()) },
+  handler: async (ctx, { installId, token }) => {
+    const user = await requireUser(ctx)
+    const device = await byInstallId(ctx, user._id, installId)
+    if (device === null || device.revoked) throw new Error("Not found")
+    if (token !== null && !/^Expo(nent)?PushToken\[[^\]]+\]$/.test(token)) {
+      throw new Error("Not an Expo push token")
+    }
+    if (device.pushToken !== (token ?? undefined)) {
+      await ctx.db.patch("devices", device._id, {
+        pushToken: token ?? undefined,
+      })
+    }
+    return null
+  },
+})

@@ -1,0 +1,77 @@
+---
+import { LockKeyhole, Server, Smartphone } from "lucide-react"
+
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+import { cipherLines } from "@/lib/pattern"
+
+interface Props {
+  locale: Locale
+}
+
+const home = t(HOME, Astro.props.locale)
+// The note goes into the lock readable and comes out the other side as
+// ciphertext. Both halves fade toward the seam, so the lock is where one
+// becomes the other. Decorative: the sentence is the only thing a reader needs.
+const WIDTH = 34
+const cipher = cipherLines(3, WIDTH, 19).map((line) => [...line])
+---
+
+<div
+  class="rise-in relative mt-16 overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] px-6 py-8 backdrop-blur md:px-10 md:py-10 lg:mt-20"
+>
+  <div class="relative grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-10">
+    <div>
+      <p class="text-sand-300 flex items-center gap-2 text-[13px] font-semibold">
+        <Smartphone className="size-4" strokeWidth={2.25} aria-hidden="true" />
+        {home.diagramPhone}
+      </p>
+      <p class="font-heading text-sand-50 mt-4 text-[21px] leading-[1.7] font-extrabold md:text-[24px] lg:ltr:[mask-image:linear-gradient(to_right,#000_55%,transparent)] lg:rtl:[mask-image:linear-gradient(to_left,#000_55%,transparent)]">
+        {home.diagramPhoneNote}
+      </p>
+    </div>
+
+    <div class="relative flex flex-col items-center gap-2.5 self-stretch justify-center">
+      {/* The seam, in two pieces that stop short of the lock and its label:
+          across the card on phones, down it on wide screens. */}
+      <span aria-hidden="true" class="to-terracotta-400 absolute top-7 right-[calc(50%+40px)] left-0 h-px bg-linear-to-r from-transparent lg:hidden"></span>
+      <span aria-hidden="true" class="from-terracotta-400 absolute top-7 right-0 left-[calc(50%+40px)] h-px bg-linear-to-r to-transparent lg:hidden"></span>
+      <span aria-hidden="true" class="to-terracotta-400 absolute -top-10 bottom-[calc(50%+52px)] left-1/2 hidden w-px bg-linear-to-b from-transparent lg:block"></span>
+      <span aria-hidden="true" class="from-terracotta-400 absolute top-[calc(50%+52px)] -bottom-10 left-1/2 hidden w-px bg-linear-to-b to-transparent lg:block"></span>
+      <span
+        class="bg-brand relative flex size-14 items-center justify-center rounded-full text-white shadow-[0_0_0_8px_rgb(234_91_72/0.14)]"
+      >
+        <LockKeyhole className="size-6" strokeWidth={2.25} aria-hidden="true" />
+      </span>
+      <span class="text-terracotta-300 relative text-[12.5px] font-bold">
+        {home.diagramEncrypt}
+      </span>
+    </div>
+
+    <div>
+      <p class="text-sand-300 flex items-center gap-2 text-[13px] font-semibold">
+        <Server className="size-4" strokeWidth={2.25} aria-hidden="true" />
+        {home.diagramServer}
+      </p>
+      <div
+        class="cipher-flicker text-terracotta-200 mt-4 overflow-hidden font-mono text-[15px] leading-[1.95] tracking-[0.18em] md:text-[16px] ltr:[mask-image:linear-gradient(to_right,#000_60%,transparent)] rtl:[mask-image:linear-gradient(to_left,#000_60%,transparent)] lg:ltr:[mask-image:linear-gradient(to_right,transparent,#000_30%,#000_70%,transparent)] lg:rtl:[mask-image:linear-gradient(to_left,transparent,#000_30%,#000_70%,transparent)]"
+        aria-hidden="true"
+      >
+        {/* The block keeps the page's direction, so each line starts at the
+            seam in both scripts and the rtl:/ltr: masks resolve correctly;
+            only the characters themselves are isolated as LTR. */}
+        {
+          cipher.map((line, row) => (
+            <p class="whitespace-nowrap">
+              <span dir="ltr" class="inline-block">
+                {line.map((char, col) => (
+                  <span style={`--i:${row * WIDTH + col}`}>{char}</span>
+                ))}
+              </span>
+            </p>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</div>

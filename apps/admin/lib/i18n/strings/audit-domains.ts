@@ -18,6 +18,7 @@ export const AUDIT_DOMAIN_LABELS = {
   email: { ar: "البريد", en: "Email" },
   guardian: { ar: "الأوصياء", en: "Guardians" },
   heir: { ar: "الورثة", en: "Heirs" },
+  help: { ar: "مركز المساعدة", en: "Help center" },
   identity: { ar: "الهوية", en: "Identity" },
   job: { ar: "المهام المجدولة", en: "Jobs" },
   keyring: { ar: "المفاتيح", en: "Keyring" },
@@ -25,5 +26,6 @@ export const AUDIT_DOMAIN_LABELS = {
   release: { ar: "التسليم", en: "Release" },
   routing: { ar: "التوجيه", en: "Routing" },
   settings: { ar: "الإعدادات", en: "Settings" },
+  support: { ar: "الدعم", en: "Support" },
   recovery: { ar: "الاسترداد", en: "Recovery" },
 } as const satisfies Dictionary

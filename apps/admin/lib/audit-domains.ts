@@ -15,6 +15,7 @@ export const AUDIT_DOMAINS = [
   "email",
   "guardian",
   "heir",
+  "help",
   "identity",
   "job",
   "keyring",
@@ -22,6 +23,7 @@ export const AUDIT_DOMAINS = [
   "release",
   "routing",
   "settings",
+  "support",
 ] as const
 
 export type AuditDomain = (typeof AUDIT_DOMAINS)[number]

@@ -118,7 +118,10 @@ function RejectedBody({
         <Text className="text-[14.5px] leading-[1.7] text-muted-foreground">
           {t.supportBody}
         </Text>
-        <Button variant="outline" onPress={() => router.replace("/setup/kyc")}>
+        <Button
+          variant="outline"
+          onPress={() => router.push("/settings/help/new?topic=kyc")}
+        >
           <Text>{t.contactSupport}</Text>
         </Button>
       </View>

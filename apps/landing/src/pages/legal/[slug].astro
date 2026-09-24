@@ -1,0 +1,14 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content"
+
+import LegalPage from "@/components/legal/LegalPage.astro"
+
+export async function getStaticPaths() {
+  const entries = await getCollection("legal", (entry) => entry.id.startsWith("ar/"))
+  return entries.map((entry) => ({ params: { slug: entry.id.slice("ar/".length) }, props: { entry } }))
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<"legal"> }
+---
+
+<LegalPage locale="ar" entry={entry} />

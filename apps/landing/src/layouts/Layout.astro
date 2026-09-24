@@ -1,28 +1,70 @@
 ---
 import "../styles/global.css"
 
+import ConsentBanner from "@/components/ConsentBanner.astro"
+import SiteFooter from "@/components/SiteFooter.astro"
+import SiteHeader from "@/components/SiteHeader.astro"
+import { SITE } from "@/config/site"
+import { COMMON } from "@/i18n/strings/common"
+import { dirFor, pathFor, stripLocale, t, type Locale } from "@/i18n/locale"
+
 interface Props {
-  title?: string
-  description?: string
+  locale: Locale
+  title: string
+  description: string
+  noindex?: boolean
 }
 
-const {
-  title = "Convex Starter",
-  description = "A full-stack monorepo starter: Convex backend, Clerk auth, web + mobile.",
-} = Astro.props
+const { locale, title, description, noindex = false } = Astro.props
+const common = t(COMMON, locale)
+const bare = stripLocale(Astro.url.pathname)
+const canonical = new URL(pathFor(locale, bare), Astro.site)
+const alternate = (to: Locale) => new URL(pathFor(to, bare), Astro.site).href
+const ogImage = new URL(`/og/${locale}.png`, Astro.site).href
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={locale} dir={dirFor(locale)} class="wassiya">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#f5ead8" />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical.href} />
+    <link rel="alternate" hreflang="ar" href={alternate("ar")} />
+    <link rel="alternate" hreflang="en" href={alternate("en")} />
+    <link rel="alternate" hreflang="x-default" href={alternate("ar")} />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={common.appName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={locale === "ar" ? "ar_SA" : "en_US"} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {SITE.appStoreId && <meta name="apple-itunes-app" content={`app-id=${SITE.appStoreId}`} />}
   </head>
-  <body class="bg-background text-foreground min-h-svh antialiased">
-    <slot />
+  <body class="min-h-svh antialiased">
+    <a
+      href="#main"
+      class="bg-primary text-primary-foreground sr-only z-50 rounded-full px-4 py-2 font-semibold focus:not-sr-only focus:absolute focus:start-4 focus:top-4"
+    >
+      {common.skipToContent}
+    </a>
+    <SiteHeader locale={locale} />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter locale={locale} />
+    {SITE.gaId && <ConsentBanner locale={locale} gaId={SITE.gaId} />}
   </body>
 </html>

@@ -1,31 +1,38 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
-/**
- * The shell's labels — all four of them.
- *
- * This was the nav bar's dictionary: a group heading and a label for every
- * destination, indexed by `config/nav.ts` so that adding a link without adding
- * both languages failed the build. There are no destinations left. `/` routes a
- * reader into the one thing they have in flight, and the bar is a mark and an
- * avatar — so what survives is the product's name, the skip link, and the two
- * rows inside the avatar's menu.
- */
+/** The shell: header, footer and the account menu. */
 export const NAV = {
   appName: { ar: "وصيّة", en: "Wassiya" },
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
-  account: { ar: "الحساب", en: "Account" },
 
-  /**
-   * ⚠️ **"مفتاح الوصاية", not "المفتاح".** The menu is shared with heirs, who
-   * hold no key and would read a bare "key" as something of theirs that has gone
-   * missing. Naming the role makes the row self-explanatory to the reader it is
-   * not for.
-   */
-
-  // "Manage account" and "Account" sat next to each other in the old menu and
-  // read as the same thing. This one is Clerk's modal — email, password, the
-  // second factor — so it is named for what it actually holds.
+  home: { ar: "الرئيسية", en: "Home" },
+  reportDeath: { ar: "أبلغ عن وفاة", en: "Report a death" },
+  help: { ar: "المساعدة", en: "Help" },
+  writeToUs: { ar: "راسلنا", en: "Write to us" },
+  notifications: { ar: "الإشعارات", en: "Notifications" },
+  account: { ar: "حسابي", en: "My account" },
+  // Clerk's own modal — email, sign-in methods, second factor — named for
+  // what it holds, so it never reads as a second "account" row.
   security: { ar: "الدخول والأمان", en: "Sign-in & security" },
+  signIn: { ar: "تسجيل الدخول", en: "Sign in" },
   signOut: { ar: "تسجيل الخروج", en: "Sign out" },
   openMenu: { ar: "حسابك", en: "Your account" },
+  mainNav: { ar: "التنقّل الرئيسي", en: "Main navigation" },
+
+  footerFamilies: { ar: "للعائلات", en: "For families" },
+  footerLegal: { ar: "قانوني", en: "Legal" },
+  footerAbout: { ar: "وصيّة", en: "Wassiya" },
+  aboutSite: { ar: "عن وصيّة", en: "About Wassiya" },
+  getApp: { ar: "حمّل التطبيق", en: "Get the app" },
+  terms: { ar: "شروط الاستخدام", en: "Terms of use" },
+  privacy: { ar: "سياسة الخصوصية", en: "Privacy policy" },
+  encryption: { ar: "كيف يعمل التشفير", en: "How the encryption works" },
+  // The same sentence as mobile's `LEGAL.notLegal` and the landing footer:
+  // the product's most important legal statement, repeated wherever a reader
+  // already is.
+  notLegal: {
+    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات. الأنصبة يحدّدها القانون وفق الفرائض.",
+    en: "Wassiya is not a legal authority and does not divide estates. Shares are set by law under the fara'id.",
+  },
+  copyright: { ar: "© {year} وصيّة", en: "© {year} Wassiya" },
 } as const satisfies Dictionary

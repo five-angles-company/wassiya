@@ -1,46 +1,58 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
+import type { LucideIcon } from "lucide-react"
+
+import { Eyebrow } from "@/components/eyebrow"
 
 /**
- * The page's identity: what this is, and one quiet line of provenance under it.
+ * The page's own heading: an optional eyebrow, the title, a lead paragraph and
+ * a quiet line of provenance.
  *
- * There is no status badge beside it. Status is a sentence in `StatusLine`, not
- * a pill — a coloured chip reporting "awaiting veto" to someone who has just
- * lost a parent is a database field wearing a costume.
- *
- * ## ⚠️ `eyebrow` exists because one page forked this component to get it
- *
- * `/file` wrote its own header rather than use this one, and said why: it wants
- * a line **above** the title — how long this takes, and that you can stop — which
- * answers the reader's real question before they have committed to reading
- * anything. That was a good reason and the wrong remedy: a page that opts out of
- * the title component is a page whose title silently stops tracking every later
- * change to this one.
- *
- * ⚠️ **Above, not below.** `meta` is provenance — who filed this, when — and it
- * is read after the title or not at all. An eyebrow is read first, so it carries
- * only what changes whether somebody starts.
+ * - The eyebrow sits **above** the title and carries only what changes whether
+ *   somebody starts ("about ten minutes"); `meta` is provenance (who filed,
+ *   when) and is read after the title or not at all.
+ * - There is no status badge beside the title. Status is a sentence
+ *   (`StatusBanner`, `StatusLine`), never a chip.
+ * - The brand gradient is never used on words about death or loss.
  */
 export function DocTitle({
   title,
   meta,
   eyebrow,
+  eyebrowIcon,
+  lead,
 }: {
   title: string
   meta?: ReactNode
   eyebrow?: string
+  eyebrowIcon?: LucideIcon
+  lead?: ReactNode
 }) {
+  const delay = (ms: number) => ({ "--rise-delay": `${ms}ms` }) as CSSProperties
+
   return (
-    <header>
+    <header className="flex flex-col items-start">
       {eyebrow !== undefined && (
-        <p className="text-muted-foreground mb-2.5 text-[13px] font-semibold">
+        <Eyebrow icon={eyebrowIcon} className="rise">
           {eyebrow}
-        </p>
+        </Eyebrow>
       )}
-      <h1 className="font-heading text-[27px] leading-[1.25] font-extrabold md:text-[31px]">
+      <h1
+        className={`font-heading rise text-[32px] leading-[1.3] font-black text-balance md:text-[44px] md:leading-[1.2] ${
+          eyebrow !== undefined ? "mt-5" : ""
+        }`}
+        style={delay(60)}
+      >
         {title}
       </h1>
+      {lead !== undefined && (
+        <div className="rise text-foreground/75 mt-4 max-w-[62ch] space-y-3 text-[17px] leading-[1.9]" style={delay(120)}>
+          {lead}
+        </div>
+      )}
       {meta !== undefined && (
-        <p className="text-muted-foreground mt-2.5 text-[13px]">{meta}</p>
+        <p className="rise text-muted-foreground mt-3 text-[13.5px]" style={delay(160)}>
+          {meta}
+        </p>
       )}
     </header>
   )

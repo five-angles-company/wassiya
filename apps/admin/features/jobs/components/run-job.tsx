@@ -17,6 +17,7 @@ export type JobName =
   | "claims.advance"
   | "claims.sweepUnmatched"
   | "deliveries.expire"
+  | "support.purgeFiles"
 
 /**
  * Retry a missed sweep.

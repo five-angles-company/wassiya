@@ -157,6 +157,8 @@ function titleFor(
       return t.claimVetoed!
     case "release.bundles_rebuilt":
       return t.bundlesRebuilt!
+    case "support.reply":
+      return t.supportReply!
     default:
       return t.generic!
   }

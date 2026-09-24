@@ -4,61 +4,33 @@ import { SearchXIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
+import { NoticeCard } from "@/components/notice-card"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 
 /**
- * A detail screen whose record is not there.
- *
- * Reachable three ways and none of them exotic: a mistyped URL, a bookmark to a
- * claim that was closed, and a link an email client truncated — which is a real
- * failure mode for a URL forwarded between relatives.
- *
- * It renders *inside* the shell rather than replacing it. Nothing is wrong with
- * the session, so the rail stays and the way out is a link back to the list.
- *
- * The id is shown because it is the only thing that distinguishes this screen
- * from any other empty one, and because someone chasing a broken link needs to
- * see which id failed. It is a machine string: LTR and unshaped even inside
- * Arabic prose, or the bidi algorithm reorders it and it can no longer be
- * copied out accurately.
+ * A detail page whose record is not there — a mistyped URL, an old bookmark, a
+ * link a mail client cut short. It renders inside the shell rather than
+ * replacing it, so the way back is still on screen.
  */
-export function RecordNotFound({
-  id,
-  backHref,
-  backLabel,
-}: {
-  id: string
-  backHref: string
-  backLabel: string
-}) {
+export function RecordNotFound({ id, backHref, backLabel }: { id: string; backHref: string; backLabel: string }) {
   const labels = t(COMMON, useLocale())
 
   return (
-    <div className="border-border rounded-card flex flex-col items-start gap-4 border p-6">
-      <span
-        aria-hidden
-        className="bg-muted text-muted-foreground grid size-9 place-items-center rounded-full"
-      >
-        <SearchXIcon className="size-[17px]" />
-      </span>
-
-      <div>
-        <h1 className="font-heading text-[19px] font-extrabold">
-          {labels.notFoundTitle}
-        </h1>
-        <p className="text-muted-foreground mt-2 max-w-[66ch] text-[14.5px] leading-[1.7]">
-          {labels.notFoundBody}
-        </p>
-      </div>
-
+    <NoticeCard
+      icon={SearchXIcon}
+      title={labels.notFoundTitle}
+      body={labels.notFoundBody}
+      headingLevel="h1"
+      action={
+        <ButtonLink href={backHref} variant="outline">
+          {backLabel}
+        </ButtonLink>
+      }
+    >
       <p dir="ltr" className="text-muted-foreground font-mono text-[12px]">
         {id}
       </p>
-
-      <ButtonLink href={backHref} variant="outline">
-        {backLabel}
-      </ButtonLink>
-    </div>
+    </NoticeCard>
   )
 }

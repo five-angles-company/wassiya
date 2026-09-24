@@ -44,7 +44,7 @@ export function Field({
 
   return (
     <label className="flex flex-col gap-2">
-      <span className="text-[13.5px] font-semibold">{label}</span>
+      <span className="text-[14px] font-semibold">{label}</span>
 
       <TextInput
         type={type}
@@ -57,7 +57,7 @@ export function Field({
 
       {message !== undefined && (
         <span
-          className={`text-[12.5px] leading-[1.6] ${
+          className={`text-[13px] leading-[1.6] ${
             error === undefined ? "text-muted-foreground" : "text-tone-attention"
           }`}
         >

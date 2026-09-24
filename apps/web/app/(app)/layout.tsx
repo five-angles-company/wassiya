@@ -1,43 +1,14 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { auth } from "@clerk/nextjs/server"
-import { Toaster } from "@workspace/ui/components/sonner"
-import { TooltipProvider } from "@workspace/ui/components/tooltip"
 
 import { AuthGate } from "@/components/auth-gate"
-import { PageTop } from "@/components/page-top"
-import { UserMenu } from "@/components/user-menu"
-import { t } from "@/lib/i18n/locale"
-import { getLocale } from "@/lib/i18n/server"
+import { PageColumn } from "@/components/page-column"
 import { safePath } from "@/lib/safe-path"
-import { getTheme } from "@/lib/theme-server"
-import { NAV } from "@/lib/i18n/strings/nav"
 
 /**
- * The app shell: everything behind the sign-in wall. A route group, so
- * `/sign-in` and `/sign-up` sit outside it and keep rendering as bare centred
- * cards.
- *
- * Two gates answering different questions. `await auth()` answers "is anyone
- * signed in?" — a Clerk fact available on the server, and the cheapest way to
- * bounce an anonymous visitor before any markup is generated. It cannot answer
- * "has Convex caught up?", which is what `AuthGate` waits for client-side.
- * Behind both, every Convex function derives the caller itself; that is the only
- * load-bearing one.
- *
- * **The bounce carries the destination.** The two links that matter most arrive
- * by message — an heir's delivery link and a report's case page — and
- * both are opened by someone not signed in, so a bare `/sign-in` would drop the
- * destination. A Server Component cannot read its own URL, so the path comes from
- * `x-pathname`, which `proxy.ts` sets for this and for the language switch.
- *
- * The document scrolls and the bar sticks. Pinning the shell to one viewport and
- * handing an inner region the scroll is what a rail needs, not a bar — and a
- * height-constrained flex column makes every card a shrinkable child, which is
- * exactly how this product broke once already.
- *
- * `TooltipProvider` stays: this package's `Tooltip` is a bare Radix root with no
- * provider of its own.
+ * Signed-in screens. The redirect protects the page render; the data is
+ * protected separately, by `ctx.auth` in every Convex function it reads.
  */
 export default async function AppLayout({
   children,
@@ -50,31 +21,9 @@ export default async function AppLayout({
     redirect(`/sign-in?redirect_url=${encodeURIComponent(here)}`)
   }
 
-  const locale = await getLocale()
-  const theme = await getTheme()
-  const nav = t(NAV, locale)
-
   return (
-    <AuthGate>
-      <TooltipProvider delayDuration={0}>
-        <a
-          href="#content"
-          className="bg-primary text-primary-foreground sr-only rounded-full px-4 py-2 text-sm font-semibold focus:not-sr-only focus:absolute focus:start-3 focus:top-3 focus:z-50"
-        >
-          {nav.skipToContent}
-        </a>
-
-        <PageTop locale={locale} theme={theme} trailing={<UserMenu />} />
-
-        <main
-          id="content"
-          className="mx-auto w-full max-w-[920px] px-4 pt-8 pb-20 md:px-6"
-        >
-          {children}
-        </main>
-
-        <Toaster position="bottom-center" richColors />
-      </TooltipProvider>
-    </AuthGate>
+    <PageColumn>
+      <AuthGate>{children}</AuthGate>
+    </PageColumn>
   )
 }

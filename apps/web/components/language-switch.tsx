@@ -73,9 +73,9 @@ export function LanguageSwitch({
         type="submit"
         lang={next}
         aria-label={label}
-        className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13.5px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground inline-flex h-10 items-center rounded-full px-4 text-[14.5px] font-semibold transition-colors hover:bg-foreground/[0.05]"
       >
-        {next === "en" ? "EN" : "AR"}
+        {next === "en" ? "English" : "العربية"}
       </button>
     </form>
   )

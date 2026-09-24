@@ -1,0 +1,26 @@
+---
+import ButtonLink from "@/components/ButtonLink.astro"
+import { NOT_FOUND } from "@/i18n/strings/pages"
+import { t } from "@/i18n/locale"
+import Layout from "@/layouts/Layout.astro"
+
+// One static 404 serves every path, so it cannot know the reader's language:
+// Arabic first, English beneath it.
+const ar = t(NOT_FOUND, "ar")
+const en = t(NOT_FOUND, "en")
+---
+
+<Layout locale="ar" title={ar.title} description={ar.body} noindex>
+  <div class="mx-auto flex w-full max-w-[760px] flex-col gap-14 px-4 py-20 md:px-8">
+    <section>
+      <h1 class="text-[32px] leading-[1.35] font-black md:text-[40px]">{ar.title}</h1>
+      <p class="text-sand-700 mt-4 text-[16.5px] leading-[1.9]">{ar.body}</p>
+      <ButtonLink href="/" class="mt-8">{ar.home}</ButtonLink>
+    </section>
+    <section lang="en" dir="ltr" class="border-border border-t pt-10">
+      <h2 class="text-[24px] leading-[1.4]">{en.title}</h2>
+      <p class="text-sand-700 mt-3 text-[15.5px] leading-[1.8]">{en.body}</p>
+      <ButtonLink href="/en/" variant="outline" class="mt-6">{en.home}</ButtonLink>
+    </section>
+  </div>
+</Layout>

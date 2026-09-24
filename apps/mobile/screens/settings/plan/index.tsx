@@ -27,6 +27,7 @@ import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-ro
 import { StorageMeter } from "@workspace/ui-native/components/wassiya/storage-meter"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
+import { router } from "expo-router"
 import { CreditCard, Sparkles } from "lucide-react-native"
 import { Alert, View } from "react-native"
 
@@ -190,7 +191,15 @@ export function PlanScreen() {
         <SettingsRow
           icon={CreditCard}
           label={t.manage}
-          onPress={() => Alert.alert(t.manage, t.billingSoon)}
+          onPress={() =>
+            Alert.alert(t.manage, t.billingSoon, [
+              { text: common.cancel, style: "cancel" },
+              {
+                text: t.contactUs,
+                onPress: () => router.push("/settings/help/new?topic=billing"),
+              },
+            ])
+          }
         />
       </View>
     </Screen>

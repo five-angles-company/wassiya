@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/button"
+import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { fetchAndDecrypt } from "@/features/box/lib/open-box"
@@ -106,19 +107,14 @@ export function AssetRow({ item }: { item: BoxItem }) {
   }
 
   return (
-    <li className="flex flex-wrap items-start gap-4 px-5 py-4">
-      <span
-        aria-hidden
-        className="bg-background text-muted-foreground grid size-9 shrink-0 place-items-center rounded-full"
-      >
-        <Icon className="size-[17px]" strokeWidth={2.2} />
-      </span>
+    <li className="flex flex-wrap items-start gap-4 px-5 py-5 md:px-6">
+      <IconDisc icon={Icon} tone={item.title === null ? "attention" : "quiet"} />
 
       <div className="min-w-0 flex-1">
-        <div className="font-heading text-[15.5px] font-extrabold">
+        <div className="font-heading text-[17px] font-extrabold">
           {item.title ?? labels.noKeyTitle}
         </div>
-        <p className="text-muted-foreground mt-1 text-[13.5px] leading-[1.6]">
+        <p className="text-muted-foreground mt-1 text-[14px] leading-[1.6]">
           {item.title === null
             ? labels.noKeyBody
             : [
@@ -131,7 +127,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
                 .join(" · ")}
         </p>
         {item.hasInstructions && item.title !== null && (
-          <p className="text-tone-settled mt-2 text-[13px] leading-[1.6]">
+          <p className="text-tone-settled mt-2 text-[13.5px] leading-[1.6] font-semibold">
             {labels.instructionsNote}
           </p>
         )}
@@ -146,7 +142,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
       </div>
 
       {downloadable ? (
-        <Button size="sm" onClick={() => void download()} disabled={busy}>
+        <Button size="sm" variant="outline" className="self-center" onClick={() => void download()} disabled={busy}>
           <DownloadIcon className="size-4" strokeWidth={2.4} aria-hidden />
           {busy ? labels.downloading : labels.download}
         </Button>

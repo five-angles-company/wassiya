@@ -35,6 +35,7 @@ import type * as model_permissions from "../model/permissions.js";
 import type * as model_plans from "../model/plans.js";
 import type * as model_settings from "../model/settings.js";
 import type * as model_staff from "../model/staff.js";
+import type * as model_support from "../model/support.js";
 import type * as notifications from "../notifications.js";
 import type * as outreach from "../outreach.js";
 import type * as plans from "../plans.js";
@@ -43,6 +44,12 @@ import type * as routing from "../routing.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
 import type * as staff from "../staff.js";
+import type * as support_admin from "../support/admin.js";
+import type * as support_help from "../support/help.js";
+import type * as support_notify from "../support/notify.js";
+import type * as support_push from "../support/push.js";
+import type * as support_retention from "../support/retention.js";
+import type * as support_threads from "../support/threads.js";
 import type * as users from "../users.js";
 
 import type {
@@ -79,6 +86,7 @@ declare const fullApi: ApiFromModules<{
   "model/plans": typeof model_plans;
   "model/settings": typeof model_settings;
   "model/staff": typeof model_staff;
+  "model/support": typeof model_support;
   notifications: typeof notifications;
   outreach: typeof outreach;
   plans: typeof plans;
@@ -87,6 +95,12 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   settings: typeof settings;
   staff: typeof staff;
+  "support/admin": typeof support_admin;
+  "support/help": typeof support_help;
+  "support/notify": typeof support_notify;
+  "support/push": typeof support_push;
+  "support/retention": typeof support_retention;
+  "support/threads": typeof support_threads;
   users: typeof users;
 }>;
 
@@ -118,4 +132,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   resend: import("@convex-dev/resend/_generated/component.js").ComponentApi<"resend">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

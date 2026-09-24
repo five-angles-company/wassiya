@@ -1,0 +1,44 @@
+---
+import HeirPreview from "@/components/mock/HeirPreview.astro"
+import ReleaseChecks from "@/components/mock/ReleaseChecks.astro"
+import VaultRows from "@/components/mock/VaultRows.astro"
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+import { fmtNumber } from "@/lib/format"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const steps = [
+  { title: home.step1Title, body: home.step1Body, figure: VaultRows },
+  { title: home.step2Title, body: home.step2Body, figure: HeirPreview },
+  { title: home.step3Title, body: home.step3Body, figure: ReleaseChecks },
+]
+---
+
+<section id="how" class="grain band relative pt-44 pb-24 lg:pt-44 lg:pb-28">
+  <div class="mx-auto w-full max-w-[1200px] px-4 md:px-8">
+    <SectionHead eyebrow={home.stepsEyebrow} title={home.stepsTitle} align="center" />
+
+    <ol class="mt-14 grid gap-5 lg:mt-20 lg:grid-cols-3">
+      {
+        steps.map((step, index) => (
+          <li class="rise-in lift bg-card border-border flex flex-col rounded-[32px] border p-6 md:p-7">
+            <span class="font-heading text-brand text-[64px] leading-none font-black">
+              {fmtNumber(index + 1, locale)}
+            </span>
+            <h3 class="mt-5 text-[23px] leading-snug">{step.title}</h3>
+            <p class="text-sand-700 mt-3 text-[15.5px] leading-[1.85]">{step.body}</p>
+            <div class="bg-background border-border mt-7 flex-1 rounded-[24px] border p-4">
+              <step.figure locale={locale} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

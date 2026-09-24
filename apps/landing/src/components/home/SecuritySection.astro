@@ -1,0 +1,64 @@
+---
+import { ArrowRight, KeyRound, LockKeyhole, SmartphoneNfc } from "lucide-react"
+
+import EncryptionLine from "@/components/home/EncryptionLine.astro"
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { pathFor, t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+// The third point is the escrow trade. It sits beside the other two at the
+// same weight on purpose: it is part of the promise, not its small print.
+const points = [
+  { icon: LockKeyhole, title: home.securityItemTitle, body: home.securityItemBody },
+  { icon: SmartphoneNfc, title: home.securityPhoneTitle, body: home.securityPhoneBody },
+  { icon: KeyRound, title: home.securityEscrowTitle, body: home.securityEscrowBody },
+]
+---
+
+<section id="security" class="grain relative overflow-hidden bg-[#1c1a19] py-24 text-sand-50 lg:py-28">
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="dot-grid-light absolute inset-0"></div>
+  </div>
+
+  <div class="mx-auto w-full max-w-[1200px] px-4 md:px-8">
+    <SectionHead
+      eyebrow={home.securityEyebrow}
+      title={home.securityTitle}
+      body={home.securityBody}
+      align="center"
+      tone="dark"
+    />
+
+    <EncryptionLine locale={locale} />
+
+    <div class="mt-14 grid gap-4 md:grid-cols-3 lg:mt-16 lg:gap-5">
+      {
+        points.map((point) => (
+          <div class="rise-in rounded-[28px] border border-white/10 bg-white/[0.04] p-7">
+            <span class="text-terracotta-300 flex size-11 items-center justify-center rounded-2xl bg-white/[0.07]">
+              <point.icon className="size-[22px]" strokeWidth={2} aria-hidden="true" />
+            </span>
+            <h3 class="text-sand-50 mt-5 text-[19px] leading-[1.45]">{point.title}</h3>
+            <p class="text-sand-300 mt-3 text-[15px] leading-[1.9]">{point.body}</p>
+          </div>
+        ))
+      }
+    </div>
+
+    <div class="mt-12 text-center">
+      <a
+        href={pathFor(locale, "/legal/encryption")}
+        class="group text-terracotta-300 inline-flex items-center gap-2 text-[15.5px] font-bold underline-offset-8 hover:underline"
+      >
+        {home.securityLink}
+        <ArrowRight className="nudge size-4 rtl:-scale-x-100" strokeWidth={2.5} aria-hidden="true" />
+      </a>
+    </div>
+  </div>
+</section>

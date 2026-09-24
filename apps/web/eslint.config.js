@@ -32,6 +32,7 @@ const FEATURES = [
   "claims",
   "notifications",
   "overview",
+  "support",
 ]
 
 /** @type {import("eslint").Linter.Config} */

@@ -4,6 +4,8 @@ import { auth } from "@clerk/nextjs/server"
 import type { Metadata } from "next"
 
 import { AuthGate } from "@/components/auth-gate"
+import { HelpLink } from "@/components/help-link"
+import { getLocale } from "@/lib/i18n/server"
 import { safePath } from "@/lib/safe-path"
 import { HeirDelivery } from "@/features/box/components/heir-delivery"
 import { IdentityPanel } from "@/features/claims/components/identity-panel"
@@ -38,8 +40,9 @@ export default async function DeliveryPage({
     <AuthGate>
       <HeirDelivery
         deliveryId={id}
-        identity={<IdentityPanel returnTo={`/delivery/${id}`} />}
+        identity={<IdentityPanel returnTo={`/delivery/${id}`} audience="heir" />}
       />
+      <HelpLink locale={await getLocale()} topic="delivery" deliveryId={id} />
     </AuthGate>
   )
 }

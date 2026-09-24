@@ -6,6 +6,8 @@ import {
   KeyRoundIcon,
   SearchXIcon,
   BellIcon,
+  BookOpenIcon,
+  MessagesSquareIcon,
   ClipboardCheckIcon,
   CreditCardIcon,
   FileClockIcon,
@@ -51,6 +53,8 @@ export type NavItem = {
    * place to sit that is not a dead link.
    */
   href: string | null
+  /** A live count beside the label; see `components/nav-badge.tsx`. */
+  badge?: "supportUnassigned"
 }
 
 export type NavGroup = { key: NavKey; items: readonly NavItem[] }
@@ -106,6 +110,24 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         icon: ShieldCheckIcon,
         href: "/identity",
         need: "identity.read",
+      },
+    ],
+  },
+  {
+    key: "groupSupport",
+    items: [
+      {
+        key: "support",
+        icon: MessagesSquareIcon,
+        href: "/support",
+        need: "support.read",
+        badge: "supportUnassigned",
+      },
+      {
+        key: "helpCenter",
+        icon: BookOpenIcon,
+        href: "/support/help",
+        need: "support.read",
       },
     ],
   },

@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactNode } from "react"
 
 const CHROME =
-  "bg-card h-[52px] rounded-2xl border-[1.5px] transition-[border-color,box-shadow]"
+  "bg-background rounded-field h-14 border-[1.5px] transition-[border-color,box-shadow]"
 const VALID = "border-[color:var(--input)]"
 const INVALID = "border-[color:var(--tone-attention)]"
 const MONO = "font-mono text-[14.5px] font-semibold tracking-[.05em]"
@@ -60,7 +60,7 @@ export function TextInput({
     return (
       <input
         {...shared}
-        className={`${CHROME} ${invalid ? INVALID : VALID} placeholder:text-muted-foreground w-full px-4 text-[15.5px] outline-none focus-visible:border-[color:var(--primary)] focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/30 ${mono ? MONO : ""} ${className ?? ""}`}
+        className={`${CHROME} ${invalid ? INVALID : VALID} placeholder:text-muted-foreground w-full px-4 text-[16px] outline-none focus-visible:border-[color:var(--primary)] focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]/25 ${mono ? MONO : ""} ${className ?? ""}`}
         {...props}
       />
     )
@@ -68,7 +68,7 @@ export function TextInput({
 
   return (
     <div
-      className={`${CHROME} ${invalid ? INVALID : VALID} flex w-full items-center focus-within:border-[color:var(--primary)] focus-within:ring-4 focus-within:ring-[color:var(--ring)]/30 ${className ?? ""}`}
+      className={`${CHROME} ${invalid ? INVALID : VALID} flex w-full items-center focus-within:border-[color:var(--primary)] focus-within:ring-4 focus-within:ring-[color:var(--ring)]/25 ${className ?? ""}`}
     >
       <input
         {...shared}

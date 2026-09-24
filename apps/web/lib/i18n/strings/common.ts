@@ -1,80 +1,65 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
-/** Chrome shared by every screen: the shell, the boundaries, the empty states. */
+/** Words shared by every screen: the shell's controls, boundaries, empty states. */
 export const COMMON = {
-  // What the switch will give you, not what you are looking at — the control
-  // says where it goes.
+  needHelp: { ar: "تحتاج مساعدة؟", en: "Need help?" },
+  needHelpBody: {
+    ar: "راسلنا، ويردّ عليك شخص من فريقنا.",
+    en: "Write to us — a person on our team will answer.",
+  },
+
+  // What the switch will give you, not what you are looking at.
   themeDark: { ar: "التبديل إلى الوضع الداكن", en: "Switch to dark" },
   themeLight: { ar: "التبديل إلى الوضع الفاتح", en: "Switch to light" },
+  language: { ar: "اللغة", en: "Language" },
 
-  // The record's vocabulary, shared by every ledger in the app — the one thing
-  // worse than a shared primitive is the same three words spelled twice.
-  stepNow: { ar: "جارٍ", en: "In progress" },
+  stepNow: { ar: "الآن", en: "Now" },
   stepDone: { ar: "تم", en: "Done" },
-  askEyebrow: { ar: "مطلوب منك الآن", en: "Asked of you now" },
+  // Always this phrase above an Ask, or it stops being a signal.
+  askEyebrow: { ar: "مطلوب منك الآن", en: "What we need from you" },
+  loading: { ar: "جارٍ التحميل", en: "Loading" },
 
-
-  // Filing is the one action in this app that is not part of a case — it is
-  // what *creates* one — so it belongs to no feature and lives here. It was
-  // previously in `features/overview`, which is how it came to be deleted with
-  // the home screen while three other screens still needed it.
-  fileReportPrompt: { ar: "فقدت شخصاً عزيزاً؟", en: "Have you lost someone?" },
-  fileReportLink: { ar: "أبلغ عن وفاة", en: "Report a death" },
   newReport: { ar: "بلاغ جديد", en: "New report" },
 
-  language: { ar: "اللغة", en: "Language" },
-  arabic: { ar: "العربية", en: "العربية" },
-
-  // The error boundary. Says what to do, not what went wrong — the reader is
-  // usually bereaved and mid-claim, and every case this actually catches is
-  // cured by trying again.
-  errorTitle: {
-    ar: "تعذّر تحميل هذه الصفحة",
-    en: "This page did not load",
-  },
+  // Says what to do, not what went wrong: the reader is often bereaved and in
+  // the middle of something, and what this catches is cured by trying again.
+  errorTitle: { ar: "لم تُحمَّل هذه الصفحة", en: "This page didn't load" },
   errorBody: {
-    ar: "انقطع الاتصال بالخادم أو رُفض الطلب. أعد المحاولة — لم يُفقد شيء مما أدخلته سابقاً.",
-    en: "The request to the server failed or was refused. Try again — nothing you entered earlier has been lost.",
+    ar: "حدث خطأ مؤقت. حاول مرة أخرى — لم يضِع شيء مما أدخلته.",
+    en: "Something went wrong for a moment. Try again — nothing you entered has been lost.",
   },
   errorDigest: { ar: "المرجع", en: "Reference" },
-  retry: { ar: "أعد المحاولة", en: "Try again" },
+  retry: { ar: "حاول مرة أخرى", en: "Try again" },
 
-  routeMissingTitle: { ar: "لا توجد صفحة هنا", en: "No page here" },
+  routeMissingTitle: { ar: "لا توجد صفحة هنا", en: "There's no page here" },
   routeMissingBody: {
-    ar: "هذا العنوان لا يقابل أي صفحة. إن كنت تتابع بلاغاً، افتح الرابط الذي أرسلناه إلى بريدك.",
-    en: "This address does not match any page. If you are following a report, open the link we emailed you.",
+    ar: "ربما كُتب العنوان خطأً. إن كنت تتابع بلاغاً، افتح الرابط الذي أرسلناه إلى بريدك.",
+    en: "The address may be mistyped. If you're following a report, open the link we emailed you.",
   },
-  backHome: { ar: "العودة إلى البداية", en: "Back to the start" },
+  backHome: { ar: "العودة إلى الرئيسية", en: "Back to home" },
 
-  // A detail route whose record is not there. Reachable from a mistyped URL, a
-  // bookmark, or an emailed link a mail client truncated — none of them exotic.
-  notFoundTitle: { ar: "لم نجد هذا", en: "We could not find this" },
+  notFoundTitle: { ar: "لم نجد هذا", en: "We couldn't find this" },
   notFoundBody: {
-    ar: "قد يكون الرابط ناقصاً أو قديماً، أو لا يخصّ حسابك. افتح الرابط الكامل الذي أرسلناه إلى بريدك.",
-    en: "The link may be incomplete, old, or not yours. Open the full link we emailed you.",
+    ar: "قد يكون الرابط ناقصاً أو قديماً، أو لا يخصّ حسابك. افتح الرابط كاملاً كما وصلك في رسالتنا.",
+    en: "The link may be incomplete, old, or not yours. Open the full link from our message.",
   },
 
   copy: { ar: "انسخ", en: "Copy" },
-  copied: { ar: "نُسخ", en: "Copied" },
+  copied: { ar: "تم النسخ", en: "Copied" },
   filedOn: { ar: "قُدّم في", en: "Filed" },
-
-  // Table paging. `range` counts rows on screen, not a total: a cursor knows
-  // where it is, never how many follow.
   previous: { ar: "السابق", en: "Previous" },
   next: { ar: "التالي", en: "Next" },
-  range: { ar: "{from}–{to}", en: "{from}–{to}" },
 
-  // The six claim states, named once here so a pill, a list row and a detail
-  // heading can never drift apart.
-  statusSubmitted: { ar: "قيد المراجعة", en: "Under review" },
-  statusAwaitingVeto: { ar: "مدة الاعتراض", en: "Objection period" },
-  // A status no report enters any more; kept so older rows still render.
-  statusGuardianReview: { ar: "قيد المراجعة", en: "In review" },
+  // A report's states, named once here (via `lib/claim-status-line.ts`) so a
+  // list row and a case page can never drift apart.
+  statusSubmitted: { ar: "قيد المراجعة", en: "Being reviewed" },
+  statusAwaitingVeto: { ar: "فترة الانتظار", en: "Waiting period" },
+  // A state no report enters any more; kept so older rows still render.
+  statusGuardianReview: { ar: "قيد المراجعة", en: "Being reviewed" },
   statusReleased: { ar: "جاهز", en: "Ready" },
-  statusVetoed: { ar: "مُغلق", en: "Closed" },
-  statusLocked: { ar: "موقوف", en: "Barred" },
-  // Ended without a verdict — today only "no vault matched that address".
-  // Deliberately *not* "Barred": nothing is held against this claimant and
-  // filing again with the right address is exactly what they should do.
-  statusClosed: { ar: "مُنتهٍ", en: "Ended" },
+  statusVetoed: { ar: "أُغلق", en: "Closed" },
+  statusLocked: { ar: "موقوف", en: "Paused" },
+  // Ended without a decision — today only "no vault matched that email".
+  // Deliberately not "Paused": nothing is held against the person who filed.
+  statusClosed: { ar: "انتهى", en: "Ended" },
 } as const satisfies Dictionary

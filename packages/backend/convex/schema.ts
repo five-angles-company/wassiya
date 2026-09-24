@@ -302,6 +302,11 @@ export default defineSchema({
     platform: v.union(v.literal("ios"), v.literal("android"), v.literal("web")),
     lastUnlockAt: v.optional(v.number()),
     revoked: v.boolean(),
+    /**
+     * Expo push token. A push never carries content — only that something is
+     * waiting — because a lock screen is an intercepted surface.
+     */
+    pushToken: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_and_installId", ["userId", "installId"]),
@@ -800,4 +805,138 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_and_readAt", ["userId", "readAt"])
     .index("by_userId_and_claimId", ["userId", "claimId"]),
+
+  /**
+   * One support conversation. See `model/support.ts` for the rules.
+   *
+   * The requester is either a signed-in account (`requesterUserId`) or a guest
+   * holding a browser token whose SHA-256 is `guestKeyHash`. A guest's name and
+   * email are what they typed — **unverified**, never matched to an account,
+   * and shown to staff as such.
+   *
+   * Chat is not end-to-end encrypted. Nothing here may ever hold key material,
+   * and `verify-invariants.mjs` keeps every vault table out of `support/`.
+   */
+  supportThreads: defineTable({
+    requesterUserId: v.optional(v.id("users")),
+    guestKeyHash: v.optional(v.string()),
+    guestName: v.optional(v.string()),
+    guestEmail: v.optional(v.string()),
+    /** SHA-256 of the single-use link in a guest's reply email. */
+    resumeKeyHash: v.optional(v.string()),
+    surface: v.union(v.literal("mobile"), v.literal("web")),
+    topic: v.union(
+      v.literal("account"),
+      v.literal("kyc"),
+      v.literal("billing"),
+      v.literal("recovery"),
+      v.literal("claim"),
+      v.literal("delivery"),
+      v.literal("other")
+    ),
+    /** Validated server-side as the caller's own; see `model/support.ts`. */
+    claimId: v.optional(v.id("claims")),
+    deliveryId: v.optional(v.id("deliveries")),
+    locale: v.union(v.literal("ar"), v.literal("en")),
+    /** open: staff owe a reply · waiting: requester does · resolved. */
+    status: v.union(
+      v.literal("open"),
+      v.literal("waiting"),
+      v.literal("resolved")
+    ),
+    assigneeUserId: v.optional(v.id("users")),
+    lastMessageAt: v.number(),
+    lastAuthor: v.union(v.literal("requester"), v.literal("staff")),
+    preview: v.string(),
+    /**
+     * Flags rather than read timestamps: a reply and a read landing in the
+     * same millisecond would otherwise leave "unread" to a coin toss. Written
+     * by `appendMessage` and the two mark-read mutations.
+     */
+    requesterUnread: v.boolean(),
+    staffUnread: v.boolean(),
+    resolvedAt: v.optional(v.number()),
+    /** Set by the retention sweep once the thread's files are deleted. */
+    filesPurgedAt: v.optional(v.number()),
+    /** Requester name, email and first message, for the inbox search box. */
+    searchText: v.string(),
+  })
+    .index("by_requesterUserId_and_lastMessageAt", [
+      "requesterUserId",
+      "lastMessageAt",
+    ])
+    .index("by_guestKeyHash_and_lastMessageAt", [
+      "guestKeyHash",
+      "lastMessageAt",
+    ])
+    .index("by_resumeKeyHash", ["resumeKeyHash"])
+    .index("by_status_and_lastMessageAt", ["status", "lastMessageAt"])
+    .index("by_status_and_assigneeUserId_and_lastMessageAt", [
+      "status",
+      "assigneeUserId",
+      "lastMessageAt",
+    ])
+    .index("by_lastMessageAt", ["lastMessageAt"])
+    // The retention sweep. `filesPurgedAt` leads so a purged thread leaves the
+    // range the sweep drains, rather than sitting at its front forever.
+    .index("by_filesPurgedAt_and_status_and_resolvedAt", [
+      "filesPurgedAt",
+      "status",
+      "resolvedAt",
+    ])
+    .searchIndex("search_text", {
+      searchField: "searchText",
+      filterFields: ["status"],
+    }),
+
+  /** Inserted only by `appendMessage` in `model/support.ts`. */
+  supportMessages: defineTable({
+    threadId: v.id("supportThreads"),
+    author: v.union(v.literal("requester"), v.literal("staff")),
+    /** The staff member, for the console. Never returned to a requester. */
+    staffUserId: v.optional(v.id("users")),
+    body: v.string(),
+    attachments: v.array(
+      v.object({
+        storageId: v.id("_storage"),
+        name: v.string(),
+        contentType: v.string(),
+        size: v.number(),
+      })
+    ),
+    at: v.number(),
+  }).index("by_threadId_and_at", ["threadId", "at"]),
+
+  /**
+   * Staff-only notes on a thread. A separate table rather than a flag on
+   * `supportMessages`, so no requester query can return one by forgetting a
+   * filter. `verify-invariants.mjs` confines it to the staff module.
+   */
+  supportNotes: defineTable({
+    threadId: v.id("supportThreads"),
+    authorUserId: v.id("users"),
+    body: v.string(),
+    at: v.number(),
+  }).index("by_threadId_and_at", ["threadId", "at"]),
+
+  /**
+   * The help center, edited in the console. Articles never state a plan limit
+   * or a price — those move without a deploy (AGENTS.md "Plans").
+   */
+  helpArticles: defineTable({
+    slug: v.string(),
+    audience: v.union(
+      v.literal("owner"),
+      v.literal("heir"),
+      v.literal("reporter"),
+      v.literal("all")
+    ),
+    order: v.number(),
+    published: v.boolean(),
+    title: v.object({ ar: v.string(), en: v.string() }),
+    body: v.object({ ar: v.string(), en: v.string() }),
+    updatedAt: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_audience_and_order", ["audience", "order"]),
 })

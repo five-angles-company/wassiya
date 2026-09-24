@@ -1,0 +1,85 @@
+---
+import { BadgeCheck, FileCheck, Heart, Hourglass, PackageOpen, Scale, UserCheck } from "lucide-react"
+
+import SectionHead from "@/components/ui/SectionHead.astro"
+import { HOME } from "@/i18n/strings/home"
+import { t, type Locale } from "@/i18n/locale"
+import { fmtNumber } from "@/lib/format"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+// The release order in AGENTS.md, not a ranking. Delivery is the outcome, so
+// it alone takes the brand fill.
+const gates = [
+  { icon: FileCheck, title: home.gateCertificate, meta: home.gateCertificateMeta },
+  { icon: UserCheck, title: home.gateReview, meta: home.gateReviewMeta },
+  { icon: Hourglass, title: home.gateVeto, meta: home.gateVetoMeta },
+  { icon: BadgeCheck, title: home.gateIdentity, meta: home.gateIdentityMeta },
+]
+---
+
+<section id="release" class="mx-auto w-full max-w-[1200px] px-4 py-24 md:px-8 lg:py-28">
+  <SectionHead eyebrow={home.releaseEyebrow} title={home.releaseTitle} body={home.releaseBody} align="center" />
+
+  <ol class="relative mt-16 grid gap-8 lg:mt-20 lg:grid-cols-5 lg:gap-4">
+    <span
+      aria-hidden="true"
+      class="from-olive-300 to-terracotta-400 absolute start-[27px] top-6 bottom-6 w-[2px] bg-linear-to-b lg:start-[10%] lg:end-[10%] lg:top-[27px] lg:bottom-auto lg:h-[2px] lg:w-auto ltr:lg:bg-linear-to-r rtl:lg:bg-linear-to-l"
+    ></span>
+    {
+      gates.map((gate, index) => (
+        <li class="rise-in relative flex items-start gap-5 lg:flex-col lg:items-center lg:text-center">
+          <span class="bg-olive-100 text-olive-800 ring-background relative flex size-14 shrink-0 items-center justify-center rounded-full ring-[6px]">
+            <gate.icon className="size-6" strokeWidth={2} aria-hidden="true" />
+            <span class="bg-olive-700 text-olive-100 absolute -end-1 -top-1 flex size-6 items-center justify-center rounded-full text-[11px] font-bold">
+              {fmtNumber(index + 1, locale)}
+            </span>
+          </span>
+          <span class="lg:mt-5">
+            <span class="font-heading block text-[18px] leading-snug font-extrabold">{gate.title}</span>
+            <span class="text-sand-700 mt-1.5 block text-[14.5px] leading-[1.75]">{gate.meta}</span>
+          </span>
+        </li>
+      ))
+    }
+    <li class="rise-in relative flex items-start gap-5 lg:flex-col lg:items-center lg:text-center">
+      <span
+        class="bg-brand ring-background flex size-14 shrink-0 items-center justify-center rounded-full text-white ring-[6px]"
+      >
+        <PackageOpen className="size-6" strokeWidth={2} aria-hidden="true" />
+      </span>
+      <span class="lg:mt-5">
+        <span class="font-heading text-brand block text-[18px] leading-snug font-black">{home.gateDelivery}</span>
+        <span class="text-sand-700 mt-1.5 block text-[14.5px] leading-[1.75]">{home.gateDeliveryMeta}</span>
+      </span>
+    </li>
+  </ol>
+
+  <div class="mt-16 grid gap-4 md:grid-cols-2 lg:mt-20 lg:gap-5">
+    <div class="rise-in bg-terracotta-100 flex items-start gap-5 rounded-[32px] p-7 md:p-8">
+      <span class="relative isolate size-14 shrink-0">
+        <span class="pulse-ring bg-terracotta-300 absolute inset-0 -z-10 rounded-full"></span>
+        <span class="bg-primary flex size-full items-center justify-center rounded-full shadow-[0_3px_10px_rgb(46_43_37/0.16)]">
+          <Heart className="size-6 fill-[#fff6f0] text-[#fff6f0]" strokeWidth={2.5} aria-hidden="true" />
+        </span>
+      </span>
+      <div>
+        <h3 class="text-terracotta-800 text-[21px]">{home.checkinTitle}</h3>
+        <p class="text-terracotta-700 mt-2 text-[15.5px] leading-[1.85]">{home.checkinBody}</p>
+      </div>
+    </div>
+    <div class="rise-in bg-olive-100 flex items-start gap-5 rounded-[32px] p-7 md:p-8">
+      <span class="bg-olive-200 text-olive-800 flex size-14 shrink-0 items-center justify-center rounded-full">
+        <Scale className="size-6" strokeWidth={2} aria-hidden="true" />
+      </span>
+      <div>
+        <h3 class="text-olive-800 text-[21px]">{home.sharesTitle}</h3>
+        <p class="text-olive-700 mt-2 text-[15.5px] leading-[1.85]">{home.sharesBody}</p>
+      </div>
+    </div>
+  </div>
+</section>

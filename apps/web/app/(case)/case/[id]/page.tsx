@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 
+import { HelpLink } from "@/components/help-link"
 import { HeirCase } from "@/features/claims/components/heir-case"
+import { getLocale } from "@/lib/i18n/server"
 
 /**
  * ⚠️ **Never indexed.** The claim id *is* the capability — 32 random characters,
@@ -27,5 +29,10 @@ export default async function CasePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  return <HeirCase claimId={id} />
+  return (
+    <>
+      <HeirCase claimId={id} />
+      <HelpLink locale={await getLocale()} topic="claim" claimId={id} />
+    </>
+  )
 }

@@ -49,4 +49,12 @@ crons.interval(
   {}
 )
 
+// Delete support attachments a fixed time after their thread was resolved.
+crons.interval(
+  "purge support files",
+  { hours: 24 },
+  internal.support.retention.purgeFiles,
+  {}
+)
+
 export default crons

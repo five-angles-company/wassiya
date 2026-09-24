@@ -167,5 +167,6 @@ export const NOTIFICATIONS = {
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },
   bundlesRebuilt: { ar: "حُدّثت مفاتيح التسليم", en: "Delivery keys were updated" },
+  supportReply: { ar: "ردّ فريق الدعم على رسالتك", en: "Support replied to your message" },
   generic: { ar: "تحديث في خزنتك", en: "An update in your vault" },
 } satisfies LabelSet<string>

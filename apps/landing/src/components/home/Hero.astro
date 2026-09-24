@@ -1,0 +1,113 @@
+---
+import { ArrowRight, Check, LockKeyhole, ShieldCheck } from "lucide-react"
+
+import StoreBadges from "@/components/StoreBadges.astro"
+import HeirLetter from "@/components/mock/HeirLetter.astro"
+import Faces from "@/components/ui/Faces.astro"
+import { HOME } from "@/i18n/strings/home"
+import { MOCK } from "@/i18n/strings/mock"
+import { t, type Locale } from "@/i18n/locale"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const home = t(HOME, locale)
+const m = t(MOCK, locale)
+const trust = [home.heroTrustDevice, home.heroTrustPasswords, home.heroTrustFree]
+const heirInitials = [m.heirSara, m.heirMohammed, m.heirNoura].map((name) => name.charAt(0))
+---
+
+<section class="grain relative -mt-16 overflow-hidden pt-16 md:-mt-[72px] md:pt-[72px]">
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="dot-grid absolute inset-0"></div>
+  </div>
+
+  <div
+    class="mx-auto grid w-full max-w-[1200px] items-center gap-14 px-4 pt-10 pb-20 md:px-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-8 lg:pt-20 lg:pb-32"
+  >
+    <div class="text-center lg:text-start">
+      <p
+        class="rise border-border bg-card/80 inline-flex items-center gap-2 rounded-full border py-1.5 ps-2 pe-4 text-[13.5px] font-semibold shadow-[var(--shadow-raised)] backdrop-blur"
+      >
+        <span class="bg-olive-100 text-olive-800 flex size-6 items-center justify-center rounded-full">
+          <ShieldCheck className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+        </span>
+        {home.heroBadge}
+      </p>
+
+      <h1
+        class="rise mt-7 text-[40px] leading-[1.22] font-black tracking-[-0.01em] text-balance sm:text-[56px] lg:text-[72px] lg:leading-[1.15]"
+        style="--rise-delay: 80ms"
+      >
+        {home.heroTitleLead} <span class="text-brand">{home.heroTitleAccent}</span>
+      </h1>
+
+      <p
+        class="rise text-sand-700 mx-auto mt-6 max-w-[36rem] text-[18px] leading-[1.9] text-pretty lg:mx-0 lg:text-[20px]"
+        style="--rise-delay: 160ms"
+      >
+        {home.heroBody}
+      </p>
+
+      <div
+        class="rise mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center lg:justify-start"
+        style="--rise-delay: 240ms"
+      >
+        <StoreBadges locale={locale} />
+        <a
+          href="#how"
+          class="group text-foreground inline-flex items-center gap-2 text-[15.5px] font-bold underline-offset-8 hover:underline"
+        >
+          {home.heroHow}
+          <ArrowRight className="nudge size-4 rtl:-scale-x-100" strokeWidth={2.5} aria-hidden="true" />
+        </a>
+      </div>
+
+      <ul
+        class="rise text-sand-700 mt-9 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[14.5px] font-medium lg:justify-start"
+        style="--rise-delay: 320ms"
+      >
+        {
+          trust.map((item) => (
+            <li class="inline-flex items-center gap-2">
+              <Check className="text-olive-700 size-4" strokeWidth={3} aria-hidden="true" />
+              {item}
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <div class="rise relative mx-auto w-full max-w-[440px] py-12" style="--rise-delay: 200ms">
+      <div class="bg-sand-100 border-border absolute inset-x-8 top-6 bottom-16 -rotate-[7deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
+      <div class="bg-card border-border absolute inset-x-6 top-8 bottom-14 rotate-[5deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
+      <div class="relative rotate-[-1.5deg]">
+        <HeirLetter locale={locale} />
+      </div>
+
+      <div
+        class="float-b bg-card border-border absolute -top-1 -end-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-end-10"
+      >
+        <Faces initials={heirInitials} size={32} />
+        <span class="text-start">
+          <span class="block text-[14px] leading-tight font-bold">{home.floatHeirsTitle}</span>
+          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatHeirsMeta}</span>
+        </span>
+      </div>
+
+      <div
+        class="float-a bg-card border-border absolute -bottom-1 -start-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-start-10"
+      >
+        <span class="bg-terracotta-100 text-terracotta-700 flex size-10 items-center justify-center rounded-full">
+          <LockKeyhole className="size-5" strokeWidth={2.25} aria-hidden="true" />
+        </span>
+        <span class="text-start">
+          <span class="block text-[14px] leading-tight font-bold">{home.floatLockTitle}</span>
+          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatLockMeta}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
