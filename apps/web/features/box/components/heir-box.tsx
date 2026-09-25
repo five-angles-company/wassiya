@@ -3,30 +3,30 @@
 import { useEffect, useRef, useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { useAction } from "convex/react"
+import { useMutation } from "convex/react"
 
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { BoxGate } from "@/features/box/components/box-gate"
 import { OpenedBox } from "@/features/box/components/opened-box"
 import {
-  openDelivery,
-  wipeKeyMap,
-  type OpenedBundle,
+  openDeliveryResponse,
+  wipeDelivery,
+  type OpenedDelivery,
 } from "@/features/box/lib/open-box"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
 
 type BoxState =
   | { status: "locked" }
   | { status: "opening" }
-  | { status: "open"; bundle: OpenedBundle }
+  | { status: "open"; delivery: OpenedDelivery }
   | { status: "failed" }
 
 /**
  * ٧.٦ — the heir's box: the gate, and what is behind it.
  *
- * K_h arrives sealed to a one-time key this page generates, and is opened and
- * zeroed in `openDelivery`; the DEKs it releases live exactly as long as this
+ * Opening is one call: the release gate checks everything again and returns
+ * this heir's items with their keys. The keys live exactly as long as this
  * component is mounted.
  */
 export function HeirBox({
@@ -37,33 +37,30 @@ export function HeirBox({
   expiresAt: number
 }) {
   const labels = t(HEIR_BOX, useLocale())
-  const unlockAction = useAction(api.escrow.openDelivery)
+  const openDelivery = useMutation(api.escrow.openDelivery)
   const [state, setState] = useState<BoxState>({ status: "locked" })
 
-  // The DEKs live for as long as the box is on screen — every row decrypts
-  // against them — so they are zeroed when it leaves, not when it opens. A ref
-  // rather than a dependency on `state`, so navigating away wipes the bundle
-  // that is actually held.
-  const held = useRef<OpenedBundle | null>(null)
+  // Zeroed when the box leaves the screen, not when it opens: every item
+  // decrypts against its key while it is shown. A ref rather than a dependency
+  // on `state`, so navigating away wipes the keys that are actually held.
+  const held = useRef<OpenedDelivery | null>(null)
   useEffect(() => {
-    held.current = state.status === "open" ? state.bundle : null
+    held.current = state.status === "open" ? state.delivery : null
   }, [state])
-  useEffect(() => () => wipeKeyMap(held.current?.deks), [])
+  useEffect(() => () => wipeDelivery(held.current), [])
 
   async function unlock() {
     setState({ status: "opening" })
     try {
-      const bundle = await openDelivery((browserPublicKey) =>
-        unlockAction({ deliveryId, browserPublicKey })
-      )
-      setState({ status: "open", bundle })
+      const response = await openDelivery({ deliveryId })
+      setState({ status: "open", delivery: openDeliveryResponse(response) })
     } catch {
       setState({ status: "failed" })
     }
   }
 
   if (state.status === "open") {
-    return <OpenedBox deliveryId={deliveryId} bundle={state.bundle} expiresAt={expiresAt} />
+    return <OpenedBox delivery={state.delivery} />
   }
 
   return (

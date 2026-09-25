@@ -86,7 +86,7 @@ function pick(row: string | undefined, env: string | undefined): string | null {
  * The escrow private key is deliberately absent, even as a boolean:
  * `verify-invariants` allows its name in `escrow.ts` and nowhere else, and a
  * status row is not worth an exception to the rule that keeps the one key
- * capable of opening every heir bundle in a single file.
+ * capable of opening every routed item in a single file.
  */
 export function credentialStatus(): Record<string, boolean> {
   return {

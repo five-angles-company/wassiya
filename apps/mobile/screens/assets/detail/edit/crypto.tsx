@@ -50,7 +50,6 @@ export function CryptoEditScreen({ assetId }: { assetId: Id<"assets"> }) {
     if (form === null || source === null) return
     const payload = toCryptoPayload(
       form,
-      source,
       crypto,
       (n) => fmtNum(n, locale),
       locale === "ar" ? "كلمة" : "words"

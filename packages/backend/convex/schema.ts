@@ -125,6 +125,12 @@ export default defineSchema({
     // `model/entitlements.ts` for why bytes are the only thing that has to be.
     storageBytesUsed: v.optional(v.number()),
 
+    // Set when a death report against this owner is released. A closed vault
+    // refuses recovery and new devices, so the printed sheet cannot open, after
+    // death, what the owner chose to let die with them. The one way back is
+    // `claims.reopenVault`, run by hand for an owner proven alive.
+    vaultClosedAt: v.optional(v.number()),
+
     // This account's limits, overriding its plan's field by field. For a pilot,
     // a support case, an owner who needs more room than their tier gives.
     //
@@ -358,6 +364,9 @@ export default defineSchema({
     // "مصرف الراجحي" and "iCloud · fatima@icloud.com", which is precisely what
     // section ١ promises the server cannot read.
     labelSealed: v.bytes(),
+    // The type's secret fields as JSON, sealed under the DEK by
+    // `@workspace/crypto/secret`. Absent for a type that is only files.
+    secretSealed: v.optional(v.bytes()),
     // Non-sensitive only: counts, sizes, mime, reminder dates. Never a secret,
     // never a filename that gives away contents. The descriptive half of a row
     // lives in `labelSealed`; anything here is a number the server may know.
@@ -368,8 +377,20 @@ export default defineSchema({
       expiryRemindAt: v.optional(v.number()),
     }),
     dekWrappedByMk: v.bytes(),
-    storageIds: v.array(v.id("_storage")),
+    // Each file is one encrypted blob, decryptable on its own; a photo carries
+    // its thumbnail beside it.
+    files: v.array(
+      v.object({
+        storageId: v.id("_storage"),
+        thumbnailId: v.optional(v.id("_storage")),
+      })
+    ),
     recipientRule: v.union(v.literal("default"), v.literal("explicit")),
+    // The DEK sealed on the owner's device to the escrow key, bound to this
+    // owner and this asset. Present exactly while the asset is routed — only
+    // routed items are escrowed. Read by `escrow.openDelivery` alone.
+    escrowedDek: v.optional(v.bytes()),
+    escrowKeyId: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_and_type", ["userId", "type"]),
@@ -399,7 +420,6 @@ export default defineSchema({
       v.literal("allHeirs")
     ),
     recipientHeirId: v.optional(v.id("heirs")),
-    instructionsCiphertext: v.optional(v.bytes()),
   })
     .index("by_assetId", ["assetId"])
     .index("by_userId_and_recipientHeirId", ["userId", "recipientHeirId"])
@@ -433,12 +453,9 @@ export default defineSchema({
      */
     mode: v.literal("silent"),
     inviteStatus: v.literal("none"),
-    // When this heir's routing last changed. Compared against the matching
-    // `releaseBundles.rebuiltAt` to find heirs still owed a rebuild — see
-    // `routing.staleHeirs`. Written only by `routing.setRecipients`.
-    routingChangedAt: v.optional(v.number()),
-    // The message itself is encrypted; only its kind, blob id and its key
-    // wrapped by MK live here. The key reaches the heir inside the bundle.
+    // The message itself is encrypted; only its kind, blob id and its key live
+    // here — wrapped by MK for the owner, and sealed to the escrow key for this
+    // heir at release, exactly like a routed asset's DEK.
     messageMeta: v.optional(
       v.object({
         kind: v.union(
@@ -447,28 +464,12 @@ export default defineSchema({
           v.literal("video")
         ),
         storageId: v.id("_storage"),
-        messageKeyWrappedByMk: v.optional(v.bytes()),
+        messageKeyWrappedByMk: v.bytes(),
+        messageKeyEscrowed: v.bytes(),
+        escrowKeyId: v.string(),
       })
     ),
   }).index("by_userId", ["userId"]),
-
-  // One row per heir, replaced on every rebuild. `lockedKey` is K_h locked on
-  // the owner's device to the escrow public key; it is read by exactly one
-  // path, the gated release action, and never returned, logged or spread —
-  // `scripts/verify-invariants.mjs` fails the build otherwise.
-  releaseBundles: defineTable({
-    userId: v.id("users"),
-    heirId: v.id("heirs"),
-    bundleStorageId: v.id("_storage"),
-    lockedKey: v.bytes(),
-    // Which escrow key version locked it, so a rotated key still unlocks the
-    // rows it locked and a stale client cannot lock to a retired one.
-    escrowKeyId: v.string(),
-    rebuiltAt: v.number(),
-  })
-    .index("by_userId", ["userId"])
-    .index("by_userId_and_heirId", ["userId", "heirId"])
-    .index("by_heirId", ["heirId"]),
 
   checkinConfig: defineTable({
     userId: v.id("users"),
@@ -532,7 +533,6 @@ export default defineSchema({
     // Set once the claimant signs in through Clerk, so their own client can
     // read the claim back without a token in the URL.
     claimantUserId: v.optional(v.id("users")),
-    claimantIdentityStatus: identityStatus,
     certificateStorageId: v.optional(v.id("_storage")),
     certificateName: v.optional(v.string()),
     // Admin-set: does the certificate name match the owner's verified legal
@@ -689,7 +689,7 @@ export default defineSchema({
     ),
     readyAt: v.optional(v.number()),
     lastOpenedAt: v.optional(v.number()),
-    // Release + one year. After it the locked key and bundle are destroyed.
+    // Release + one year. After it the owner's escrowed keys are destroyed.
     expiresAt: v.number(),
     remindedAt: v.optional(v.number()),
     destroyedAt: v.optional(v.number()),

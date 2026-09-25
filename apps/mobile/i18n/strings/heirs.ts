@@ -278,13 +278,13 @@ export const HEIR_EDIT = {
   /**
    * The consequence, stated before the confirmation.
    *
-   * `heirs.remove` cascades: it drops their routing rows and their release
-   * bundle. So deleting an heir who receives assets leaves those assets with
-   * no recipient — which is the single thing this sheet exists to say out loud.
+   * `heirs.remove` cascades: it drops their routing rows. So deleting an heir
+   * who receives assets leaves those assets with no recipient — which is the
+   * single thing this sheet exists to say out loud.
    */
   deleteRouted: {
-    ar: "{name} تستلم {n} أصلاً. بحذفها تصبح هذه الأصول بلا مستلم، وتُلغى حصّتها من مفاتيح الإفراج.",
-    en: "{name} receives {n} assets. Deleting them leaves those assets with no recipient and destroys their share of the release keys.",
+    ar: "{name} تستلم {n} أصلاً. بحذفها تصبح هذه الأصول بلا مستلم.",
+    en: "{name} receives {n} assets. Deleting them leaves those assets with no recipient.",
   },
   deleteNothing: {
     ar: "لا تستلم {name} شيئاً حالياً، فلن يتغيّر توجيه أي أصل.",

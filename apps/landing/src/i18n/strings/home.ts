@@ -75,8 +75,8 @@ export const HOME = {
     en: "Not even we can see what you keep",
   },
   securityBody: {
-    ar: "كل شيء يُقفل على جوّالك قبل أن يصل إلينا، والمفتاح يبقى معك وحدك.",
-    en: "Everything is locked on your phone before it reaches us, and only you hold the key.",
+    ar: "كل شيء يُقفل على جوّالك قبل أن يصل إلينا، ومفتاح خزنتك يبقى معك وحدك.",
+    en: "Everything is locked on your phone before it reaches us, and only you hold your vault's key.",
   },
   diagramPhone: { ar: "على جوّالك", en: "On your phone" },
   diagramPhoneNote: {
@@ -100,8 +100,8 @@ export const HOME = {
     en: "What you leave your heirs is kept for them",
   },
   securityEscrowBody: {
-    ar: "ما خصّصته لكل شخص يبقى مقفلاً حتى نتأكد من الوفاة ومن هويته، وعندها فقط نفتحه لنسلّمه له. وما لم تخصّصه لأحد لا يُفتح أبداً.",
-    en: "What you set aside for each person stays locked until we've confirmed the death and who they are. Only then do we open it to hand it over. Anything you didn't set aside for anyone is never opened.",
+    ar: "نقفل نسخة مما خصّصته لورثتك بمفتاح التسليم، ولا نفتحها إلا بعد التأكد من الوفاة ومن هوية الوارث. وما لم تخصّصه لأحد لا يفتحه أحد — ولا نحن.",
+    en: "We lock a copy of what you set aside for your heirs with our delivery key, and open it only once the death and the heir are confirmed. What you set aside for no one, nobody can open — not even us.",
   },
   securityLink: { ar: "اقرأ كيف نحمي خزنتك", en: "Read how we protect your vault" },
 
@@ -153,8 +153,8 @@ export const HOME = {
   },
   keysPaperLabel: { ar: "ورقة الاسترداد، عند الحاجة", en: "The recovery sheet, just in case" },
   keysPaperValue: {
-    ar: "ورقة مطبوعة تفتح خزنتك إذا ضاع جوّالك. احفظها مع أوراقك المهمة، فمن يملكها يستطيع فتح خزنتك.",
-    en: "A printed sheet that opens your vault if you lose your phone. Keep it with your important papers — whoever has it can open your vault.",
+    ar: "ورقة مطبوعة تفتح خزنتك إذا ضاع جوّالك. احفظها مع أوراقك المهمة، فمن يملكها يستطيع فتح خزنتك. وبعد التحقق من وفاتك تتوقف عن العمل نهائياً.",
+    en: "A printed sheet that opens your vault if you lose your phone. Keep it with your important papers — whoever has it can open your vault. Once your death is verified, it stops working for good.",
   },
   keysNever: {
     ar: "لن نطلب منك هذه الورقة أبداً. من يطلبها منك ليس نحن.",
@@ -191,8 +191,8 @@ export const HOME = {
   },
   checkinTitle: { ar: "ونطمئن عليك", en: "And we check in on you" },
   checkinBody: {
-    ar: "من وقت لآخر نسألك: هل أنت بخير؟ لمسة بإصبعك تكفي للرد. ولا نسلّم شيئاً أبداً دون شهادة وفاة رسمية.",
-    en: "Every so often we ask: are you well? One touch of your finger is enough. Nothing is ever handed over without an official death certificate.",
+    ar: "من وقت لآخر نسألك: هل أنت بخير؟ لمسة ببصمتك تكفي للرد، وهي نفسها توقف أي بلاغ عن وفاتك. ولا نسلّم شيئاً أبداً دون شهادة وفاة رسمية.",
+    en: "Every so often we ask: are you well? One touch of your fingerprint is enough — and the same touch stops any report of your death. Nothing is ever handed over without an official death certificate.",
   },
   sharesTitle: { ar: "أنت تختار ما يأخذه كل شخص", en: "You choose what each person gets" },
   sharesBody: {
@@ -243,8 +243,8 @@ export const HOME = {
   },
   doorClaimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
   doorClaimMeta: {
-    ar: "نحو عشر دقائق، ويمكنك الإكمال لاحقاً",
-    en: "About ten minutes, and you can finish later",
+    ar: "دقائق قليلة، ويمكنك الإكمال لاحقاً",
+    en: "A few minutes, and you can finish later",
   },
   doorHeirTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
   doorHeirBody: {

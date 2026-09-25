@@ -16,7 +16,6 @@ import type { FunctionReturnType } from "convex/server"
 import { ExternalLinkIcon, MoreHorizontalIcon } from "lucide-react"
 
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
-import { IdentityBadge } from "@/components/identity-badge"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import type { DataTableFeatures } from "@/lib/data-table-features"
@@ -59,17 +58,6 @@ export function claimColumns(
       ),
       cell: ({ row }) => (
         <span className="font-medium">{row.original.claimantName}</span>
-      ),
-    }),
-
-    helper.accessor("claimantIdentityStatus", {
-      id: "claimantIdentityStatus",
-      header: () => labels.colIdentity,
-      cell: ({ row }) => (
-        <IdentityBadge
-          status={row.original.claimantIdentityStatus}
-          locale={locale}
-        />
       ),
     }),
 
@@ -175,7 +163,6 @@ export function claimColumnLabels(locale: Locale): Record<string, string> {
   const labels = t(CLAIMS, locale)
   return {
     claimantName: labels.colClaimant,
-    claimantIdentityStatus: labels.colIdentity,
     certificateName: labels.colCertificate,
     subjectVerifiedName: labels.colOwner,
     submittedAt: labels.colSubmitted,

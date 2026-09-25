@@ -33,8 +33,8 @@ export const ACCOUNT = {
   identityVerifiedAt: { ar: "التاريخ", en: "Date" },
   identityAttempts: { ar: "بقيت {n} محاولات", en: "{n} attempts left" },
   identityWhy: {
-    ar: "نطلب التحقق عند الإبلاغ عن وفاة، ويتحقق الوارث من هويته قبل أن يستلم ما تُرك له.",
-    en: "We ask for this when someone reports a death, and an heir confirms who they are before receiving what was left to them.",
+    ar: "يتحقق الوارث من هويته قبل أن يستلم ما تُرك له. الإبلاغ عن وفاة لا يحتاج هذا التحقق.",
+    en: "An heir confirms who they are before receiving what was left to them. Reporting a death doesn't need this check.",
   },
 
   seeTitle: { ar: "ما نراه وما لا نراه", en: "What we can and can't see" },

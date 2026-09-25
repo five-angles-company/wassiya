@@ -61,8 +61,8 @@ export const WELCOME = {
   },
   gateReview: { ar: "مراجعة بشرية للشهادة", en: "A human review of the certificate" },
   gateVeto: {
-    ar: "مدة اعتراض تملك إيقافها بضغطة",
-    en: "A veto window you can stop with one tap",
+    ar: "مدة اعتراض توقفها ببصمتك",
+    en: "A veto window you stop with your fingerprint",
   },
 
   nothingToMemoriseTitle: {

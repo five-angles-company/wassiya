@@ -30,11 +30,9 @@ import { CLAIM_IDENTITY } from "@/features/claims/strings/claim-identity"
  */
 export function IdentityPanel({
   returnTo = "/",
-  audience,
 }: {
   /** Where the provider sends the reader back — the page the panel sits on. */
   returnTo?: string
-  audience: "reporter" | "heir"
 }) {
   const locale = useLocale()
   const labels = t(CLAIM_IDENTITY, locale)
@@ -46,7 +44,6 @@ export function IdentityPanel({
   const [providerUrl, setProviderUrl] = useState<string | null>(null)
 
   const state = status?.status ?? "unverified"
-  const privacy = audience === "reporter" ? labels.privacyReporter : labels.privacyHeir
 
   async function begin() {
     setBusy(true)
@@ -72,7 +69,7 @@ export function IdentityPanel({
         <IconDisc icon={BadgeCheckIcon} tone="settled" size="sm" shape="circle" className="bg-card" />
         <div>
           <p className="text-tone-settled font-heading text-[17px] font-extrabold">{labels.verified}</p>
-          <p className="text-foreground/75 mt-1 text-[14px] leading-[1.75]">{privacy}</p>
+          <p className="text-foreground/75 mt-1 text-[14px] leading-[1.75]">{labels.privacy}</p>
         </div>
       </div>
     )
@@ -136,7 +133,7 @@ export function IdentityPanel({
 
       <p className="text-muted-foreground flex items-start gap-2 text-[13px] leading-[1.7]">
         <ShieldCheckIcon className="text-tone-settled mt-0.5 size-4 shrink-0" strokeWidth={2.25} aria-hidden />
-        {privacy}
+        {labels.privacy}
       </p>
 
       {error !== null && <p className="text-tone-attention text-[14.5px] leading-[1.7] font-semibold">{error}</p>}

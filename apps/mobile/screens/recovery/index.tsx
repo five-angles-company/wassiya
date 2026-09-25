@@ -60,7 +60,10 @@ export function RecoveryScreen() {
   const [phase, setPhase] = useState<Phase>("input")
 
   async function recover() {
-    if (keyring == null || me == null) return
+    if (keyring == null || keyring.mkWrappedByRecovery === null || me == null) {
+      return
+    }
+    const wrapper = keyring.mkWrappedByRecovery
     setPhase("working")
 
     let sPaper: Uint8Array | null = null
@@ -79,7 +82,7 @@ export function RecoveryScreen() {
 
       mk = recoverMk(
         sPaper,
-        new Uint8Array(keyring.mkWrappedByRecovery),
+        new Uint8Array(wrapper),
         me.id,
         keyring.paperVersion
       )
@@ -144,6 +147,12 @@ export function RecoveryScreen() {
           className="mt-header"
           variant="security"
           description={t.noKeyring}
+        />
+      ) : keyring?.closed === true ? (
+        <AlertBanner
+          className="mt-header"
+          variant="security"
+          description={t.closed}
         />
       ) : keyring !== undefined &&
         keyring.wrapperVersion !== CURRENT_WRAPPER_VERSION ? (

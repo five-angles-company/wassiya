@@ -1,17 +1,14 @@
 /**
- * The submit half of a wizard: turn its answers into payloads, run
- * `useCreateAsset`, and own the submitting/error state so six screens do not
- * each re-invent it.
+ * The submit half of a wizard: run `useSaveAsset` for a new asset, and own the
+ * submitting/error state so six screens do not each re-invent it.
  *
- * Text secrets arrive as strings and become one encrypted blob; file-backed
- * types pass their bytes straight through. Either way the caller gets a boolean
- * and an error message it can render — never a thrown exception to catch, since
- * every wizard would handle it identically.
+ * The caller gets the new id or `null` and an error message it can render —
+ * never a thrown exception to catch, since every wizard would handle it
+ * identically.
  */
 import { useCallback, useRef, useState } from "react"
 import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { utf8ToBytes } from "@workspace/crypto/bytes"
 import type { AssetLabel } from "@workspace/crypto/label"
 import type { Id } from "@workspace/backend/dataModel"
 
@@ -21,24 +18,19 @@ import { usePaywall } from "@/components/paywall"
 import { useStrings } from "@/i18n/use-strings"
 import { limitBeforeUpload, planLimitOf } from "@/lib/plan-limit"
 import {
-  useCreateAsset,
+  type AssetMeta,
+  type NewFile,
+  useSaveAsset,
   VaultLockedError,
-  type AssetPayload,
-} from "@/screens/assets/new/use-create-asset"
+} from "@/screens/assets/use-save-asset"
 
 export type AssetSubmitInput = {
   type: AssetType
   label: AssetLabel
-  /** A phrase, a password, a note body — encrypted as a single blob. */
+  /** The type's secret fields as JSON — a phrase, a password, a note body. */
   secret?: string
-  /** Already-read plaintext file bytes, one blob each. */
-  files?: AssetPayload[]
-  meta?: {
-    itemCount?: number
-    byteSize?: number
-    mimeType?: string
-    expiryRemindAt?: number
-  }
+  files?: NewFile[]
+  meta?: AssetMeta
   onProgress?: (fileIndex: number, progress: UploadProgress) => void
 }
 
@@ -51,7 +43,7 @@ export type AssetSubmit = {
 
 export function useAssetSubmit(): AssetSubmit {
   const { t } = useStrings("assets/new")
-  const create = useCreateAsset()
+  const save = useSaveAsset()
   const paywall = usePaywall()
   // Same "skip" as the paywall's: `plans.current` calls `requireUser`, so a
   // session that lapses while a wizard is open would take the screen down with
@@ -92,13 +84,7 @@ export function useAssetSubmit(): AssetSubmit {
           return null
         }
 
-        const payloads: AssetPayload[] = [
-          ...(secret === undefined
-            ? []
-            : [{ read: () => Promise.resolve(utf8ToBytes(secret)) }]),
-          ...(files ?? []),
-        ]
-        return await create({ type, label, payloads, meta, onProgress })
+        return await save({ type, label, secret, files, meta, onProgress })
       } catch (cause) {
         // Three outcomes, three remedies. A plan limit and an auto-locked vault
         // are both normal events; collapsing them into "something went wrong"
@@ -126,7 +112,7 @@ export function useAssetSubmit(): AssetSubmit {
         setSubmitting(false)
       }
     },
-    [create, paywall, plan, t.quotaExceeded, t.saveFailed, t.vaultLocked]
+    [save, paywall, plan, t.quotaExceeded, t.saveFailed, t.vaultLocked]
   )
 
   return { submit, submitting, error }

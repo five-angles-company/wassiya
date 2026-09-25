@@ -14,13 +14,14 @@
 //  submitted        sweepUnmatched     no subjectUserId, older than the       closed
 //                                      grace window                           (no_vault_matched)
 //  submitted        adminCloseClaim    admin ends it without a verdict        closed
-//  submitted        adminSetNameMatch  nameMatch === true AND the reporter    awaiting_veto
-//                                      is Didit-verified                      (sets vetoDeadline)
+//  submitted        adminSetNameMatch  nameMatch === true                     awaiting_veto
+//                                                                             (sets vetoDeadline)
 //  submitted        adminSetNameMatch  nameMatch === false                    locked
-//  awaiting_veto    veto               caller is the subject; now < deadline  vetoed
-//                                                                             (lockedUntil +90d)
+//  submitted or     checkin.confirm    the subject confirms alive with a      vetoed
+//  awaiting_veto                       fingerprint; before the deadline       (lockedUntil +90d)
 //  awaiting_veto    advance            now >= vetoDeadline                    released
-//                                                                             (creates deliveries)
+//                                                                             (creates deliveries,
+//                                                                             closes the vault)
 //  vetoed           —                  terminal                               —
 //  locked           —                  terminal                               —
 //  released         —                  terminal                               —
@@ -85,45 +86,24 @@ export function vetoWindowElapsed(claim: Doc<"claims">, now: number): boolean {
 }
 
 /** Where an admin's name-match verdict sends a submitted claim. */
-export function nameMatchOutcome(
-  nameMatch: boolean,
-  claimantIdentityStatus: Doc<"users">["identityStatus"]
-): ClaimStatus {
-  return nameMatch && claimantIdentityStatus === "verified"
-    ? "awaiting_veto"
-    : "locked"
+export function nameMatchOutcome(nameMatch: boolean): ClaimStatus {
+  return nameMatch ? "awaiting_veto" : "locked"
 }
 
-/** Days an heir can open a delivery after release, before its key is destroyed. */
+/** Days an heir can open a delivery after release, before the vault is deleted. */
 export const DELIVERY_WINDOW_DAYS = 365
 
 /** Why a verdict cannot be given yet. `null` means it can. */
-export type NameMatchBlock = "past-review" | "identity-not-verified"
+export type NameMatchBlock = "past-review"
 
 /**
- * Whether an admin may record this verdict on this claim right now.
- *
- * Every block applies only to approval: a rejection is *meant* to end in
- * `locked`, so refusing it would refuse the very thing the reviewer is there
- * to do.
- *
- *  - **`identity-not-verified`** — `nameMatchOutcome(true, anything-but-verified)`
- *    returns `locked`, so an admin approving a genuine match while Didit is
- *    still `pending` would destroy the report. It resolves itself: the webhook
- *    lands and the block lifts.
- *
- * ⚠️ `reporterIdentityStatus` must be the LIVE `users.identityStatus`, never
- * `claims.claimantIdentityStatus` — a snapshot taken at submit. A console that
- * disabled its button on the snapshot would disagree with the server in
- * exactly the case this function exists to prevent.
+ * Whether an admin may record a verdict on this claim right now: once, while it
+ * is `submitted`. The reporter's own identity is not a condition — they
+ * receive nothing, and the certificate, the veto window and each heir's own
+ * verification guard everything that matters.
  */
 export function nameMatchBlockedReason(
-  claim: Doc<"claims">,
-  nameMatch: boolean,
-  reporterIdentityStatus: Doc<"users">["identityStatus"]
+  claim: Doc<"claims">
 ): NameMatchBlock | null {
-  if (claim.status !== "submitted") return "past-review"
-  if (!nameMatch) return null
-  if (reporterIdentityStatus !== "verified") return "identity-not-verified"
-  return null
+  return claim.status === "submitted" ? null : "past-review"
 }

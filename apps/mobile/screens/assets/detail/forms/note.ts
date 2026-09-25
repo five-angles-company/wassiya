@@ -14,8 +14,7 @@
  * saved before ٤.٨ had a second composer — and the **format cannot be changed
  * by an edit**: swapping one for the other is discarding the note and writing a
  * different one, so the screen offers a new take or a new body, never a swap.
- * A voice note's blob sits after the payload, making `storageIds`
- * `[payload, audio]`, the same layout ٤.٥ uses.
+ * A voice note's recording is its one stored file.
  */
 import type { EditPayload, EditSource } from "@/screens/assets/detail/forms/source"
 
@@ -48,11 +47,11 @@ export type NoteForm = {
   durationMs: number
   /** What the row currently holds, for the row that reports it. */
   current: { byteSize: number }
-  /** The audio blob, which survives every edit that does not replace it. */
-  fileIds: string[]
+  /** A stored recording survives every edit that does not replace it. */
+  hasRecording: boolean
 }
 
-export function parseNote({ secret, meta, storageIds }: EditSource): NoteForm | null {
+export function parseNote({ secret, meta, files }: EditSource): NoteForm | null {
   let data: Record<string, unknown>
   try {
     const parsed: unknown = JSON.parse(secret)
@@ -70,10 +69,10 @@ export function parseNote({ secret, meta, storageIds }: EditSource): NoteForm | 
     typeof data[key] === "string" ? (data[key] as string) : ""
 
   const kind = str("kind")
-  // Two blobs and nothing else is what makes a note audible; the flag alone
-  // would leave the screen offering a player over a recording that is not there.
+  // A stored file is what makes a note audible; the flag alone would leave the
+  // screen offering a player over a recording that is not there.
   const format: NoteFormat =
-    str("format") === "voice" && storageIds.length > 1 ? "voice" : "text"
+    str("format") === "voice" && files.length > 0 ? "voice" : "text"
 
   return {
     kind: NOTE_KINDS.includes(kind as NoteKind)
@@ -85,7 +84,7 @@ export function parseNote({ secret, meta, storageIds }: EditSource): NoteForm | 
     durationMs:
       typeof data.durationMs === "number" ? (data.durationMs as number) : 0,
     current: { byteSize: meta.byteSize ?? 0 },
-    fileIds: storageIds.slice(1),
+    hasRecording: files.length > 0,
   }
 }
 
@@ -158,6 +157,6 @@ export function kindLabel(
 export function isNoteValid(form: NoteForm, take: StagedTake | null = null): boolean {
   if (form.title.trim().length === 0) return false
   return form.format === "voice"
-    ? take !== null || form.fileIds.length > 0
+    ? take !== null || form.hasRecording
     : form.body.trim().length > 0
 }

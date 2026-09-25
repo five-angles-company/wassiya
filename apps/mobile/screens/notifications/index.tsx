@@ -8,11 +8,10 @@
  * `readAt`. Marking read is a *reading* gesture and must not dismiss something
  * the owner still has to act on.
  *
- * **A death claim must never appear here as a row.** ٧.٥ escalates past this
- * screen to a full-screen interrupt at `/protection/claim`, with 6.1 carrying
- * the banner; claim events map to history copy only. A claim rendered as a row
- * has been demoted from an interrupt, which is the failure that loses someone
- * their veto window.
+ * **A death claim must never appear here as a row.** Home carries it, above
+ * everything, right over the fingerprint check-in that stops it; claim events
+ * map to history copy only. A claim rendered as a row has been demoted from an
+ * interrupt, which is the failure that loses someone their veto window.
  */
 import { useMemo } from "react"
 import { usePaginatedQuery, useMutation } from "convex/react"

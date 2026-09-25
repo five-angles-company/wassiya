@@ -29,15 +29,15 @@ export const RELEASES = {
   remainingToday: { ar: "أقل من يوم", en: "Under a day" },
   overdueSweep: { ar: "انقضت — بانتظار المهمة", en: "Elapsed — awaiting the job" },
 
-  // A report counting down with no bundles is the one genuinely alarming row
-  // this screen can show: it will release on schedule and reach nobody.
-  bundlesNone: { ar: "لا حزم", en: "No bundles" },
-  bundlesReady: { ar: "{n} وريثاً جاهزاً", en: "{n} heirs ready" },
+  // A report counting down with no receiving heir is the one genuinely alarming
+  // row this screen can show: it will release on schedule and reach nobody.
+  receivingNone: { ar: "لا وارث يستلم", en: "No heir receives" },
+  receivingCount: { ar: "{n} وريثاً يستلم", en: "{n} heirs receive" },
 
   deliveryNone: { ar: "لا تسليمات", en: "No deliveries" },
   deliveryNoneHint: {
-    ar: "لم يبنِ جهاز صاحب الخزنة أي حزمة، فلا شيء يصل لأي وارث.",
-    en: "The owner's device never built a bundle, so nothing reaches any heir.",
+    ar: "لم يُوجِّه صاحب الخزنة شيئاً لأي وارث، فلا شيء يصل لأحد.",
+    en: "The owner routed nothing to any heir, so nothing reaches anyone.",
   },
   deliverySummary: { ar: "{ready} من {total} جاهزة", en: "{ready} of {total} ready" },
 

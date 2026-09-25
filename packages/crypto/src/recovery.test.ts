@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { KEY_BYTES, randomBytes, xor } from "./bytes"
+import { KEY_BYTES, randomBytes } from "./bytes"
 import { generateMk } from "./keys"
 import { recoverMk, rotatePaperShare, splitRecovery } from "./recovery"
 import { wrap } from "./wrap"
@@ -29,13 +29,10 @@ describe("splitRecovery / recoverMk", () => {
 
   it("does not encode MK in the share itself", () => {
     // The catastrophic implementation hands MK to anyone holding the share.
-    // Assert the share is unrelated to MK: it is neither MK nor its
-    // XOR-complement under the wrapper.
     for (let i = 0; i < 32; i++) {
       const mk = generateMk()
       const { sPaper } = splitRecovery(mk, USER, 1)
       expect(Array.from(sPaper)).not.toEqual(Array.from(mk))
-      expect(Array.from(xor(sPaper, mk))).not.toEqual(Array.from(sPaper))
     }
   })
 

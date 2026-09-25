@@ -1,229 +1,154 @@
-"use node"
-
 // The one unlock path — AGENTS.md "Escrowed release".
 //
-//  - `unlockHeirKey` is module-private and `openDelivery` is its only caller.
-//    Nothing else in this deployment may import a key-vault client or read
-//    `ESCROW_DEV_PRIVATE_KEY`; `scripts/verify-invariants.mjs` enforces it.
-//  - Every precondition is re-checked by `release.releaseGate`, which runs as
-//    the calling heir. This action trusts nothing it is passed.
-//  - The attempt is audited *before* the unlock, so a failure is on record.
-//  - K_h leaves only sealed to the heir's one-time browser key, and is zeroed
-//    here once sealed. It is never returned, logged or thrown in an error.
-//  - `ESCROW_BACKEND=dev` is refused when `WASSIYA_ENV=production`.
+//  - `openDelivery` is the only reader of `escrowedDek`, `messageKeyEscrowed`
+//    and `ESCROW_PRIVATE_KEY`, and this is the only module that may import
+//    `@workspace/crypto`. `scripts/verify-invariants.mjs` enforces all three.
+//  - Every precondition is re-read here, as the calling heir. Nothing passed in
+//    is trusted, and every refusal is the same "not found".
+//  - An open that passes the gate is audited in the same transaction, including
+//    one whose keys then fail to open.
+//  - Keys leave only in this mutation's return value, to the one verified heir.
+//    They are never logged, stored in the clear, or put in an error.
 import {
-  constants,
-  createPrivateKey,
-  createSign,
-  privateDecrypt,
-} from "node:crypto"
-
-import { parseUnlockedHeirKey } from "@workspace/crypto/escrow"
-import { SEAL_KEY_BYTES, sealKeyTo } from "@workspace/crypto/seal"
+  type EscrowSubject,
+  openFromEscrow,
+  parseEscrowKey,
+} from "@workspace/crypto/escrow"
 import { v } from "convex/values"
 
-import { internal } from "./_generated/api"
-import type { Id } from "./_generated/dataModel"
-import { action } from "./_generated/server"
+import type { Doc, Id } from "./_generated/dataModel"
+import { mutation, type MutationCtx } from "./_generated/server"
+import { writeAudit } from "./audit"
+import { currentEscrowKeyId } from "./model/escrowSeal"
+import { routesForHeir } from "./model/receivers"
+import { getCurrentUserOrThrow } from "./users"
 
-export const openDelivery = action({
-  args: {
-    deliveryId: v.id("deliveries"),
-    browserPublicKey: v.bytes(),
-  },
-  handler: async (
-    ctx,
-    { deliveryId, browserPublicKey }
-  ): Promise<{
-    bundleUrl: string
-    sealedKey: ArrayBuffer
-    expiresAt: number
-  }> => {
-    if (browserPublicKey.byteLength !== SEAL_KEY_BYTES) {
-      throw new Error("Not found")
-    }
-    const gate: {
-      subjectUserId: Id<"users">
-      heirId: Id<"heirs">
-      bundleUrl: string | null
-      lockedKey: ArrayBuffer
-      escrowKeyId: string
-      expiresAt: number
-    } | null = await ctx.runQuery(internal.release.releaseGate, { deliveryId })
-    if (gate === null || gate.bundleUrl === null) {
-      throw new Error("Not found")
-    }
+/**
+ * What one heir receives: every routed asset with its DEK, and their message
+ * with its key. The heir's browser decrypts everything itself.
+ */
+export const openDelivery = mutation({
+  args: { deliveryId: v.id("deliveries") },
+  handler: async (ctx, { deliveryId }) => {
+    const delivery = await openableDelivery(ctx, deliveryId)
+    if (delivery === null) throw new Error("Not found")
 
-    await ctx.runMutation(internal.release.recordOpened, { deliveryId })
+    const now = Date.now()
+    await ctx.db.patch("deliveries", deliveryId, { lastOpenedAt: now })
+    await writeAudit(ctx, {
+      userId: delivery.subjectUserId,
+      event: "release.delivery_opened",
+      meta: {
+        deliveryId,
+        heirId: delivery.heirId,
+        heirUserId: delivery.heirUserId ?? null,
+      },
+      at: now,
+    })
 
-    const plaintext = await unlockHeirKey(
-      new Uint8Array(gate.lockedKey),
-      gate.escrowKeyId
-    )
-    let kH: Uint8Array | undefined
+    const secretKey = escrowSecretKey()
+    const ownerId = delivery.subjectUserId
     try {
-      kH = parseUnlockedHeirKey(plaintext, {
-        ownerId: gate.subjectUserId,
-        heirId: gate.heirId,
-      })
-      const sealed = sealKeyTo(kH, new Uint8Array(browserPublicKey))
-      return {
-        bundleUrl: gate.bundleUrl,
-        sealedKey: sealed.buffer.slice(
-          sealed.byteOffset,
-          sealed.byteOffset + sealed.byteLength
-        ) as ArrayBuffer,
-        expiresAt: gate.expiresAt,
+      const items = []
+      for (const route of await routesForHeir(ctx, ownerId, delivery.heirId)) {
+        const asset = await ctx.db.get("assets", route.assetId)
+        if (asset === null) continue
+        items.push({
+          assetId: asset._id,
+          type: asset.type,
+          via: route.recipient.kind,
+          meta: asset.meta,
+          labelSealed: asset.labelSealed,
+          secretSealed: asset.secretSealed ?? null,
+          files: await Promise.all(
+            asset.files.map(async (file) => ({
+              url: await ctx.storage.getUrl(file.storageId),
+              thumbnailUrl:
+                file.thumbnailId === undefined
+                  ? null
+                  : await ctx.storage.getUrl(file.thumbnailId),
+            }))
+          ),
+          dek: openKey(asset.escrowedDek, asset.escrowKeyId, secretKey, {
+            ownerId,
+            assetId: asset._id,
+          }),
+        })
       }
-    } catch {
-      throw new Error("Not found")
+
+      const heir = await ctx.db.get("heirs", delivery.heirId)
+      const stored = heir?.messageMeta
+      const message =
+        stored === undefined
+          ? null
+          : {
+              kind: stored.kind,
+              url: await ctx.storage.getUrl(stored.storageId),
+              key: openKey(stored.messageKeyEscrowed, stored.escrowKeyId, secretKey, {
+                ownerId,
+                messageForHeirId: delivery.heirId,
+              }),
+            }
+
+      return { expiresAt: delivery.expiresAt, items, message }
     } finally {
-      plaintext.fill(0)
-      kH?.fill(0)
+      secretKey.fill(0)
     }
   },
 })
 
-async function unlockHeirKey(
-  lockedKey: Uint8Array,
-  escrowKeyId: string
-): Promise<Uint8Array> {
-  const backend = process.env.ESCROW_BACKEND ?? "dev"
-  if (backend === "dev") {
-    if (process.env.WASSIYA_ENV === "production") {
-      throw new Error("The dev escrow key is refused in production")
-    }
-    if (escrowKeyId !== process.env.ESCROW_KEY_ID) {
-      throw new Error("Not found")
-    }
-    const pem = process.env.ESCROW_DEV_PRIVATE_KEY
-    if (pem === undefined) {
-      throw new Error("ESCROW_DEV_PRIVATE_KEY is not set on this deployment")
-    }
-    // One base64 line of the PKCS#8 DER is the stored form: a multi-line PEM
-    // does not survive `npx convex env set` on Windows, which keeps only its
-    // first line. A PEM with escaped newlines is still accepted.
-    const key = pem.startsWith("-----BEGIN")
-      ? createPrivateKey(pem.replace(/\\n/g, "\n"))
-      : createPrivateKey({
-          key: Buffer.from(pem, "base64"),
-          format: "der",
-          type: "pkcs8",
-        })
-    return new Uint8Array(
-      privateDecrypt(
-        { key, padding: constants.RSA_PKCS1_OAEP_PADDING, oaepHash: "sha256" },
-        lockedKey
-      )
-    )
+/**
+ * Every precondition for opening a delivery, re-read now. `null` means "not
+ * found" to the caller, who learns nothing more.
+ */
+async function openableDelivery(
+  ctx: MutationCtx,
+  deliveryId: Id<"deliveries">
+): Promise<Doc<"deliveries"> | null> {
+  const caller = await getCurrentUserOrThrow(ctx)
+  const delivery = await ctx.db.get("deliveries", deliveryId)
+  if (delivery === null) return null
+  if (delivery.status !== "ready") return null
+  if (delivery.destroyedAt !== undefined) return null
+  if (delivery.expiresAt <= Date.now()) return null
+  if (delivery.heirUserId !== caller._id) return null
+  if (caller.identityStatus !== "verified") return null
+
+  const claim = await ctx.db.get("claims", delivery.claimId)
+  if (claim === null || claim.status !== "released") return null
+  if (claim.nameMatch !== true) return null
+  if (claim.subjectUserId !== delivery.subjectUserId) return null
+  return delivery
+}
+
+function escrowSecretKey(): Uint8Array {
+  currentEscrowKeyId()
+  const hex = process.env.ESCROW_PRIVATE_KEY
+  if (hex === undefined) {
+    throw new Error("ESCROW_PRIVATE_KEY is not set on this deployment")
   }
-  if (backend === "gcp") {
-    // `escrowKeyId` is the key version's resource name, and must be the one
-    // this deployment is configured for.
-    if (escrowKeyId !== process.env.ESCROW_KEY_ID) {
-      throw new Error("Not found")
-    }
-    return await cloudKmsDecrypt(escrowKeyId, lockedKey)
-  }
-  throw new Error(`Escrow backend "${backend}" is not available`)
+  return parseEscrowKey(hex)
 }
 
 /**
- * Cloud KMS `asymmetricDecrypt` over REST (RSA_DECRYPT_OAEP_*_SHA256).
- *
- * Authenticates as the service account in `GCP_SERVICE_ACCOUNT` (the JSON key
- * file, base64 on one line — a multi-line value does not survive
- * `npx convex env set` on Windows). That account must hold only
- * `roles/cloudkms.cryptoKeyDecrypter` on this one key. Both CRC32C checks are
- * made: KMS confirms it received the ciphertext intact, and the plaintext is
- * checked against the checksum KMS returns.
+ * One escrowed key, as bytes the heir's browser can use — or `null` when it
+ * will not open, which the page shows as an item it cannot name rather than
+ * failing the whole delivery.
  */
-async function cloudKmsDecrypt(
-  keyVersionName: string,
-  ciphertext: Uint8Array
-): Promise<Uint8Array> {
-  const encoded = process.env.GCP_SERVICE_ACCOUNT
-  if (encoded === undefined) {
-    throw new Error("GCP_SERVICE_ACCOUNT is not set on this deployment")
+function openKey(
+  sealed: ArrayBuffer | undefined,
+  keyId: string | undefined,
+  secretKey: Uint8Array,
+  subject: EscrowSubject
+): ArrayBuffer | null {
+  if (sealed === undefined || keyId !== currentEscrowKeyId()) return null
+  try {
+    const key = openFromEscrow(new Uint8Array(sealed), secretKey, subject)
+    const out = key.slice().buffer
+    key.fill(0)
+    return out
+  } catch {
+    return null
   }
-  const account = JSON.parse(
-    Buffer.from(encoded, "base64").toString("utf8")
-  ) as {
-    client_email: string
-    private_key: string
-  }
-
-  const now = Math.floor(Date.now() / 1000)
-  const segment = (value: object) =>
-    Buffer.from(JSON.stringify(value)).toString("base64url")
-  const unsigned = `${segment({ alg: "RS256", typ: "JWT" })}.${segment({
-    iss: account.client_email,
-    scope: "https://www.googleapis.com/auth/cloudkms",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 300,
-  })}`
-  const signature = createSign("RSA-SHA256")
-    .update(unsigned)
-    .sign(account.private_key)
-    .toString("base64url")
-
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: `${unsigned}.${signature}`,
-    }),
-  })
-  if (!tokenResponse.ok) {
-    throw new Error(`Cloud KMS auth failed (${tokenResponse.status})`)
-  }
-  const { access_token: accessToken } = (await tokenResponse.json()) as {
-    access_token: string
-  }
-
-  const response = await fetch(
-    `https://cloudkms.googleapis.com/v1/${keyVersionName}:asymmetricDecrypt`,
-    {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        ciphertext: Buffer.from(ciphertext).toString("base64"),
-        ciphertextCrc32c: String(crc32c(ciphertext)),
-      }),
-    }
-  )
-  if (!response.ok) {
-    throw new Error(`Cloud KMS decrypt failed (${response.status})`)
-  }
-  const result = (await response.json()) as {
-    plaintext: string
-    plaintextCrc32c: string
-    verifiedCiphertextCrc32c: boolean
-  }
-  const plaintext = new Uint8Array(Buffer.from(result.plaintext, "base64"))
-  if (
-    !result.verifiedCiphertextCrc32c ||
-    String(crc32c(plaintext)) !== result.plaintextCrc32c
-  ) {
-    plaintext.fill(0)
-    throw new Error("Cloud KMS response failed its integrity check")
-  }
-  return plaintext
 }
 
-/** CRC32C (Castagnoli), which Cloud KMS uses to detect corruption in transit. */
-function crc32c(bytes: Uint8Array): number {
-  let crc = 0xffffffff
-  for (const byte of bytes) {
-    crc ^= byte
-    for (let bit = 0; bit < 8; bit++) {
-      crc = crc & 1 ? (crc >>> 1) ^ 0x82f63b78 : crc >>> 1
-    }
-  }
-  return (crc ^ 0xffffffff) >>> 0
-}

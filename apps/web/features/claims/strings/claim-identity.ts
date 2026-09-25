@@ -1,13 +1,12 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * Confirming who the reader is — for the person filing a report and for an
- * heir. `intro` does the work of not making someone feel accused at the first
- * step.
+ * Confirming who an heir is before their delivery opens. `intro` does the work
+ * of not making someone feel accused at the first step.
  *
  * ⚠️ Say only what the check really does: a photo of an ID and of a face,
  * taken by the verification partner. Wassiya keeps the result and the verified
- * name, not the images — `privacyReporter`/`privacyHeir` must stay true to
+ * name, not the images — `privacy` must stay true to
  * `packages/backend/convex/model/didit.ts`.
  */
 export const CLAIM_IDENTITY = {
@@ -39,11 +38,7 @@ export const CLAIM_IDENTITY = {
   },
   copyLink: { ar: "انسخ الرابط", en: "Copy the link" },
 
-  privacyReporter: {
-    ar: "يلتقط شريكنا صور هويتك ولا نحفظها نحن؛ نحفظ نتيجة التحقق واسمك فقط، ولا نعطيها لأي وارث.",
-    en: "Our partner takes the photos of your ID and we don't keep them — we keep only the result and your name, and never share them with any heir.",
-  },
-  privacyHeir: {
+  privacy: {
     ar: "يلتقط شريكنا صور هويتك ولا نحفظها نحن؛ نحفظ نتيجة التحقق واسمك فقط، ولا نعطيها لأحد.",
     en: "Our partner takes the photos of your ID and we don't keep them — we keep only the result and your name, and share them with no one.",
   },

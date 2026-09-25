@@ -61,21 +61,11 @@ export function NoteEditScreen({ assetId }: { assetId: Id<"assets"> }) {
 
     const ok = await save({
       ...payload,
-      ...(form.format !== "voice"
-        ? null
-        : take === null
-          ? {
-              // The payload blob is rewritten on every save, so the recording
-              // has to be put back *after* it — `keep` would place it first and
-              // invert the `[payload, audio]` layout every reader relies on.
-              arrange: (uploaded) =>
-                [...uploaded, ...form.fileIds] as Id<"_storage">[],
-            }
-          : {
-              files: [
-                { read: () => readFileBytes(take.uri), byteSize: take.byteSize },
-              ],
-            }),
+      // Absent keeps the stored recording; a new take supersedes it.
+      files:
+        form.format === "voice" && take !== null
+          ? [{ read: () => readFileBytes(take.uri), byteSize: take.byteSize }]
+          : undefined,
     })
 
     if (ok) {

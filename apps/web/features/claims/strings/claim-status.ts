@@ -13,7 +13,6 @@ import type { Dictionary } from "@/lib/i18n/locale"
  */
 export const CLAIM_STATUS = {
   stepReceived: { ar: "استلمنا البلاغ", en: "Report received" },
-  stepIdentity: { ar: "إثبات هويتك", en: "Confirm who you are" },
   stepCertificate: { ar: "شهادة الوفاة", en: "The death certificate" },
   stepNotified: { ar: "أبلغنا صاحب الخزنة", en: "We told the vault's owner" },
   stepReview: { ar: "مراجعة الشهادة", en: "We check the certificate" },
@@ -22,10 +21,6 @@ export const CLAIM_STATUS = {
   timelineTitle: { ar: "مسار البلاغ", en: "Where the report is" },
 
   // One sentence about the report — never a status name.
-  headIdentity: {
-    ar: "نحتاج أن نتأكد من هويتك قبل أن نكمل.",
-    en: "We need to confirm who you are before we go on.",
-  },
   headCertificate: {
     ar: "بقيت شهادة الوفاة، ثم نراجع البلاغ.",
     en: "Only the death certificate is left, then we check the report.",

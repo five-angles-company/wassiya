@@ -9,7 +9,7 @@
  * own grid drew faster would hand the server a legible index of every photo the
  * vault holds — which is why ٤.٩'s grid needs decryption to render.
  *
- * `storageIds` is all originals then all thumbnails, split at `meta.itemCount`.
+ * Each stored file is one photo with its thumbnail beside it.
  *
  * Still missing and needing native work: a foreground service with resumable
  * upload. `expo-file-system`'s `UploadTask` has no pause/resume, so a
@@ -55,9 +55,7 @@ export function NewPhotosScreen() {
    *
    * Per file rather than per album, and the reasoning matters: with
    * twenty photos on a weak connection one bar hides *which* file is stuck.
-   * Keyed by index into `photos`, because the uploader reports the same index
-   * — originals lead the payload list, so a `fileIndex` below `photos.length`
-   * is a photo and anything above it is one of the thumbnails.
+   * Keyed by index into `photos`, because the uploader reports the same index.
    */
   const [progress, setProgress] = useState<Record<number, number>>({})
   /** The photo the last attempt died on, so the grid can point at it. */
@@ -114,13 +112,15 @@ export function NewPhotosScreen() {
     // Thunks, not bytes: the pipeline reads each file immediately before it
     // encrypts and uploads it, so one plaintext buffer is alive at a time
     // rather than the whole album. See `AssetPayload`.
-    const files = [
-      ...photos.map((photo) => ({
+    const files = photos.map((photo, i) => {
+      const thumbUri = thumbUris[i]
+      return {
         read: () => readFileBytes(photo.uri),
+        readThumbnail:
+          thumbUri === undefined ? undefined : () => readFileBytes(thumbUri),
         byteSize: photo.size,
-      })),
-      ...thumbUris.map((uri) => ({ read: () => readFileBytes(uri) })),
-    ]
+      }
+    })
 
     const saved = await submit({
       type: "photos",
@@ -135,8 +135,6 @@ export function NewPhotosScreen() {
         mimeType: "image/*",
       },
       onProgress: (index, sent) => {
-        // Thumbnails upload after the originals and have no tile of their own.
-        if (index >= photos.length) return
         const fraction =
           sent.totalBytes > 0 ? sent.bytesSent / sent.totalBytes : 0
         // Tracked locally as well as in state: the state read below happens

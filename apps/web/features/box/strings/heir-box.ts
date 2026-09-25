@@ -45,14 +45,7 @@ export const HEIR_BOX = {
   download: { ar: "نزّل", en: "Download" },
   downloading: { ar: "جارٍ التنزيل…", en: "Downloading…" },
   downloadFailed: { ar: "لم يكتمل التنزيل. حاول مرة أخرى.", en: "The download didn't finish. Please try again." },
-  noContent: {
-    ar: "لا ملف مرفق — هذا العنصر ملاحظة مكتوبة.",
-    en: "No file attached — this item is a written note.",
-  },
-  instructionsNote: {
-    ar: "كتب لك صاحب الخزنة تعليمات مع هذا العنصر.",
-    en: "The vault's owner wrote you instructions with this item.",
-  },
+  downloadNumbered: { ar: "نزّل {n}", en: "Download {n}" },
 
   // The item's own title is encrypted, so its type is the only name available
   // before the box opens.
@@ -62,6 +55,45 @@ export const HEIR_BOX = {
   typePhotos: { ar: "صور", en: "Photos" },
   typeDigital: { ar: "حساب إلكتروني", en: "Online account" },
   typeNote: { ar: "ملاحظة", en: "Note" },
+
+  // The secret fields, named as the owner's app names them when they are
+  // written. A key missing here shows as itself rather than disappearing.
+  fieldPhrase: { ar: "العبارة السرّية", en: "Recovery phrase" },
+  fieldNetwork: { ar: "الشبكة", en: "Network" },
+  fieldKind: { ar: "النوع", en: "Type" },
+  fieldDevicePassword: { ar: "رمز الجهاز", en: "Device PIN" },
+  fieldDeviceLocation: { ar: "مكان الجهاز", en: "Where the device is" },
+  fieldAccount: { ar: "الحساب", en: "Account" },
+  fieldPassword: { ar: "كلمة المرور", en: "Password" },
+  fieldTwoFactor: { ar: "التحقق بخطوتين", en: "Two-step verification" },
+  fieldBank: { ar: "البنك", en: "Bank" },
+  fieldIban: { ar: "الآيبان", en: "IBAN" },
+  fieldCountry: { ar: "الدولة", en: "Country" },
+  fieldAccountType: { ar: "نوع الحساب", en: "Account type" },
+  fieldCurrency: { ar: "العملة", en: "Currency" },
+  fieldBranch: { ar: "الفرع", en: "Branch" },
+  fieldInstructions: { ar: "تعليمات", en: "Instructions" },
+  fieldService: { ar: "الخدمة", en: "Service" },
+  fieldUsername: { ar: "اسم المستخدم", en: "Username" },
+  fieldRecoveryCodes: { ar: "رموز الاسترداد", en: "Recovery codes" },
+  fieldDisposition: { ar: "المطلوب", en: "What to do" },
+  fieldBody: { ar: "النص", en: "Text" },
+
+  valueHardware: { ar: "جهاز", en: "Hardware" },
+  valueSoftware: { ar: "برنامج", en: "Software" },
+  valueExchange: { ar: "منصة", en: "Exchange" },
+  valueCurrent: { ar: "جارٍ", en: "Current" },
+  valueSavings: { ar: "توفير", en: "Savings" },
+  valueDeed: { ar: "صك ملكية", en: "Title deed" },
+  valueMarriage: { ar: "عقد زواج", en: "Marriage contract" },
+  valueCertificate: { ar: "شهادة", en: "Certificate" },
+  valueOther: { ar: "أخرى", en: "Other" },
+  valueInstructions: { ar: "تعليمات", en: "Instructions" },
+  valueWhereabouts: { ar: "مكان أشياء", en: "Where things are" },
+  valueWish: { ar: "وصية شخصية", en: "Personal wish" },
+  valueHandOver: { ar: "سلّمه إلى وارث", en: "Hand it over" },
+  valueDelete: { ar: "احذفه نهائياً", en: "Delete it permanently" },
+  valueMemorialise: { ar: "حوّله إلى حساب تذكاري", en: "Turn it into a memorial account" },
 
   messageTitle: { ar: "رسالة تركها لك", en: "A message left for you" },
   messageFailed: {

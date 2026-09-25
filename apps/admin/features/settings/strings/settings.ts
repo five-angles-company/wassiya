@@ -156,8 +156,8 @@ export const SETTINGS = {
   },
   deliveryWindow: { ar: "نافذة التسليم", en: "Delivery window" },
   deliveryWindowHint: {
-    ar: "بعدها يُتلف المفتاح والحزمة، ولا يفتحها أحد — نحن أيضاً.",
-    en: "After this the key and bundle are destroyed and nobody can open it, us included.",
+    ar: "بعدها تُتلف المفاتيح المحفوظة للتسليم، ولا يفتحه أحد — نحن أيضاً.",
+    en: "After this the escrowed keys are destroyed and nobody can open it, us included.",
   },
   escalation: { ar: "أيام التصعيد", en: "Escalation days" },
   escalationHint: {

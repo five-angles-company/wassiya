@@ -32,10 +32,9 @@ const MAX_BYTES = 25 * 1024 * 1024
  *
  * ## The stored file is never downloaded
  *
- * `payload: false`. The blob is a PDF; decoding it as UTF-8 would produce
- * nothing this form can use, and fetching 25 MB every time someone opens the
- * screen to fix a typo in the title would be worse than useless. Everything the
- * form shows comes from the sealed label and the row's plaintext `meta`.
+ * Fetching 25 MB every time someone opens the screen to fix a typo in the title
+ * would be worse than useless. Everything the form shows comes from the sealed
+ * label, the sealed secret and the row's plaintext `meta`.
  *
  * ## A scan's plaintext PDF must not outlive its ciphertext
  *
@@ -48,8 +47,6 @@ export function DocumentEditScreen({ assetId }: { assetId: Id<"assets"> }) {
   const { t, locale } = useStrings("assets/detail")
   const { t: doc } = useStrings("assets/new/document")
 
-  // The payload is now a tiny `{kind}` blob, not the document — so it *is*
-  // fetched, and the 25 MB file behind it still never is.
   const { load, save, saving, error } = useAssetEditor(assetId)
   const { form, patch, dirty, commit, reset } = useEditForm(
     load.status === "ready" ? load : null,
@@ -154,19 +151,11 @@ export function DocumentEditScreen({ assetId }: { assetId: Id<"assets"> }) {
     const file = form.replacement
     const ok = await save({
       ...toDocumentPayload(form, formatSize),
-      ...(file === null
-        ? {
-            // The kind blob is rewritten every save, so the file has to be put
-            // back *after* it — `keep` would place it first and invert the
-            // layout every other type relies on.
-            arrange: (uploaded) =>
-              [...uploaded, ...form.fileIds] as Id<"_storage">[],
-          }
-        : {
-            files: [
-              { read: () => readFileBytes(file.uri), byteSize: file.size },
-            ],
-          }),
+      // Absent keeps the stored file; a replacement supersedes it.
+      files:
+        file === null
+          ? undefined
+          : [{ read: () => readFileBytes(file.uri), byteSize: file.size }],
     })
     if (ok) {
       clearGenerated()

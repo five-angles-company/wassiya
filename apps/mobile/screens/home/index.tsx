@@ -29,7 +29,7 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { CheckInHero } from "@workspace/ui-native/components/wassiya/check-in-hero"
 import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
 import { StatTile } from "@workspace/ui-native/components/wassiya/stat-tile"
-import { fmtNum } from "@workspace/ui-native/lib/format"
+import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import {
   BadgeCheck,
@@ -76,7 +76,7 @@ export function HomeScreen() {
     checkin: t.itemCheckin,
   })
 
-  const openClaim = claims?.find((claim) => claim.canVeto) ?? null
+  const openClaim = claims?.find((claim) => claim.open) ?? null
   const total = rows?.length ?? 0
   const unrouted =
     rows?.filter((row) => row.recipientRule !== "explicit").length ?? 0
@@ -104,21 +104,26 @@ export function HomeScreen() {
       </View>
 
       {/* Above everything: a veto window is measured in days and closes whether
-          or not anyone opened the app. Nothing outranks it. */}
+          or not anyone opened the app. Nothing outranks it, and the heart right
+          below is what stops it — there is no second "I'm alive" button. */}
       {openClaim !== null ? (
         <AlertBanner
           variant="security"
           title={claimCopy.title}
-          description={claimCopy.intro.replace(
-            "{name}",
-            openClaim.claimantName
-          )}
-          actions={
-            <Button size="sm" onPress={() => router.push("/protection/claim")}>
-              <Text>{claimCopy.review}</Text>
-            </Button>
-          }
+          description={[
+            claimCopy.intro.replace("{name}", openClaim.claimantName),
+            openClaim.vetoDeadline === null
+              ? null
+              : claimCopy.deadline.replace(
+                  "{date}",
+                  fmtDate(new Date(openClaim.vetoDeadline), locale)
+                ),
+          ]
+            .filter((line) => line !== null)
+            .join("\n\n")}
         />
+      ) : alive.claimsStopped > 0 ? (
+        <AlertBanner variant="success" description={claimCopy.stopped} />
       ) : null}
 
       {/* Yearly, and only once a year: an owner who is asked about the same
@@ -149,8 +154,10 @@ export function HomeScreen() {
           decision — how often to be asked — and having "off" push a screen
           while "settings" opened a sheet would make one choice two objects. */}
       <CheckInHero
-        state={checkin.state}
-        detail={checkin.detail}
+        // An open report asks the question whatever the check-in says — even
+        // with the check-in off, an owner must be able to say they are alive.
+        state={openClaim !== null ? "overdue" : checkin.state}
+        detail={openClaim !== null ? undefined : checkin.detail}
         locale={locale}
         failed={alive.failed}
         onConfirm={alive.confirm}

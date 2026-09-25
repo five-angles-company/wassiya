@@ -9,7 +9,6 @@ import {
   ClipboardListIcon,
   FilePenLineIcon,
   FileTextIcon,
-  IdCardIcon,
   LogInIcon,
   ShieldCheckIcon,
 } from "lucide-react"
@@ -115,14 +114,13 @@ export function FileClaimForm() {
 
 function Checklist({ labels }: { labels: Resolved<typeof CLAIMS> }) {
   const items = [
-    { icon: IdCardIcon, title: labels.needIdTitle, body: labels.needIdBody },
     { icon: FileTextIcon, title: labels.needCertificateTitle, body: labels.needCertificateBody },
     { icon: AtSignIcon, title: labels.needEmailTitle, body: labels.needEmailBody },
   ]
 
   return (
     <DocSection title={labels.needTitle} description={labels.needWhy} icon={ClipboardListIcon}>
-      <ul className="grid gap-3 md:grid-cols-3">
+      <ul className="grid gap-3 md:grid-cols-2">
         {items.map((item) => (
           <li key={item.title} className="bg-background/60 border-border rounded-row flex flex-col gap-3 border p-4">
             <IconDisc icon={item.icon} tone="attention" size="sm" />

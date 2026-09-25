@@ -1,7 +1,7 @@
 ---
 title: How the encryption works
 description: What happens to your vault on your phone, and who can open what and when — including what we can do at delivery.
-updated: 2026-09-23
+updated: 2026-09-25
 draft: true
 ---
 
@@ -32,6 +32,8 @@ If you lose your phone, a printed **recovery sheet** opens your vault. It carrie
 
 When you print a new sheet, the old one stops working only after you confirm the new one is saved — so there is never a day with no sheet that opens your vault.
 
+Once your death is verified and your vault is handed over, the sheet stops working for good. Whoever finds it cannot open what you chose to keep to yourself.
+
 **We will never ask for your recovery sheet** — not in chat, by phone or by email. If someone asks, it is not us.
 
 ## A key for every item
@@ -40,15 +42,11 @@ Every item you add — a file, a photo, a secret, a message — is encrypted on 
 
 ## What reaches your heirs
 
-**Heirs never receive your vault's key.** Whenever you change what reaches an heir, your phone rebuilds that heir's box:
+**Heirs never receive your vault's key.** When you route an item to an heir, your phone locks a copy of that item's key to our delivery key (an X25519 sealed box), with your account and the item bound inside the lock. Your messages to an heir are locked the same way. An item you route to no one is never locked this way, so it is kept for no one.
 
-1. It generates a fresh random key for that heir.
-2. It encrypts, with that key, the keys of the items you routed to them and your messages to them — and nothing else.
-3. It locks that key, on your phone, to the key vault's public key (RSA-OAEP-SHA256), with your identity and the heir's inside the lock.
+The delivery key's public half is built into the app and never fetched from our servers, so a compromised server cannot swap in a key of its own. Its private half is held by Wassiya on our servers.
 
-The public key is built into the app and never fetched from our servers, so a compromised server cannot swap in a key of its own. We store only the locked form of each heir's box.
-
-The matching private key lives in a hardware key vault (Google Cloud KMS) in Saudi Arabia, and never leaves it.
+**This is the trade, stated plainly:** someone who took over our servers could open what you routed to your heirs — never what you kept to yourself. What stands in the way is the checks below, our access controls, and a record of every opening.
 
 ## When a box opens
 
@@ -59,11 +57,11 @@ An heir's box opens only after these conditions hold, in this order:
 3. We contact the heir on the number you registered for them.
 4. The heir verifies their identity. If you registered their ID number, their document must match it; otherwise our team compares their verified name and birth date by hand. We never deliver on a name alone.
 
-Then a single path in our service re-checks every condition itself, unlocks inside the key vault, confirms the box belongs to this heir, and hands the key over sealed again to a one-time key the heir's browser generates. The contents open on the heir's device and never pass through our service in the clear.
+Then a single path in our service re-checks every condition itself, opens only the keys of the items meant for this heir, and hands them to the heir's browser. The contents open on the heir's device and never pass through our service in the clear.
 
 ## One year
 
-A delivery stays available for one year from release. Then the locked key and the box are destroyed for good, and nobody — us included — can open that delivery again.
+A delivery stays available for one year from release. Then the whole vault is deleted for good — every item, file, message and key — and nobody, us included, can open any of it again.
 
 ## What is not end-to-end encrypted
 

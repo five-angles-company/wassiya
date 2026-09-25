@@ -3,17 +3,18 @@
 // No share arithmetic exists here or anywhere else in this deployment. An asset
 // goes to an heir, to the executor, or to all heirs — never to "one third of".
 //
-// Every write is `setRecipients`, which replaces an asset's routing atomically.
-// That is deliberate: routing changes invalidate release bundles, and a
-// half-applied edit would leave a bundle describing a state that never existed.
-// The client's obligation after any call here is to rebuild the affected heirs'
-// bundles and call `release.saveBundles`; `staleHeirs` below tells it which.
+// Every write is `setRecipients`, which replaces an asset's routing atomically
+// and keeps the escrow invariant in the same transaction: a routed asset
+// carries its DEK sealed to the escrow key, an unrouted one carries nothing.
+// Moving an asset between recipients changes no key.
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
-import { mutation, query, type MutationCtx } from "./_generated/server"
+import { mutation, query } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
+import { assertEscrowSeal } from "./model/escrowSeal"
+import { routesForHeir } from "./model/receivers"
 
 const recipientValidator = v.union(
   v.object({ kind: v.literal("heir"), heirId: v.id("heirs") }),
@@ -36,33 +37,37 @@ export const forAsset = query({
       .query("assetRecipients")
       .withIndex("by_assetId", (q) => q.eq("assetId", assetId))
       .take(200)
-    return rows.map((row) => ({
-      id: row._id,
-      recipient: row.recipient,
-      hasInstructions: row.instructionsCiphertext !== undefined,
-    }))
+    return rows.map((row) => ({ id: row._id, recipient: row.recipient }))
   },
 })
 
 /**
- * Replace an asset's routing wholesale. `instructionsCiphertext` is encrypted
- * on-device under the same DEK path as the asset, so it is opaque here.
+ * Replace an asset's routing wholesale.
+ *
+ * Routing to anyone requires `escrowedDek`: the owner's device seals the DEK to
+ * the pinned escrow key as part of the same save. Routing to nobody deletes the
+ * sealed copy, because only routed items are ever escrowed.
  */
 export const setRecipients = mutation({
   args: {
     assetId: v.id("assets"),
-    recipients: v.array(
-      v.object({
-        recipient: recipientValidator,
-        instructionsCiphertext: v.optional(v.bytes()),
-      })
-    ),
+    recipients: v.array(v.object({ recipient: recipientValidator })),
+    escrowedDek: v.optional(v.bytes()),
+    escrowKeyId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
     const asset = await ctx.db.get("assets", args.assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
+    }
+
+    const routed = args.recipients.length > 0
+    if (routed) {
+      if (args.escrowedDek === undefined || args.escrowKeyId === undefined) {
+        throw new Error("A routed asset needs its escrowed key")
+      }
+      assertEscrowSeal(args.escrowedDek, args.escrowKeyId)
     }
 
     // Every named heir must be one of this owner's. Checked before any write,
@@ -91,17 +96,14 @@ export const setRecipients = mutation({
         recipient: entry.recipient,
         recipientKind: entry.recipient.kind,
         recipientHeirId: heirIdOf(entry.recipient),
-        instructionsCiphertext: entry.instructionsCiphertext,
       })
     }
 
     await ctx.db.patch("assets", args.assetId, {
-      recipientRule: args.recipients.length === 0 ? "default" : "explicit",
+      recipientRule: routed ? "explicit" : "default",
+      escrowedDek: routed ? args.escrowedDek : undefined,
+      escrowKeyId: routed ? args.escrowKeyId : undefined,
     })
-    // Stamp every heir whose bundle this change invalidates — the ones routed
-    // before, the ones routed now, and (for an "allHeirs" entry on either side)
-    // everyone. `release.saveBundles` is what clears the stamp.
-    await markRoutingChanged(ctx, user._id, [...existing, ...args.recipients])
     await writeAudit(ctx, {
       userId: user._id,
       event: "routing.changed",
@@ -112,11 +114,8 @@ export const setRecipients = mutation({
 })
 
 /**
- * Exactly what one heir would receive — the heir-preview screen, and the input
- * the owner's device uses to rebuild that heir's bundle.
- *
- * "allHeirs" routes are folded in here rather than expanded at write time, so
- * adding an heir later picks them up without rewriting every routing row.
+ * Exactly what one heir would receive — the heir-preview screen. Wrapped DEKs
+ * only, which the owner's device opens with MK to name each asset.
  */
 export const previewForHeir = query({
   args: { heirId: v.id("heirs") },
@@ -127,26 +126,8 @@ export const previewForHeir = query({
       throw new Error("Not found")
     }
 
-    const direct = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_userId_and_recipientHeirId", (q) =>
-        q.eq("userId", user._id).eq("recipientHeirId", heirId)
-      )
-      .take(500)
-    // Queried on its own index rather than filtered out of the
-    // `recipientHeirId: undefined` window, which also holds every executor row:
-    // an owner with 500+ executor routes would otherwise push an "allHeirs" row
-    // past the take() limit and silently drop that asset from this heir's
-    // bundle. A wrong bundle is worse than a slow one.
-    const shared = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", user._id).eq("recipientKind", "allHeirs")
-      )
-      .take(500)
-
     const items = []
-    for (const row of [...direct, ...shared]) {
+    for (const row of await routesForHeir(ctx, user._id, heirId)) {
       const asset = await ctx.db.get("assets", row.assetId)
       if (asset === null) {
         continue
@@ -158,91 +139,19 @@ export const previewForHeir = query({
         meta: asset.meta,
         via: row.recipient.kind,
         dekWrappedByMk: asset.dekWrappedByMk,
-        instructionsCiphertext: row.instructionsCiphertext ?? null,
       })
     }
 
     return {
       heir: { id: heir._id, name: heir.name, mode: heir.mode },
       messageKind: heir.messageMeta?.kind ?? null,
-      // What the owner's device puts in the bundle as the message key.
-      messageKeyWrappedByMk: heir.messageMeta?.messageKeyWrappedByMk ?? null,
       items,
     }
   },
 })
 
-/**
- * Heirs whose stored bundle predates the newest routing change, i.e. the set
- * the owner's device still owes a rebuild for. Drives the "protection needs
- * attention" state rather than silently leaving heirs with a stale bundle.
- */
-export const staleHeirs = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await requireUser(ctx)
-    const heirs = await ctx.db
-      .query("heirs")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .take(100)
-
-    const stale = []
-    for (const heir of heirs) {
-      const bundle = await ctx.db
-        .query("releaseBundles")
-        .withIndex("by_userId_and_heirId", (q) =>
-          q.eq("userId", user._id).eq("heirId", heir._id)
-        )
-        .unique()
-      const changedAt = heir.routingChangedAt ?? 0
-      if (bundle === null || bundle.rebuiltAt < changedAt) {
-        stale.push({
-          heirId: heir._id,
-          name: heir.name,
-          hasBundle: bundle !== null,
-        })
-      }
-    }
-    return stale
-  },
-})
-
 function heirIdOf(recipient: Recipient): Id<"heirs"> | undefined {
   return recipient.kind === "heir" ? recipient.heirId : undefined
-}
-
-/**
- * Stamp `routingChangedAt` on every heir affected by a routing edit. An
- * "allHeirs" entry on either side of the edit touches everyone, because that is
- * exactly the set whose bundle contents move.
- */
-async function markRoutingChanged(
-  ctx: MutationCtx,
-  userId: Id<"users">,
-  touched: { recipient: Recipient }[]
-): Promise<void> {
-  const now = Date.now()
-  const everyone = touched.some((row) => row.recipient.kind === "allHeirs")
-  if (everyone) {
-    const heirs = await ctx.db
-      .query("heirs")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .take(100)
-    for (const heir of heirs) {
-      await ctx.db.patch("heirs", heir._id, { routingChangedAt: now })
-    }
-    return
-  }
-  const seen = new Set<Id<"heirs">>()
-  for (const row of touched) {
-    if (row.recipient.kind !== "heir" || seen.has(row.recipient.heirId)) {
-      continue
-    }
-    seen.add(row.recipient.heirId)
-    await ctx.db.patch("heirs", row.recipient.heirId, {
-      routingChangedAt: now,
-    })
-  }
 }
 
 /**

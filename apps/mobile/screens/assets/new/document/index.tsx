@@ -214,7 +214,6 @@ export function NewDocumentScreen() {
         title: title.trim(),
         subtitle: `${describeType(mimeType)} · ${formatSize(size, locale)}`,
       },
-      // The kind, as a payload blob ahead of the file — see `forms/document.ts`.
       secret: JSON.stringify({ kind }),
       files: [{ read: () => readFileBytes(uri), byteSize: size }],
       meta: { itemCount: 1, byteSize: size, mimeType },

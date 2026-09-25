@@ -10,10 +10,10 @@
 //  1. **Everything is an `internalMutation`.** Nothing here is reachable from a
 //     client, only from `npx convex run`, which needs deployment credentials.
 //
-//  2. **No `releaseBundles`.** Inserting one requires `lockedKey`, and
-//     `scripts/verify-invariants.mjs` fails the build if that token appears
-//     outside the files allowed to touch it. The seed bends around it: every
-//     seeded heir reads as "never built".
+//  2. **No escrowed keys.** A real one needs `@workspace/crypto`, which
+//     `scripts/verify-invariants.mjs` allows in `escrow.ts` alone. Seeded
+//     routed assets carry none, so a seeded delivery opens to items it cannot
+//     name — which is what the console needs, and all it needs.
 //
 //  3. **No `auditLog` rows.** The log is append-only by the same build gate, so
 //     anything written here could never be wiped. Audit-derived views run on
@@ -196,7 +196,7 @@ export const demo = internalMutation({
               itemCount: 1,
             },
             dekWrappedByMk: fakeBytes(60),
-            storageIds: [],
+            files: [],
             recipientRule: routed ? "explicit" : "default",
           })
           if (routed) {
@@ -218,11 +218,6 @@ export const demo = internalMutation({
             phone: `+9665${Math.floor(rand() * 90_000_000 + 10_000_000)}`,
             mode: "silent" as const,
             inviteStatus: "none" as const,
-            // Varied so the risk table's ordering and per-owner roll-up are
-            // exercised. Every one still reads as stale, because the seed
-            // cannot write a release bundle — see the header.
-            routingChangedAt:
-              rand() < 0.7 ? now - Math.floor(rand() * 30) * DAY_MS : undefined,
           })
         }
 
@@ -301,7 +296,6 @@ export const demo = internalMutation({
           phone: "+966551234567",
           mode: "silent" as const,
           inviteStatus: "none" as const,
-          routingChangedAt: now - 10 * DAY_MS,
         })
       }
 
@@ -314,7 +308,6 @@ export const demo = internalMutation({
         claimantName: "بدر الدوسري",
         claimantContact: "seed-demo-claimant@example.test",
         claimantUserId: claimantId,
-        claimantIdentityStatus: "verified" as const,
         certificateName: "سلمى عبدالله الدوسري",
         status: "submitted" as const,
       })
@@ -329,7 +322,6 @@ export const demo = internalMutation({
         subjectUserId,
         claimantName: `${pick(FIRST)} ${pick(LAST)}`,
         claimantContact: `claimant${claimCount}@example.test`,
-        claimantIdentityStatus: pick(["verified", "verified", "pending", "unverified"] as const),
         certificateName: rand() < 0.6 ? "death-certificate.pdf" : undefined,
         status,
         vetoDeadline:
@@ -465,7 +457,6 @@ const PURGE_TABLES = [
   "notifications",
   "deliveries",
   "jobRuns",
-  "releaseBundles",
   "assetRecipients",
   "assets",
   "heirs",
@@ -585,7 +576,6 @@ export const fastForwardRelease = internalMutation({
       claimantName: reporter.name ?? "Dev reporter",
       claimantContact: reporter.email ?? "dev",
       claimantUserId: reporterUserId,
-      claimantIdentityStatus: "verified" as const,
       certificateName: subject.identityVerifiedName ?? subject.name ?? "—",
       nameMatch: true,
       status: "awaiting_veto" as const,

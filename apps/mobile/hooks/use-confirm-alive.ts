@@ -1,11 +1,11 @@
 /**
  * The single confirmation path in the product, and the one gate it runs behind.
  *
- * The affordance lives in exactly one place — Home's `CheckInHero`. It moved
- * there from the check-in prompt and was not duplicated;
- * `screens/protection/checkin` configures cadence and reports state only. The
- * gate is a hook rather than inline code so a second copy cannot quietly lose
- * its `disableDeviceFallback`.
+ * The affordance lives in exactly one place — Home's `CheckInHero`;
+ * `screens/protection/checkin` configures cadence and reports state only. It is
+ * also the veto: confirming stops every open death report against the owner.
+ * The gate is a hook rather than inline code so a second copy cannot quietly
+ * lose its `disableDeviceFallback`.
  *
  * Returns `false` for anything but a successful biometric, and the mutation runs
  * only after `auth.success`: there is no path where a tap alone says "still
@@ -25,12 +25,15 @@ export type ConfirmAlive = {
   confirm: () => Promise<boolean>
   /** True after a declined or failed biometric, until the next attempt. */
   failed: boolean
+  /** Death reports the last confirmation stopped. */
+  claimsStopped: number
 }
 
 export function useConfirmAlive(): ConfirmAlive {
   const { t } = useStrings("protection/checkin")
   const record = useMutation(api.checkin.confirm)
   const [failed, setFailed] = useState(false)
+  const [claimsStopped, setClaimsStopped] = useState(0)
 
   async function confirm(): Promise<boolean> {
     setFailed(false)
@@ -43,7 +46,8 @@ export function useConfirmAlive(): ConfirmAlive {
         setFailed(true)
         return false
       }
-      await record({})
+      const result = await record({})
+      setClaimsStopped(result.claimsStopped)
       return true
     } catch {
       setFailed(true)
@@ -51,5 +55,5 @@ export function useConfirmAlive(): ConfirmAlive {
     }
   }
 
-  return { confirm, failed }
+  return { confirm, failed, claimsStopped }
 }

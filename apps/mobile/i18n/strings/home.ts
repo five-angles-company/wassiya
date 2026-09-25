@@ -56,7 +56,7 @@ export const HOME = {
   contactsReview: { ar: "راجع الورثة", en: "Review heirs" },
   contactsConfirm: { ar: "كلها صحيحة", en: "All correct" },
   stateDeliveryReady: { ar: "جاهز للورثة", en: "Ready for heirs" },
-  stateDeliveryStale: { ar: "يحتاج تحديثاً", en: "Needs updating" },
+  stateDeliveryStale: { ar: "وارث بلا شيء", en: "An heir gets nothing" },
   itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
   notSet: { ar: "غير مفعّل", en: "not on" },
 

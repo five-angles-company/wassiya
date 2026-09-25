@@ -50,6 +50,11 @@ export const register = mutation({
       }
       return { deviceId: existing._id, created: false }
     }
+    // A closed vault takes no new device: after a verified death, a phone set
+    // up with the owner's sheet must not become a way in.
+    if (user.vaultClosedAt !== undefined) {
+      throw new Error("This vault was closed after a verified death")
+    }
 
     const deviceId = await ctx.db.insert("devices", {
       userId: user._id,

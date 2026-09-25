@@ -4,11 +4,12 @@
 // claim except through those guards, and the release action re-checks
 // `status === "released"` on its own rather than trusting this file.
 //
-// A report reaches `released` only when the reporter is Didit-verified, the
-// death certificate's name matches the owner's verified legal name (an admin's
-// judgement, never a string comparison), and the veto window has elapsed with
-// no veto. What each heir then receives is a `deliveries` row, with its own
-// identity gate — the reporter receives nothing by reporting.
+// A report reaches `released` only when the death certificate's name matches
+// the owner's verified legal name (an admin's judgement, never a string
+// comparison) and the veto window has elapsed without the owner confirming
+// they are alive. The reporter is never asked to verify: they receive nothing
+// by reporting. What each heir receives is a `deliveries` row, with its own
+// identity gate. Release also closes the owner's vault (`users.vaultClosedAt`).
 import { v } from "convex/values"
 
 import { internal } from "./_generated/api"
@@ -114,9 +115,8 @@ export async function patchClaim(
 /**
  * File a claim against a vault.
  *
- * The claimant must be signed in: identity verification is mandatory for heirs
- * at claim time anyway, and an account is what makes the rate limit and the
- * 90-day lockout attach to a person rather than to a typed-in string.
+ * The claimant must be signed in: an account is what makes the rate limit and
+ * the 90-day lockout attach to a person rather than to a typed-in string.
  *
  * ## It always creates a claim, and returns its id
  *
@@ -207,7 +207,6 @@ export const submit = mutation({
       claimantName: args.claimantName,
       claimantContact: args.claimantContact,
       claimantUserId: claimant._id,
-      claimantIdentityStatus: claimant.identityStatus ?? "unverified",
       certificateStorageId: args.certificateStorageId,
       certificateName: args.certificateName,
       status: barred ? "locked" : "submitted",
@@ -343,13 +342,6 @@ export const mine = query({
  * mine" to anyone past twenty claims — and then hides their own actions from
  * them.
  *
- * ⚠️ `identityStatus` is the **live** value from the claimant's own user row,
- * never `claim.claimantIdentityStatus`, which is a snapshot. Someone who files
- * and then verifies sits between the two, and a page that branched on the
- * snapshot would render the identity step as outstanding while the panel inside
- * it reported "verified" — an ask that answers itself, with the certificate step
- * never appearing behind it. See `model/claimFlow.ts`.
- *
  * Returns `null` rather than throwing for a bad or foreign id: this backs a page
  * reached from an emailed link, and mail clients truncate them.
  *
@@ -373,7 +365,6 @@ export const forClaimant = query({
       id: claim._id,
       subjectName: subject?.name ?? null,
       status: claim.status,
-      identityStatus: claimant.identityStatus ?? "unverified",
       certificateReceived: claim.certificateStorageId !== undefined,
       certificateName: claim.certificateName ?? null,
       vetoDeadline: claim.vetoDeadline ?? null,
@@ -402,37 +393,43 @@ export const againstMe = query({
       status: row.status,
       claimantName: row.claimantName,
       vetoDeadline: row.vetoDeadline ?? null,
-      canVeto: row.status === "awaiting_veto",
+      open: isStoppable(row, Date.now()),
       submittedAt: row._creationTime,
     }))
   },
 })
 
+/** A report the owner can still stop: not yet released, not already ended. */
+function isStoppable(claim: Doc<"claims">, now: number): boolean {
+  if (claim.status === "submitted") return true
+  return (
+    claim.status === "awaiting_veto" &&
+    (claim.vetoDeadline === undefined || claim.vetoDeadline > now)
+  )
+}
+
 /**
- * The owner says "I am alive." Locks the claimant out for 90 days and stops the
- * release cold. Only reachable while the claim is in its veto window — after
- * the deadline the scheduler has already released and there is nothing to undo.
+ * The owner said "I am alive" — `checkin.confirm`, behind a fingerprint, is the
+ * only caller, because the check-in *is* the veto. Every open report against
+ * them stops and bars its reporter for 90 days. After the deadline there is
+ * nothing to stop: the report has released.
  */
-export const veto = mutation({
-  args: { claimId: v.id("claims") },
-  handler: async (ctx, { claimId }) => {
-    const user = await requireUser(ctx)
-    const claim = await ctx.db.get("claims", claimId)
-    if (claim === null || claim.subjectUserId !== user._id) {
-      throw new Error("Not found")
-    }
-    if (claim.status !== "awaiting_veto") {
-      throw new Error("This claim is not in its veto window")
-    }
+export async function stopOpenClaimsOf(
+  ctx: MutationCtx,
+  ownerId: Id<"users">,
+  now: number
+): Promise<number> {
+  const rows = await ctx.db
+    .query("claims")
+    .withIndex("by_subjectUserId", (q) => q.eq("subjectUserId", ownerId))
+    .take(20)
 
-    const now = Date.now()
-    if (claim.vetoDeadline !== undefined && claim.vetoDeadline <= now) {
-      throw new Error("The veto window has closed")
-    }
-
+  let stopped = 0
+  for (const claim of rows) {
+    if (!isStoppable(claim, now)) continue
     await patchClaim(
       ctx,
-      claimId,
+      claim._id,
       {
         status: "vetoed",
         lockedUntil: now + VETO_LOCKOUT_DAYS * DAY_MS,
@@ -441,18 +438,19 @@ export const veto = mutation({
       now
     )
     await writeAudit(ctx, {
-      userId: user._id,
+      userId: ownerId,
       event: "claim.vetoed",
-      meta: { claimId, lockoutDays: VETO_LOCKOUT_DAYS },
+      meta: { claimId: claim._id, lockoutDays: VETO_LOCKOUT_DAYS },
       at: now,
     })
     if (claim.claimantUserId !== undefined) {
-      await notify(ctx, claim.claimantUserId, "claim.vetoed", {}, claimId)
-      await sendClaimVetoed(ctx, claim.claimantUserId, claimId)
+      await notify(ctx, claim.claimantUserId, "claim.vetoed", {}, claim._id)
+      await sendClaimVetoed(ctx, claim.claimantUserId, claim._id)
     }
-    return null
-  },
-})
+    stopped += 1
+  }
+  return stopped
+}
 
 /**
  * Attach a vault to a claim that matched none.
@@ -683,7 +681,6 @@ export const pendingReview = query({
         return {
           id: row._id,
           claimantName: row.claimantName,
-          claimantIdentityStatus: row.claimantIdentityStatus,
           certificateName: row.certificateName ?? null,
           certificateUrl:
             row.certificateStorageId === undefined
@@ -711,13 +708,6 @@ export const adminSetNameMatch = mutation({
     if (claim === null) {
       throw new Error("Not found")
     }
-    // Re-read the claimant's live verification status rather than trusting the
-    // copy taken at submit time — Didit may have landed since.
-    const claimant =
-      claim.claimantUserId === undefined
-        ? null
-        : await ctx.db.get("users", claim.claimantUserId)
-    const claimantIdentityStatus = claimant?.identityStatus ?? "unverified"
 
     // An unmatched claim has no vault to rule on. It is not rejected here —
     // `adminLinkSubject` is how a mistyped address gets attached to the right
@@ -731,21 +721,11 @@ export const adminSetNameMatch = mutation({
 
     // `nameMatchBlockedReason` is the same predicate the console disables its
     // button on, so the two cannot disagree.
-    const blocked = nameMatchBlockedReason(
-      claim,
-      nameMatch,
-      claimantIdentityStatus
-    )
-    if (blocked === "past-review") {
+    if (nameMatchBlockedReason(claim) === "past-review") {
       throw new Error("This claim is past review")
     }
-    if (blocked === "identity-not-verified") {
-      throw new Error(
-        "The reporter is not identity-verified, so approving would lock this report permanently. Wait for verification."
-      )
-    }
 
-    const status = nameMatchOutcome(nameMatch, claimantIdentityStatus)
+    const status = nameMatchOutcome(nameMatch)
 
     const reviewedAt = Date.now()
     const vetoDeadline =
@@ -757,7 +737,6 @@ export const adminSetNameMatch = mutation({
       claimId,
       {
         nameMatch,
-        claimantIdentityStatus,
         status,
         reviewedAt,
         vetoDeadline,
@@ -863,6 +842,9 @@ export const advance = internalMutation({
         claim.subjectUserId,
         now
       )
+      // From here the printed sheet opens nothing: recovery and new devices
+      // are refused. See `users.vaultClosedAt`.
+      await ctx.db.patch("users", claim.subjectUserId, { vaultClosedAt: now })
       await writeAudit(ctx, {
         userId: claim.subjectUserId,
         event: "claim.released",
@@ -898,6 +880,47 @@ export const advance = internalMutation({
     })
 
     return { scanned: due.length, released }
+  },
+})
+
+/**
+ * The way back for an owner proven alive after their report released — they
+ * missed the veto window, and staff have confirmed who they are. Run by hand:
+ *
+ *   npx convex run claims:reopenVault '{"userId":"…"}'
+ *
+ * Reopens recovery and new devices, and stops every delivery still open, so no
+ * heir receives anything from a living owner and the one-year deletion never
+ * runs. Deliberately not in the console: it undoes a death.
+ */
+export const reopenVault = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    const now = Date.now()
+    await ctx.db.patch("users", userId, { vaultClosedAt: undefined })
+
+    let stopped = 0
+    for (const status of ["awaiting_heir", "identity_pending", "ready"] as const) {
+      const live = await ctx.db
+        .query("deliveries")
+        .withIndex("by_status", (q) => q.eq("status", status))
+        .take(500)
+      for (const delivery of live) {
+        if (delivery.subjectUserId !== userId) continue
+        await ctx.db.patch("deliveries", delivery._id, {
+          status: "rejected",
+          staffNote: "Owner confirmed alive; vault reopened.",
+        })
+        stopped += 1
+      }
+    }
+    await writeAudit(ctx, {
+      userId,
+      event: "vault.reopened",
+      meta: { deliveriesStopped: stopped },
+      at: now,
+    })
+    return { deliveriesStopped: stopped }
   },
 })
 
@@ -1010,9 +1033,6 @@ export const publicStatus = query({
       status: claim.status,
       submittedAt: claim._creationTime,
       vetoDeadline: claim.vetoDeadline ?? null,
-      // Whether the identity check passed is the claimant's own result and the
-      // thing they are most likely to be waiting on.
-      identityVerified: claim.claimantIdentityStatus === "verified",
       certificateReceived: claim.certificateStorageId !== undefined,
     }
   },

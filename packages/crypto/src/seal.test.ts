@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { KEY_BYTES, randomBytes } from "./bytes"
+import { KEY_BYTES, randomBytes, utf8ToBytes } from "./bytes"
 import { generateSealKeypair, openSealedKey, sealKeyTo } from "./seal"
 
 describe("sealKeyTo / openSealedKey", () => {
@@ -16,6 +16,19 @@ describe("sealKeyTo / openSealedKey", () => {
   it("cannot be opened by another key", () => {
     const sealed = sealKeyTo(randomBytes(KEY_BYTES), generateSealKeypair().publicKey)
     expect(() => openSealedKey(sealed, generateSealKeypair().secretKey)).toThrow()
+  })
+
+  it("cannot be opened under a different context", () => {
+    const recipient = generateSealKeypair()
+    const sealed = sealKeyTo(
+      randomBytes(KEY_BYTES),
+      recipient.publicKey,
+      utf8ToBytes("row a")
+    )
+    expect(() =>
+      openSealedKey(sealed, recipient.secretKey, utf8ToBytes("row b"))
+    ).toThrow()
+    expect(() => openSealedKey(sealed, recipient.secretKey)).toThrow()
   })
 
   it("rejects any altered byte", () => {

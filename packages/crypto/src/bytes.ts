@@ -46,21 +46,6 @@ export function randomBytes(length: number): Uint8Array {
 
 const MAX_RANDOM_BLOCK = 65536
 
-/**
- * XOR of two equal-length buffers: with one operand uniformly random and
- * independent, the result is a perfect 2-of-2 split.
- */
-export function xor(a: Uint8Array, b: Uint8Array): Uint8Array {
-  if (a.length !== b.length) {
-    throw new Error(`Cannot XOR ${a.length}-byte and ${b.length}-byte buffers`)
-  }
-  const out = new Uint8Array(a.length)
-  for (let i = 0; i < a.length; i++) {
-    out[i] = a[i]! ^ b[i]!
-  }
-  return out
-}
-
 export function concatBytes(...parts: Uint8Array[]): Uint8Array {
   let total = 0
   for (const part of parts) {
@@ -156,7 +141,7 @@ export function bytesToUtf8(bytes: Uint8Array): string {
 
 const HEX = "0123456789abcdef"
 
-/** Hex, so bundle payloads serialise as JSON without a base64 polyfill. */
+/** Hex, so keys serialise as text without a base64 polyfill. */
 export function bytesToHex(bytes: Uint8Array): string {
   let out = ""
   for (let i = 0; i < bytes.length; i++) {

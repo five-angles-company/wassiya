@@ -1,6 +1,6 @@
 "use client"
 
-import { FileTextIcon, UserCheckIcon } from "lucide-react"
+import { FileTextIcon } from "lucide-react"
 
 import { Ask } from "@/components/doc/ask"
 import { Ledger } from "@/components/doc/ledger"
@@ -22,13 +22,12 @@ const DAY = 24 * 60 * 60 * 1000
 const NOW = Date.UTC(2026, 8, 24)
 
 const STATES: { name: string; facts: Omit<HeirCaseFacts, "submittedAt"> }[] = [
-  { name: "identity", facts: { status: "submitted", vetoDeadline: null, certificateReceived: false, identityVerified: false, isMine: true } },
-  { name: "certificate", facts: { status: "submitted", vetoDeadline: null, certificateReceived: false, identityVerified: true, isMine: true } },
-  { name: "review", facts: { status: "submitted", vetoDeadline: null, certificateReceived: true, identityVerified: true, isMine: true } },
-  { name: "veto", facts: { status: "awaiting_veto", vetoDeadline: NOW + 21 * DAY, certificateReceived: true, identityVerified: true, isMine: true, reviewedAt: NOW - 9 * DAY } },
-  { name: "released", facts: { status: "released", vetoDeadline: NOW - 2 * DAY, certificateReceived: true, identityVerified: true, isMine: true, reviewedAt: NOW - 32 * DAY, releasedAt: NOW - 2 * DAY } },
-  { name: "vetoed", facts: { status: "vetoed", vetoDeadline: NOW + 4 * DAY, certificateReceived: true, identityVerified: true, isMine: true } },
-  { name: "closed", facts: { status: "closed", vetoDeadline: null, certificateReceived: false, identityVerified: true, isMine: true } },
+  { name: "certificate", facts: { status: "submitted", vetoDeadline: null, certificateReceived: false, isMine: true } },
+  { name: "review", facts: { status: "submitted", vetoDeadline: null, certificateReceived: true, isMine: true } },
+  { name: "veto", facts: { status: "awaiting_veto", vetoDeadline: NOW + 21 * DAY, certificateReceived: true, isMine: true, reviewedAt: NOW - 9 * DAY } },
+  { name: "released", facts: { status: "released", vetoDeadline: NOW - 2 * DAY, certificateReceived: true, isMine: true, reviewedAt: NOW - 32 * DAY, releasedAt: NOW - 2 * DAY } },
+  { name: "vetoed", facts: { status: "vetoed", vetoDeadline: NOW + 4 * DAY, certificateReceived: true, isMine: true } },
+  { name: "closed", facts: { status: "closed", vetoDeadline: null, certificateReceived: false, isMine: true } },
 ]
 
 export function PreviewGallery() {
@@ -68,7 +67,7 @@ export function PreviewGallery() {
               ))}
             </StatusBanner>
             {view.askTitle !== null && (
-              <Ask eyebrow={common.askEyebrow} title={view.askTitle} icon={view.ask === "identity" ? UserCheckIcon : FileTextIcon}>
+              <Ask eyebrow={common.askEyebrow} title={view.askTitle} icon={FileTextIcon}>
                 <p className="text-muted-foreground text-[14px]">(panel)</p>
               </Ask>
             )}
@@ -85,12 +84,23 @@ export function PreviewGallery() {
         <Paper>
           <ul className="divide-border divide-y">
             <AssetRow
-              item={{ assetId: "a1", type: "crypto", title: locale === "ar" ? "محفظة بيتكوين" : "Bitcoin wallet", via: "direct", contentUrls: [], hasInstructions: true }}
+              item={{
+                assetId: "a1",
+                type: "crypto",
+                title: locale === "ar" ? "محفظة بيتكوين" : "Bitcoin wallet",
+                via: "direct",
+                fields: [
+                  { key: "kind", value: "hardware" },
+                  { key: "network", value: "Bitcoin" },
+                  { key: "phrase", value: "abandon ability able about above absent absorb abstract absurd abuse access accident" },
+                ],
+                fileUrls: [],
+              }}
             />
             <AssetRow
-              item={{ assetId: "a2", type: "document", title: locale === "ar" ? "صك المنزل" : "House deed", byteSize: 820_000, via: "allHeirs", contentUrls: [], hasInstructions: false }}
+              item={{ assetId: "a2", type: "document", title: locale === "ar" ? "صك المنزل" : "House deed", byteSize: 820_000, via: "allHeirs", fields: [{ key: "kind", value: "deed" }], fileUrls: ["#"], dek: new Uint8Array(32) }}
             />
-            <AssetRow item={{ assetId: "k97fz0a8nq3", type: "photos", title: null, via: "direct", contentUrls: [], hasInstructions: false }} />
+            <AssetRow item={{ assetId: "k97fz0a8nq3", type: "photos", title: null, via: "direct", fields: [], fileUrls: [] }} />
           </ul>
         </Paper>
       </section>

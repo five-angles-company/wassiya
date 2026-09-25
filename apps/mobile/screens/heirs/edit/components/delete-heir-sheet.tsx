@@ -15,9 +15,9 @@ import { useStrings } from "@/i18n/use-strings"
  * Deleting an heir — consequence before confirmation.
  *
  * `heirs.remove` cascades further than "delete" suggests: it drops every
- * `assetRecipients` row pointing at this heir and destroys their release bundle
- * and its blob. So removing an heir who receives four assets silently leaves
- * **four assets with no recipient** and voids their share of K_h. An owner only
+ * `assetRecipients` row pointing at this heir, and an asset that thereby
+ * reaches nobody loses its escrowed key. So removing an heir who receives four
+ * assets silently leaves **four assets with no recipient**. An owner only
  * trying to fix a mistake needs to learn that here, at the last moment it can
  * still change anything — hence the count, by name, rather than "are you sure?".
  *

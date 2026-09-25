@@ -111,7 +111,7 @@ export function ReleasesTable() {
             header: labels.colDelivery,
             value: (row) =>
               row.deliveries === null
-                ? (row.heirsWithBundle ?? "")
+                ? (row.heirsReceiving ?? "")
                 : `${row.deliveries.ready}/${row.deliveries.total}`,
           },
         ],

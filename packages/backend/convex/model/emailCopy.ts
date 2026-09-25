@@ -26,8 +26,8 @@ export type LocalisedCopy = { ar: Copy; en: Copy }
  * what the recipient is not looking at — that is the premise of the dead man's
  * switch.
  *
- * `countdown` is not merely louder: it is the step where the veto window is
- * running, so it says what will happen and by when.
+ * ⚠️ Missed check-ins release nothing — only a verified death report can, and
+ * confirming is what stops one. No step here may say or imply otherwise.
  */
 export const ESCALATION_COPY = {
   day0: {
@@ -53,21 +53,21 @@ export const ESCALATION_COPY = {
   day14: {
     ar: {
       subject: "أسبوعان — لم نسمع منك",
-      body: "لم نسمع منك منذ أسبوعين. افتح وصيّة وأكّد ببصمتك — إن لم تؤكّد، سنستمرّ في محاولة الوصول إليك.",
+      body: "لم نسمع منك منذ أسبوعين. افتح وصيّة وأكّد ببصمتك.",
     },
     en: {
       subject: "Two weeks — we have not heard from you",
-      body: "We have not heard from you in two weeks. Open Wassiya and confirm with your fingerprint — if you do not, we will keep trying to reach you.",
+      body: "We have not heard from you in two weeks. Open Wassiya and confirm with your fingerprint.",
     },
   },
   countdown: {
     ar: {
-      subject: "مهم: بدأت مهلة الاعتراض على خزنتك",
-      body: "بدأت المهلة التي تسبق تسليم خزنتك إلى ورثتك. تأكيدك الآن يوقف ذلك فوراً.",
+      subject: "شهر دون تأكيد",
+      body: "مرّ شهر على موعد تأكيدك. لا يُسلَّم شيء بسبب تأخّر التأكيد وحده، لكن إن بلّغ أحد عن وفاتك فتأكيدك ببصمتك هو ما يوقف البلاغ. افتح وصيّة وأكّد.",
     },
     en: {
-      subject: "Important: the veto window on your vault has started",
-      body: "The window before your vault is handed to your heirs has begun. Confirming now stops it immediately.",
+      subject: "A month without a check-in",
+      body: "It has been a month since your check-in was due. Nothing is handed over because of a missed check-in alone — but if anyone reports your death, confirming with your fingerprint is what stops it. Open Wassiya and confirm.",
     },
   },
 } as const satisfies Record<string, LocalisedCopy>
@@ -138,11 +138,11 @@ export const RECOVERY_COPY = {
 export const CLAIM_FILED_COPY = {
   ar: {
     subject: "استلمنا بلاغك",
-    body: "استلمنا بلاغك وبدأنا مراجعته. سنطلب منك إثبات هويتك وشهادة الوفاة إن لم تكن أرسلتهما بعد، ونراسلك عند كل تغيّر — لا حاجة لمتابعة الصفحة يومياً.",
+    body: "استلمنا بلاغك وبدأنا مراجعته. سنطلب منك شهادة الوفاة إن لم تكن أرسلتها بعد، ونراسلك عند كل تغيّر — لا حاجة لمتابعة الصفحة يومياً.",
   },
   en: {
     subject: "We have your report",
-    body: "We have your report and review has started. We will ask for your identity check and the death certificate if you have not sent them yet, and we will email you at each change — there is no need to watch the page.",
+    body: "We have your report and review has started. We will ask for the death certificate if you have not sent it yet, and we will email you at each change — there is no need to watch the page.",
   },
 } as const satisfies LocalisedCopy
 

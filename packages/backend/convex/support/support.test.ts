@@ -175,7 +175,6 @@ describe("requester access", () => {
         claimantName: "Alice",
         claimantContact: "alice@example.com",
         claimantUserId: alice,
-        claimantIdentityStatus: "verified",
         status: "submitted",
       })
     )

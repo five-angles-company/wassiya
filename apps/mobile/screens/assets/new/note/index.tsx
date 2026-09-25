@@ -93,11 +93,10 @@ export function NewNoteScreen() {
     const saved = await submit({
       type: "note",
       label: { title: draft.title.trim(), subtitle },
-      // The kind and the format travel inside the ciphertext: together they
-      // decide where the note sits in the heir's release bundle and how it is
-      // read out, and that is not the server's business. `body` stays present
-      // and empty on a voice note so a reader written for the text shape never
-      // meets an absent field.
+      // The kind and the format travel inside the ciphertext: they decide how
+      // the note is read out, and that is not the server's business. `body`
+      // stays present and empty on a voice note so a reader written for the
+      // text shape never meets an absent field.
       secret: JSON.stringify(
         format === "voice"
           ? {

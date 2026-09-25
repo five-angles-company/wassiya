@@ -23,7 +23,6 @@ import {
 import { writeAudit, writeStaffAudit } from "./audit"
 import { requirePermission } from "./model/access"
 import { getCurrentUser } from "./users"
-import { notify, patchClaim } from "./claims"
 import { reevaluateDeliveriesFor } from "./deliveries"
 import { verifiedDocument } from "./model/didit"
 
@@ -229,37 +228,11 @@ export const applyWebhookResult = internalMutation({
       },
     })
 
-    // Identity is a step in somebody's claim, and this mutation is the only
-    // place that learns it resolved. Without it the claimant completes the one
-    // thing they were asked to do, in a third-party window, and hears nothing
-    // back from us about the claim it was for.
-    //
-    // The same loop refreshes each open claim's `claimantIdentityStatus`. That
-    // column is a snapshot taken at submit and otherwise updated only as a side
-    // effect of an admin's verdict, so `claims.pendingReview` could show a
-    // reviewer a status that was days stale. This does not weaken
-    // `claimFlow`'s rule that a verdict reads the LIVE value — it still does;
-    // it just stops the stored copy being wrong in the meantime.
+    // A person who bound a delivery before verifying: their document may now
+    // match the heir's registered ID number.
     if (args.status === "verified") {
-      // A person who bound a delivery before verifying: their document may
-      // now match the heir's registered ID number.
       const verified = await ctx.db.get("users", user._id)
       if (verified !== null) await reevaluateDeliveriesFor(ctx, verified)
-
-      for (const status of ["submitted"] as const) {
-        const open = await ctx.db
-          .query("claims")
-          .withIndex("by_claimantUserId_and_status", (q) =>
-            q.eq("claimantUserId", user._id).eq("status", status)
-          )
-          .take(10)
-        for (const claim of open) {
-          await patchClaim(ctx, claim._id, {
-            claimantIdentityStatus: args.status,
-          })
-          await notify(ctx, user._id, "claim.identity_verified", {}, claim._id)
-        }
-      }
     }
     return null
   },

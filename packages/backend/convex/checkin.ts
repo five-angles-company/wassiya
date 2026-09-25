@@ -1,10 +1,14 @@
 // The dead man's switch.
 //
 // ⚠️ Product rule, load-bearing: confirming life is ALWAYS biometric-gated on
-// the device and exists in exactly ONE place — the check-in prompt. Rows,
+// the device and exists in exactly ONE place — Home's check-in. Rows,
 // notifications and widgets may report and navigate, never confirm. `confirm`
-// below is that single endpoint, and no second one may ever be added: an
-// unlocked phone in the wrong hands could otherwise suppress delivery forever.
+// below is that single endpoint, and it is also the veto on a death report. No
+// second one may ever be added: an unlocked phone in the wrong hands could
+// otherwise suppress delivery forever.
+//
+// Missed check-ins never release anything by themselves. The ladder reminds;
+// only a verified death report can start a release.
 import { v } from "convex/values"
 
 import type { Doc } from "./_generated/dataModel"
@@ -16,6 +20,7 @@ import {
   type MutationCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { stopOpenClaimsOf } from "./claims"
 import { sendEscalation } from "./email"
 import { recordJobRun } from "./model/jobRuns"
 import { requireUser } from "./model/access"
@@ -115,24 +120,36 @@ export const configure = mutation({
  * The ONLY confirmation endpoint. The client must gate the call behind a
  * biometric prompt; nothing else in this deployment resets the clock.
  */
+/**
+ * "I am alive" — and the veto. It resets the check-in clock when one is set,
+ * and it stops every open death report against this owner, which is why it
+ * works even with the check-in turned off: an owner must never need a setting
+ * to say they are alive.
+ */
 export const confirm = mutation({
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx)
-    const config = await requireConfig(ctx, user)
     const now = Date.now()
+    const config = await ctx.db
+      .query("checkinConfig")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .unique()
 
-    await ctx.db.patch("checkinConfig", config._id, {
-      lastConfirmedAt: now,
-      escalationState: "idle",
-      nextDueAt: dueAfter(now, config.cadenceMonths, config.graceDays),
-    })
+    if (config !== null) {
+      await ctx.db.patch("checkinConfig", config._id, {
+        lastConfirmedAt: now,
+        escalationState: "idle",
+        nextDueAt: dueAfter(now, config.cadenceMonths, config.graceDays),
+      })
+    }
     await writeAudit(ctx, {
       userId: user._id,
       event: "checkin.confirmed",
-      meta: { fromState: config.escalationState },
+      meta: { fromState: config?.escalationState ?? null },
     })
-    return null
+    const claimsStopped = await stopOpenClaimsOf(ctx, user._id, now)
+    return { claimsStopped }
   },
 })
 

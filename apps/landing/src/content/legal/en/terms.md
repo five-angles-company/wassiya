@@ -1,7 +1,7 @@
 ---
 title: Terms of use
 description: The agreement between you and Wassiya — what the service does and does not do, how delivery after death works, and what each of us is responsible for.
-updated: 2026-09-23
+updated: 2026-09-25
 draft: true
 ---
 
@@ -45,7 +45,8 @@ Because your vault is encrypted on your phone and we do not hold its key:
 - Release happens only after an official death certificate whose name our team matches to your verified legal name, followed by the end of the veto window.
 - **You can stop any report with your fingerprint during the veto window**, and its filer is then barred from filing again for 90 days.
 - After release we contact each heir on the number you registered, and deliver only once their identity is verified. If their identity does not match what you registered, our team decides after review, and we may refuse delivery if we cannot verify them.
-- Each heir receives only what you routed to them. A delivery stays available for **one year** from release, then is destroyed for good.
+- From release, your recovery sheet no longer opens your vault, and no new device can be added to it.
+- Each heir receives only what you routed to them. A delivery stays available for **one year** from release; then your whole vault is deleted for good.
 - Anything you routed to no one is delivered to no one.
 
 ## Reports

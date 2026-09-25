@@ -2,16 +2,13 @@
  * ٥.٣b — who receives one asset, and the screen that makes every "بلا مستلم"
  * badge actionable.
  *
- * A multi-select with no numbers anywhere: *"cryptographically this is
- * per-recipient key wrapping, one wrapped copy per selected heir — so the
- * picker's real output is a list of key envelopes, not a ratio."* Every selected
- * recipient receives the asset whole, because a seed phrase cannot be divided
- * and neither can a deed. How the value is later split is the fara'id's
- * business.
+ * A multi-select with no numbers anywhere. Every selected recipient receives
+ * the asset whole, because a seed phrase cannot be divided and neither can a
+ * deed. How the value is later split is the fara'id's business.
  *
- * The executor is a distinct capability, not another heir: instructions and
- * handover steps without the payload. A key envelope would hand the person
- * administering the estate the contents of it.
+ * Saving any recipient seals the asset's DEK to the escrow key in the same
+ * call; saving none deletes that sealed copy. Moving the asset between heirs
+ * changes no key.
  *
  * Zero recipients is allowed and never silently accepted — it surfaces amber on
  * 4.1, 4.9 and 5.1.
@@ -31,6 +28,7 @@ import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
+import { sealForRelease } from "@/lib/escrow-key"
 import { relationLabel } from "@/screens/heirs/relations"
 
 type Selection = {
@@ -58,6 +56,8 @@ export function AssetRecipientsScreen() {
 
   const heirs = useQuery(api.heirs.list)
   const current = useQuery(api.routing.forAsset, { assetId })
+  const me = useQuery(api.users.me)
+  const asset = useQuery(api.assets.get, { assetId })
   const setRecipients = useMutation(api.routing.setRecipients)
 
   const [saving, setSaving] = useState(false)
@@ -91,9 +91,10 @@ export function AssetRecipientsScreen() {
   const selected = value?.selected ?? EMPTY_SET
   const executor = value?.executor ?? false
   const allHeirs = value?.allHeirs ?? false
-  // Nothing to save until the query has answered — saving `fromServer === null`
-  // would clear the asset's routing on a slow connection.
-  const ready = value !== null
+  // Nothing to save until the queries have answered — saving `fromServer ===
+  // null` would clear the asset's routing on a slow connection, and sealing
+  // needs the owner's id and the wrapped DEK.
+  const ready = value !== null && me != null && asset !== undefined
 
   function edit(patch: Partial<Selection>) {
     setEdits({ selected, executor, allHeirs, ...patch })
@@ -110,21 +111,29 @@ export function AssetRecipientsScreen() {
     setSaving(true)
     setFailed(false)
     try {
+      if (me == null || asset === undefined) throw new Error("Not loaded")
+      const recipients = [
+        // "All heirs jointly" is one edge, not one per heir — adding an heir
+        // later picks it up without rewriting every routing row.
+        ...(allHeirs
+          ? [{ recipient: { kind: "allHeirs" as const } }]
+          : [...selected].map((heirId) => ({
+              recipient: {
+                kind: "heir" as const,
+                heirId: heirId as Id<"heirs">,
+              },
+            }))),
+        ...(executor ? [{ recipient: { kind: "executor" as const } }] : []),
+      ]
+      const escrow =
+        recipients.length === 0
+          ? null
+          : sealForRelease(asset.dekWrappedByMk, { ownerId: me.id, assetId })
       await setRecipients({
         assetId,
-        recipients: [
-          // "All heirs jointly" is one edge, not one per heir — adding an heir
-          // later picks it up without rewriting every routing row.
-          ...(allHeirs
-            ? [{ recipient: { kind: "allHeirs" as const } }]
-            : [...selected].map((heirId) => ({
-                recipient: {
-                  kind: "heir" as const,
-                  heirId: heirId as Id<"heirs">,
-                },
-              }))),
-          ...(executor ? [{ recipient: { kind: "executor" as const } }] : []),
-        ],
+        recipients,
+        escrowedDek: escrow?.sealed,
+        escrowKeyId: escrow?.escrowKeyId,
       })
       router.back()
     } catch {

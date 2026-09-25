@@ -1,25 +1,7 @@
 /**
- * The recovery leg: MK wrapped by K_rec = S_paper. One share, not two.
+ * The recovery leg: MK wrapped by K_rec = S_paper, the printed sheet alone.
  *
- * ## Why the guardian is not here
- *
- * This used to be `K_rec = S_paper ⊕ S_guardian` — a 2-of-3. It was removed
- * deliberately, and *storing the guardian half on the server* was rejected as
- * the worse version of the same idea: raw XOR of two 32-byte random values with
- * no KDF means a server holding one half is cryptographically identical to
- * wrapping under the sheet alone, except the server then holds key material it
- * has no need of. Same security, more liability.
- *
- * It also repairs the common case rather than weakening it. `splitRecovery`
- * used to mint both shares at setup, but until a guardian accepted, S_guardian
- * lived only in the owner's own keystore — the very device recovery exists to
- * replace. A guardian-less owner could not recover at all.
- *
- * Recovery is 1-of-1. Release is escrowed — see `escrow.ts` and AGENTS.md.
- *
- * ## The sheet is a bearer token, so the wrapper is bound
- *
- * With one factor, whoever photographs the sheet can recover the vault. Two
+ * The sheet is a bearer token, so the wrapper is bound. With one factor, whoever photographs the sheet can recover the vault. Two
  * things narrow that, and the first lives here: every wrapper is sealed under
  * an AAD naming the owner and the sheet's generation, so a stolen wrapper
  * cannot be replayed against another account or against a sheet that has since
@@ -104,7 +86,7 @@ export function recoverMk(
  * load-bearing rather than incidental. A caller that saves before the owner has
  * seen and acknowledged the new code has turned a theft mitigation into a
  * total-loss bug: the wrapper would then stand under a code printed on no piece
- * of paper, with no guardian left to fall back on. Mint → display → confirm →
+ * of paper, with nothing to fall back on. Mint → display → confirm →
  * save, in that order, every time.
  */
 export function rotatePaperShare(

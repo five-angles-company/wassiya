@@ -44,8 +44,8 @@ export const CHECKIN = {
   },
   title: { ar: "تأكيد الحياة", en: "Life check-in" },
   intro: {
-    ar: "نسألك بين حين وآخر إن كنت بخير. إذا لم تجب خلال المهلة، تبدأ إجراءات التسليم لورثتك.",
-    en: "We ask now and then whether you're well. If you don't answer within the grace period, delivery to your heirs begins.",
+    ar: "نسألك بين حين وآخر إن كنت بخير، ونذكّرك إن تأخّرت. التأخّر وحده لا يُسلّم شيئاً: التسليم يحتاج بلاغ وفاة موثّقاً، وتأكيدك ببصمتك يوقف أي بلاغ.",
+    en: "We ask now and then whether you're well, and remind you if you're late. Being late hands nothing over by itself: delivery needs a verified death report, and confirming with your fingerprint stops any report.",
   },
 
   // The sheet titles itself with the words on the link that opened it —
@@ -83,68 +83,32 @@ export const CHECKIN = {
     en: "Not verified. Checking in always needs your biometrics — and we accept it no other way.",
   },
   notConfigured: {
-    ar: "لم تفعّل تأكيد الحياة بعد. بدونه لن يبدأ التسليم لورثتك أبداً.",
-    en: "Life check-in is off. Without it, delivery to your heirs never begins.",
+    ar: "لم تفعّل تأكيد الحياة بعد. فعّله لنطمئن عليك بانتظام — وستستطيع دائماً إيقاف أي بلاغ وفاة ببصمتك.",
+    en: "Life check-in is off. Turn it on so we check on you regularly — you can always stop a death report with your fingerprint.",
   },
   enable: { ar: "فعّل تأكيد الحياة", en: "Turn on life check-in" },
 } satisfies LabelSet<string>
 
 /**
- * ٧.٥ — the owner's veto interrupt.
- *
- * The one screen of section ٧ that lives in the app rather than the web funnel,
- * and the reason is stated: *"it must reach a person who is alive, on their own
- * phone, with a biometric to cancel."* A veto is the assertion "I am not dead",
- * and it has to be provable by presence, not by a tap on an unlocked handset
- * someone else is holding.
+ * ٧.٥ — a death report against the owner, as Home's banner states it. There is
+ * no separate veto: the fingerprint check-in right below the banner stops it.
  */
 export const CLAIM_VETO = {
-  title: { ar: "طلب وراثة على حسابك", en: "An inheritance claim on your account" },
-  // Deliberately unalarming in tone and unambiguous in fact. Most claims are
-  // genuine; the ones that are not are the reason this screen exists.
+  title: { ar: "بلاغ وفاة على حسابك", en: "A death report on your account" },
+  // Deliberately unalarming in tone and unambiguous in fact. Most reports are
+  // genuine; the ones that are not are the reason this banner exists.
   intro: {
-    ar: "تقدّم {name} بطلب للوصول إلى ما تركته. إن كنت تقرأ هذا، فأنت حيّ — وبإمكانك إيقاف الطلب.",
-    en: "{name} has filed a claim to access what you left. If you're reading this, you're alive — and you can stop it.",
+    ar: "بلّغ {name} عن وفاتك. إن كنت تقرأ هذا فأنت حيّ: أكّد ببصمتك أدناه أنك بخير، فيتوقف البلاغ فوراً.",
+    en: "{name} has reported your death. If you are reading this, you are alive: confirm below with your fingerprint and the report stops at once.",
   },
   deadline: {
-    ar: "إن لم توقفه قبل {date}، سيُفرج عمّا خُصّص لهم.",
-    en: "If you don't stop it before {date}, what's routed to them will be released.",
+    ar: "إن لم يتوقف قبل {date}، نتواصل مع ورثتك ويستلم كلٌّ منهم ما خُصّص له وحده.",
+    en: "If it is not stopped before {date}, we contact your heirs and each receives only what was routed to them.",
   },
-  daysLeft: { ar: "{n} يوماً متبقياً", en: "{n} days left" },
-
-  // Home links here; it must NOT read as the veto itself. Stopping a claim is
-  // biometric-gated and happens on the claim screen, not from a banner.
-  review: { ar: "راجع الطلب", en: "Review the claim" },
-  veto: { ar: "أوقف الطلب — أنا بخير", en: "Stop this claim — I'm well" },
-  vetoing: { ar: "جارٍ الإيقاف…", en: "Stopping…" },
-  vetoPrompt: {
-    ar: "أثبت هويتك لإيقاف الطلب",
-    en: "Confirm it's you to stop this claim",
+  stopped: {
+    ar: "أُوقف البلاغ. لن يُسلَّم شيء، ولن يستطيع المُبلِّغ المحاولة مجدداً لمدة ٩٠ يوماً.",
+    en: "The report is stopped. Nothing will be handed over, and the reporter cannot try again for 90 days.",
   },
-  vetoed: {
-    ar: "أُوقف الطلب. لن يُفرج عن شيء، ولن يستطيع مقدّم الطلب المحاولة مجدداً لمدة ٩٠ يوماً.",
-    en: "The claim is stopped. Nothing will be released, and the claimant cannot try again for 90 days.",
-  },
-  vetoFailed: {
-    ar: "تعذّر إيقاف الطلب. لم يتغيّر شيء — حاول مرة أخرى.",
-    en: "Could not stop the claim. Nothing changed — try again.",
-  },
-  biometricFailed: {
-    ar: "لم يتم التحقق. إيقاف الطلب يحتاج بصمتك — وهذا ما يمنع شخصاً آخر من إيقافه نيابةً عنك.",
-    en: "Not verified. Stopping a claim needs your biometrics — which is what stops someone else doing it for you.",
-  },
-  windowClosed: {
-    ar: "انتهت مدة الاعتراض على هذا الطلب.",
-    en: "The objection window for this claim has closed.",
-  },
-
-  // The other half of the honesty: doing nothing is also a decision.
-  ignoreTitle: { ar: "إن لم تفعل شيئاً", en: "If you do nothing" },
-  ignoreBody: {
-    ar: "سيمضي الطلب في مساره: بعد انتهاء المدة نتواصل مع ورثتك، ويستلم كلٌّ منهم ما خُصّص له وحده بعد التحقّق من هويته.",
-    en: "The claim continues: when the period ends we contact your heirs, and each receives only what was routed to them once their identity is verified.",
-  },
-  none: { ar: "لا توجد طلبات على حسابك.", en: "No claims against your account." },
 } satisfies LabelSet<string>
 
 

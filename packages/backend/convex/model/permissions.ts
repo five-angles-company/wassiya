@@ -70,7 +70,7 @@ export const PERMISSIONS = [
   /**
    * One key per job, not one for the lot.
    *
-   * `deliveries.expire` destroys locked keys and bundles forever; a staff
+   * `deliveries.expire` destroys escrowed keys forever; a staff
    * member who should be able to nudge `claims.advance` must not inherit that
    * because both happen to be buttons on the same screen.
    */

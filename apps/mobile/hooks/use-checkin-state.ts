@@ -11,9 +11,9 @@
  *   day0                      → due         the first prompt has fired
  *   day7 · day14 · countdown  → overdue     escalation is under way
  *
- * `overdue` deliberately does not distinguish day 7 from the release countdown.
- * 6.3 explains the ladder; an owner who sees "overdue" needs to do exactly one
- * thing regardless of which rung they are on.
+ * `overdue` deliberately does not distinguish day 7 from the last rung. The
+ * ladder only reminds — it releases nothing — and an owner who sees "overdue"
+ * needs to do exactly one thing regardless of which rung they are on.
  */
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"

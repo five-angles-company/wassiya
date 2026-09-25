@@ -11,12 +11,18 @@ import {
   StickyNoteIcon,
   type LucideIcon,
 } from "lucide-react"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { Button } from "@/components/button"
 import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
-import { t } from "@/lib/i18n/locale"
-import { fetchAndDecrypt } from "@/features/box/lib/open-box"
+import { fmtNumber } from "@/lib/format"
+import { t, type Resolved } from "@/lib/i18n/locale"
+import {
+  fetchAndDecrypt,
+  type OpenedItem,
+  type SecretField,
+} from "@/features/box/lib/open-box"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
 
 const ICON: Record<string, LucideIcon> = {
@@ -28,6 +34,8 @@ const ICON: Record<string, LucideIcon> = {
   note: StickyNoteIcon,
 }
 
+type Labels = Resolved<typeof HEIR_BOX>
+
 const TYPE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
   crypto: "typeCrypto",
   bank: "typeBank",
@@ -37,52 +45,90 @@ const TYPE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
   note: "typeNote",
 }
 
-export type BoxItem = {
-  assetId: string
-  type: string
-  /** Opened client-side; `null` when this bundle carries no key for the row. */
-  title: string | null
-  subtitle?: string
-  byteSize?: number
-  mimeType?: string
-  via: string
-  contentUrls: readonly string[]
-  hasInstructions: boolean
-  /** The asset's DEK, or `undefined` when the bundle did not carry one. */
-  dek?: Uint8Array
+const FIELD_LABEL: Record<string, keyof typeof HEIR_BOX> = {
+  phrase: "fieldPhrase",
+  network: "fieldNetwork",
+  kind: "fieldKind",
+  devicePassword: "fieldDevicePassword",
+  deviceLocation: "fieldDeviceLocation",
+  account: "fieldAccount",
+  password: "fieldPassword",
+  twoFactor: "fieldTwoFactor",
+  bank: "fieldBank",
+  iban: "fieldIban",
+  country: "fieldCountry",
+  accountType: "fieldAccountType",
+  currency: "fieldCurrency",
+  branch: "fieldBranch",
+  instructions: "fieldInstructions",
+  service: "fieldService",
+  username: "fieldUsername",
+  recoveryCodes: "fieldRecoveryCodes",
+  disposition: "fieldDisposition",
+  body: "fieldBody",
 }
+
+/** The stored value is a key; the heir reads the word the owner chose. */
+const VALUE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
+  hardware: "valueHardware",
+  software: "valueSoftware",
+  exchange: "valueExchange",
+  current: "valueCurrent",
+  savings: "valueSavings",
+  deed: "valueDeed",
+  marriage: "valueMarriage",
+  certificate: "valueCertificate",
+  other: "valueOther",
+  instructions: "valueInstructions",
+  whereabouts: "valueWhereabouts",
+  wish: "valueWish",
+  handOver: "valueHandOver",
+  delete: "valueDelete",
+  memorialise: "valueMemorialise",
+}
+
+const ENUM_FIELDS = new Set(["kind", "accountType", "disposition"])
+
+/** Values copied character by character: left-to-right, monospaced. */
+const EXACT_FIELDS = new Set([
+  "phrase",
+  "devicePassword",
+  "password",
+  "twoFactor",
+  "iban",
+  "username",
+  "recoveryCodes",
+  "account",
+])
 
 /**
  * One thing that was left to this heir.
  *
- * ## The download happens entirely in the browser
- *
- * The ciphertext is fetched from storage, concatenated in order, decrypted with
- * the DEK the bundle carried, and handed to the browser as an object URL. The
- * server sees a range request for a blob it cannot read; the plaintext exists
- * only in this tab.
- *
- * The filename is the **decrypted title**, not the asset id. That is the whole
- * difference between a page that technically works and one an heir can use: a
- * downloads folder holding `k97a3f…bin` three times over is not an inheritance.
+ * The secret fields are shown as text — a seed phrase or a password is read,
+ * not downloaded. Each file is its own download, fetched and decrypted in this
+ * tab and handed to the browser as an object URL; the plaintext never leaves
+ * the tab. The filename is the decrypted title, because a downloads folder of
+ * `k97a3f…bin` is not an inheritance.
  */
-export function AssetRow({ item }: { item: BoxItem }) {
-  const labels = t(HEIR_BOX, useLocale())
-  const [busy, setBusy] = useState(false)
+export function AssetRow({ item }: { item: OpenedItem }) {
+  const locale = useLocale()
+  const labels = t(HEIR_BOX, locale)
+  const [busy, setBusy] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const Icon = ICON[item.type] ?? FileTextIcon
   const typeKey = TYPE_LABEL[item.type]
   const typeName = typeKey === undefined ? item.type : labels[typeKey]
-  const downloadable = item.contentUrls.length > 0 && item.dek !== undefined
+  const dek = item.dek
 
-  async function download() {
-    if (item.dek === undefined) return
-    setBusy(true)
+  async function download(index: number) {
+    const fileUrl = item.fileUrls[index]
+    if (dek === undefined || fileUrl === undefined) return
+    setBusy(index)
     setError(null)
     let url: string | null = null
     try {
-      const plaintext = await fetchAndDecrypt(item.contentUrls, item.dek)
+      const plaintext = await fetchAndDecrypt(fileUrl, dek)
       // `slice()` because the view can be a window onto a larger buffer, and
       // `Blob` would otherwise carry the whole thing.
       const blob = new Blob([plaintext.slice()], {
@@ -91,7 +137,7 @@ export function AssetRow({ item }: { item: BoxItem }) {
       url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = filenameFor(item, typeName)
+      anchor.download = filenameFor(item, typeName, index)
       anchor.click()
     } catch {
       setError(labels.downloadFailed)
@@ -102,57 +148,86 @@ export function AssetRow({ item }: { item: BoxItem }) {
         const revoke = url
         requestAnimationFrame(() => URL.revokeObjectURL(revoke))
       }
-      setBusy(false)
+      setBusy(null)
     }
   }
 
   return (
-    <li className="flex flex-wrap items-start gap-4 px-5 py-5 md:px-6">
-      <IconDisc icon={Icon} tone={item.title === null ? "attention" : "quiet"} />
-
-      <div className="min-w-0 flex-1">
-        <div className="font-heading text-[17px] font-extrabold">
-          {item.title ?? labels.noKeyTitle}
+    <li className="flex flex-col gap-4 px-5 py-5 md:px-6">
+      <div className="flex items-start gap-4">
+        <IconDisc icon={Icon} tone={item.title === null ? "attention" : "quiet"} />
+        <div className="min-w-0 flex-1">
+          <div className="font-heading text-[17px] font-extrabold">
+            {item.title ?? labels.noKeyTitle}
+          </div>
+          <p className="text-muted-foreground mt-1 text-[14px] leading-[1.6]">
+            {item.title === null
+              ? labels.noKeyBody
+              : [
+                  item.subtitle,
+                  typeName,
+                  item.byteSize === undefined ? undefined : formatBytes(item.byteSize),
+                  item.via === "allHeirs" ? labels.viaAllHeirs : labels.viaDirect,
+                ]
+                  .filter((part) => part !== undefined && part.length > 0)
+                  .join(" · ")}
+          </p>
+          {item.title === null && (
+            <p dir="ltr" className="text-muted-foreground mt-2 font-mono text-[11.5px]">
+              {item.assetId}
+            </p>
+          )}
         </div>
-        <p className="text-muted-foreground mt-1 text-[14px] leading-[1.6]">
-          {item.title === null
-            ? labels.noKeyBody
-            : [
-                item.subtitle,
-                typeName,
-                item.byteSize === undefined ? undefined : formatBytes(item.byteSize),
-                item.via === "allHeirs" ? labels.viaAllHeirs : labels.viaDirect,
-              ]
-                .filter((part) => part !== undefined && part.length > 0)
-                .join(" · ")}
-        </p>
-        {item.hasInstructions && item.title !== null && (
-          <p className="text-tone-settled mt-2 text-[13.5px] leading-[1.6] font-semibold">
-            {labels.instructionsNote}
-          </p>
-        )}
-        {item.title === null && (
-          <p dir="ltr" className="text-muted-foreground mt-2 font-mono text-[11.5px]">
-            {item.assetId}
-          </p>
-        )}
-        {error !== null && (
-          <p className="text-tone-attention mt-2 text-[13px]">{error}</p>
-        )}
       </div>
 
-      {downloadable ? (
-        <Button size="sm" variant="outline" className="self-center" onClick={() => void download()} disabled={busy}>
-          <DownloadIcon className="size-4" strokeWidth={2.4} aria-hidden />
-          {busy ? labels.downloading : labels.download}
-        </Button>
-      ) : item.title !== null ? (
-        <span className="text-muted-foreground shrink-0 self-center text-[13px]">
-          {labels.noContent}
-        </span>
-      ) : null}
+      {item.fields.length > 0 && (
+        <dl className="bg-card/70 border-border rounded-row grid gap-3 border p-4">
+          {item.fields.map((field) => (
+            <div key={field.key}>
+              <dt className="text-muted-foreground text-[12.5px]">{fieldLabel(field.key, labels)}</dt>
+              <dd
+                dir={EXACT_FIELDS.has(field.key) ? "ltr" : undefined}
+                className={cn(
+                  "mt-0.5 text-[15px] leading-[1.7] font-semibold break-words whitespace-pre-wrap",
+                  EXACT_FIELDS.has(field.key) && "font-mono text-[14px]"
+                )}
+              >
+                {fieldValue(field, labels)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {dek !== undefined && item.fileUrls.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {item.fileUrls.map((_, index) => (
+            <Button key={index} size="sm" variant="outline" onClick={() => void download(index)} disabled={busy !== null}>
+              <DownloadIcon className="size-4" strokeWidth={2.4} aria-hidden />
+              {busy === index
+                ? labels.downloading
+                : item.fileUrls.length === 1
+                  ? labels.download
+                  : labels.downloadNumbered.replace("{n}", fmtNumber(index + 1, locale))}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {error !== null && <p className="text-tone-attention text-[13px]">{error}</p>}
     </li>
   )
+}
+
+function fieldLabel(key: string, labels: Labels): string {
+  const labelKey = FIELD_LABEL[key]
+  return labelKey === undefined ? key : labels[labelKey]
+}
+
+function fieldValue(field: SecretField, labels: Labels): string {
+  if (!ENUM_FIELDS.has(field.key)) return field.value
+  const valueKey = VALUE_LABEL[field.value]
+  return valueKey === undefined ? field.value : labels[valueKey]
 }
 
 /**
@@ -161,10 +236,11 @@ export function AssetRow({ item }: { item: BoxItem }) {
  * The characters stripped are the ones Windows rejects outright; Arabic titles
  * survive untouched, which matters because most of them will be Arabic.
  */
-function filenameFor(item: BoxItem, typeName: string): string {
+function filenameFor(item: OpenedItem, typeName: string, index: number): string {
   const base = (item.title ?? typeName).replace(/[\\/:*?"<>|]/g, "").trim()
-  const extension = EXTENSION[item.mimeType ?? ""] ?? ""
-  return `${base.length > 0 ? base : item.assetId}${extension}`
+  const name = base.length > 0 ? base : item.assetId
+  const numbered = item.fileUrls.length > 1 ? `${name} ${index + 1}` : name
+  return `${numbered}${EXTENSION[item.mimeType ?? ""] ?? ""}`
 }
 
 const EXTENSION: Record<string, string> = {

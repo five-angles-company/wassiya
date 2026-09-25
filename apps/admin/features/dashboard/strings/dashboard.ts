@@ -45,8 +45,8 @@ export const DASHBOARD = {
     en: "They cannot try again. Only a person can unblock this.",
   },
 
-  heirsNoBundle: { ar: "ورثة بلا حزمة", en: "Heirs with no bundle" },
-  heirsNoBundleHint: {
+  heirsNothing: { ar: "ورثة لا يستلمون شيئاً", en: "Heirs who get nothing" },
+  heirsNothingHint: {
     ar: "لن يستلموا شيئاً لو وقع الإفراج الليلة.",
     en: "They would receive nothing if a claim released tonight.",
   },

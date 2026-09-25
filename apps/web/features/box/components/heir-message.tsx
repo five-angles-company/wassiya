@@ -12,7 +12,7 @@ import { COMMON } from "@/lib/i18n/strings/common"
 import { HEIR_BOX } from "@/features/box/strings/heir-box"
 
 /**
- * The personal message, decrypted in this tab with the key the bundle carried.
+ * The personal message, decrypted in this tab with the key the release gate returned.
  * The plaintext lives only in this component's state.
  */
 export function HeirMessage({ url, messageKey }: { url: string; messageKey: Uint8Array }) {

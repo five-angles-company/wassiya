@@ -9,10 +9,11 @@ import { unwrap, wrap } from "./wrap"
 /**
  * Editing an asset reuses its DEK. It does not rotate it.
  *
- * That is forced by the release model rather than chosen for convenience: heir
- * bundles carry the routed DEKs, so minting a fresh key on an ordinary rename
- * would invalidate every bundle already built for that asset — silently, and
- * only discoverable years later at a claim, by someone who cannot fix it.
+ * That is forced by the release model rather than chosen for convenience: a
+ * routed asset's DEK is sealed to the escrow key at routing time, so minting a
+ * fresh key on an ordinary rename would leave that sealed copy opening nothing —
+ * silently, and only discoverable years later at a claim, by someone who cannot
+ * fix it.
  *
  * Reuse is safe because `seal` mints a nonce per call and `encryptAsset` a salt
  * per call. That was believed on the strength of a doc comment; these tests
@@ -102,13 +103,13 @@ describe("editing an asset under its existing DEK", () => {
   })
 
   /**
-   * An heir's bundle carries the DEK itself, not the wrapper. So the test that
+   * The escrow lock holds the DEK itself, not the wrapper. So the test that
    * actually matters for delivery: a key captured at routing time still opens
    * what the owner saved afterwards.
    */
   it("keeps a DEK captured at routing time able to open later edits", () => {
     const dek = generateDek()
-    // What a release bundle would have copied, whenever routing last ran.
+    // What the escrow lock sealed, whenever routing last ran.
     const routed = Uint8Array.from(dek)
 
     const laterEdit = encryptAsset(utf8ToBytes("edited long after routing"), dek)

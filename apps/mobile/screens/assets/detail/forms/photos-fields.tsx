@@ -75,10 +75,10 @@ export function PhotosFields({
           </Text>
 
           <View className="flex-row flex-wrap gap-2">
-            {value.keptOriginals.map((id, i) => (
+            {value.kept.map((file, i) => (
               <Tile
-                key={id}
-                uri={thumbs[i] ?? null}
+                key={file.storageId}
+                uri={thumbs[file.storageId] ?? null}
                 onRemove={() => onRemove(i)}
                 removeLabel={labels.removePhoto!}
               />
@@ -87,7 +87,7 @@ export function PhotosFields({
               <Tile
                 key={`${photo.uri}-${i}`}
                 uri={photo.uri}
-                onRemove={() => onRemove(value.keptOriginals.length + i)}
+                onRemove={() => onRemove(value.kept.length + i)}
                 removeLabel={labels.removePhoto!}
               />
             ))}

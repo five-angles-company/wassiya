@@ -40,7 +40,7 @@ export default async function DeliveryPage({
     <AuthGate>
       <HeirDelivery
         deliveryId={id}
-        identity={<IdentityPanel returnTo={`/delivery/${id}`} audience="heir" />}
+        identity={<IdentityPanel returnTo={`/delivery/${id}`} />}
       />
       <HelpLink locale={await getLocale()} topic="delivery" deliveryId={id} />
     </AuthGate>

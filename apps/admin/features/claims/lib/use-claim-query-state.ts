@@ -9,7 +9,6 @@ import {
 import type { SortingState } from "@tanstack/react-table"
 
 import { CLAIM_STATUSES, type ClaimStatus } from "@/features/claims/lib/status"
-import { IDENTITY_STATUSES, type IdentityStatus } from "@/lib/identity"
 import { useTableUrlState } from "@/lib/use-table-url-state"
 
 /** The default order, and what the sort headers fall back to. */
@@ -42,9 +41,6 @@ export function useClaimQueryState() {
       status: parseAsArrayOf(parseAsStringLiteral(CLAIM_STATUSES)).withDefault(
         []
       ),
-      identity: parseAsArrayOf(
-        parseAsStringLiteral(IDENTITY_STATUSES)
-      ).withDefault([]),
     },
     { history: "replace", clearOnDefault: true }
   )
@@ -52,7 +48,7 @@ export function useClaimQueryState() {
   const url = useTableUrlState({
     defaultSorting: DEFAULT_SORTING,
     sortableIds: SORTABLE,
-    facetKey: `${facets.status.join(",")}|${facets.identity.join(",")}`,
+    facetKey: facets.status.join(","),
   })
 
   const sort = useMemo<ClaimSort>(() => {
@@ -65,24 +61,22 @@ export function useClaimQueryState() {
   const filters = useMemo(
     () => ({
       statuses: facets.status,
-      identity: facets.identity,
       search: url.search,
       sort,
     }),
-    [facets.status, facets.identity, url.search, sort]
+    [facets.status, url.search, sort]
   )
 
-  const toggleIn = useCallback(
-    <T extends string>(key: "status" | "identity") =>
-      (value: string, checked: boolean) => {
-        void setFacets((current) => ({
-          [key]: checked
-            ? current[key].includes(value as never)
-              ? current[key]
-              : [...current[key], value as T]
-            : current[key].filter((entry: string) => entry !== value),
-        }))
-      },
+  const toggleStatus = useCallback(
+    (value: string, checked: boolean) => {
+      void setFacets((current) => ({
+        status: checked
+          ? current.status.includes(value as ClaimStatus)
+            ? current.status
+            : [...current.status, value as ClaimStatus]
+          : current.status.filter((entry) => entry !== value),
+      }))
+    },
     [setFacets]
   )
 
@@ -95,14 +89,9 @@ export function useClaimQueryState() {
     setSearch: url.setSearch,
     sorting: url.sorting,
     setSorting: url.setSorting,
-    toggleStatus: toggleIn<ClaimStatus>("status"),
+    toggleStatus,
     clearStatuses: useCallback(
       () => void setFacets({ status: [] }),
-      [setFacets]
-    ),
-    toggleIdentity: toggleIn<IdentityStatus>("identity"),
-    clearIdentity: useCallback(
-      () => void setFacets({ identity: [] }),
       [setFacets]
     ),
     pageNumber: url.pageNumber,

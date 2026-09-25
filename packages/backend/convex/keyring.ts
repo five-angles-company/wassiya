@@ -1,10 +1,10 @@
 // The recovery leg, as the server sees it.
 //
-// `mkWrappedByRecovery` is MK under K_rec = S_paper — one share, not two. The
-// guardian used to hold the other half; they no longer appear in recovery at
-// all, and this deployment has never held either. See `packages/crypto/src/
-// recovery.ts` for why storing the guardian half here was the worse option
-// rather than the safer one.
+// `mkWrappedByRecovery` is MK under K_rec = S_paper, the printed sheet alone.
+//
+// A closed vault (`users.vaultClosedAt`, set when a death report releases)
+// hands out no wrapper and accepts none: after death the sheet must not open
+// what the owner chose to let die with them.
 //
 // The wrapper is sealed under an AAD of `wassiya/recovery/v2 | userId |
 // paperVersion`. That is why `paperVersion` is not merely bookkeeping here: it
@@ -50,6 +50,9 @@ export const save = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
+    if (user.vaultClosedAt !== undefined) {
+      throw new Error("This vault was closed after a verified death")
+    }
     const now = Date.now()
     const existing = await keyringFor(ctx, user._id)
 
@@ -122,8 +125,11 @@ export const get = query({
     if (keyring === null) {
       return null
     }
+    const closed = user.vaultClosedAt !== undefined
     return {
-      mkWrappedByRecovery: keyring.mkWrappedByRecovery,
+      /** `null` once the vault is closed: nothing left to recover with. */
+      mkWrappedByRecovery: closed ? null : keyring.mkWrappedByRecovery,
+      closed,
       paperVersion: keyring.paperVersion,
       // `null` means a pre-AAD wrapper this code cannot open. The caller must
       // check it before offering to recover, not after failing to.

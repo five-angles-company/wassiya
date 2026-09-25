@@ -2,9 +2,9 @@
  * `@workspace/crypto` — the client-side key hierarchy for Wassiya.
  *
  * Every function here is meant to run on a *device*: the owner's phone or the
- * heir's browser at release. The one exception is the escrow unlock action
- * (`convex/escrow.ts`), which parses an unlocked K_h and seals it straight to
- * the heir's browser; nothing else server-side may import this package.
+ * heir's browser. The one exception is the release gate (`convex/escrow.ts`),
+ * which opens the escrowed keys of one delivery; nothing else server-side may
+ * import this package.
  */
 export {
   KEY_BYTES,
@@ -17,7 +17,6 @@ export {
   hexToBytes,
   randomBytes,
   utf8ToBytes,
-  xor,
 } from "./bytes"
 
 export { generateDek, generateMk } from "./keys"
@@ -33,36 +32,24 @@ export {
 } from "./recovery"
 
 export {
-  type CodeFormat,
   type DecodedPaperCode,
-  type DecodedSecretCode,
-  RECOVERY_CODE_FORMAT,
   crc16,
   decodePaperCode,
-  decodeSecretCode,
   encodePaperCode,
-  encodeSecretCode,
+  looksLikeRecoveryCode,
 } from "./papercode"
 
 export {
-  type KeyMap,
-  type ReleaseBundleContents,
-  buildReleaseBundle,
-  generateHeirKey,
-  openReleaseBundle,
-} from "./heir"
-
-export {
-  type EscrowPublicKey,
-  type HeirKeyContext,
-  escrowKeyFingerprint,
-  lockHeirKey,
-  parseEscrowPublicKey,
-  parseUnlockedHeirKey,
+  type EscrowSubject,
+  escrowAad,
+  openFromEscrow,
+  parseEscrowKey,
+  sealForEscrow,
 } from "./escrow"
 
 export {
   SEAL_KEY_BYTES,
+  SEALED_KEY_BYTES,
   type SealKeypair,
   generateSealKeypair,
   openSealedKey,
@@ -81,13 +68,8 @@ export {
 } from "./asset"
 
 export { type AssetLabel, LABEL_AAD, openLabel, sealLabel } from "./label"
-
-export {
-  MESSAGE_AAD,
-  MESSAGE_KEY_ID,
-  openMessage,
-  sealMessage,
-} from "./message"
+export { MAX_SECRET_BYTES, SECRET_AAD, openSecret, sealSecret } from "./secret"
+export { MESSAGE_AAD, openMessage, sealMessage } from "./message"
 
 export {
   type MnemonicCheck,

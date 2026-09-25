@@ -126,17 +126,10 @@ export function OwnerProtection({
               value={
                 <span className="flex items-center justify-end gap-2">
                   <span>{heir.name}</span>
-                  {heir.bundleRebuiltAt === null ? (
-                    <Badge variant="destructive">{labels.bundleNever}</Badge>
-                  ) : heir.bundleStale ? (
-                    <Badge variant="outline">{labels.bundleStale}</Badge>
+                  {heir.receives ? (
+                    <Badge variant="secondary">{labels.heirReceives}</Badge>
                   ) : (
-                    <Badge variant="secondary">
-                      {labels.bundleBuilt.replace(
-                        "{date}",
-                        fmtDate(heir.bundleRebuiltAt, locale)
-                      )}
-                    </Badge>
+                    <Badge variant="destructive">{labels.heirGetsNothing}</Badge>
                   )}
                   {!heir.hasIdNumber && (
                     <Badge variant="outline">{labels.noIdNumber}</Badge>

@@ -15,7 +15,6 @@ import {
   XCircleIcon,
 } from "lucide-react"
 
-import { IdentityBadge } from "@/components/identity-badge"
 import { ClaimVerdict } from "@/features/claims/components/claim-verdict"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { fmtDate, fmtNumber } from "@/lib/format"
@@ -42,8 +41,6 @@ export function ClaimDecision({
   const labels = t(CLAIMS, locale)
   const { claim, subject, priorClaims, blocked, deliveries } = detail
   const vetoedBefore = priorClaims.some((row) => row.status === "vetoed")
-  const staleIdentity =
-    detail.storedIdentityStatus !== detail.liveIdentityStatus
 
   return (
     <Card className="flex h-full flex-col gap-0 py-0">
@@ -63,21 +60,10 @@ export function ClaimDecision({
         </Block>
 
         <Block title={labels.claimantLabel}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-base font-medium">{claim.claimantName}</span>
-            <IdentityBadge status={detail.liveIdentityStatus} locale={locale} />
-          </div>
+          <span className="text-base font-medium">{claim.claimantName}</span>
           <span dir="ltr" className="self-start text-sm text-muted-foreground">
             {claim.claimantContact}
           </span>
-          {staleIdentity && (
-            <span className="text-xs text-muted-foreground">
-              {labels.identityStaleWarning.replace(
-                "{stored}",
-                detail.storedIdentityStatus
-              )}
-            </span>
-          )}
           {vetoedBefore && (
             <p className="flex gap-2 text-sm leading-relaxed text-destructive">
               <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" />

@@ -136,15 +136,15 @@ export function releaseColumns(
       },
     }),
 
-    // A report counting down with no bundles will release on schedule and
+    // A report counting down with no receiving heir will release on schedule and
     // reach nobody. It is the one genuinely alarming row this screen can show,
     // so it is a column rather than something an operator has to go and check.
-    helper.accessor("heirsWithBundle", {
-      id: "bundles",
+    helper.accessor("heirsReceiving", {
+      id: "receiving",
       enableSorting: false,
       header: () => labels.colDelivery,
       cell: ({ row }) => {
-        const bundles = row.original.heirsWithBundle
+        const receiving = row.original.heirsReceiving
         const deliveries = row.original.deliveries
 
         if (deliveries !== null) {
@@ -174,14 +174,14 @@ export function releaseColumns(
           )
         }
 
-        if (bundles === null) {
+        if (receiving === null) {
           return <NotApplicable />
         }
-        return bundles === 0 ? (
+        return receiving === 0 ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge variant="destructive" className="whitespace-nowrap">
-                {labels.bundlesNone}
+                {labels.receivingNone}
               </Badge>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
@@ -190,7 +190,7 @@ export function releaseColumns(
           </Tooltip>
         ) : (
           <span className="whitespace-nowrap tabular-nums">
-            {labels.bundlesReady.replace("{n}", fmtNumber(bundles, locale))}
+            {labels.receivingCount.replace("{n}", fmtNumber(receiving, locale))}
           </span>
         )
       },
@@ -234,7 +234,7 @@ export function releaseColumnLabels(locale: Locale): Record<string, string> {
     band: labels.colBand,
     claimant: labels.colClaimant,
     remaining: labels.colRemaining,
-    bundles: labels.colDelivery,
+    receiving: labels.colDelivery,
     deadline: labels.colDeadline,
     releasedAt: labels.colReleased,
   }

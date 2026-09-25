@@ -19,7 +19,6 @@ import { MoreHorizontalIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { selectColumn } from "@/components/data-table-select-column"
 import type { DataTableLabels } from "@/components/data-table-toolbar"
-import { IdentityBadge } from "@/components/identity-badge"
 import { claimStatusLabel } from "@/features/claims/lib/status"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import type { DataTableFeatures } from "@/lib/data-table-features"
@@ -92,21 +91,6 @@ export function claimBrowserColumns(
         <Badge variant="outline" className="whitespace-nowrap">
           {claimStatusLabel(row.original.status, locale)}
         </Badge>
-      ),
-    }),
-
-    helper.accessor("claimantIdentityStatus", {
-      id: "claimantIdentityStatus",
-      filterFn: "arrIncludesSome",
-      enableGlobalFilter: false,
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={labels.colIdentity} />
-      ),
-      cell: ({ row }) => (
-        <IdentityBadge
-          status={row.original.claimantIdentityStatus}
-          locale={locale}
-        />
       ),
     }),
 
@@ -197,7 +181,6 @@ export function claimBrowserColumnLabels(
   return {
     claimantName: labels.colClaimant,
     status: labels.colStatus,
-    claimantIdentityStatus: labels.colIdentity,
     subjectVerifiedName: labels.colOwner,
     submittedAt: labels.colSubmitted,
     actions: labels.colActions,

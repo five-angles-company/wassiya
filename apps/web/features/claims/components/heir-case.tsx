@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { useConvexAuth, useQuery } from "convex/react"
-import { FileTextIcon, LogInIcon, UserCheckIcon } from "lucide-react"
+import { FileTextIcon, LogInIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
 import { Ask } from "@/components/doc/ask"
@@ -18,7 +18,6 @@ import { fmtDate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { CertificatePanel } from "@/features/claims/components/certificate-panel"
-import { IdentityPanel } from "@/features/claims/components/identity-panel"
 import { heirView } from "@/features/claims/lib/heir-view"
 import { CLAIM_STATUS } from "@/features/claims/strings/claim-status"
 import { CLAIMS } from "@/features/claims/strings/claims"
@@ -48,7 +47,6 @@ export function HeirCase({ claimId }: { claimId: string }) {
   const { isAuthenticated } = useConvexAuth()
   const claim = useQuery(api.claims.publicStatus, { claimId })
   const own = useQuery(api.claims.forClaimant, isAuthenticated ? { claimId } : "skip")
-  const identity = useQuery(api.identity.status, isAuthenticated ? {} : "skip")
   // Only to decide whether this reader has anywhere else to go — see the footer.
   const summary = useQuery(api.claims.mineSummary, isAuthenticated ? {} : "skip")
 
@@ -58,18 +56,12 @@ export function HeirCase({ claimId }: { claimId: string }) {
   const isMine = own !== undefined && own !== null
   const name = claim.subjectName ?? labels.unknownVault
 
-  // The live value from the filer's own user row. A signed-out reader gets the
-  // claim's snapshot — all `publicStatus` carries, and enough for someone who
-  // cannot act on it either way.
-  const identityVerified = isMine ? identity?.status === "verified" : claim.identityVerified
-
   const view = heirView(
     {
       status: claim.status,
       submittedAt: claim.submittedAt,
       vetoDeadline: claim.vetoDeadline,
       certificateReceived: claim.certificateReceived,
-      identityVerified,
       isMine,
       certificateAttachedAt: own?.certificateAttachedAt,
       reviewedAt: own?.reviewedAt,
@@ -117,14 +109,9 @@ export function HeirCase({ claimId }: { claimId: string }) {
         </div>
       )}
 
-      {view.ask !== null && view.askTitle !== null && (
-        <Ask
-          eyebrow={common.askEyebrow}
-          title={view.askTitle}
-          icon={view.ask === "identity" ? UserCheckIcon : FileTextIcon}
-        >
-          {view.ask === "identity" && <IdentityPanel returnTo={`/case/${claimId}`} audience="reporter" />}
-          {view.ask === "certificate" && <CertificatePanel claimId={claimId} />}
+      {view.ask === "certificate" && view.askTitle !== null && (
+        <Ask eyebrow={common.askEyebrow} title={view.askTitle} icon={FileTextIcon}>
+          <CertificatePanel claimId={claimId} />
         </Ask>
       )}
 

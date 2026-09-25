@@ -14,18 +14,16 @@ import { t, type Locale } from "@/lib/i18n/locale"
 
 /** Why a verdict is unavailable, as `nameMatchBlockedReason` names it. */
 export type VerdictBlocked = {
-  approve: string | null
-  reject: string | null
+  approve: "past-review" | null
+  reject: "past-review" | null
 }
 
 /** The refusal reasons, in the operator's language. */
 function blockedLabel(
-  reason: string | null,
+  reason: VerdictBlocked["approve"],
   labels: ReturnType<typeof t<typeof CLAIMS>>
 ): string | undefined {
-  if (reason === "identity-not-verified") return labels.blockedIdentity
-  if (reason === "past-review") return labels.blockedPastReview
-  return undefined
+  return reason === "past-review" ? labels.blockedPastReview : undefined
 }
 
 /**

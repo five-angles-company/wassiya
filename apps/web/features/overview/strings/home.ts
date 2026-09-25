@@ -30,8 +30,8 @@ export const HOME = {
   },
   doorClaimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
   doorClaimMeta: {
-    ar: "نحو عشر دقائق، ويمكنك الإكمال لاحقاً",
-    en: "About ten minutes, and you can finish later",
+    ar: "دقائق قليلة، ويمكنك الإكمال لاحقاً",
+    en: "A few minutes, and you can finish later",
   },
   doorHeirTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
   doorHeirBody: {

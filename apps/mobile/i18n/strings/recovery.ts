@@ -52,6 +52,12 @@ export const RECOVERY = {
     ar: "لا توجد خزنة على هذا الحساب بعد.",
     en: "There's no vault on this account yet.",
   },
+  // The vault was handed to the heirs after a verified death. The one person
+  // who can undo that is the owner, alive, through us.
+  closed: {
+    ar: "أُغلقت هذه الخزنة بعد التحقق من وفاة صاحبها، ولا يمكن استردادها بالوثيقة. إن كنت صاحبها، راسلنا لنتحقق من هويتك.",
+    en: "This vault was closed after its owner's death was verified, and a sheet cannot recover it. If it is yours, write to us so we can verify who you are.",
+  },
   // Says what to do rather than what went wrong, and does not pretend the code
   // might still work. Honest about needing the other device, because that is
   // the only thing that helps.

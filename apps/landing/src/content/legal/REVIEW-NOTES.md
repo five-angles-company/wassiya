@@ -34,9 +34,13 @@ These are code gaps, not wording problems. The drafts avoid promising any of the
 5. **Identity hash omits the country.** AGENTS.md says
    `HMAC(secret, country|number)`; `model/identityHash.ts` hashes the number
    alone. Not a policy issue as drafted, but the two should agree.
-6. **Production escrow is not live.** The encryption page describes Google Cloud
-   KMS in Saudi Arabia (me-central2, Dammam), per AGENTS.md; the production key
-   is not configured yet. Confirm before publishing.
+6. **Production escrow is not live, and it moved.** Google Cloud KMS was dropped
+   on 2026-09-25: the delivery key's private half now lives in the Convex
+   deployment env, and the encryption page states the trade (whoever controls
+   our servers can open routed items). Before publishing: generate the
+   production key, confirm the Convex hosting region against PDPL now that
+   "key in Saudi Arabia" is no longer claimed, and have counsel read the new
+   wording.
 7. **The web account page contradicts the escrow model**
    (`apps/web/features/account/strings/account.ts` says Wassiya cannot open an
    heir's box on its own). The public pages state the trade; that string should

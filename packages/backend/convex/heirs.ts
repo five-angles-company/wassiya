@@ -6,7 +6,7 @@
 //
 // Every heir is silent: they learn nothing until release. There was a
 // "notified" mode and it is gone — see the schema for why. The distinction
-// never lived in the crypto anyway; every heir gets the same sealed bundle.
+// never lived in the crypto anyway.
 import { v } from "convex/values"
 
 import type { Id } from "./_generated/dataModel"
@@ -14,6 +14,7 @@ import { mutation, query, type QueryCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
 import { assertCanAddHeir } from "./model/entitlements"
+import { assertEscrowSeal } from "./model/escrowSeal"
 import { evaluateDeliveryIdentity } from "./deliveries"
 import { identityNumberHash } from "./model/identityHash"
 
@@ -217,9 +218,8 @@ export const update = mutation({
 
 /**
  * Attach the heir's personal message. The content is sealed on-device under a
- * message key; that key arrives wrapped by MK and reaches the heir only inside
- * the release bundle, so this deployment holds an unreadable blob. Setting it
- * stamps `routingChangedAt`, because the bundle must now carry the key.
+ * message key, which arrives wrapped by MK for the owner and sealed to the
+ * escrow key for this heir, so this deployment holds an unreadable blob.
  */
 export const setMessage = mutation({
   args: {
@@ -227,19 +227,21 @@ export const setMessage = mutation({
     kind: v.union(v.literal("text"), v.literal("audio"), v.literal("video")),
     storageId: v.id("_storage"),
     messageKeyWrappedByMk: v.bytes(),
+    messageKeyEscrowed: v.bytes(),
+    escrowKeyId: v.string(),
   },
-  handler: async (ctx, { heirId, kind, storageId, messageKeyWrappedByMk }) => {
+  handler: async (ctx, { heirId, kind, storageId, ...keys }) => {
     const user = await requireUser(ctx)
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) {
       throw new Error("Not found")
     }
+    assertEscrowSeal(keys.messageKeyEscrowed, keys.escrowKeyId)
     if (heir.messageMeta !== undefined) {
       await ctx.storage.delete(heir.messageMeta.storageId)
     }
     await ctx.db.patch("heirs", heirId, {
-      messageMeta: { kind, storageId, messageKeyWrappedByMk },
-      routingChangedAt: Date.now(),
+      messageMeta: { kind, storageId, ...keys },
     })
     await writeAudit(ctx, {
       userId: user._id,
@@ -250,7 +252,7 @@ export const setMessage = mutation({
   },
 })
 
-/** Remove the heir's personal message; their bundle is rebuilt without it. */
+/** Remove the heir's personal message, and its escrowed key with it. */
 export const clearMessage = mutation({
   args: { heirId: v.id("heirs") },
   handler: async (ctx, { heirId }) => {
@@ -261,10 +263,7 @@ export const clearMessage = mutation({
     }
     if (heir.messageMeta === undefined) return null
     await ctx.storage.delete(heir.messageMeta.storageId)
-    await ctx.db.patch("heirs", heirId, {
-      messageMeta: undefined,
-      routingChangedAt: Date.now(),
-    })
+    await ctx.db.patch("heirs", heirId, { messageMeta: undefined })
     await writeAudit(ctx, {
       userId: user._id,
       event: "heir.message_cleared",
@@ -285,8 +284,7 @@ export const message = query({
     const heir = await ctx.db.get("heirs", heirId)
     if (heir === null || heir.userId !== user._id) return null
     const meta = heir.messageMeta
-    if (meta === undefined || meta.messageKeyWrappedByMk === undefined)
-      return null
+    if (meta === undefined) return null
     return {
       kind: meta.kind,
       url: await ctx.storage.getUrl(meta.storageId),
@@ -296,9 +294,9 @@ export const message = query({
 })
 
 /**
- * Removing an heir also removes their routing rows and their release bundle —
- * a bundle for a deleted heir is a share of K_h nobody should still be able to
- * claim against.
+ * Removing an heir also removes their routing rows. An asset that thereby
+ * reaches nobody goes back to unrouted, and its escrowed key is deleted — only
+ * routed items are ever escrowed.
  */
 export const remove = mutation({
   args: { heirId: v.id("heirs") },
@@ -317,17 +315,17 @@ export const remove = mutation({
       .take(500)
     for (const route of routes) {
       await ctx.db.delete("assetRecipients", route._id)
-    }
-
-    const bundles = await ctx.db
-      .query("releaseBundles")
-      .withIndex("by_userId_and_heirId", (q) =>
-        q.eq("userId", user._id).eq("heirId", heirId)
-      )
-      .take(20)
-    for (const bundle of bundles) {
-      await ctx.storage.delete(bundle.bundleStorageId)
-      await ctx.db.delete("releaseBundles", bundle._id)
+      const remaining = await ctx.db
+        .query("assetRecipients")
+        .withIndex("by_assetId", (q) => q.eq("assetId", route.assetId))
+        .take(1)
+      if (remaining.length === 0) {
+        await ctx.db.patch("assets", route.assetId, {
+          recipientRule: "default",
+          escrowedDek: undefined,
+          escrowKeyId: undefined,
+        })
+      }
     }
 
     if (heir.messageMeta !== undefined) {

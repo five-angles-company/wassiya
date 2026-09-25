@@ -16,7 +16,6 @@ import {
   type BrowsedClaim,
 } from "@/features/claims/components/claims-browser-columns"
 import { useClaimQueryState } from "@/features/claims/lib/use-claim-query-state"
-import { IDENTITY_STATUSES, identityLabel } from "@/lib/identity"
 import {
   CLAIM_STATUSES,
   claimStatusLabel,
@@ -34,7 +33,7 @@ import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
  * so an admin who ruled on a claim watched it leave the only admin query that
  * returns a claim id with no way back to it.
  *
- * Search, the three filters, the sort and the paging are all query arguments, so
+ * Search, the status filter, the sort and the paging are all query arguments, so
  * a search reaches every claim rather than the hundred that happened to load.
  * Two consequences the UI carries rather than hides: cursor pagination has no
  * total, so the pager says "page 3" and takes a bounded count from `claimsTally`
@@ -102,23 +101,6 @@ export function ClaimsBrowser() {
     />
   )
 
-  const identityFilter = (
-    <FacetedFilter
-      title={labels.colIdentity}
-      options={IDENTITY_STATUSES.map((value) => ({
-        value,
-        label: identityLabel(value, locale),
-      }))}
-      selected={new Set<string>(filters.identity)}
-      onToggle={query.toggleIdentity}
-      onClear={query.clearIdentity}
-      // No counts: these would have to be a tally query per value, and the
-      // filter is useful without them.
-      count={() => undefined}
-      clearLabel={tableLabels.resetFilters}
-    />
-  )
-
   // Only the very first load, when there is genuinely nothing to show yet.
   if (page === undefined) {
     return <Skeleton className="min-h-0 w-full flex-1 rounded-xl" />
@@ -134,12 +116,7 @@ export function ClaimsBrowser() {
       columnLabels={columnLabels}
       getRowId={(row) => row.id}
       fill
-      filters={
-        <>
-          {statusFilter}
-          {identityFilter}
-        </>
-      }
+      filters={statusFilter}
       server={{
         search: query.searchInput,
         onSearchChange: query.setSearch,
@@ -165,10 +142,6 @@ export function ClaimsBrowser() {
           { header: labels.colStatus, value: (row) => row.status },
           { header: labels.colClaimant, value: (row) => row.claimantName },
           { header: labels.contactLabel, value: (row) => row.claimantContact },
-          {
-            header: labels.colIdentity,
-            value: (row) => row.claimantIdentityStatus,
-          },
           { header: labels.colOwner, value: (row) => row.subjectVerifiedName },
           {
             header: labels.certificateNameLabel,

@@ -1,7 +1,7 @@
 ---
 title: Privacy policy
 description: What we collect, why, who we share it with, how long we keep it, and your rights over it — under Saudi Arabia's Personal Data Protection Law.
-updated: 2026-09-23
+updated: 2026-09-25
 draft: true
 ---
 
@@ -34,7 +34,7 @@ Before release we know only what the vault owner registered, and we do not conta
 
 ### If you report a death
 
-Your name and how to reach you, your account and identity-check result, the email you entered for the person who died, and the **death certificate** you attach. The certificate is kept without end-to-end encryption because our team reviews it by hand.
+Your name and how to reach you, your account, the email you entered for the person who died, and the **death certificate** you attach. The certificate is kept without end-to-end encryption because our team reviews it by hand.
 
 ### If you write to support
 
@@ -58,9 +58,8 @@ We do not sell your data. We use providers who process it on our behalf, only as
 | Provider | Purpose | What it receives |
 |---|---|---|
 | Clerk | Account sign-in | Name, email and session data |
-| Convex | Database and file hosting | Everything above, with vault contents encrypted |
+| Convex | Database and file hosting | Everything above, with vault contents encrypted, and the private half of the delivery key |
 | Didit | Identity verification | The document and face images you give it directly |
-| Google Cloud KMS | The delivery key vault | Locked heir boxes only — no names or contact details |
 | Resend | Email | Recipient address and message text |
 | Twilio | Text messages to heirs | The heir's number and a message that names no one and nothing |
 | Google Analytics | Analytics for this website, with your consent | Browsing data on wassiya.app |
@@ -71,7 +70,7 @@ Some of this data may be processed outside Saudi Arabia. [Cross-border transfer 
 ## How long we keep it
 
 - **Your vault and heirs:** for as long as your account exists, or until you delete the item or heir.
-- **Deliveries:** one year from release; then the heir's box and its key are destroyed for good.
+- **Deliveries:** one year from release; then the whole vault is deleted for good.
 - **Support attachments:** deleted 180 days after the conversation is closed.
 - **Security log:** kept without edits or deletions, because it is the record of what happened on your account.
 - **Death reports and certificates, support text, and emails sent:** [retention periods — to be confirmed].
@@ -84,7 +83,7 @@ The only copy of your vault's contents you can read is on your phone; we cannot 
 
 ## Security
 
-We encrypt your vault on your phone, lock heirs' boxes with a hardware key vault, and limit our team's access to your data through specific, logged permissions. Details are in [How the encryption works](/en/legal/encryption).
+We encrypt your vault on your phone, lock what you route to your heirs with our delivery key, and limit our team's access to your data through specific, logged permissions. Details are in [How the encryption works](/en/legal/encryption).
 
 ## Age
 

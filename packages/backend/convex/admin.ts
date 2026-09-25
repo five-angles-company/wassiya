@@ -32,6 +32,7 @@ import {
   requirePermission,
 } from "./model/access"
 import { planOf, storageUsed } from "./model/plans"
+import { heirsWhoReceive } from "./model/receivers"
 import { JOB_EVERY_HOURS, JOB_NAMES } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
 
@@ -265,13 +266,21 @@ export const activation = query({
       heirRows.slice(0, SCAN_CAP).map((row) => row.userId as string)
     )
 
-    // Owners whose device has built at least one heir's delivery. Without a
-    // bundle a released report delivers nothing, however complete the rest.
-    const bundles = await ctx.db.query("releaseBundles").take(SCAN_CAP + 1)
-    const bundleCapped = bundles.length > SCAN_CAP
-    const deliveryPrepared = new Set(
-      bundles.slice(0, SCAN_CAP).map((row) => row.userId as string)
-    )
+    // Owners with at least one heir who would receive something — an asset
+    // routed to them or to all heirs, or a message. Without one a released
+    // report delivers nothing, however complete the rest.
+    const routes = await ctx.db.query("assetRecipients").take(SCAN_CAP + 1)
+    const deliveryCapped =
+      routes.length > SCAN_CAP || heirRows.length > SCAN_CAP
+    const deliveryPrepared = new Set<string>()
+    for (const row of routes.slice(0, SCAN_CAP)) {
+      if (row.recipientKind !== "executor" && heirOwners.has(row.userId)) {
+        deliveryPrepared.add(row.userId)
+      }
+    }
+    for (const heir of heirRows.slice(0, SCAN_CAP)) {
+      if (heir.messageMeta !== undefined) deliveryPrepared.add(heir.userId)
+    }
 
     // Five indexed ranges rather than a scan — the index this table was built
     // around. One row per owner, so the counts add up without de-duplication.
@@ -316,7 +325,7 @@ export const activation = query({
         },
         {
           key: "deliveryPrepared",
-          ...setTally(deliveryPrepared, bundleCapped),
+          ...setTally(deliveryPrepared, deliveryCapped),
         },
         { key: "checkinConfigured", count: checkinCount, more: checkinCapped },
       ],
@@ -406,14 +415,8 @@ const RISK_LIMIT_MAX = 400
  *
  * ## Cost is bounded by index ranges, not documents
  *
- * Seven ranges per owner against a 4,096-range transaction limit, so the real
- * ceiling is ~580 owners and `RISK_LIMIT_MAX` sits well under it.
- *
- * Note the shape here is deliberately not `routing.staleHeirs`'. That one issues
- * one `.unique()` per heir, which is right for a single owner looking at their
- * own vault and would be N x M here. Reading the owner's bundles once and
- * comparing in memory answers the identical question — `bundle === null ||
- * bundle.rebuiltAt < changedAt` — at one range per owner instead of one per heir.
+ * At most eight ranges per owner against a 4,096-range transaction limit, so
+ * the real ceiling is ~500 owners and `RISK_LIMIT_MAX` sits well under it.
  */
 export const risk = query({
   args: { limit: v.optional(v.number()) },
@@ -446,14 +449,6 @@ export const risk = query({
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
         .unique()
 
-      const bundles = await ctx.db
-        .query("releaseBundles")
-        .withIndex("by_userId", (q) => q.eq("userId", owner._id))
-        .take(100)
-      const rebuiltFor = new Map<string, number>(
-        bundles.map((bundle) => [bundle.heirId as string, bundle.rebuiltAt])
-      )
-
       // "Has this owner routed anything at all?" Two indexed probes rather than
       // a per-asset walk. `allHeirs` is a bucket every heir receives, so an
       // owner with only that entry still has live routing.
@@ -472,14 +467,9 @@ export const risk = query({
       }
 
       // The heir-side question, which is the one that matters at release: how
-      // many of this owner's heirs would receive nothing today. Same test as
-      // `routing.staleHeirs`, including its `?? 0` for an heir never routed.
-      const heirsAtRisk = heirs.filter((heir) => {
-        const rebuiltAt = rebuiltFor.get(heir._id as string)
-        return (
-          rebuiltAt === undefined || rebuiltAt < (heir.routingChangedAt ?? 0)
-        )
-      }).length
+      // many of this owner's heirs would receive nothing today.
+      const receiving = await heirsWhoReceive(ctx, owner._id, heirs)
+      const heirsAtRisk = heirs.length - receiving.size
 
       const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
         identity: owner.identityStatus === "verified",
@@ -487,7 +477,7 @@ export const risk = query({
         sheet: keyring?.paperPrintedAt !== undefined,
         heirs: heirs.length > 0,
         routing: routed,
-        // Every heir has a bundle built since their routing last changed.
+        // Every heir receives something: an asset, or at least a message.
         delivery: heirs.length > 0 && heirsAtRisk === 0,
         checkin: checkin !== null,
       }
@@ -660,8 +650,6 @@ const claimSortValidator = v.union(
 /** The filters the console can apply, shared by the page and the tally. */
 const claimFilterArgs = {
   statuses: v.array(claimStatusValidator),
-  identity: v.array(identityStatusValidator),
-  /** `undefined` means no opinion; `true`/`false` narrow to one side. */
   /** Trimmed by the caller. Empty means no search. */
   search: v.string(),
   sort: claimSortValidator,
@@ -669,7 +657,6 @@ const claimFilterArgs = {
 
 type ClaimFilters = {
   statuses: string[]
-  identity: string[]
   search: string
   sort: "newest" | "oldest" | "nameAsc" | "nameDesc"
 }
@@ -716,15 +703,6 @@ function claimsQuery(ctx: QueryCtx, filters: ClaimFilters) {
       clauses.push(
         q.or(
           ...filters.statuses.map((status) => q.eq(q.field("status"), status))
-        )
-      )
-    }
-    if (filters.identity.length > 0) {
-      clauses.push(
-        q.or(
-          ...filters.identity.map((state) =>
-            q.eq(q.field("claimantIdentityStatus"), state)
-          )
         )
       )
     }
@@ -776,10 +754,6 @@ export const claimsPage = query({
           status: row.status,
           claimantName: row.claimantName,
           claimantContact: row.claimantContact,
-          // The stored snapshot. `claimDetail` returns the live value; this is
-          // the list, and re-reading a user per row to correct a badge would
-          // cost one index range per claim for no decision.
-          claimantIdentityStatus: row.claimantIdentityStatus,
           certificateName: row.certificateName ?? null,
           subjectName: subject?.name ?? null,
           subjectVerifiedName: subject?.identityVerifiedName ?? null,
@@ -1095,8 +1069,8 @@ export const ownersTally = query({
  * The same indexed probes `risk` runs across many owners, run once here.
  *
  * **Nothing returned is ciphertext or key material.** The keyring is reported
- * as dates and a version, never as `mkWrappedByRecovery`; a bundle is reported
- * as the date it was rebuilt, never its locked key.
+ * as dates and a version, never as `mkWrappedByRecovery`; an heir is reported
+ * as whether they receive anything, never with an escrowed key.
  */
 export const ownerDetail = query({
   // `v.string()` rather than `v.id("users")`, and the id checked in the body.
@@ -1124,13 +1098,7 @@ export const ownerDetail = query({
       .query("heirs")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .take(50)
-    const bundles = await ctx.db
-      .query("releaseBundles")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .take(50)
-    const rebuiltFor = new Map<string, number>(
-      bundles.map((bundle) => [bundle.heirId as string, bundle.rebuiltAt])
-    )
+    const receiving = await heirsWhoReceive(ctx, userId, heirs)
     const keyring = await ctx.db
       .query("keyring")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -1187,12 +1155,8 @@ export const ownerDetail = query({
         relation: row.relation,
         phone: row.phone,
         hasIdNumber: row.idNumberHash !== undefined,
-        // Null when the device has never built this heir a delivery; stale when
-        // it predates the heir's last routing change.
-        bundleRebuiltAt: rebuiltFor.get(row._id as string) ?? null,
-        bundleStale:
-          (rebuiltFor.get(row._id as string) ?? -1) <
-          (row.routingChangedAt ?? 0),
+        // False when a release today would reach this heir with nothing.
+        receives: receiving.has(row._id),
       })),
       claims: claims.map((row) => ({
         id: row._id,
@@ -1329,7 +1293,6 @@ export const heirsPage = query({
         directCount: direct.length,
         sharedCount: sharedCounts.get(ownerKey) ?? 0,
         receivesCount: direct.length + (sharedCounts.get(ownerKey) ?? 0),
-        routingChangedAt: heir.routingChangedAt ?? null,
         addedAt: heir._creationTime,
       })
     }
@@ -1644,7 +1607,7 @@ type ReleaseRow = {
   claimantName: string
   vetoDeadline: number | null
   remainingMs: number | null
-  heirsWithBundle: number | null
+  heirsReceiving: number | null
   releasedAt: number | null
   deliveries: {
     total: number
@@ -1667,8 +1630,8 @@ type ReleaseRow = {
  * Bounded rather than paginated: a countdown an operator pages through has
  * stopped being a countdown, and the table says when it was cut short.
  *
- * A counting-down report carries how many heirs have a bundle, because a report
- * that releases into an owner with none delivers nothing to anyone. A released
+ * A counting-down report carries how many heirs receive anything, because a
+ * report that releases into an owner with none delivers nothing to anyone. A released
  * one carries its deliveries by state — the per-heir work lives on the
  * deliveries screen, and a row here links to it.
  */
@@ -1704,13 +1667,20 @@ export const releasesTable = query({
 
     for (const row of pending.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
-      const bundles =
-        row.subjectUserId === undefined
-          ? []
-          : await ctx.db
-              .query("releaseBundles")
-              .withIndex("by_userId", (q) => q.eq("userId", row.subjectUserId!))
-              .take(100)
+      const ownerId = row.subjectUserId
+      const heirsReceiving =
+        ownerId === undefined
+          ? 0
+          : (
+              await heirsWhoReceive(
+                ctx,
+                ownerId,
+                await ctx.db
+                  .query("heirs")
+                  .withIndex("by_userId", (q) => q.eq("userId", ownerId))
+                  .take(100)
+              )
+            ).size
       rows.push({
         id: row._id,
         band: "counting",
@@ -1720,7 +1690,7 @@ export const releasesTable = query({
         vetoDeadline: row.vetoDeadline ?? null,
         /** Negative once the deadline has passed and the sweep has not run. */
         remainingMs: (row.vetoDeadline ?? now) - now,
-        heirsWithBundle: bundles.length,
+        heirsReceiving,
         releasedAt: null,
         deliveries: null,
       })
@@ -1742,7 +1712,7 @@ export const releasesTable = query({
         claimantName: row.claimantName,
         vetoDeadline: null,
         remainingMs: null,
-        heirsWithBundle: null,
+        heirsReceiving: null,
         releasedAt: row.releasedAt ?? row.vetoDeadline ?? row._creationTime,
         deliveries: {
           total: deliveries.length,
@@ -2266,15 +2236,6 @@ const HISTORY_SCAN = 400
  * order make that unsafe in Arabic and in every other script this ships to."*
  * So both names come back, and the console puts them side by side.
  *
- * ## The identity status here is LIVE, and that is not a detail
- *
- * `claims.claimantIdentityStatus` is a snapshot written at submit and refreshed
- * only as a side effect of `adminSetNameMatch`. That mutation decides on the
- * live `users.identityStatus`. Returning the stored column would mean the
- * console disabled its button on one value while the server ruled on another —
- * precisely the disagreement `nameMatchBlockedReason` exists to prevent. Both
- * are returned so a stale snapshot is visible rather than silently wrong.
- *
  * ## Heirs are another owner's data, so they are projected
  *
  * Nothing else in this console reads an owner's heir list. `heirs` carries
@@ -2349,12 +2310,6 @@ export const claimDetail = query({
       subjectUserId === undefined
         ? null
         : await ctx.db.get("users", subjectUserId)
-    const claimant =
-      claim.claimantUserId === undefined
-        ? null
-        : await ctx.db.get("users", claim.claimantUserId)
-    const liveIdentityStatus = claimant?.identityStatus ?? "unverified"
-
     const heirRows =
       subjectUserId === undefined
         ? []
@@ -2463,10 +2418,6 @@ export const claimDetail = query({
         status: row.status,
         contactedAt: row.contactedAt ?? null,
       })),
-      /** What Didit says right now — the value the mutation will rule on. */
-      liveIdentityStatus,
-      /** What was recorded at submit. Shown so a stale badge is visible. */
-      storedIdentityStatus: claim.claimantIdentityStatus,
       subject: {
         name: subject?.name ?? null,
         email: subject?.email ?? null,
@@ -2482,8 +2433,8 @@ export const claimDetail = query({
       history,
       /** Why each verdict is unavailable, or `null`. The button reads this. */
       blocked: {
-        approve: nameMatchBlockedReason(claim, true, liveIdentityStatus),
-        reject: nameMatchBlockedReason(claim, false, liveIdentityStatus),
+        approve: nameMatchBlockedReason(claim),
+        reject: nameMatchBlockedReason(claim),
       },
     }
   },

@@ -144,6 +144,33 @@ export const seedArticles = internalMutation({
   },
 })
 
+/**
+ * Put the named articles back to their seed text, after that text changed in
+ * code. It overwrites any console edit to those slugs, which is why it takes
+ * an explicit list and nothing is refreshed by default.
+ * `npx convex run support/help:refreshSeedArticles '{"slugs":["report-a-death"]}'`
+ */
+export const refreshSeedArticles = internalMutation({
+  args: { slugs: v.array(v.string()) },
+  handler: async (ctx, { slugs }) => {
+    let refreshed = 0
+    for (const article of SEED.filter((row) => slugs.includes(row.slug))) {
+      const existing = await ctx.db
+        .query("helpArticles")
+        .withIndex("by_slug", (q) => q.eq("slug", article.slug))
+        .first()
+      if (existing === null) continue
+      await ctx.db.patch("helpArticles", existing._id, {
+        title: article.title,
+        body: article.body,
+        updatedAt: Date.now(),
+      })
+      refreshed += 1
+    }
+    return { refreshed }
+  },
+})
+
 type SeedArticle = Pick<
   Doc<"helpArticles">,
   "slug" | "audience" | "title" | "body"
@@ -189,8 +216,8 @@ const SEED: SeedArticle[] = [
       en: "Can Wassiya read my vault?",
     },
     body: {
-      ar: "لا. تُشفَّر خزنتك على جهازك قبل أن تصلنا، ومفتاحها لا يغادر جهازك إلا مغلقاً. ما دمت حيّاً لا يفتحها أحد — ولا نحن. بعد التحقق من الوفاة ومن هوية الوارث، نسلّم ما اخترته فقط، لمن سمّيته فقط. لذلك لا يستطيع فريق الدعم رؤية ما في خزنتك ولا استرجاعه لك.",
-      en: "No. Your vault is encrypted on your phone before it reaches us, and its key only leaves your phone locked. While you are alive nobody can open it — us included. After a verified death and a verified heir, we deliver only what you chose, only to whom you named. That is also why support cannot see what is in your vault or recover it for you.",
+      ar: "لا. تُشفَّر خزنتك على جهازك قبل أن تصلنا، ومفتاحها لا يغادر جهازك إلا مغلقاً. أما ما خصّصته لورثتك فنقفل نسخة منه بمفتاح التسليم الخاص بنا لنستطيع تسليمه: لا نفتحه إلا بعد التحقق من الوفاة ومن هوية الوارث، وكل فتح يُسجَّل. وما لم تخصّصه لأحد لا يستطيع أحد فتحه — ولا نحن. لذلك لا يستطيع فريق الدعم رؤية ما في خزنتك ولا استرجاعه لك.",
+      en: "No. Your vault is encrypted on your phone before it reaches us, and its key only leaves your phone locked. For what you set aside for your heirs, we lock a copy with our delivery key so that we can hand it over: we open it only after a verified death and a verified heir, and every opening is recorded. Anything you set aside for no one, nobody can open — us included. That is also why support cannot see what is in your vault or recover it for you.",
     },
   },
   {
@@ -227,6 +254,18 @@ const SEED: SeedArticle[] = [
     },
   },
   {
+    slug: "reported-while-alive",
+    audience: "owner",
+    title: {
+      ar: "بلّغ أحد عن وفاتي وأنا حيّ",
+      en: "Someone reported my death, and I am alive",
+    },
+    body: {
+      ar: "لا يُسلَّم شيء خلال فترة الانتظار. افتح وصيّة وأكّد ببصمتك في الشاشة الرئيسية أنك بخير، فيتوقف البلاغ فوراً، ولا يستطيع من قدّمه المحاولة مجدداً لمدة ٩٠ يوماً.",
+      en: "Nothing is handed over during the waiting period. Open Wassiya and confirm with your fingerprint on the home screen that you are well — the report stops at once, and whoever filed it cannot try again for 90 days.",
+    },
+  },
+  {
     slug: "message-from-wassiya",
     audience: "heir",
     title: {
@@ -255,8 +294,8 @@ const SEED: SeedArticle[] = [
     audience: "reporter",
     title: { ar: "كيف أبلّغ عن وفاة؟", en: "How do I report a death?" },
     body: {
-      ar: "أدخل بريد المتوفّى الذي استخدمه في وصيّة، وأثبت هويتك، وأرفق شهادة الوفاة. نراجع البلاغ ونراسلك عند كل تغيّر. لا تستلم شيئاً بتقديم البلاغ — نتواصل نحن مع الورثة مباشرة.",
-      en: "Enter the email the person used with Wassiya, verify your identity and attach the death certificate. We review the report and email you at each change. Filing a report gives you nothing yourself — we contact the heirs directly.",
+      ar: "أدخل بريد المتوفّى الذي استخدمه في وصيّة، وأرفق شهادة الوفاة. نراجع البلاغ ونراسلك عند كل تغيّر. لا تستلم شيئاً بتقديم البلاغ — نتواصل نحن مع الورثة مباشرة.",
+      en: "Enter the email the person used with Wassiya and attach the death certificate. We review the report and email you at each change. Filing a report gives you nothing yourself — we contact the heirs directly.",
     },
   },
 ]

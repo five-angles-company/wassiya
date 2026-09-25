@@ -1,8 +1,8 @@
 // Deliveries — what one heir receives from a released death report.
 //
 // Rules (AGENTS.md "Escrowed release"):
-//  - Created only by `claims.advance`, one per heir with a bundle, never by a
-//    client. The reporter receives nothing by reporting.
+//  - Created only by `claims.advance`, one per heir who receives anything,
+//    never by a client. The reporter receives nothing by reporting.
 //  - The contact link only lets a signed-in person *bind* the delivery to
 //    their account. Nothing opens until `status === "ready"`, which needs the
 //    bound person's own Didit verification to match this heir: automatically
@@ -35,6 +35,7 @@ import {
   sendDeliveryReady,
 } from "./email"
 import { requirePermission } from "./model/access"
+import { heirsWhoReceive } from "./model/receivers"
 import { DAY_MS, DELIVERY_WINDOW_DAYS } from "./model/claimFlow"
 import { recordJobRun } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
@@ -111,8 +112,8 @@ async function inviteHeir(
 }
 
 /**
- * One delivery per heir of `subjectUserId` that has a bundle. Heirs without one
- * receive nothing — their bundle was never built, so there is nothing to open.
+ * One delivery per heir of `subjectUserId` who receives anything — an asset or
+ * a message. An heir routed nothing is never contacted.
  */
 export async function createDeliveriesForClaim(
   ctx: MutationCtx,
@@ -120,23 +121,24 @@ export async function createDeliveriesForClaim(
   subjectUserId: Id<"users">,
   now: number
 ): Promise<number> {
-  const bundles = await ctx.db
-    .query("releaseBundles")
+  const heirs = await ctx.db
+    .query("heirs")
     .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
     .take(100)
+  const receiving = await heirsWhoReceive(ctx, subjectUserId, heirs)
 
   let created = 0
-  for (const bundle of bundles) {
+  for (const heirId of receiving) {
     const existing = await ctx.db
       .query("deliveries")
-      .withIndex("by_heirId", (q) => q.eq("heirId", bundle.heirId))
+      .withIndex("by_heirId", (q) => q.eq("heirId", heirId))
       .take(10)
     if (existing.some((row) => row.claimId === claimId)) continue
 
     const deliveryId = await ctx.db.insert("deliveries", {
       claimId,
       subjectUserId,
-      heirId: bundle.heirId,
+      heirId,
       status: "awaiting_heir",
       contactToken: randomToken(),
       expiresAt: now + DELIVERY_WINDOW_DAYS * DAY_MS,
@@ -722,8 +724,9 @@ export const recordSms = internalMutation({
 
 /**
  * Daily. Warns each bound heir thirty days before their delivery closes, then
- * destroys the locked key and bundle of every delivery past its window, so
- * after a year nobody — Wassiya included — can open it again.
+ * closes every delivery past its window and, with the last one, deletes the
+ * vault (`vault.purge`), so after a year nobody — Wassiya included — can open
+ * it again.
  */
 export const expire = internalMutation({
   // Set by the reschedule below, absent on the pass the cron itself started —
@@ -771,20 +774,24 @@ export const expire = internalMutation({
         )
         .take(EXPIRE_BATCH - expired)
       for (const delivery of due) {
-        const bundle = await ctx.db
-          .query("releaseBundles")
-          .withIndex("by_userId_and_heirId", (q) =>
-            q.eq("userId", delivery.subjectUserId).eq("heirId", delivery.heirId)
-          )
-          .unique()
-        if (bundle !== null) {
-          await ctx.storage.delete(bundle.bundleStorageId)
-          await ctx.db.delete("releaseBundles", bundle._id)
-        }
         await ctx.db.patch("deliveries", delivery._id, {
           status: "expired",
           destroyedAt: now,
         })
+        // Heirs share assets through "allHeirs", so the vault goes only once
+        // the last of this report's deliveries has closed.
+        const siblings = await ctx.db
+          .query("deliveries")
+          .withIndex("by_claimId", (q) => q.eq("claimId", delivery.claimId))
+          .take(100)
+        const stillOpen = siblings.some((row) =>
+          (LIVE_STATUSES as readonly string[]).includes(row.status)
+        )
+        if (!stillOpen) {
+          await ctx.scheduler.runAfter(0, internal.vault.purge, {
+            ownerId: delivery.subjectUserId,
+          })
+        }
         await writeAudit(ctx, {
           userId: delivery.subjectUserId,
           event: "delivery.expired",

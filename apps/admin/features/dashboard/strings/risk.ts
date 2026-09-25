@@ -5,7 +5,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  *
  * The seven item labels are the same seven the app shows an owner about
  * themselves (`use-protection-score.ts`). Worded from the operator's side —
- * "heirs with no bundle" rather than "open the app" — but naming the same fact, so
+ * "heirs who get nothing" rather than "route something" — but naming the same fact, so
  * a support conversation and the owner's own screen cannot describe different
  * problems.
  */
@@ -20,14 +20,14 @@ export const RISK = {
   colScore: { ar: "الحماية", en: "Protection" },
   colWorstGap: { ar: "أهم نقص", en: "Worst gap" },
   colMissing: { ar: "النواقص", en: "Missing" },
-  colHeirsAtRisk: { ar: "ورثة بلا حزمة", en: "Heirs with no bundle" },
+  colHeirsAtRisk: { ar: "ورثة بلا شيء", en: "Heirs who get nothing" },
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
   itemSheet: { ar: "ورقة الاسترجاع", en: "Recovery sheet" },
   itemHeirs: { ar: "الورثة", en: "Heirs" },
   itemRouting: { ar: "التوجيه", en: "Routing" },
-  itemDelivery: { ar: "حزم التسليم", en: "Delivery bundles" },
+  itemDelivery: { ar: "التسليم", en: "Delivery" },
   itemCheckin: { ar: "نبض الحياة", en: "Check-in" },
 
   neverPrinted: { ar: "لم تُطبع الورقة", en: "Sheet never printed" },
@@ -37,8 +37,8 @@ export const RISK = {
   },
   heirsNothing: { ar: "ورثة لن يستلموا شيئاً", en: "Heirs who get nothing" },
   heirsNothingHint: {
-    ar: "لا توجد لهم حزمة إفراج، أو أنّها أقدم من آخر تغيير في التوجيه.",
-    en: "No release bundle exists for them, or it predates the last routing change.",
+    ar: "لم يُوجَّه لهم أي أصل ولا رسالة.",
+    en: "Nothing is routed to them — no asset and no message.",
   },
 
   empty: { ar: "لا خزنة معرّضة", en: "No vault at risk" },

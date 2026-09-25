@@ -13,8 +13,8 @@ import { fmtNumber } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 
 /**
- * Who this report would deliver to. Read-only: on release every heir with a
- * built bundle gets their own delivery and proves their own identity, so there
+ * Who this report would deliver to. Read-only: on release every heir with
+ * something routed gets their own delivery and proves their own identity, so there
  * is nothing to link here — only the fact a reviewer should weigh, which is
  * whether anyone would receive anything at all.
  */

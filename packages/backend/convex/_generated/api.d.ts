@@ -29,17 +29,18 @@ import type * as model_claimFlow from "../model/claimFlow.js";
 import type * as model_didit from "../model/didit.js";
 import type * as model_emailCopy from "../model/emailCopy.js";
 import type * as model_entitlements from "../model/entitlements.js";
+import type * as model_escrowSeal from "../model/escrowSeal.js";
 import type * as model_identityHash from "../model/identityHash.js";
 import type * as model_jobRuns from "../model/jobRuns.js";
 import type * as model_permissions from "../model/permissions.js";
 import type * as model_plans from "../model/plans.js";
+import type * as model_receivers from "../model/receivers.js";
 import type * as model_settings from "../model/settings.js";
 import type * as model_staff from "../model/staff.js";
 import type * as model_support from "../model/support.js";
 import type * as notifications from "../notifications.js";
 import type * as outreach from "../outreach.js";
 import type * as plans from "../plans.js";
-import type * as release from "../release.js";
 import type * as routing from "../routing.js";
 import type * as seed from "../seed.js";
 import type * as settings from "../settings.js";
@@ -51,6 +52,7 @@ import type * as support_push from "../support/push.js";
 import type * as support_retention from "../support/retention.js";
 import type * as support_threads from "../support/threads.js";
 import type * as users from "../users.js";
+import type * as vault from "../vault.js";
 
 import type {
   ApiFromModules,
@@ -80,17 +82,18 @@ declare const fullApi: ApiFromModules<{
   "model/didit": typeof model_didit;
   "model/emailCopy": typeof model_emailCopy;
   "model/entitlements": typeof model_entitlements;
+  "model/escrowSeal": typeof model_escrowSeal;
   "model/identityHash": typeof model_identityHash;
   "model/jobRuns": typeof model_jobRuns;
   "model/permissions": typeof model_permissions;
   "model/plans": typeof model_plans;
+  "model/receivers": typeof model_receivers;
   "model/settings": typeof model_settings;
   "model/staff": typeof model_staff;
   "model/support": typeof model_support;
   notifications: typeof notifications;
   outreach: typeof outreach;
   plans: typeof plans;
-  release: typeof release;
   routing: typeof routing;
   seed: typeof seed;
   settings: typeof settings;
@@ -102,6 +105,7 @@ declare const fullApi: ApiFromModules<{
   "support/retention": typeof support_retention;
   "support/threads": typeof support_threads;
   users: typeof users;
+  vault: typeof vault;
 }>;
 
 /**

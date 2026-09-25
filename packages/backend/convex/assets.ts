@@ -1,14 +1,16 @@
 // Assets.
 //
-// `dekWrappedByMk`, `labelSealed`, and every blob behind `storageIds` are
-// encrypted on the owner's device before they get here. `meta` is the only
+// `dekWrappedByMk`, `labelSealed`, `secretSealed` and every blob behind `files`
+// are encrypted on the owner's device before they get here. `meta` is the only
 // readable part and is typed to hold counts, sizes, mime types and a reminder
 // date — nothing that would tell this deployment what an asset actually
 // contains, or even what its owner calls it.
 //
-// `labelSealed` is sealed under the asset's DEK rather than MK, so it opens for
-// an heir holding a released bundle. Every function below passes it through
-// untouched; nothing here can name an asset, including the audit log.
+// The label and the secret are sealed under the asset's DEK rather than MK, so
+// they open for the routed heir at release. Every function below passes them
+// through untouched; nothing here can name an asset, including the audit log.
+// Nothing here reads or returns `escrowedDek` either — routing writes it, and
+// the release gate alone reads it.
 //
 // The subscription-lapse rule applies in exactly one place: `create`. Reads
 // and the entire release path never consult the plan, because a lapsed card
@@ -20,7 +22,7 @@
 // it. Shrinking and re-wrapping stay free at any plan.
 import { v } from "convex/values"
 
-import type { Id } from "./_generated/dataModel"
+import type { Doc, Id } from "./_generated/dataModel"
 import {
   mutation,
   query,
@@ -47,6 +49,32 @@ const assetMeta = v.object({
   mimeType: v.optional(v.string()),
   expiryRemindAt: v.optional(v.number()),
 })
+
+const assetFile = v.object({
+  storageId: v.id("_storage"),
+  thumbnailId: v.optional(v.id("_storage")),
+})
+
+/** `MAX_SECRET_BYTES` in `@workspace/crypto/secret`, plus nonce and tag. */
+const MAX_SECRET_SEALED_BYTES = 256 * 1024 + 40
+
+function assertSecretSize(secretSealed: ArrayBuffer | undefined): void {
+  if (
+    secretSealed !== undefined &&
+    secretSealed.byteLength > MAX_SECRET_SEALED_BYTES
+  ) {
+    throw new Error("An asset secret is too large")
+  }
+}
+
+/** Every blob a set of files owns, thumbnails included. */
+function blobsOf(files: Doc<"assets">["files"]): Id<"_storage">[] {
+  return files.flatMap((file) =>
+    file.thumbnailId === undefined
+      ? [file.storageId]
+      : [file.storageId, file.thumbnailId]
+  )
+}
 
 /** Upload target for already-encrypted bytes. The plaintext never leaves the device. */
 export const generateUploadUrl = mutation({
@@ -104,7 +132,7 @@ export const list = query({
         // against `heirs.list`; this deployment ships ids only.
         recipients,
         recipientCount: recipients.length,
-        fileCount: row.storageIds.length,
+        fileCount: row.files.length,
         createdAt: row._creationTime,
       }
     })
@@ -160,34 +188,50 @@ export const get = query({
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
     }
-    const urls = await Promise.all(
-      asset.storageIds.map((id) => ctx.storage.getUrl(id))
+    const files = await Promise.all(
+      asset.files.map(async (file) => ({
+        storageId: file.storageId,
+        thumbnailId: file.thumbnailId ?? null,
+        url: await ctx.storage.getUrl(file.storageId),
+        thumbnailUrl:
+          file.thumbnailId === undefined
+            ? null
+            : await ctx.storage.getUrl(file.thumbnailId),
+      }))
     )
     return {
       id: asset._id,
       type: asset.type,
       labelSealed: asset.labelSealed,
+      secretSealed: asset.secretSealed ?? null,
       meta: asset.meta,
       recipientRule: asset.recipientRule,
       dekWrappedByMk: asset.dekWrappedByMk,
-      storageIds: asset.storageIds,
-      urls,
+      files,
     }
   },
 })
 
+/**
+ * A new asset is always unrouted: routing is its own save
+ * (`routing.setRecipients`), which is where its key is escrowed.
+ */
 export const create = mutation({
   args: {
     type: assetType,
     labelSealed: v.bytes(),
+    secretSealed: v.optional(v.bytes()),
     meta: assetMeta,
     dekWrappedByMk: v.bytes(),
-    storageIds: v.array(v.id("_storage")),
-    recipientRule: v.union(v.literal("default"), v.literal("explicit")),
+    files: v.array(assetFile),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
     const now = Date.now()
+    if (args.secretSealed === undefined && args.files.length === 0) {
+      throw new Error("An asset needs a secret or a file")
+    }
+    assertSecretSize(args.secretSealed)
     // The one gate the subscription state is allowed to close. Called first and
     // on its own, so a lapsed owner is told to renew rather than to upgrade.
     assertCanAddAssets(user, now)
@@ -200,16 +244,17 @@ export const create = mutation({
       userId: user._id,
       type: args.type,
       labelSealed: args.labelSealed,
+      secretSealed: args.secretSealed,
       meta: args.meta,
       dekWrappedByMk: args.dekWrappedByMk,
-      storageIds: args.storageIds,
-      recipientRule: args.recipientRule,
+      files: args.files,
+      recipientRule: "default",
     })
     await bumpStorageUsed(ctx, user._id, args.meta.byteSize ?? 0)
     await writeAudit(ctx, {
       userId: user._id,
       event: "asset.created",
-      meta: { assetId, type: args.type, fileCount: args.storageIds.length },
+      meta: { assetId, type: args.type, fileCount: args.files.length },
     })
     return assetId
   },
@@ -221,21 +266,21 @@ export const create = mutation({
  * — a lapsed card blocks *adding* assets and nothing else, so an existing vault
  * stays fully editable.
  *
- * ## `storageIds` is a full replacement, and only the dropped blobs are deleted
+ * ## `files` is a full replacement, and only the dropped blobs are deleted
  *
- * The caller sends the complete new list. Anything on the row that is *not* in
+ * The caller sends the complete new list. Any blob on the row that is *not* in
  * that list is superseded and deleted; anything in both is retained. The set
  * difference matters — an owner adding two photos to an album of five sends
- * seven ids, five of which already exist, and deleting "the old ones" would
+ * seven files, five of which already exist, and deleting "the old ones" would
  * destroy the five they kept.
  *
  * ## The DEK is not rotated here, on purpose
  *
  * A caller re-encrypting a payload reuses the asset's existing DEK and does not
- * pass `dekWrappedByMk`. **This is a requirement, not laziness:** heir release
- * bundles carry the routed DEKs, so minting a fresh DEK on an ordinary edit
- * would silently break delivery for every heir already routed to this asset,
- * and nothing would surface it until a claim. It is safe because the sealing
+ * pass `dekWrappedByMk`. **This is a requirement, not laziness:** a routed
+ * asset's DEK is sealed to the escrow key, so minting a fresh DEK on an ordinary
+ * edit would silently break delivery for every heir already routed to this
+ * asset, and nothing would surface it until a claim. It is safe because the sealing
  * primitives derive fresh per-call randomness — see `wrap.ts` and
  * `assetHeader.ts`, whose salt exists precisely so a deliberately reused DEK
  * stays safe. `dekWrappedByMk` remains accepted for the one case that *is* a
@@ -245,9 +290,10 @@ export const update = mutation({
   args: {
     assetId: v.id("assets"),
     labelSealed: v.optional(v.bytes()),
+    secretSealed: v.optional(v.bytes()),
     meta: v.optional(assetMeta),
     dekWrappedByMk: v.optional(v.bytes()),
-    storageIds: v.optional(v.array(v.id("_storage"))),
+    files: v.optional(v.array(assetFile)),
   },
   handler: async (ctx, { assetId, ...fields }) => {
     const user = await requireUser(ctx)
@@ -255,10 +301,12 @@ export const update = mutation({
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
     }
-    if (fields.storageIds !== undefined && fields.storageIds.length === 0) {
-      // Every type stores at least one blob — the secret, or the files. An
-      // empty list is a caller bug that would leave an unopenable row behind.
-      throw new Error("An asset cannot have zero payloads")
+    assertSecretSize(fields.secretSealed)
+    const secret = fields.secretSealed ?? asset.secretSealed
+    const files = fields.files ?? asset.files
+    if (secret === undefined && files.length === 0) {
+      // A caller bug that would leave an unopenable row behind.
+      throw new Error("An asset needs a secret or a file")
     }
 
     // `ctx.db.patch` is shallow, so patching a partial `meta` would REPLACE the
@@ -288,9 +336,9 @@ export const update = mutation({
 
     // Deleted after the patch rather than before it: the row no longer points
     // at them, so there is no window in which it references a missing blob.
-    if (fields.storageIds !== undefined) {
-      const kept = new Set<string>(fields.storageIds)
-      for (const storageId of asset.storageIds) {
+    if (fields.files !== undefined) {
+      const kept = new Set<string>(blobsOf(fields.files))
+      for (const storageId of blobsOf(asset.files)) {
         if (!kept.has(storageId)) {
           await ctx.storage.delete(storageId)
         }
@@ -331,7 +379,7 @@ export const remove = mutation({
     for (const route of routes) {
       await ctx.db.delete("assetRecipients", route._id)
     }
-    for (const storageId of asset.storageIds) {
+    for (const storageId of blobsOf(asset.files)) {
       await ctx.storage.delete(storageId)
     }
     await ctx.db.delete("assets", assetId)

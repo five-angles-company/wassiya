@@ -8,12 +8,12 @@ import { discardLocalFile, readFileBytes } from "@/lib/asset-upload"
 import { makeThumbnail } from "@/lib/thumbnail"
 import { AssetEditFrame } from "@/screens/assets/detail/edit-frame"
 import { PhotosFields } from "@/screens/assets/detail/forms/photos-fields"
+import type { SourceFile } from "@/screens/assets/detail/forms/source"
 import {
   isPhotosValid,
   parsePhotos,
   photoCount,
   removePhoto,
-  toPhotosArrangement,
   toPhotosPayload,
 } from "@/screens/assets/detail/forms/photos"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
@@ -23,42 +23,34 @@ import { usePhotoThumbs } from "@/screens/assets/detail/use-photo-thumbs"
 /** ٤.٦'s ceiling, repeated because an edit adds by the same rules a create does. */
 const MAX_PHOTOS = 20
 
+/** Stable, so the thumbnail hook does not see a new list on every render. */
+const NO_FILES: SourceFile[] = []
+
 /**
  * ٤.٦ — an album, as the form that edits it.
  *
  * ## The originals are never downloaded
  *
- * `payload: false`, and only the *thumbnail* half of `storageIds` is fetched —
- * see `use-photo-thumbs.ts`. Pulling twenty full-resolution photographs back
- * over the wire so the owner can rename the album would be absurd, and the
- * thumbnails exist precisely so it never has to happen.
- *
- * ## Ordering is the whole risk here
- *
- * An album is `[...originals, ...thumbnails]` split at `meta.itemCount`. New
- * photos must land with the originals, not after the thumbnails, or an heir
- * opens the album to a grid of tiny pictures. `toPhotosArrangement` owns that,
- * and `arrange` is why `useUpdateAsset` accepts one at all.
+ * Only the thumbnails are fetched — see `use-photo-thumbs.ts`. Pulling twenty
+ * full-resolution photographs back over the wire so the owner can rename the
+ * album would be absurd, and the thumbnails exist precisely so it never has to
+ * happen.
  */
 export function PhotosEditScreen({ assetId }: { assetId: Id<"assets"> }) {
   const { t, locale } = useStrings("assets/detail")
   const { t: photos } = useStrings("assets/new/photos")
 
-  const { asset, load, save, saving, error } = useAssetEditor(assetId, {
-    payload: false,
-  })
+  const { asset, load, save, saving, error } = useAssetEditor(assetId)
   const { form, patch, dirty, commit, reset } = useEditForm(
     load.status === "ready" ? load : null,
     parsePhotos
   )
   const [preparing, setPreparing] = useState(false)
 
-  // Only the second half — the thumbnails, in photo order.
-  const thumbUrls =
-    load.status === "ready"
-      ? load.urls.slice(load.meta.itemCount ?? load.storageIds.length)
-      : []
-  const thumbs = usePhotoThumbs(asset?.dekWrappedByMk, thumbUrls)
+  const thumbs = usePhotoThumbs(
+    asset?.dekWrappedByMk,
+    load.status === "ready" ? load.files : NO_FILES
+  )
 
   async function add() {
     if (form === null) return
@@ -99,14 +91,17 @@ export function PhotosEditScreen({ assetId }: { assetId: Id<"assets"> }) {
     const ok = await save({
       ...toPhotosPayload(form, photos, (n) => fmtNum(n, locale)),
       files: [
-        ...form.added.map((photo) => ({
-          read: () => readFileBytes(photo.uri),
-          byteSize: photo.size,
-        })),
-        ...thumbUris.map((uri) => ({ read: () => readFileBytes(uri) })),
+        ...form.kept.map((file) => ({ kept: file })),
+        ...form.added.map((photo, i) => {
+          const thumbUri = thumbUris[i]
+          return {
+            read: () => readFileBytes(photo.uri),
+            readThumbnail:
+              thumbUri === undefined ? undefined : () => readFileBytes(thumbUri),
+            byteSize: photo.size,
+          }
+        }),
       ],
-      arrange: (uploaded) =>
-        toPhotosArrangement(form, uploaded) as Id<"_storage">[],
     })
 
     // The plaintext thumbnails have done their job either way.

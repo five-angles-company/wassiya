@@ -73,11 +73,13 @@ export function NewCryptoScreen() {
           ? `${t.kindExchange} · ${network}`
           : `${t.secretLabel} · ${network} · ${num(words.length)} ${WORD_UNIT[locale]}`,
       },
-      secret: isExchange
-        ? JSON.stringify({ kind, network, ...exchange })
-        : // The canonical single-spaced phrase, not what was typed — the
-          // checksum was verified against exactly these words.
-          words.join(" "),
+      secret: JSON.stringify(
+        isExchange
+          ? { kind, network, ...exchange }
+          : // The canonical single-spaced phrase, not what was typed — the
+            // checksum was verified against exactly these words.
+            { kind, network, phrase: words.join(" ") }
+      ),
       meta: isExchange ? {} : { itemCount: words.length },
     })
     if (saved) {

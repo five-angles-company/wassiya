@@ -2,10 +2,9 @@
  * ٥.٤ — a personal message to one heir.
  *
  * Sealed on this device under a fresh message key (`@workspace/crypto/message`);
- * the key is stored wrapped by MK so only the owner's devices can re-read it or
- * put it in the heir's bundle. Saving marks the heir's bundle stale, and
- * `use-release-bundles` carries the key to them on the next rebuild. The
- * plaintext never leaves the device.
+ * the key is stored wrapped by MK so the owner's devices can re-read it, and
+ * sealed to the escrow key for this heir at release. The plaintext never leaves
+ * the device.
  */
 import { useEffect, useState } from "react"
 import { useMutation, useQuery } from "convex/react"
@@ -24,6 +23,7 @@ import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import { downloadCiphertext, uploadCiphertext } from "@/lib/asset-upload"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
+import { sealForRelease } from "@/lib/escrow-key"
 import { useVault } from "@/stores/vault"
 
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
@@ -37,6 +37,7 @@ export function HeirMessageScreen() {
   const heirId = id as Id<"heirs">
   const mk = useVault((state) => state.mk)
 
+  const me = useQuery(api.users.me)
   const heirs = useQuery(api.heirs.list)
   const heir = heirs?.find((row) => row.id === heirId)
   const saved = useQuery(api.heirs.message, { heirId })
@@ -72,19 +73,28 @@ export function HeirMessageScreen() {
   }, [saved, mk, opened, t])
 
   async function save() {
-    if (mk === null) return
+    if (mk === null || me == null) return
     setBusy(true)
     setError(null)
+    // Before the key: Hermes has no Web Crypto global and `generateDek`
+    // refuses to run without one.
+    ensureWebCrypto()
     const key = generateDek()
     try {
-      ensureWebCrypto()
       const sealed = sealMessage(text.trim(), key)
       const storageId = await uploadCiphertext(sealed, await generateUploadUrl())
+      const messageKeyWrappedByMk = toArrayBuffer(wrap(key, mk))
+      const escrow = sealForRelease(messageKeyWrappedByMk, {
+        ownerId: me.id,
+        messageForHeirId: heirId,
+      })
       await setMessage({
         heirId,
         kind: "text",
         storageId: storageId as Id<"_storage">,
-        messageKeyWrappedByMk: toArrayBuffer(wrap(key, mk)),
+        messageKeyWrappedByMk,
+        messageKeyEscrowed: escrow.sealed,
+        escrowKeyId: escrow.escrowKeyId,
       })
       router.back()
     } catch {

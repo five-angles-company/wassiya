@@ -46,23 +46,18 @@ export const CLAIMS = {
   // ---- the form -------------------------------------------------------------
   newTitle: { ar: "بلاغ وفاة", en: "Report a death" },
   newIntro: {
-    ar: "نأسف لفقدك. سنطلب منك إثبات هويتك وشهادة الوفاة. بعد أن نتأكد من كل شيء، نتواصل نحن مع الورثة مباشرة — فتقديم البلاغ لا يمنحك شيئاً بنفسه.",
-    en: "We're sorry for your loss. We'll ask you to confirm who you are and to upload the death certificate. Once we've checked everything, we contact the heirs ourselves — filing the report doesn't give you anything by itself.",
+    ar: "نأسف لفقدك. سنطلب منك شهادة الوفاة. بعد أن نتأكد من كل شيء، نتواصل نحن مع الورثة مباشرة — فتقديم البلاغ لا يمنحك شيئاً بنفسه.",
+    en: "We're sorry for your loss. We'll ask you to upload the death certificate. Once we've checked everything, we contact the heirs ourselves — filing the report doesn't give you anything by itself.",
   },
   timing: {
-    ar: "نحو عشر دقائق · يمكنك الإكمال لاحقاً",
-    en: "About ten minutes · you can finish later",
+    ar: "دقائق قليلة · يمكنك الإكمال لاحقاً",
+    en: "A few minutes · you can finish later",
   },
 
   needTitle: { ar: "جهّز هذه قبل أن تبدأ", en: "Have these ready first" },
   needWhy: {
     ar: "أكثر ما يؤخّر الناس هو البدء دون شهادة الوفاة.",
     en: "What holds people up most is starting without the death certificate.",
-  },
-  needIdTitle: { ar: "هويتك", en: "Your ID" },
-  needIdBody: {
-    ar: "الهوية الوطنية أو الإقامة أو جواز السفر، وصورة لوجهك بالجوّال",
-    en: "Your national ID, iqama or passport, and a photo of your face taken on your phone",
   },
   needCertificateTitle: { ar: "شهادة الوفاة", en: "The death certificate" },
   needCertificateBody: {
@@ -83,7 +78,7 @@ export const CLAIMS = {
     ar: "كما هو على ورقة الاسترداد إن وجدتها",
     en: "As printed on their recovery sheet, if you have it",
   },
-  nameLabel: { ar: "اسمك الكامل كما في هويتك", en: "Your full name, as on your ID" },
+  nameLabel: { ar: "اسمك الكامل", en: "Your full name" },
   subjectPlaceholder: { ar: "name@example.com", en: "name@example.com" },
   contactPlaceholder: { ar: "05x xxx xxxx", en: "05x xxx xxxx" },
   contactLabel: { ar: "رقم جوّالك", en: "Your mobile number" },
@@ -106,8 +101,8 @@ export const CLAIMS = {
     en: "Wassiya is not a legal authority and doesn't divide estates — that is set by law. We deliver to each heir only what the vault's owner set aside for them by name.",
   },
   needPrivacy: {
-    ar: "نستخدم مستنداتك للتحقق من البلاغ فقط، ولا نعطيها لأي وارث.",
-    en: "We use your documents only to check this report, and never share them with any heir.",
+    ar: "نستخدم شهادة الوفاة للتحقق من البلاغ فقط، ولا نعطيها لأي وارث.",
+    en: "We use the death certificate only to check this report, and never share it with any heir.",
   },
 
   // ---- the case page ----------------------------------------------------------

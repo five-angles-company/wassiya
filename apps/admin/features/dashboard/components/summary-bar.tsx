@@ -27,9 +27,9 @@ import { fmtDate, fmtNumber, fmtTally } from "@/lib/format"
  * number exactly. Clicking a tile and counting the rows on arrival is the
  * acceptance test, and the reason the filters moved into the URL.
  *
- * **The fourth stays unlinked, deliberately.** `heirsAtRisk` is heirs whose
- * bundle is missing or older than their routing, summed across owners, while
- * `/heirs` filters on `unroutedOnly` — a different predicate. There is no URL
+ * **The fourth stays unlinked, deliberately.** `heirsAtRisk` is heirs who would
+ * receive nothing — no asset and no message — summed across owners, while
+ * `/heirs` filters on `unroutedOnly`, which ignores messages. There is no URL
  * that reproduces the number, so there is no link; its detail is the risk table
  * further down this same page.
  */
@@ -101,9 +101,9 @@ export function SummaryBar() {
       />
       <StatCard
         icon={UsersIcon}
-        label={labels.heirsNoBundle}
+        label={labels.heirsNothing}
         value={heirsAtRisk === null ? "—" : fmtNumber(heirsAtRisk, locale)}
-        hint={labels.heirsNoBundleHint}
+        hint={labels.heirsNothingHint}
         emphasis={(heirsAtRisk ?? 0) > 0}
       />
     </div>

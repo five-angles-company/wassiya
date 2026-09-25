@@ -35,7 +35,6 @@ export const CLAIMS = {
   statusLocked: { ar: "الطلب مغلق", en: "Closed" },
 
   colClaimant: { ar: "مقدّم الطلب", en: "Claimant" },
-  colIdentity: { ar: "الهوية", en: "Identity" },
   colCertificate: { ar: "شهادة الوفاة", en: "Certificate" },
   colOwner: { ar: "الاسم المُوثّق للمالك", en: "Owner's verified name" },
   colSubmitted: { ar: "تاريخ التقديم", en: "Submitted" },
@@ -46,9 +45,6 @@ export const CLAIMS = {
   },
   colActions: { ar: "إجراءات", en: "Actions" },
   colHeir: { ar: "الوريث", en: "Heir" },
-
-  // The four state labels moved to `lib/i18n/strings/identity-status.ts` —
-  // three screens read them and shared code cannot import a feature's strings.
 
   certificateView: { ar: "فتح الملف", en: "Open file" },
   certificateNone: { ar: "لم تصل", en: "Not received" },
@@ -86,16 +82,10 @@ export const CLAIMS = {
   claimantLabel: { ar: "مقدّم الطلب", en: "Claimant" },
   contactLabel: { ar: "وسيلة التواصل", en: "Contact" },
 
-  identityLive: { ar: "حالة الهوية الآن", en: "Identity now" },
-  identityStaleWarning: {
-    ar: "الحالة المسجّلة وقت التقديم كانت «{stored}» — القرار يُبنى على الحالة الحالية.",
-    en: "Recorded at submit as “{stored}” — the decision uses the current value.",
-  },
-
   heirTitle: { ar: "الورثة المستلمون", en: "Receiving heirs" },
   heirHint: {
-    ar: "بعد مدة الاعتراض يستلم كل وارث بُنيت له حزمة تسليماً خاصاً به، ويُثبت هويته بنفسه.",
-    en: "After the objection period every heir with a built bundle gets their own delivery and proves their own identity.",
+    ar: "بعد مدة الاعتراض يستلم كل وارث وُجِّه إليه شيء تسليماً خاصاً به، ويُثبت هويته بنفسه.",
+    en: "After the objection period every heir with something routed to them gets their own delivery and proves their own identity.",
   },
   heirAssets: { ar: "{n} أصل", en: "{n} assets" },
   heirNone: {
@@ -131,8 +121,8 @@ export const CLAIMS = {
     en: "{ready} of {total} heirs have received",
   },
   deliveriesNone: {
-    ar: "لم تُبنَ أي حزمة تسليم — لا شيء يصل لأي وارث.",
-    en: "No delivery bundle was built — nothing reaches any heir.",
+    ar: "لم يُوجَّه شيء لأي وارث — لا شيء يصل لأحد.",
+    en: "Nothing was routed to any heir — nothing reaches anyone.",
   },
   deliveriesOpen: { ar: "تابع التواصل مع الورثة", en: "Follow up with the heirs" },
   tabHeirs: { ar: "الورثة", en: "Heirs" },
@@ -176,10 +166,6 @@ export const CLAIMS = {
   cancel: { ar: "تراجع", en: "Cancel" },
 
   // Why an action is unavailable — the same reasons the mutation throws.
-  blockedIdentity: {
-    ar: "هوية مقدّم الطلب غير موثّقة بعد. الموافقة الآن ستغلق الطلب نهائياً بدل تمريره — انتظر التوثيق.",
-    en: "The claimant is not verified yet. Approving now would close the claim for good instead of passing it on — wait for verification.",
-  },
   blockedPastReview: {
     ar: "خرج هذا الطلب من مرحلة المراجعة.",
     en: "This claim is past the review stage.",
@@ -201,7 +187,7 @@ export const CLAIMS = {
     en: "What approving does",
   },
   approveNextBody: {
-    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وارث بُنيت له حزمة ونتواصل معه ليُثبت هويته.",
-    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every heir with a built bundle and contact each one to prove their identity.",
+    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وارث وُجِّه إليه شيء ونتواصل معه ليُثبت هويته.",
+    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every heir with something routed to them and contact each one to prove their identity.",
   },
 } as const satisfies Dictionary

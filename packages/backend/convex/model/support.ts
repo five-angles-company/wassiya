@@ -33,7 +33,7 @@ export const ATTACHMENT_TYPES = [
 ] as const
 /**
  * An attachment must have been uploaded recently. Storage ids of vault blobs
- * are not secret to an heir who received a bundle, and this — with the type
+ * are not secret to an heir who received a delivery, and this — with the type
  * allow-list, which excludes the octet-stream every ciphertext is — stops a
  * thread from being used to mint fresh URLs for someone else's files.
  */

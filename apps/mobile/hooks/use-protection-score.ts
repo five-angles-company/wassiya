@@ -55,7 +55,6 @@ export function useProtectionScore(
   const me = useQuery(api.users.me)
   const keyring = useQuery(api.keyring.get)
   const heirs = useQuery(api.heirs.list)
-  const stale = useQuery(api.routing.staleHeirs)
   const checkin = useQuery(api.checkin.get)
 
   const items = useMemo((): ProtectionEntry[] => {
@@ -87,13 +86,17 @@ export function useProtectionScore(
         // that same list, grouped and filtered, and ٤.١ now does both itself.
         href: "/assets?filter=unrouted",
       },
-      // Every heir has a delivery bundle built since their routing last
-      // changed. The device builds them itself while the vault is open, so
-      // this only stays amber if a rebuild is failing.
+      // Every heir receives something — an asset or a message. An heir who
+      // would be contacted with nothing is almost always an oversight.
       {
         id: "delivery",
         label: labels.delivery,
-        done: (heirs?.length ?? 0) > 0 && stale?.length === 0,
+        done:
+          heirs !== undefined &&
+          heirs.length > 0 &&
+          heirs.every(
+            (heir) => heir.routedAssetCount > 0 || heir.messageKind !== null
+          ),
         href: "/heirs",
       },
       {
@@ -103,7 +106,7 @@ export function useProtectionScore(
         href: "/protection/checkin",
       },
     ]
-  }, [me, keyring, heirs, stale, checkin, labels])
+  }, [me, keyring, heirs, checkin, labels])
 
   const ranked = useMemo(() => {
     let promoted = false
@@ -129,7 +132,6 @@ export function useProtectionScore(
       me === undefined ||
       keyring === undefined ||
       heirs === undefined ||
-      stale === undefined ||
       checkin === undefined,
   }
 }

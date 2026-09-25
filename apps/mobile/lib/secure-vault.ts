@@ -1,8 +1,7 @@
 /**
  * The device leg, and the only module in this app that touches key material at
  * rest. MK lives in the OS keystore behind `requireAuthentication`; it is the
- * only secret here, since K_rec is the printed sheet alone and the guardian
- * keypair left with the guardian screens (guardians are web users).
+ * only secret here, since K_rec is the printed sheet alone.
  *
  * Two consequences shape everything:
  *
@@ -27,24 +26,6 @@ import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 
 /** MK: 32 random bytes, generated on this device, never sent anywhere. */
 const MK_KEY = "wassiya.mk.v1"
-
-/**
- * Two slots used to live here and both are gone.
- *
- * `wassiya.sguardian.v1` held S_guardian, this owner's half of the old K_rec.
- * Recovery is the sheet alone now, so there is no such share to hold.
- *
- * `wassiya.guardiankey.v1` held the X25519 secret this user published when
- * acting as **someone else's** guardian. Guardians are web users; nothing in
- * the owner's app reads it any more.
- *
- * `clearVault` still deletes the first, so an install that predates this change
- * does not keep a share for a key that no longer exists. The guardian keypair is
- * deliberately *not* deleted: it is the only copy of a secret that opens shares
- * sealed to that person, and destroying it from an app that no longer uses it
- * would be an irreversible act taken on their behalf.
- */
-const LEGACY_GUARDIAN_SHARE_KEY = "wassiya.sguardian.v1"
 
 /** The unauthenticated routing probe. Contains no secret. */
 const ENROLMENT_KEY = "wassiya.enrolment.v1"
@@ -188,10 +169,6 @@ export async function readMk(
  */
 export async function clearVault(): Promise<void> {
   await SecureStore.deleteItemAsync(MK_KEY, { keychainService: VAULT_SERVICE })
-  // Still cleared, for installs that predate the single-share recovery model.
-  await SecureStore.deleteItemAsync(LEGACY_GUARDIAN_SHARE_KEY, {
-    keychainService: VAULT_SERVICE,
-  })
   await SecureStore.deleteItemAsync(ENROLMENT_KEY)
 }
 
@@ -199,9 +176,9 @@ export async function clearVault(): Promise<void> {
  * Seal a **recovered** MK into this device's keystore.
  *
  * Distinct from `generateAndStoreMk`, which mints a new key during setup. Here
- * the key already exists — it was just rebuilt from the paper share and the
- * guardian's — and generating a fresh one instead would orphan the entire
- * vault it was meant to reopen. Two functions rather than one flag, because
+ * the key already exists — it was just recovered with the paper sheet — and
+ * generating a fresh one instead would orphan the entire vault it was meant to
+ * reopen. Two functions rather than one flag, because
  * that is the sort of mistake a boolean invites.
  *
  * Idempotent by contract, not by hope: 8.1 only reaches here when
