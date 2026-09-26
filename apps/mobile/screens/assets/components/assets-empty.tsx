@@ -1,59 +1,64 @@
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { Plus } from "lucide-react-native"
+import {
+  AssetTypeGrid,
+  type AssetTypeOption,
+} from "@workspace/ui-native/components/wassiya/asset-type-grid"
+import { Lock } from "lucide-react-native"
 import { View } from "react-native"
-
-import { GhostRow } from "@/components/ghost-row"
 
 /**
  * ٤.١b — the vault with nothing in it yet.
  *
- * No illustration and no menu of suggested types. One sentence at 19px that
- * teaches how to **choose** — *"whatever your family would lose today, without
- * ever knowing it existed"* — and then the list's own skeleton in ghost form.
+ * The six types are the page: an empty vault's only job is to be filled, and
+ * showing what can go in it answers "what do I add?" and starts the form in
+ * one tap. Left-aligned and low-key — a centred empty state reads as an error,
+ * and this is a normal first day.
  *
- * Left-aligned and low in the frame. A centred empty state reads as an error;
- * this one reads as a page that simply has not been filled in yet, which is
- * exactly what it is.
+ * ⚠️ Mount it in a `gap-header` `Screen`: it returns a fragment, so the space
+ * between its blocks belongs to the parent.
  */
 export type AssetsEmptyProps = {
   title: string
   subtitle: string
-  /** The one sentence. */
+  /** The one sentence that teaches how to choose. */
   lead: string
-  addLabel: string
-  onAdd: () => void
+  startLabel: string
+  options: AssetTypeOption[]
+  /** The quiet line under the grid: nothing leaves the phone unencrypted. */
+  trustNote: string
 }
 
 export function AssetsEmpty({
   title,
   subtitle,
   lead,
-  addLabel,
-  onAdd,
+  startLabel,
+  options,
+  trustNote,
 }: AssetsEmptyProps) {
   return (
     <>
-      <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
-        {title}
-      </Text>
-      <Text className="text-[13px] opacity-55">{subtitle}</Text>
-
-      <Text className="mb-[30px] mt-8 max-w-[320px] text-[19px] leading-[1.6]">
-        {lead}
-      </Text>
-
-      {/* 32% — present enough to teach the shape, quiet enough not to be
-          mistaken for content that failed to load. */}
-      <View className="gap-row mb-auto opacity-[0.32]">
-        <GhostRow title="62%" meta="30%" />
-        <GhostRow title="48%" meta="22%" />
-        <View className="opacity-50">
-          <GhostRow title="55%" />
-        </View>
+      <View>
+        <Text className="font-heading-extrabold text-foreground mb-1.25 text-[30px] leading-[1.2]">
+          {title}
+        </Text>
+        <Text className="text-[13px] opacity-55">{subtitle}</Text>
       </View>
 
-      <PrimaryCta label={addLabel} onPress={onAdd} icon={Plus} />
+      <Text className="max-w-85 text-[17px] leading-[1.65]">{lead}</Text>
+
+      <View className="gap-3">
+        <Text variant="sectionLabel">{startLabel}</Text>
+        <AssetTypeGrid options={options} />
+      </View>
+
+      <View className="mt-auto flex-row items-center gap-2">
+        <Icon as={Lock} size={14} strokeWidth={2.5} className="text-muted-foreground" />
+        <Text variant="metaSm" className="flex-1 text-muted-foreground">
+          {trustNote}
+        </Text>
+      </View>
     </>
   )
 }

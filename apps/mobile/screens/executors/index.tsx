@@ -17,11 +17,11 @@ import { Plus, Search } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { FilterChips, type FilterChip } from "@/components/filter-chips"
-import { ListEmpty } from "@/components/list-empty"
 import { Screen } from "@/components/screen"
 import { SearchField } from "@/components/search-field"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
+import { ExecutorsEmpty } from "@/screens/executors/components/executors-empty"
 
 type ExecutorFilter = "noSheet"
 
@@ -43,12 +43,18 @@ export function ExecutorsScreen() {
   if (executors !== undefined && executors.length === 0) {
     return (
       <Screen contentClassName="gap-header">
-        <ListEmpty
+        <ExecutorsEmpty
           title={t.title}
           subtitle={t.emptySubtitle!}
           lead={t.emptyLead!}
+          steps={[
+            { label: t.emptyStep1!, body: t.emptyStep1Body! },
+            { label: t.emptyStep2!, body: t.emptyStep2Body! },
+            { label: t.emptyStep3!, body: t.emptyStep3Body! },
+          ]}
           addLabel={t.add!}
           onAdd={() => router.push("/executors/new")}
+          locale={locale}
         />
       </Screen>
     )

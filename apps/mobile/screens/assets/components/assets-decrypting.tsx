@@ -43,16 +43,16 @@ export function AssetsDecrypting({ title, subtitle }: AssetsDecryptingProps) {
 
       <View className="gap-row mb-auto">
         <View className="opacity-40">
-          <GhostRow variant="solid" title="58%" meta="26%" />
+          <GhostRow title="58%" meta="26%" />
         </View>
         <View className="opacity-[0.32]">
-          <GhostRow variant="solid" title="44%" meta="20%" />
+          <GhostRow title="44%" meta="20%" />
         </View>
         <View className="opacity-[0.22]">
-          <GhostRow variant="solid" title="52%" meta="24%" />
+          <GhostRow title="52%" meta="24%" />
         </View>
         <View className="opacity-[0.14]">
-          <GhostRow variant="solid" title="38%" meta="18%" />
+          <GhostRow title="38%" meta="18%" />
         </View>
       </View>
     </>

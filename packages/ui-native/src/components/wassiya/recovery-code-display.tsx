@@ -7,6 +7,7 @@ import { resolveLabels, type LabelledProps, type LabelSet } from '@workspace/ui-
 import { isolateLtr } from '@workspace/ui-native/lib/rtl';
 import { cn } from '@workspace/ui-native/lib/utils';
 import { TriangleAlert } from 'lucide-react-native';
+import { Fragment } from 'react';
 import type * as React from 'react';
 import { View } from 'react-native';
 
@@ -34,6 +35,8 @@ export type RecoveryCodeDisplayProps = LabelledProps<DisplayLabelKey> & {
   qrSlot?: React.ReactNode;
   /** Extra handling instruction appended to the footer. */
   handlingNote?: string;
+  /** A masked stand-in for a sheet already printed: no shown-once band. */
+  preview?: boolean;
   className?: string;
 };
 
@@ -59,15 +62,16 @@ export function RecoveryCodeDisplay({
   issuedAt,
   qrSlot,
   handlingNote,
+  preview = false,
   locale = 'ar',
   labels,
   className,
 }: RecoveryCodeDisplayProps) {
   const t = resolveLabels(LABELS, labels, locale);
 
-  const lines: string[] = [];
+  const lines: string[][] = [];
   for (let i = 0; i < groups.length; i += perLine) {
-    lines.push(groups.slice(i, i + perLine).join(' · '));
+    lines.push(groups.slice(i, i + perLine));
   }
 
   const footer = [`${t.owner}: ${ownerName}`, fmtDate(issuedAt, locale), handlingNote]
@@ -84,22 +88,34 @@ export function RecoveryCodeDisplay({
         <View className="gap-1.5">
           <Text variant="kicker">{t.codeLabel}</Text>
           <View style={{ direction: 'ltr' }}>
-            {lines.map((line) => (
-              <Text
-                key={line}
-                selectable={false}
-                className={cn(monoFont, 'font-body-semibold text-body tracking-widest')}>
-                {isolateLtr(line)}
-              </Text>
+            {lines.map((line, row) => (
+              <View key={row} className="flex-row items-center justify-between">
+                {line.map((group, index) => (
+                  <Fragment key={index}>
+                    {index > 0 ? (
+                      <Text selectable={false} className={cn(monoFont, 'text-body opacity-40')}>
+                        ·
+                      </Text>
+                    ) : null}
+                    <Text
+                      selectable={false}
+                      className={cn(monoFont, 'font-body-semibold text-body tracking-widest')}>
+                      {isolateLtr(group)}
+                    </Text>
+                  </Fragment>
+                ))}
+              </View>
             ))}
           </View>
         </View>
       </DocumentSheet>
 
-      <View className="bg-terracotta-100 flex-row gap-2.5 rounded-row p-3.5">
-        <Icon as={TriangleAlert} className="text-terracotta-800 mt-0.5 size-4.5" />
-        <Text className="text-terracotta-800 flex-1 text-meta">{t.shownOnce}</Text>
-      </View>
+      {preview ? null : (
+        <View className="bg-terracotta-100 flex-row gap-2.5 rounded-row p-3.5">
+          <Icon as={TriangleAlert} className="text-terracotta-800 mt-0.5 size-4.5" />
+          <Text className="text-terracotta-800 flex-1 text-meta">{t.shownOnce}</Text>
+        </View>
+      )}
     </View>
   );
 }

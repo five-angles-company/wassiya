@@ -44,6 +44,24 @@ export const EXECUTORS = {
     ar: "الوصي يستلم كل ما تسلّمه بعد رحيلك، وينفّذ وصيّتك. اختر شخصاً تثق به.",
     en: "Your executor receives everything you hand over after you are gone, and carries out your will. Choose someone you trust.",
   },
+  emptyStep1: { ar: "سمِّ شخصاً تثق به", en: "Name someone you trust" },
+  emptyStep1Body: {
+    ar: "باسمه ورقم جواله ورقم هويته.",
+    en: "With their name, mobile number and ID number.",
+  },
+  emptyStep2: { ar: "اطبع ورقته", en: "Print their sheet" },
+  emptyStep2Body: {
+    ar: "تفتح ما سلّمته بعد رحيلك — ولا شيء قبل ذلك.",
+    en: "It opens what you hand over after you are gone — and nothing before.",
+  },
+  emptyStep3: {
+    ar: "أعطه إياها، أو احفظها مع وصيّتك",
+    en: "Give it to them, or keep it with your will",
+  },
+  emptyStep3Body: {
+    ar: "لا نخبره بشيء قبل التحقق من الوفاة.",
+    en: "We tell them nothing until a death is verified.",
+  },
   howItWorks: {
     ar: "كل وصيّ يستلم كل ما اخترت تسليمه، وحده. لا نخبره بشيء قبل الإفراج — أعطه ورقته بنفسك، أو احفظها مع وصيّتك.",
     en: "Each executor receives everything you chose to hand over, on their own. We tell them nothing before release — give them their sheet yourself, or keep it with your will.",

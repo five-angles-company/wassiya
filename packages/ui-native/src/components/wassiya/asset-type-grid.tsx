@@ -18,7 +18,7 @@ export type AssetTypeGridProps = {
  *
  * Two columns of tiles, one per asset type, each opening its own wizard —
  * every type asks for different things, and the point of splitting them is to
- * ask only for what an heir will actually need.
+ * ask only for what an executor will actually need.
  *
  * Laid out as explicit rows of two rather than `flex-wrap`, so tiles in a row
  * stretch to equal height. Wrapping would leave a short tile next to a tall

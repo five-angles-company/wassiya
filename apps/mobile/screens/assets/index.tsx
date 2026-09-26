@@ -36,6 +36,7 @@ import { AssetTypeSheet } from "@/screens/assets/components/asset-type-sheet"
 import { AssetsDecrypting } from "@/screens/assets/components/assets-decrypting"
 import { AssetsEmpty } from "@/screens/assets/components/assets-empty"
 import { AssetsLocked } from "@/screens/assets/components/assets-locked"
+import { useAssetTypeOptions } from "@/screens/assets/components/use-asset-type-options"
 import { useAssetList, type AssetFilter } from "@/screens/assets/use-asset-list"
 
 /** Chip copy per type, keyed flat so the strings table stays flat. */
@@ -94,6 +95,11 @@ export function AssetsScreen() {
 
   const num = (n: number) => fmtNum(n, locale)
 
+  // The empty vault's tiles open the form directly; there is no sheet to close.
+  const typeOptions = useAssetTypeOptions((type) =>
+    router.push(ASSET_TYPE_ROUTE[type])
+  )
+
   const addSheet = useRef<TrueSheet>(null)
   const openAdd = () => void addSheet.current?.present()
 
@@ -140,19 +146,13 @@ export function AssetsScreen() {
   if (total === 0) {
     return (
       <Screen contentClassName="gap-header">
-        {/* The empty vault keeps a full-width button: it is the only action on
-            an otherwise blank screen, and a round button in the corner of one
-            reads as an afterthought rather than an invitation. */}
         <AssetsEmpty
           title={t.vaultTitle!}
           subtitle={t.emptySubtitle!}
           lead={t.emptyLead!}
-          addLabel={t.addAsset!}
-          onAdd={openAdd}
-        />
-        <AssetTypeSheet
-          ref={addSheet}
-          onSelect={(type) => void chooseType(type)}
+          startLabel={t.emptyStart!}
+          options={typeOptions}
+          trustNote={t.emptyTrust!}
         />
       </Screen>
     )

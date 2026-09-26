@@ -16,7 +16,7 @@ import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { DEFAULT_COUNTRY, findCountry } from "@/lib/countries"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
-import { RequirementRow } from "@/screens/setup/kyc/components/requirement-row"
+import { NumberedRow } from "@/components/numbered-row"
 
 /**
  * 2.1 — the blocking identity gate.
@@ -98,13 +98,13 @@ export function KycScreen() {
       ) : null}
 
       <View className="mb-5 gap-3">
-        <RequirementRow
+        <NumberedRow
           index={1}
           locale={locale}
           label={documents?.[locale] ?? t.requirementDocument}
         />
-        <RequirementRow index={2} locale={locale} label={t.requirementSelfie} />
-        <RequirementRow index={3} locale={locale} label={t.requirementTime} />
+        <NumberedRow index={2} locale={locale} label={t.requirementSelfie} />
+        <NumberedRow index={3} locale={locale} label={t.requirementTime} />
       </View>
 
       <AlertBanner variant="security" description={t.blockingNotice} />

@@ -111,6 +111,11 @@ export const ASSETS = {
 
   // ── Empty (v2) ──────────────────────────────────────────────────────────
   emptySubtitle: { ar: "جاهزة وفارغة", en: "Ready and empty" },
+  emptyStart: { ar: "ابدأ بواحد من هذه", en: "Start with one of these" },
+  emptyTrust: {
+    ar: "يُشفَّر كل شيء على جهازك قبل أن يُحفظ — لا نستطيع نحن قراءته.",
+    en: "Everything is encrypted on your phone before it is saved — we cannot read it.",
+  },
   // One sentence that teaches how to *choose*, in place of an illustration and
   // a menu of suggested types.
   emptyLead: {

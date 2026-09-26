@@ -4,7 +4,8 @@ import { Sheet } from "@workspace/ui-native/components/wassiya/sheet"
 import type * as React from "react"
 
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPES, ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
+import type { AssetType } from "@/lib/asset-types"
+import { useAssetTypeOptions } from "@/screens/assets/components/use-asset-type-options"
 
 /**
  * ٤.٢ — "ماذا تضيف؟"
@@ -17,11 +18,9 @@ import { ASSET_TYPES, ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
  * close the grid cleanly; an odd count would stretch the last across the full
  * width and read as a different kind of thing.
  *
- * **Every disc is sand, deliberately.** `ASSET_TYPE_TONE` exists and is not used
- * here for the same reason the vault list does not use it: terracotta means
- * "needs you" on Home and in the list, and a terracotta "محفظة رقمية" would read
- * as urgent when nothing on this screen is. The icons tell the six apart; colour
- * stays free to mean one thing.
+ * **Every disc is sand, deliberately.** Terracotta means "needs you" on Home
+ * and in the list, and a terracotta "محفظة رقمية" would read as urgent when
+ * nothing on this screen is.
  *
  * Three content-hugging rows on the default `'auto'` detent, and deliberately
  * **not** `scrollable` — a scroller inflates the sheet to roughly nine-tenths of
@@ -31,45 +30,18 @@ export type AssetTypeSheetProps = {
   ref?: React.Ref<TrueSheet>
   /**
    * Receives the type **and its localised name**, because every caller so far
-   * needs the label for its own copy, and re-deriving it from the type means a
-   * second lookup table that can disagree with this one.
+   * needs the label for its own copy.
    */
   onSelect: (type: AssetType, label: string) => void
 }
 
 export function AssetTypeSheet({ ref, onSelect }: AssetTypeSheetProps) {
   const { t } = useStrings("assets/new-sheet")
+  const options = useAssetTypeOptions(onSelect)
 
   return (
     <Sheet ref={ref} title={t.pickTitle} contentClassName="pb-7">
-      <AssetTypeGrid
-        options={ASSET_TYPES.map((type) => ({
-          id: type,
-          icon: ASSET_TYPE_ICON[type],
-          title: t[NAME_KEY[type]]!,
-          description: t[EXAMPLES_KEY[type]]!,
-          onPress: () => onSelect(type, t[NAME_KEY[type]]!),
-        }))}
-      />
+      <AssetTypeGrid options={options} />
     </Sheet>
   )
 }
-
-/** Keyed flat, so the strings table stays flat. */
-const NAME_KEY = {
-  crypto: "cryptoName",
-  bank: "bankName",
-  document: "documentName",
-  photos: "photosName",
-  digital: "digitalName",
-  note: "noteName",
-} as const satisfies Record<AssetType, string>
-
-const EXAMPLES_KEY = {
-  crypto: "cryptoExamples",
-  bank: "bankExamples",
-  document: "documentExamples",
-  photos: "photosExamples",
-  digital: "digitalExamples",
-  note: "noteExamples",
-} as const satisfies Record<AssetType, string>

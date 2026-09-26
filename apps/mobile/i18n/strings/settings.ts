@@ -142,8 +142,6 @@ export const SETTINGS = {
     en: "This creates an entirely new code. The old sheet stops working the moment the new one is saved — destroy it once you have printed the replacement.",
   },
   sheetReissueAction: { ar: "اطبع وثيقة جديدة", en: "Print a new document" },
-  sheetPrintedOn: { ar: "طُبعت في", en: "Printed on" },
-  sheetCurrentVersion: { ar: "النسخة الحالية", en: "Current version" },
 
   rowAudit: { ar: "سجل النشاط", en: "Activity log" },
   rowGuardian: { ar: "الوصي", en: "Guardian" },
