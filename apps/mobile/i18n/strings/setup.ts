@@ -3,7 +3,7 @@
  * constraints it has to honour:
  *
  *  - **Two keys, two jobs, not interchangeable.** The device key opens the vault
- *    daily and the printed sheet opens it when the device is gone. Heirs never
+ *    daily and the printed sheet opens it when the device is gone. Executors never
  *    open it: they receive only what is routed to them, after a verified death.
  *    Copy implying a third key contradicts the security model, not its tone.
  *  - `kyc.blockingNotice` is the promise that no vault exists before identity
@@ -18,8 +18,8 @@ export const KYC = {
 
   title: { ar: "لنتحقق من هويتك", en: "Let's verify your identity" },
   body: {
-    ar: "التحقق يربط الخزنة باسمك الرسمي. هذا ما يضمن أن ورثتك — ولا أحد سواهم — يستلمون إرثك.",
-    en: "Verification binds the vault to your legal name. That is what guarantees your heirs — and no one else — receive your legacy.",
+    ar: "التحقق يربط الخزنة باسمك الرسمي. هذا ما يضمن أن أوصياءك — ولا أحد سواهم — يستلمون ما تركته.",
+    en: "Verification binds the vault to your legal name. That is what guarantees your executors — and no one else — receive what you leave.",
   },
   requirementDocument: {
     ar: "الهوية الوطنية أو الإقامة أو جواز السفر",
@@ -127,12 +127,12 @@ export const EXPLAINER = {
     ar: "تفتح خزنتك إذا فقدت جهازك. من يحملها يفتحها — فاحفظها كما تحفظ وصيّتك",
     en: "Opens your vault if you lose your device. Whoever holds it can open it — keep it as you keep your will",
   },
-  // Deliberately not a third key: heirs never open this vault. Naming them here
-  // is what makes routing, later, feel like the point rather than a chore.
-  heirsTitle: { ar: "وورثتك، لاحقاً", en: "And your heirs, later" },
-  heirsBody: {
-    ar: "لا يفتحون خزنتك أبداً — يستلم كلٌّ منهم ما خصّصته له فقط، بعد التحقّق من الوفاة ومن هويته",
-    en: "They never open your vault — each receives only what you route to them, after your death and their identity are verified",
+  // Not a third key to the vault: an executor sheet opens only what was handed
+  // over, and only after a verified death.
+  executorsTitle: { ar: "وأوصياؤك، لاحقاً", en: "And your executors, later" },
+  executorsBody: {
+    ar: "لا يفتحون خزنتك أبداً — يستلمون ما اخترت تسليمه فقط، بعد التحقّق من الوفاة ومن هويتهم",
+    en: "They never open your vault — they receive only what you choose to hand over, after your death and their identity are verified",
   },
   cta: { ar: "فهمت، أكمل", en: "Got it, continue" },
 } satisfies LabelSet<string>
@@ -296,15 +296,15 @@ export const SETUP_COMPLETE = {
     ar: "وثيقة الاسترداد لم تُطبع",
     en: "Recovery sheet not printed",
   },
-  heirs: { ar: "الورثة", en: "Heirs" },
+  executors: { ar: "الأوصياء", en: "Executors" },
   checkIn: { ar: "التحقق من الحياة", en: "Life check-in" },
   needed: { ar: "مطلوب", en: "needed" },
   later: { ar: "لاحقاً", en: "later" },
   warning: {
-    ar: "خزنة بلا ورثة لا تُسلّم شيئاً. أضف وارثاً واحداً على الأقل لتكتمل السلسلة.",
-    en: "A vault with no heirs delivers nothing. Add at least one heir to close the chain.",
+    ar: "خزنة بلا وصيّ لا تُسلّم شيئاً. سمِّ وصياً واحداً على الأقل واطبع له ورقته.",
+    en: "A vault with no executor delivers nothing. Name at least one executor and print their sheet.",
   },
-  addHeirs: { ar: "أضف الورثة", en: "Add heirs" },
+  addExecutors: { ar: "سمِّ وصياً", en: "Name an executor" },
   addAsset: { ar: "أضف أول أصل", en: "Add my first asset" },
 } satisfies LabelSet<string>
 

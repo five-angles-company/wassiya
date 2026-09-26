@@ -137,7 +137,41 @@ export const get = query({
       paperPrintedAt: keyring.paperPrintedAt ?? null,
       paperUsedAt: keyring.paperUsedAt ?? null,
       rotatedAt: keyring.rotatedAt,
+      /** The owner's copy of the release key, under MK. */
+      releaseKeyWrappedByMk: closed
+        ? null
+        : (keyring.releaseKeyWrappedByMk ?? null),
     }
+  },
+})
+
+/**
+ * Store the owner's release key, once. It is never replaced: every handover
+ * wrapper and every executor sheet is built on it, and a second key would
+ * strand them all. A phone that finds one already stored uses that one.
+ */
+export const setReleaseKey = mutation({
+  args: { releaseKeyWrappedByMk: v.bytes() },
+  handler: async (ctx, { releaseKeyWrappedByMk }) => {
+    const user = await requireUser(ctx)
+    if (user.vaultClosedAt !== undefined) {
+      throw new Error("This vault was closed after a verified death")
+    }
+    const keyring = await keyringFor(ctx, user._id)
+    if (keyring === null) throw new Error("Not found")
+    if (keyring.releaseKeyWrappedByMk !== undefined) {
+      throw new Error("A release key is already stored")
+    }
+    if (releaseKeyWrappedByMk.byteLength !== 72) {
+      throw new Error("Malformed release key wrapper")
+    }
+    await ctx.db.patch("keyring", keyring._id, { releaseKeyWrappedByMk })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "keyring.release_key_set",
+      meta: {},
+    })
+    return null
   },
 })
 

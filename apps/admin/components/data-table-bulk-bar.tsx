@@ -44,8 +44,8 @@ type DataTableBulkBarProps<TData extends RowData> = {
  * Both built-in actions read. Copy puts the ids on the clipboard for pasting
  * into a ticket; export writes a CSV of the selection. Neither touches the
  * deployment, which is the point: this console reviews inheritance claims, and
- * a mis-aimed bulk write here is not an inconvenience but an heir permanently
- * locked out of an estate.
+ * a mis-aimed bulk write here is not an inconvenience but an executor
+ * permanently locked out of an estate.
  */
 export function DataTableBulkBar<TData extends RowData>({
   table,

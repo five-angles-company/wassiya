@@ -8,7 +8,7 @@
  * editing it safe; both are shown here so the difference is visible in one
  * place.
  *
- * Changing the country re-validates every heir's phone against it, so a number
+ * Changing the country re-validates every executor's phone against it, so a number
  * stored under the old one starts failing `checkPhone`. The affected count is
  * shown before the change, not discovered afterwards.
  */
@@ -38,7 +38,7 @@ export function ProfileScreen() {
   const { t: common } = useStrings("common")
 
   const me = useQuery(api.users.me)
-  const heirs = useQuery(api.heirs.list)
+  const executors = useQuery(api.executors.list)
   const saveProfile = useMutation(api.users.saveProfile)
   const { user } = useUser()
 
@@ -61,17 +61,18 @@ export function ProfileScreen() {
     value.country !== initial.country
 
   /**
-   * Heirs whose stored number would stop validating under the chosen country.
+   * Executors whose stored number would stop validating under the chosen country.
    *
    * Counted against the *draft* country, so the warning appears the moment the
    * picker changes and disappears if it is changed back — it is a preview of
    * the consequence, not a report on what already happened.
    */
-  const strandedHeirs =
+  const strandedExecutors =
     value.country === initial.country
       ? 0
-      : (heirs ?? []).filter(
-          (heir) => checkPhone(heir.phone, value.country).status !== "valid"
+      : (executors ?? []).filter(
+          (executor) =>
+            checkPhone(executor.phone, value.country).status !== "valid"
         ).length
 
   async function save() {
@@ -126,12 +127,12 @@ export function ProfileScreen() {
           locale={locale}
         />
 
-        {strandedHeirs > 0 ? (
+        {strandedExecutors > 0 ? (
           <AlertBanner
             variant="notice"
-            description={t.countryHeirsWarning!.replace(
+            description={t.countryExecutorsWarning!.replace(
               "{n}",
-              fmtNum(strandedHeirs, locale)
+              fmtNum(strandedExecutors, locale)
             )}
           />
         ) : null}

@@ -29,16 +29,13 @@ import { useStrings } from "@/i18n/use-strings"
 const SECURITY_EVENTS = new Set([
   "asset.revealed",
   "keyring.rotated",
-  "keyring.guardian_attached",
-  "guardian.revoked",
   "device.revoked",
   "claim.submitted",
   "claim.blocked_by_lockout",
-  "release.server_share_released",
-  // A spent sheet and a guardian approval are the fingerprints a recovery
-  // leaves. If the owner did not do this, these are the two rows that say so.
+  // A spent sheet and a newly printed executor sheet are the rows that say so
+  // if the owner did not do it.
   "keyring.paper_used",
-  "guardian.recovery_approved",
+  "executor.sheet_printed",
   "claim.released",
 ])
 
@@ -95,13 +92,13 @@ function labelFor(event: string, t: Record<string, string>): string {
     "asset.revealed": t.assetRevealed!,
     "keyring.created": t.keyringCreated!,
     "keyring.rotated": t.keyringRotated!,
-    "keyring.guardian_attached": t.guardianAttached!,
-    "guardian.invited": t.guardianInvited!,
-    "guardian.accepted": t.guardianAccepted!,
-    "guardian.revoked": t.guardianRevoked!,
-    "heir.added": t.heirAdded!,
-    "routing.changed": t.routingChanged!,
-    "release.bundles_rebuilt": t.bundlesRebuilt!,
+    "keyring.release_key_set": t.releaseKeySet!,
+    "asset.handover_changed": t.handoverChanged!,
+    "executor.added": t.executorAdded!,
+    "executor.updated": t.executorUpdated!,
+    "executor.removed": t.executorRemoved!,
+    "executor.sheet_printed": t.executorSheetPrinted!,
+    "executor.check_confirmed": t.executorsChecked!,
     "checkin.confirmed": t.checkinConfirmed!,
     "claim.submitted": t.claimSubmitted!,
     "claim.vetoed": t.claimVetoed!,
@@ -110,20 +107,13 @@ function labelFor(event: string, t: Record<string, string>): string {
     "profile.saved": t.profileSaved!,
     "keyring.paper_printed": t.paperPrinted!,
     "keyring.paper_used": t.paperUsed!,
-    "guardian.recovery_approved": t.recoveryApproved!,
-    "claim.heir_linked": t.claimHeirLinked!,
     "claim.certificate_attached": t.claimCertificate!,
     "claim.name_match_set": t.claimNameMatch!,
-    "claim.guardian_confirmed": t.claimGuardianConfirmed!,
     "claim.released": t.claimReleased!,
-    "release.server_share_released": t.serverShareReleased!,
-    "release.guardian_share_handed_over": t.guardianHandedOver!,
+    "release.delivery_opened": t.deliveryOpened!,
     "checkin.configured": t.checkinConfigured!,
     "checkin.snoozed": t.checkinSnoozed!,
     "checkin.escalated": t.checkinEscalated!,
-    "heir.updated": t.heirUpdated!,
-    "heir.removed": t.heirRemoved!,
-    "heir.message_set": t.heirMessageSet!,
     "identity.session_started": t.identityStarted!,
     "identity.webhook": t.identityResult!,
     "billing.plan_set": t.planSet!,
@@ -134,7 +124,7 @@ function labelFor(event: string, t: Record<string, string>): string {
 function iconFor(event: string) {
   if (event === "asset.revealed") return Eye
   if (event.startsWith("asset")) return FileText
-  if (event.startsWith("guardian") || event.startsWith("keyring")) return ShieldCheck
-  if (event.startsWith("heir") || event.startsWith("claim")) return Users
+  if (event.startsWith("keyring")) return ShieldCheck
+  if (event.startsWith("executor") || event.startsWith("claim")) return Users
   return KeyRound
 }

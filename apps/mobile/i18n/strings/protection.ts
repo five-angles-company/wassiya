@@ -25,8 +25,7 @@ export const PROTECTION = {
   itemIdentity: { ar: "التحقق من الهوية", en: "Identity verified" },
   itemKey: { ar: "مفتاح الخزنة", en: "Vault key" },
   itemSheet: { ar: "وثيقة الاسترداد مطبوعة", en: "Recovery sheet printed" },
-  itemHeirs: { ar: "الورثة", en: "Heirs" },
-  itemRouting: { ar: "توجيه الأصول", en: "Asset routing" },
+  itemExecutors: { ar: "الأوصياء", en: "Executors" },
   itemCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
 
   needed: { ar: "مطلوب", en: "Needed" },
@@ -102,8 +101,8 @@ export const CLAIM_VETO = {
     en: "{name} has reported your death. If you are reading this, you are alive: confirm below with your fingerprint and the report stops at once.",
   },
   deadline: {
-    ar: "إن لم يتوقف قبل {date}، نتواصل مع ورثتك ويستلم كلٌّ منهم ما خُصّص له وحده.",
-    en: "If it is not stopped before {date}, we contact your heirs and each receives only what was routed to them.",
+    ar: "إن لم يتوقف قبل {date}، نتواصل مع أوصيائك، ويستلمون ما اخترت تسليمه فقط.",
+    en: "If it is not stopped before {date}, we contact your executors, and they receive only what you chose to hand over.",
   },
   stopped: {
     ar: "أُوقف البلاغ. لن يُسلَّم شيء، ولن يستطيع المُبلِّغ المحاولة مجدداً لمدة ٩٠ يوماً.",

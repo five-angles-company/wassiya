@@ -1,7 +1,7 @@
 // The death-report state machine, written out before it is implemented.
 //
 // state × trigger → next state, with the guard that must hold. A report is
-// about the owner; what each heir receives is a `deliveries` row, created by
+// about the owner; what each executor receives is a `deliveries` row, created by
 // `advance` when a report reaches `released`. The release action re-reads both
 // and re-checks everything itself rather than trusting whoever called it.
 //
@@ -90,7 +90,7 @@ export function nameMatchOutcome(nameMatch: boolean): ClaimStatus {
   return nameMatch ? "awaiting_veto" : "locked"
 }
 
-/** Days an heir can open a delivery after release, before the vault is deleted. */
+/** Days an executor can open a delivery after release, before the vault is deleted. */
 export const DELIVERY_WINDOW_DAYS = 365
 
 /** Why a verdict cannot be given yet. `null` means it can. */
@@ -99,7 +99,7 @@ export type NameMatchBlock = "past-review"
 /**
  * Whether an admin may record a verdict on this claim right now: once, while it
  * is `submitted`. The reporter's own identity is not a condition — they
- * receive nothing, and the certificate, the veto window and each heir's own
+ * receive nothing, and the certificate, the veto window and each executor's own
  * verification guard everything that matters.
  */
 export function nameMatchBlockedReason(

@@ -1,7 +1,8 @@
 // The end of a released vault. One year after release, when the owner's last
 // delivery closes, everything the vault held is deleted — every asset with its
-// files and escrowed key, every routing row, every personal message, and the
-// recovery wrapper. After it nobody, Wassiya included, can open any of it.
+// files and handover wrapper, every executor with their contact details, ID
+// hash and sheet wrapper, and the recovery wrapper with the release key. After
+// it nobody, Wassiya included, can open any of it.
 //
 // Batched and self-scheduling, like the other sweeps: a vault can hold hundreds
 // of assets with dozens of blobs each, more than one mutation may delete.
@@ -22,13 +23,6 @@ export const purge = internalMutation({
       .take(ASSET_BATCH)
 
     for (const asset of assets) {
-      const routes = await ctx.db
-        .query("assetRecipients")
-        .withIndex("by_assetId", (q) => q.eq("assetId", asset._id))
-        .take(200)
-      for (const route of routes) {
-        await ctx.db.delete("assetRecipients", route._id)
-      }
       for (const file of asset.files) {
         await ctx.storage.delete(file.storageId)
         if (file.thumbnailId !== undefined) {
@@ -43,14 +37,15 @@ export const purge = internalMutation({
       return { done: false }
     }
 
-    const heirs = await ctx.db
-      .query("heirs")
+    // The executors go too: their personal details have no purpose once the
+    // handover is over. Deliveries keep their ids and read a missing executor
+    // as no contact.
+    const executors = await ctx.db
+      .query("executors")
       .withIndex("by_userId", (q) => q.eq("userId", ownerId))
-      .take(100)
-    for (const heir of heirs) {
-      if (heir.messageMeta === undefined) continue
-      await ctx.storage.delete(heir.messageMeta.storageId)
-      await ctx.db.patch("heirs", heir._id, { messageMeta: undefined })
+      .take(20)
+    for (const executor of executors) {
+      await ctx.db.delete("executors", executor._id)
     }
 
     const keyring = await ctx.db

@@ -25,10 +25,8 @@ import { useStrings } from "@/i18n/use-strings"
  * `/protection/checkin` is a pushed destination reached from the tab that owns
  * it.
  *
- * خطتي owns **people you name to receive**, and nothing else. Routing is asset
- * division and belongs to ٤.١, which groups by type and filters by "بلا مستلم".
- * (The original ٤.١ design drew five tabs — the owner directed a ground-up
- * redesign that supersedes it; see `.claude/plans/`.)
+ * الأوصياء owns **the people you name to receive**, and nothing else. Whether an
+ * asset is handed over is decided on the asset itself.
  *
  * This layout gates only on having a session. The vault-readiness gate lives on
  * the splash, so a signed-in user whose evidence says setup is unfinished never
@@ -102,11 +100,11 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="heirs"
+        name="executors"
         options={{
-          title: t.heirs,
+          title: t.executors,
           tabBarLabel: ({ focused }) => (
-            <TabBarLabel label={t.heirs} focused={focused} />
+            <TabBarLabel label={t.executors} focused={focused} />
           ),
           tabBarIcon: ({ focused }) => (
             <TabBarIcon icon={Users} focused={focused} />

@@ -6,7 +6,7 @@
  *   - **It says what the plan unlocks, never what the owner risks losing.**
  *     The lapse banner on ٩.٤ leads with what still works for the same reason:
  *     a vault about death must never be sold with fear, and a line implying
- *     heirs could lose access would be untrue as well as cruel.
+ *     executors could lose access would be untrue as well as cruel.
  *   - **No number is written here.** Every limit arrives as `{free}` or
  *     `{paid}` and is filled from `plans.current`. The catalogue is editable
  *     from the console, so a sentence reading "٥٠٠ م.ب" would be a lie the
@@ -31,10 +31,10 @@ export const PAYWALL = {
     en: "Your current plan gives you {free}. The annual plan raises it to {paid}.",
   },
 
-  heirsTitle: { ar: "وصلت إلى حدّ الورثة", en: "You have reached your heir limit" },
-  heirsBody: {
-    ar: "خطتك الحالية تتيح {free}. الخطة السنوية تتيح لك تسمية كل من تريد أن يصله شيء.",
-    en: "Your current plan allows {free}. The annual plan lets you name everyone you want something to reach.",
+  executorsTitle: { ar: "وصلت إلى حدّ الأوصياء", en: "You have reached your executor limit" },
+  executorsBody: {
+    ar: "خطتك الحالية تتيح {free}. الخطة السنوية تتيح لك تسمية أكثر من وصيّ، فلا يتوقف التسليم على ورقة واحدة.",
+    en: "Your current plan allows {free}. The annual plan lets you name more than one executor, so the handover never rests on a single sheet.",
   },
 
   photosTitle: { ar: "الصور مع الخطة السنوية", en: "Photos come with the annual plan" },
@@ -51,22 +51,22 @@ export const PAYWALL = {
 
   lapsedTitle: { ar: "اشتراكك انتهى", en: "Your subscription has ended" },
   lapsedBody: {
-    ar: "خزنتك تبقى مقروءة وتسليم الورثة يعمل كما هو. التجديد يعيد الإضافة فقط.",
-    en: "Your vault stays readable and heir delivery still works. Renewing only brings adding back.",
+    ar: "خزنتك تبقى مقروءة والتسليم لأوصيائك يعمل كما هو. التجديد يعيد الإضافة فقط.",
+    en: "Your vault stays readable and delivery to your executors still works. Renewing only brings adding back.",
   },
 
   /** What the annual plan is, in four lines. Order is deliberate: value first. */
   unlocksTitle: { ar: "الخطة السنوية", en: "The annual plan" },
   unlockAssets: { ar: "أصول بلا حد", en: "Unlimited assets" },
   unlockAssetsCount: { ar: "{paid} أصل", en: "{paid} assets" },
-  unlockHeirs: { ar: "ورثة بلا حد", en: "Unlimited heirs" },
-  unlockHeirsCount: { ar: "{paid} ورثة", en: "{paid} heirs" },
+  unlockExecutors: { ar: "أوصياء بلا حد", en: "Unlimited executors" },
+  unlockExecutorsCount: { ar: "{paid} أوصياء", en: "{paid} executors" },
   unlockPhotos: { ar: "الصور والملفات الكبيرة", en: "Photos and large files" },
   unlockStorage: { ar: "{paid} مساحة مشفّرة", en: "{paid} of encrypted storage" },
 
   /** Counts, where a limit is a number of things rather than a size. */
   assetsCount: { ar: "{n} أصول", en: "{n} assets" },
-  heirsCount: { ar: "{n} ورثة", en: "{n} heirs" },
+  executorsCount: { ar: "{n} أوصياء", en: "{n} executors" },
   unlimited: { ar: "عدداً غير محدود", en: "an unlimited number" },
   unitMb: { ar: "م.ب", en: "MB" },
   unitGb: { ar: "غ.ب", en: "GB" },

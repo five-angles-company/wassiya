@@ -30,9 +30,10 @@ script, the consent-gated analytics.
 - `REVIEW-NOTES.md` beside the legal files is for the lawyer and is not published.
   `draft: true` in a legal file shows the "pending legal review" banner; only a
   sign-off removes it.
-- The hero picture is `src/components/mock/HeirLetter.astro` — one heir's sealed
-  share, in the recovery sheet's paper, fanned over two blank letters. The share
-  images in `public/og/` show it too, so changing it means regenerating those.
+- The hero picture is `src/components/mock/ExecutorSheet.astro` — the sheet the
+  owner prints for their executor, in the recovery sheet's paper, fanned over
+  two blank sheets. The share images in `public/og/` show it too, so changing it
+  means regenerating those.
   The product pictures are drawn fragments in
   `src/components/mock/`, built from the app's tokens and strings; when the
   app's look changes, they change with it. Sample names only.
@@ -47,11 +48,16 @@ script, the consent-gated analytics.
   them. All motion is CSS and stops under reduced motion.
 
 ## Copy rules (from AGENTS.md)
-- **The escrow trade is stated, never hidden.** "Not even us" is true of the vault
-  while its owner lives; what is routed to heirs Wassiya can open at release.
+- **Wassiya holds no key, and the price of that is stated, never hidden.** "Not
+  even us" holds before and after death: the executor opens what was handed over
+  with their own sheet, or the owner's recovery sheet. If every sheet is lost,
+  nobody can open it — never write that Wassiya can open, recover or reset
+  anything.
+- **Delivery goes to the executor(s)**, who carry out the will — never "to the
+  people you chose". Arabic: الوصي / الأوصياء, never وريث / ورثة for this role.
 - **No price, ever**, and no plan limit typed as text — limits come only from
   the build-time fetch below.
-- **No "am I an heir?" path.** Every heir is silent.
+- **No "am I an executor?" path.** Every executor is silent.
 - Links into the web app go through `webUrl(locale, path)`, which appends
   `?lang=` — `apps/web/proxy.ts` turns that into the web app's locale cookie.
 

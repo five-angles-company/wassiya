@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url"
 
 const nextConfig: NextConfig = {
   // `@workspace/crypto` ships TypeScript source with no build step, like the
-  // other two — the heir box decrypts in the browser.
+  // other two — the executor's handover decrypts in the browser.
   transpilePackages: ["@workspace/ui", "@workspace/backend", "@workspace/crypto"],
   // Emit a self-contained server (.next/standalone) for a minimal Docker image.
   output: "standalone",
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
    * is cached by browsers in a way that is painful to take back mid-rework.
    *
    * They matter more than usual here because the two links that reach this app
-   * arrive by **message** — a report's case page and an heir's delivery — and mail
+   * arrive by **message** — a report's case page and an executor's delivery — and mail
    * sits in an inbox for months. A link sent today must still work after the
    * route under it moves.
    */

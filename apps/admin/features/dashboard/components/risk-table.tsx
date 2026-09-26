@@ -24,7 +24,7 @@ import { fmtNumber } from "@/lib/format"
 const PREVIEW_ROWS = 5
 
 /**
- * The seven protection items, labelled.
+ * The six protection items, labelled.
  *
  * Keys match `admin.risk`'s `missing` array exactly, which in turn matches
  * `apps/mobile/hooks/use-protection-score.ts`. If a key ever fails to resolve
@@ -37,8 +37,7 @@ function itemLabel(key: string, locale: Locale): string {
     identity: labels.itemIdentity,
     key: labels.itemKey,
     sheet: labels.itemSheet,
-    heirs: labels.itemHeirs,
-    routing: labels.itemRouting,
+    executors: labels.itemExecutors,
     delivery: labels.itemDelivery,
     checkin: labels.itemCheckin,
   }
@@ -58,9 +57,10 @@ function Fraction({ top, bottom }: { top: string; bottom: string }) {
  * The five owners furthest from protected.
  *
  * `admin.risk` already returns them worst-first — fewest items earned, then most
- * heirs who would receive nothing — so this takes the head of that list rather
- * than re-sorting. Five, because the panel's job is to say *whether* there is a
- * problem and who is worst; working through forty is a different screen.
+ * executors without a printed sheet — so this takes the head of that list
+ * rather than re-sorting. Five, because the panel's job is to say *whether*
+ * there is a problem and who is worst; working through forty is a different
+ * screen.
  */
 export function RiskTable({ risk }: { risk: RiskData | undefined }) {
   const locale = useLocale()
@@ -105,7 +105,7 @@ export function RiskTable({ risk }: { risk: RiskData | undefined }) {
               <TableHead className="text-start">{labels.colWorstGap}</TableHead>
               <TableHead className="text-start">{labels.colMissing}</TableHead>
               <TableHead className="text-start">
-                {labels.colHeirsAtRisk}
+                {labels.colExecutorsWithoutSheet}
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -151,12 +151,12 @@ export function RiskTable({ risk }: { risk: RiskData | undefined }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {row.heirsAtRisk === 0 ? (
+                  {row.executorsWithoutSheet === 0 ? (
                     "—"
                   ) : (
                     <Fraction
-                      top={fmtNumber(row.heirsAtRisk, locale)}
-                      bottom={fmtNumber(row.heirCount, locale)}
+                      top={fmtNumber(row.executorsWithoutSheet, locale)}
+                      bottom={fmtNumber(row.executorCount, locale)}
                     />
                   )}
                 </TableCell>

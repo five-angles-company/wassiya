@@ -14,27 +14,27 @@ import { Placeholder } from "@/components/placeholder"
 import { RecordNotFound } from "@/components/record-not-found"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
-import { HeirBox } from "@/features/box/components/heir-box"
-import { DELIVERY } from "@/features/box/strings/delivery"
+import { ExecutorHandover } from "@/features/handover/components/executor-handover"
+import { DELIVERY } from "@/features/handover/strings/delivery"
 
 /**
- * One delivery, for the heir it is bound to. Every state says what happens
+ * One delivery, for the executor it is bound to. Every state says what happens
  * next and whether anything is needed from them.
  *
  * `identity` is passed in as a slot because the identity check belongs to the
  * claims feature, and one feature does not import another.
  */
-export function HeirDelivery({ deliveryId, identity }: { deliveryId: string; identity: ReactNode }) {
+export function ExecutorDelivery({ deliveryId, identity }: { deliveryId: string; identity: ReactNode }) {
   const locale = useLocale()
   const labels = t(DELIVERY, locale)
   const common = t(COMMON, locale)
-  const delivery = useQuery(api.deliveries.forHeir, { deliveryId })
+  const delivery = useQuery(api.deliveries.forExecutor, { deliveryId })
 
   if (delivery === undefined) return <Placeholder label={common.loading} className="h-72" />
   if (delivery === null) return <RecordNotFound id={deliveryId} backHref="/" backLabel={labels.back} />
 
   if (delivery.status === "ready") {
-    return <HeirBox deliveryId={delivery.deliveryId} expiresAt={delivery.expiresAt} />
+    return <ExecutorHandover deliveryId={delivery.deliveryId} />
   }
 
   if (delivery.status === "expired" || delivery.status === "rejected") {

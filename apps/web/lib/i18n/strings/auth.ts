@@ -37,10 +37,10 @@ export const AUTH = {
 
   signUpTitle: { ar: "إنشاء حساب في وصيّة", en: "Create a Wassiya account" },
 
-  // Read by someone filing a report and by an heir following our link.
+  // Read by someone filing a report and by an executor following our link.
   signUpSubtitle: {
-    ar: "حساب مجاني لمتابعة بلاغك أو استلام ما تُرك لك — ولا شيء غير ذلك.",
-    en: "A free account to follow your report or receive what was left to you — nothing more.",
+    ar: "حساب مجاني لمتابعة بلاغك، أو لتفتح بصفتك وصيّاً ما سُلِّم إليك — ولا شيء غير ذلك.",
+    en: "A free account to follow your report or, as an executor, open what was handed over to you — nothing more.",
   },
 
   emailLabel: { ar: "البريد الإلكتروني", en: "Email address" },

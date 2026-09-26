@@ -1,10 +1,9 @@
 /**
  * `@workspace/crypto` — the client-side key hierarchy for Wassiya.
  *
- * Every function here is meant to run on a *device*: the owner's phone or the
- * heir's browser. The one exception is the release gate (`convex/escrow.ts`),
- * which opens the escrowed keys of one delivery; nothing else server-side may
- * import this package.
+ * Every function here runs on a *device*: the owner's phone or an executor's
+ * browser. No server code imports this package — the backend stores wrappers
+ * and never holds a key.
  */
 export {
   KEY_BYTES,
@@ -32,29 +31,28 @@ export {
 } from "./recovery"
 
 export {
+  type DecodedExecutorCode,
   type DecodedPaperCode,
   crc16,
+  decodeExecutorCode,
   decodePaperCode,
+  encodeExecutorCode,
   encodePaperCode,
   looksLikeRecoveryCode,
+  paperCodeKind,
 } from "./papercode"
 
 export {
-  type EscrowSubject,
-  escrowAad,
-  openFromEscrow,
-  parseEscrowKey,
-  sealForEscrow,
-} from "./escrow"
-
-export {
-  SEAL_KEY_BYTES,
-  SEALED_KEY_BYTES,
-  type SealKeypair,
-  generateSealKeypair,
-  openSealedKey,
-  sealKeyTo,
-} from "./seal"
+  type ExecutorSheet,
+  type HandoverAsset,
+  generateReleaseKey,
+  unwrapDekFromHandover,
+  unwrapReleaseKeyForExecutor,
+  unwrapReleaseKeyForOwner,
+  wrapDekForHandover,
+  wrapReleaseKeyForExecutor,
+  wrapReleaseKeyForOwner,
+} from "./release"
 
 export {
   type AssetHeader,
@@ -69,7 +67,6 @@ export {
 
 export { type AssetLabel, LABEL_AAD, openLabel, sealLabel } from "./label"
 export { MAX_SECRET_BYTES, SECRET_AAD, openSecret, sealSecret } from "./secret"
-export { MESSAGE_AAD, openMessage, sealMessage } from "./message"
 
 export {
   type MnemonicCheck,

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 /**
  * Development only: every screen state that needs a real session or real data
- * (the doors, the case list, each report state, the box step), drawn from
+ * (the doors, the case list, each report state, the sheet step), drawn from
  * sample props so they can be checked — and screenshotted — without either.
  */
 export default function PreviewPage() {

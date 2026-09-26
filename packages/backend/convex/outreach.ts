@@ -1,4 +1,4 @@
-// Contacting heirs after release — the first thing an heir ever hears.
+// Contacting executors after release — the first thing an executor ever hears.
 //
 // Rules:
 //  - Off unless `OUTREACH_PROVIDER=twilio` and its credentials are set on the
@@ -14,9 +14,9 @@ import { internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
 
 const BODY =
-  "وصيّة: تُرك لك شيء. افتح الرابط وأثبت هويتك لتستلمه:\n{link}\n\nWassiya: something was left for you. Open the link and verify your identity to receive it."
+  "وصيّة: سمّاك شخص وصياً على ما تركه. افتح الرابط وأثبت هويتك، وجهّز ورقة الوصي:\n{link}\n\nWassiya: someone named you as their executor. Open the link, verify your identity, and have the executor sheet ready."
 
-export const contactHeir = internalAction({
+export const contactExecutor = internalAction({
   args: { deliveryId: v.id("deliveries") },
   handler: async (ctx, { deliveryId }) => {
     // The switch and the sender are settings; the credentials are not. An

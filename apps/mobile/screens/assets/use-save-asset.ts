@@ -3,9 +3,9 @@
  * an edited one alike. Everything that makes an asset safe happens here:
  *
  *   1. a fresh DEK for a new asset — or, for an edit, the asset's own DEK
- *      unwrapped from the row. **Never a new one on an edit:** a routed asset's
- *      DEK is sealed to the escrow key, and a new DEK would leave that sealed
- *      copy opening nothing, silently, until a claim;
+ *      unwrapped from the row. **Never a new one on an edit:** a handed-over
+ *      asset's DEK is wrapped under the release key, and a new DEK would leave
+ *      that wrapper opening nothing, silently, until a death;
  *   2. the label and the secret sealed under that DEK;
  *   3. every new file (and its thumbnail) encrypted before a byte leaves the
  *      device, each as its own blob;
@@ -13,8 +13,9 @@
  *
  * Blobs upload before the row is written: a crash between them leaves orphaned
  * ciphertext nobody can open, where the reverse order would leave a row naming
- * blobs that do not exist. A new asset is always unrouted; routing is its own
- * save, on the recipients screen.
+ * blobs that do not exist. A new asset is created private and handed over
+ * straight after (`setHandover` needs its id). If that second write fails the
+ * asset stays private — the safe side, and visible on its row as خاص.
  */
 import { useCallback } from "react"
 import { useMutation } from "convex/react"
@@ -29,7 +30,10 @@ import { unwrap, wrap } from "@workspace/crypto/wrap"
 import { uploadCiphertext, type UploadProgress } from "@/lib/asset-upload"
 import type { AssetType } from "@/lib/asset-types"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
+import { useSetHandover, VaultLockedError } from "@/lib/release-key"
 import { useVault } from "@/stores/vault"
+
+export { VaultLockedError }
 
 /** A blob already in storage that survives this save untouched. */
 export type StoredFile = {
@@ -76,17 +80,11 @@ export type SaveAssetInput = {
   onProgress?: (fileIndex: number, progress: UploadProgress) => void
 }
 
-export class VaultLockedError extends Error {
-  constructor() {
-    super("The vault must be unlocked before an asset can be saved")
-    this.name = "VaultLockedError"
-  }
-}
-
 export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">> {
   const generateUploadUrl = useMutation(api.assets.generateUploadUrl)
   const create = useMutation(api.assets.create)
   const update = useMutation(api.assets.update)
+  const setHandover = useSetHandover()
 
   return useCallback(
     async (input: SaveAssetInput) => {
@@ -152,19 +150,26 @@ export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">>
           })
           return input.existing.assetId
         }
-        return await create({
+        const dekWrappedByMk = toArrayBuffer(wrap(dek, mk))
+        const assetId = await create({
           type: input.type,
           labelSealed,
           secretSealed,
           meta: input.meta ?? {},
-          dekWrappedByMk: toArrayBuffer(wrap(dek, mk)),
+          dekWrappedByMk,
           files: files ?? [],
         })
+        try {
+          await setHandover({ assetId, dekWrappedByMk }, true)
+        } catch {
+          // The asset exists and is private; its row says so.
+        }
+        return assetId
       } finally {
         dek.fill(0)
       }
     },
-    [create, generateUploadUrl, update]
+    [create, generateUploadUrl, setHandover, update]
   )
 }
 

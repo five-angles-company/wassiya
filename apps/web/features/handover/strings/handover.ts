@@ -1,103 +1,116 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The heir's box, and the step in front of it.
+ * The executor's handover: the sheet code in front of it, and what is behind it.
  *
- * ⚠️ Escrow honesty (AGENTS.md): at release Wassiya *does* open what was set
- * aside for this heir, to hand it over. Nothing here may say Wassiya cannot open
- * it or holds no key. What is true, and said: only this heir's items are
- * opened, the contents open on this device, and after a year the key is gone.
+ * ⚠️ Wassiya holds no key (AGENTS.md "Handover"). Nothing here may say Wassiya
+ * can open, recover or reset anything. What is true, and said: only the
+ * executor's sheet or the owner's recovery sheet opens it, on this device; if
+ * both are lost nobody can; and after the window everything is deleted.
  */
-export const HEIR_BOX = {
-  gateEyebrow: { ar: "جاهز لك", en: "Ready for you" },
-  gateTitle: { ar: "ما تُرك لك جاهز", en: "What was left for you is ready" },
+export const HANDOVER = {
+  gateEyebrow: { ar: "جاهز للفتح", en: "Ready to open" },
+  gateTitle: { ar: "افتح ما سُلِّم إليك", en: "Open what was handed over to you" },
   gateBody: {
-    ar: "تأكدنا من الوفاة ومن هويتك. عند الفتح، نفتح لك ما خُصّص لك وحدك، ويظهر المحتوى على جهازك هذا.",
-    en: "We've confirmed the death and who you are. When you open it, we open only what was set aside for you, and the contents appear on this device.",
+    ar: "تأكدنا من الوفاة ومن هويتك. ما اختار صاحب الخزنة تسليمه يُفتح بورقة الوصي التي طبعها لك، على جهازك هذا وحده.",
+    en: "We've confirmed the death and who you are. What the vault's owner chose to hand over opens with the executor sheet they printed for you, on this device alone.",
   },
-  unlock: { ar: "افتح", en: "Open" },
-  unlocking: { ar: "جارٍ الفتح…", en: "Opening…" },
-  onDevice: { ar: "يُفتح على جهازك", en: "Opens on your device" },
-  failed: { ar: "لم يُفتح الآن. حاول مرة أخرى بعد قليل.", en: "It didn't open just now. Please try again shortly." },
-  closesOn: {
-    ar: "يبقى متاحاً حتى {date}، ثم يُحذف مفتاحه نهائياً ولا يستطيع أحد فتحه — ولا نحن. نزّل ما تحتاجه قبل ذلك.",
-    en: "It stays available until {date}. Then its key is deleted for good and nobody can open it — not even us. Download what you need before then.",
+  gateBodyRecoveryOnly: {
+    ar: "تأكدنا من الوفاة ومن هويتك. لم يطبع صاحب الخزنة ورقة وصيّ لك، فما اختار تسليمه لا يفتحه إلا رمز ورقة استرداده، على جهازك هذا وحده.",
+    en: "We've confirmed the death and who you are. The vault's owner didn't print an executor sheet for you, so what they chose to hand over opens only with the code on their own recovery sheet, on this device alone.",
   },
 
-  openTitle: { ar: "صندوقك مفتوح", en: "Your box is open" },
+  askTitle: { ar: "أدخل الرمز من ورقة الوصي", en: "Enter the code from your executor sheet" },
+  askTitleRecoveryOnly: { ar: "أدخل الرمز من ورقة الاسترداد", en: "Enter the code from the recovery sheet" },
+  codeLabel: { ar: "الرمز كما هو مطبوع", en: "The code, as printed" },
+  codeHint: {
+    ar: "يبدأ رمز ورقة الوصي بـ WSE. وإن كانت معك ورقة استرداد صاحب الخزنة بدلاً منها، فرمزها يبدأ بـ WSY ويفتحه أيضاً. لا تهمّ المسافات ولا الشرطات.",
+    en: "The executor sheet's code starts with WSE. If you have the owner's recovery sheet instead, its code starts with WSY and opens it too. Spaces and hyphens don't matter.",
+  },
+  codeHintExecutorOnly: {
+    ar: "يبدأ رمز ورقة الوصي بـ WSE. لا تهمّ المسافات ولا الشرطات.",
+    en: "The executor sheet's code starts with WSE. Spaces and hyphens don't matter.",
+  },
+  codeHintRecoveryOnly: {
+    ar: "يبدأ رمز ورقة الاسترداد بـ WSY. لا تهمّ المسافات ولا الشرطات.",
+    en: "The recovery sheet's code starts with WSY. Spaces and hyphens don't matter.",
+  },
+  open: { ar: "افتح", en: "Open" },
+  onDevice: {
+    ar: "يُفتح على جهازك — لا يُرسل الرمز إلينا ولا يُحفظ",
+    en: "Opens on your device — the code is never sent to us or saved",
+  },
+
+  failUnreadable: {
+    ar: "هذا الرمز ناقص أو فيه حرف مختلف عن الورقة. قارنه بها حرفاً حرفاً.",
+    en: "This code is incomplete, or a character differs from the sheet. Compare it with the sheet one character at a time.",
+  },
+  failExecutorReplaced: {
+    ar: "هذه ورقة وصيّ قديمة: طبع لك صاحب الخزنة ورقة أحدث منها، فلم تعد هذه تفتح شيئاً. ابحث عن الورقة الأحدث.",
+    en: "This is an older executor sheet: the owner printed a newer one for you, and this one no longer opens anything. Look for the newer sheet.",
+  },
+  failRecoveryReplaced: {
+    ar: "هذه ورقة استرداد قديمة: طبع صاحب الخزنة ورقة أحدث منها، فلم تعد هذه تفتح شيئاً.",
+    en: "This is an older recovery sheet: the owner printed a newer one, and this one no longer opens anything.",
+  },
+  failNoExecutorSheet: {
+    ar: "لم يُكمل صاحب الخزنة طباعة ورقة وصيّ لك، فلا تفتحه أي ورقة وصيّ. رمز ورقة استرداده هو ما يفتحه.",
+    en: "The owner never finished printing an executor sheet for you, so no executor sheet opens it. The code on their recovery sheet does.",
+  },
+  failNoRecoverySheet: {
+    ar: "ورقة الاسترداد لا تفتح هذا التسليم. استعمل ورقة الوصي التي طبعها لك صاحب الخزنة.",
+    en: "The recovery sheet can't open this handover. Use the executor sheet the owner printed for you.",
+  },
+  failWrongSheet: {
+    ar: "الرمز مقروء، لكنه لا يفتح هذا التسليم. تأكّد أنها أحدث ورقة طبعها صاحب هذه الخزنة.",
+    en: "The code reads correctly, but it doesn't open this handover. Make sure it's the latest sheet this vault's owner printed.",
+  },
+
+  lostTitle: { ar: "لم تجد ورقة الوصي؟", en: "Can't find your executor sheet?" },
+  lostTitleRecovery: { ar: "لم تجد ورقة الاسترداد؟", en: "Can't find the recovery sheet?" },
+  lostLook: {
+    ar: "ابحث عنها مع وصيّة المتوفّى وأوراقه المهمة، فكثيرون يحفظونها معاً.",
+    en: "Look with the will and the other important papers of the person who died — many people keep them together.",
+  },
+  lostFallback: {
+    ar: "إن وجدت ورقة استرداده بدلاً منها (يبدأ رمزها بـ WSY)، أدخل رمزها في الخانة نفسها. تفتح ما اختار تسليمه فقط.",
+    en: "If you find their recovery sheet instead (its code starts with WSY), type its code in the same field. It opens only what they chose to hand over.",
+  },
+  lostNone: {
+    ar: "إن لم تجد أي ورقة تفتحه، فلا يمكن فتح شيء: لا نملك أي مفتاح، فلا نستطيع فتحه نحن أيضاً.",
+    en: "If you can't find any sheet that opens it, nothing can be opened: we hold no key, so we can't open it either.",
+  },
+  lostHelp: { ar: "اقرأ المزيد في المساعدة", en: "More in help" },
+
+  emptyTitle: { ar: "لم يُسلَّم شيء", en: "Nothing was handed over" },
+  emptyBody: {
+    ar: "لم يختر صاحب الخزنة تسليم أي شيء، فلا شيء هنا لتفتحه. ما أبقاه خاصاً رحل معه، ولا يستطيع أحد فتحه — ولا نحن.",
+    en: "The vault's owner didn't choose to hand anything over, so there's nothing here to open. What they kept private went with them — nobody can open it, not even us.",
+  },
+  sealedTitle: { ar: "لا يمكن فتح هذا التسليم", en: "This handover can't be opened" },
+  sealedBody: {
+    ar: "لم يطبع صاحب الخزنة ورقة وصيّ لك، ولا توجد ورقة استرداد تفتحه. لا نملك أي مفتاح، فلا يستطيع أحد فتحه — ولا نحن.",
+    en: "The vault's owner didn't print an executor sheet for you, and no recovery sheet opens it. We hold no key, so nobody can open it — not even us.",
+  },
+  loadFailedTitle: { ar: "لم يُحمَّل التسليم", en: "The handover didn't load" },
+  loadFailedBody: {
+    ar: "حدث خطأ مؤقت. حاول مرة أخرى بعد قليل.",
+    en: "Something went wrong for a moment. Please try again shortly.",
+  },
+
+  closesOn: {
+    ar: "يبقى متاحاً حتى {date}، ثم يُحذف كل ما فيه نهائياً ولا يستطيع أحد فتحه — ولا نحن. نزّل ما تحتاجه قبل ذلك.",
+    en: "It stays available until {date}. Then everything in it is deleted for good and nobody can open it — not even us. Download what you need before then.",
+  },
+
+  openTitle: { ar: "ما سُلِّم إليك مفتوح", en: "What was handed over is open" },
   openBody: {
-    ar: "هذه نسختك وحدك — لا ترى ما خُصّص لغيرك، ولا يرى غيرك ما خُصّص لك.",
-    en: "This is your copy alone — you can't see what was left to anyone else, and no one else can see what was left to you.",
+    ar: "هذا كل ما اختار صاحب الخزنة تسليمه. بصفتك وصيّه، أوصل كل شيء كما تنصّ وصيّته — فنحن لا نقسّم التركات.",
+    en: "This is everything the vault's owner chose to hand over. As their executor, pass each thing on as their will says — Wassiya doesn't divide estates.",
+  },
+  openThisPage: {
+    ar: "يبقى مفتوحاً في هذه الصفحة فقط. إن أغلقتها، تحتاج الرمز مرة أخرى.",
+    en: "It stays open on this page only. If you close it, you'll need the code again.",
   },
   itemCount: { ar: "{n} عنصراً", en: "{n} items" },
-
-  // An item routed to this heir with no key in their box. Kept on screen, named
-  // by its type, so the count here matches the count in the vault.
-  noKeyTitle: { ar: "عنصر لم نستطع فتحه", en: "An item we couldn't open" },
-  noKeyBody: {
-    ar: "خُصّص لك، لكنه لم يُفتح. راسلنا واذكر المرجع المكتوب تحته.",
-    en: "It was set aside for you but didn't open. Write to us with the reference shown below it.",
-  },
-
-  viaDirect: { ar: "خُصّص لك", en: "Set aside for you" },
-  viaAllHeirs: { ar: "لكل الورثة", en: "For all heirs" },
-
-  download: { ar: "نزّل", en: "Download" },
-  downloading: { ar: "جارٍ التنزيل…", en: "Downloading…" },
-  downloadFailed: { ar: "لم يكتمل التنزيل. حاول مرة أخرى.", en: "The download didn't finish. Please try again." },
-  downloadNumbered: { ar: "نزّل {n}", en: "Download {n}" },
-
-  // The item's own title is encrypted, so its type is the only name available
-  // before the box opens.
-  typeCrypto: { ar: "عملات رقمية", en: "Crypto" },
-  typeBank: { ar: "حساب بنكي", en: "Bank account" },
-  typeDocument: { ar: "مستند", en: "Document" },
-  typePhotos: { ar: "صور", en: "Photos" },
-  typeDigital: { ar: "حساب إلكتروني", en: "Online account" },
-  typeNote: { ar: "ملاحظة", en: "Note" },
-
-  // The secret fields, named as the owner's app names them when they are
-  // written. A key missing here shows as itself rather than disappearing.
-  fieldPhrase: { ar: "العبارة السرّية", en: "Recovery phrase" },
-  fieldNetwork: { ar: "الشبكة", en: "Network" },
-  fieldKind: { ar: "النوع", en: "Type" },
-  fieldDevicePassword: { ar: "رمز الجهاز", en: "Device PIN" },
-  fieldDeviceLocation: { ar: "مكان الجهاز", en: "Where the device is" },
-  fieldAccount: { ar: "الحساب", en: "Account" },
-  fieldPassword: { ar: "كلمة المرور", en: "Password" },
-  fieldTwoFactor: { ar: "التحقق بخطوتين", en: "Two-step verification" },
-  fieldBank: { ar: "البنك", en: "Bank" },
-  fieldIban: { ar: "الآيبان", en: "IBAN" },
-  fieldCountry: { ar: "الدولة", en: "Country" },
-  fieldAccountType: { ar: "نوع الحساب", en: "Account type" },
-  fieldCurrency: { ar: "العملة", en: "Currency" },
-  fieldBranch: { ar: "الفرع", en: "Branch" },
-  fieldInstructions: { ar: "تعليمات", en: "Instructions" },
-  fieldService: { ar: "الخدمة", en: "Service" },
-  fieldUsername: { ar: "اسم المستخدم", en: "Username" },
-  fieldRecoveryCodes: { ar: "رموز الاسترداد", en: "Recovery codes" },
-  fieldDisposition: { ar: "المطلوب", en: "What to do" },
-  fieldBody: { ar: "النص", en: "Text" },
-
-  valueHardware: { ar: "جهاز", en: "Hardware" },
-  valueSoftware: { ar: "برنامج", en: "Software" },
-  valueExchange: { ar: "منصة", en: "Exchange" },
-  valueCurrent: { ar: "جارٍ", en: "Current" },
-  valueSavings: { ar: "توفير", en: "Savings" },
-  valueDeed: { ar: "صك ملكية", en: "Title deed" },
-  valueMarriage: { ar: "عقد زواج", en: "Marriage contract" },
-  valueCertificate: { ar: "شهادة", en: "Certificate" },
-  valueOther: { ar: "أخرى", en: "Other" },
-  valueInstructions: { ar: "تعليمات", en: "Instructions" },
-  valueWhereabouts: { ar: "مكان أشياء", en: "Where things are" },
-  valueWish: { ar: "وصية شخصية", en: "Personal wish" },
-  valueHandOver: { ar: "سلّمه إلى وارث", en: "Hand it over" },
-  valueDelete: { ar: "احذفه نهائياً", en: "Delete it permanently" },
-  valueMemorialise: { ar: "حوّله إلى حساب تذكاري", en: "Turn it into a memorial account" },
-
-  messageTitle: { ar: "رسالة تركها لك", en: "A message left for you" },
-  messageFailed: {
-    ar: "لم تُفتح الرسالة الآن. حاول مرة أخرى بعد قليل.",
-    en: "The message didn't open just now. Please try again shortly.",
-  },
 } as const satisfies Dictionary

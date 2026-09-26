@@ -160,7 +160,7 @@ export function CryptoFields({
             />
           </FieldRow>
           {/* Free text, unmasked: where the second factor lives outlives any
-              code it would generate, and an heir locked out by 2FA is locked
+              code it would generate, and an executor locked out by 2FA is locked
               out for good. */}
           <FieldRow label={labels.fieldTwoFactor!} divider {...state("twoFactor")}>
             <FieldValue
@@ -218,7 +218,7 @@ export function CryptoFields({
           </FieldRow>
 
           {/* No control at all — a drawer is not a secret, and the whole point
-              is that an heir can read it. */}
+              is that an executor can read it. */}
           <FieldRow
             label={labels.fieldDeviceLocation!}
             divider

@@ -26,13 +26,13 @@ export type ExchangeFieldsProps = {
  * custody. Asking for twelve words there is not merely wrong, it is a prompt
  * the user cannot satisfy, and the BIP-39 checksum gate would then refuse to
  * let them save anything at all. So the whole payload changes shape: what an
- * heir needs is a way back into the account.
+ * executor needs is a way back into the account.
  *
  * Every field here is as guarded as the phrase it replaces — same
  * `SECRET_INPUT_PROPS`, and the screen's screenshot block and clipboard wipe
  * cover it identically. The 2FA field is free text on purpose: where the second
  * factor lives ("Authy on my iPad", "the recovery codes are in the safe") is
- * more useful to an heir than a code that will have rotated.
+ * more useful to an executor than a code that will have rotated.
  */
 export function ExchangeFields({
   value,

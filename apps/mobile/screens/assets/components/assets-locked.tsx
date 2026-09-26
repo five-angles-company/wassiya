@@ -10,10 +10,10 @@ import { View } from "react-native"
  *
  * A locked vault should feel intact, not withheld — so no padlock and no blurred
  * list behind a scrim. The screen states what is in there and that it still
- * works: the count, the heirs, and the fact that delivery is unaffected. Someone
+ * works: the count, the executors, and the fact that delivery is unaffected. Someone
  * who opens the app to reassure themselves gets that without unlocking anything.
  *
- * **Nothing here decrypts.** The count and the heirs' initials come from
+ * **Nothing here decrypts.** The count and the executors' initials come from
  * unencrypted metadata the deployment already holds, which is why this paints
  * instantly on a cold start. The figure is the same one the list's own header
  * carries, so the two screens agree.
@@ -31,10 +31,10 @@ export type AssetsLockedProps = {
   count: string
   /** "أصلاً محفوظاً ومشفّراً على هذا الجهاز". */
   countUnit: string
-  /** "يستلمها ٣ ورثة". Omitted when no heirs exist yet. */
-  heirsLine?: string
-  /** Up to three, for the faces beside `heirsLine`. */
-  heirNames?: string[]
+  /** "الأوصياء: ٣". Omitted when no executor exists yet. */
+  executorsLine?: string
+  /** Up to three, for the faces beside `executorsLine`. */
+  executorNames?: string[]
   /** "التسليم يعمل حتى وهي مغلقة". */
   deliveryLine: string
   /** "افتح ببصمتك", or the in-flight wording. */
@@ -50,8 +50,8 @@ export function AssetsLocked({
   status,
   count,
   countUnit,
-  heirsLine,
-  heirNames = [],
+  executorsLine,
+  executorNames = [],
   deliveryLine,
   actionLabel,
   footnote,
@@ -84,15 +84,15 @@ export function AssetsLocked({
         <View className="bg-border my-5 h-px w-full" />
 
         <View className="w-full gap-[11px]">
-          {heirsLine !== undefined ? (
+          {executorsLine !== undefined ? (
             <View className="flex-row items-center gap-3">
               <Text className="flex-1 text-[13.5px] opacity-70">
-                {heirsLine}
+                {executorsLine}
               </Text>
               {/* `ring="surface"`: the faces are cut out of the card now, not
                   the page, and the wrong ground leaves a hairline on each. */}
               <View className="opacity-85">
-                <AvatarStack names={heirNames} size={26} ring="surface" />
+                <AvatarStack names={executorNames} size={26} ring="surface" />
               </View>
             </View>
           ) : null}

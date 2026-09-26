@@ -1,18 +1,18 @@
-// Deliveries — what one heir receives from a released death report.
+// Deliveries — one executor's copy of a released death report.
 //
-// Rules (AGENTS.md "Escrowed release"):
-//  - Created only by `claims.advance`, one per heir who receives anything,
-//    never by a client. The reporter receives nothing by reporting.
+// Rules (AGENTS.md "Executors"):
+//  - Created only by `claims.advance`, one per executor, never by a client.
+//    The reporter receives nothing by reporting.
 //  - The contact link only lets a signed-in person *bind* the delivery to
-//    their account. Nothing opens until `status === "ready"`, which needs the
-//    bound person's own Didit verification to match this heir: automatically
-//    when the owner registered an ID number and a document hash equals it,
-//    otherwise by a staff decision. Never on name alone without staff.
-//  - **Nothing names the deceased or the heir before identity passes.** Phone
+//    their account. Nothing is served until `status === "ready"`, which needs
+//    the bound person's own Didit verification to match this executor's
+//    registered ID number — automatically, or by a staff decision when the
+//    verified document does not match. And nothing opens without their sheet.
+//  - **Nothing names the deceased or the executor before identity passes.** Phone
 //    numbers and addresses get recycled; whoever holds the link may be a
 //    stranger, and must learn no more than that something is waiting.
 //  - Binding may be taken over until the delivery is ready, so whoever reaches
-//    a forwarded link first cannot lock the real heir out; staff can also
+//    a forwarded link first cannot lock the real executor out; staff can also
 //    reissue the link, which kills the old one. Every bind is audited.
 //  - `contactToken` is returned to admins only, and never written to a log.
 import { v } from "convex/values"
@@ -35,7 +35,6 @@ import {
   sendDeliveryReady,
 } from "./email"
 import { requirePermission } from "./model/access"
-import { heirsWhoReceive } from "./model/receivers"
 import { DAY_MS, DELIVERY_WINDOW_DAYS } from "./model/claimFlow"
 import { recordJobRun } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
@@ -44,7 +43,7 @@ import { getCurrentUserOrThrow } from "./users"
 const TOKEN_BYTES = 24
 const EXPIRE_BATCH = 50
 const REMIND_BEFORE_MS = 30 * DAY_MS
-const LIVE_STATUSES = ["awaiting_heir", "identity_pending", "ready"] as const
+const LIVE_STATUSES = ["awaiting_executor", "identity_pending", "ready"] as const
 const ADMIN_TABLE_CAP = 300
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -52,14 +51,14 @@ export function deliveryPath(contactToken: string): string {
   return `/receive/${contactToken}`
 }
 
-/** Where to reach an heir now: staff overrides first, then the owner's record. */
+/** Where to reach an executor now: staff overrides first, then the owner's record. */
 function contactOf(
   delivery: Doc<"deliveries">,
-  heir: Doc<"heirs"> | null
+  executor: Doc<"executors"> | null
 ): { phone: string | null; email: string | null } {
   return {
-    phone: delivery.contactPhone ?? heir?.phone ?? null,
-    email: delivery.contactEmail ?? heir?.email ?? null,
+    phone: delivery.contactPhone ?? executor?.phone ?? null,
+    email: delivery.contactEmail ?? executor?.email ?? null,
   }
 }
 
@@ -76,16 +75,16 @@ async function logContact(
 }
 
 /**
- * Send the link on every channel the heir has: email now, in this transaction,
- * and SMS through `outreach.contactHeir` (a no-op until a provider is set).
+ * Send the link on every channel the executor has: email now, in this transaction,
+ * and SMS through `outreach.contactExecutor` (a no-op until a provider is set).
  */
-async function inviteHeir(
+async function inviteExecutor(
   ctx: MutationCtx,
   delivery: Doc<"deliveries">,
   channels: { email: boolean; sms: boolean } = { email: true, sms: true }
 ): Promise<void> {
-  const heir = await ctx.db.get("heirs", delivery.heirId)
-  const { email } = contactOf(delivery, heir)
+  const executor = await ctx.db.get("executors", delivery.executorId)
+  const { email } = contactOf(delivery, executor)
   const link = await appLink(ctx, deliveryPath(delivery.contactToken))
   const now = Date.now()
 
@@ -105,46 +104,42 @@ async function inviteHeir(
     })
   }
   if (channels.sms) {
-    await ctx.scheduler.runAfter(0, internal.outreach.contactHeir, {
+    await ctx.scheduler.runAfter(0, internal.outreach.contactExecutor, {
       deliveryId: delivery._id,
     })
   }
 }
 
-/**
- * One delivery per heir of `subjectUserId` who receives anything — an asset or
- * a message. An heir routed nothing is never contacted.
- */
+/** One delivery per executor of `subjectUserId`: each receives everything. */
 export async function createDeliveriesForClaim(
   ctx: MutationCtx,
   claimId: Id<"claims">,
   subjectUserId: Id<"users">,
   now: number
 ): Promise<number> {
-  const heirs = await ctx.db
-    .query("heirs")
+  const executors = await ctx.db
+    .query("executors")
     .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
     .take(100)
-  const receiving = await heirsWhoReceive(ctx, subjectUserId, heirs)
 
   let created = 0
-  for (const heirId of receiving) {
+  for (const { _id: executorId } of executors) {
     const existing = await ctx.db
       .query("deliveries")
-      .withIndex("by_heirId", (q) => q.eq("heirId", heirId))
+      .withIndex("by_executorId", (q) => q.eq("executorId", executorId))
       .take(10)
     if (existing.some((row) => row.claimId === claimId)) continue
 
     const deliveryId = await ctx.db.insert("deliveries", {
       claimId,
       subjectUserId,
-      heirId,
-      status: "awaiting_heir",
+      executorId,
+      status: "awaiting_executor",
       contactToken: randomToken(),
       expiresAt: now + DELIVERY_WINDOW_DAYS * DAY_MS,
     })
     const delivery = await ctx.db.get("deliveries", deliveryId)
-    if (delivery !== null) await inviteHeir(ctx, delivery)
+    if (delivery !== null) await inviteExecutor(ctx, delivery)
     created += 1
   }
   return created
@@ -153,21 +148,21 @@ export async function createDeliveriesForClaim(
 /**
  * Move a bound delivery to `ready` when the bound person's verified document
  * matches the ID number the owner registered. Anything short of that leaves it
- * for staff. Called on bind, on a verdict, and when an heir gains an ID number.
+ * for staff. Called on bind, on a verdict, and when an executor's ID number changes.
  */
 export async function evaluateDeliveryIdentity(
   ctx: MutationCtx,
   delivery: Doc<"deliveries">,
-  heirUser: Doc<"users">,
+  executorUser: Doc<"users">,
   now: number
 ): Promise<void> {
   if (delivery.status !== "identity_pending") return
-  if (heirUser.identityStatus !== "verified") return
+  if (executorUser.identityStatus !== "verified") return
 
-  const heir = await ctx.db.get("heirs", delivery.heirId)
+  const executor = await ctx.db.get("executors", delivery.executorId)
   const matches =
-    heir?.idNumberHash !== undefined &&
-    (heirUser.identityDocHashes ?? []).includes(heir.idNumberHash)
+    executor !== null &&
+    (executorUser.identityDocHashes ?? []).includes(executor.idNumberHash)
   if (!matches) return
 
   await ctx.db.patch("deliveries", delivery._id, {
@@ -180,30 +175,30 @@ export async function evaluateDeliveryIdentity(
     event: "delivery.ready",
     meta: {
       deliveryId: delivery._id,
-      heirId: delivery.heirId,
+      executorId: delivery.executorId,
       match: "id_number",
     },
     at: now,
   })
-  await sendDeliveryReady(ctx, heirUser._id, delivery._id, delivery.expiresAt)
+  await sendDeliveryReady(ctx, executorUser._id, delivery._id, delivery.expiresAt)
 }
 
 /** Re-evaluate every delivery this person has bound — the webhook's hook. */
 export async function reevaluateDeliveriesFor(
   ctx: MutationCtx,
-  heirUser: Doc<"users">
+  executorUser: Doc<"users">
 ): Promise<void> {
   const bound = await ctx.db
     .query("deliveries")
-    .withIndex("by_heirUserId", (q) => q.eq("heirUserId", heirUser._id))
+    .withIndex("by_executorUserId", (q) => q.eq("executorUserId", executorUser._id))
     .take(20)
   const now = Date.now()
   for (const delivery of bound) {
-    await evaluateDeliveryIdentity(ctx, delivery, heirUser, now)
+    await evaluateDeliveryIdentity(ctx, delivery, executorUser, now)
   }
 }
 
-/** The deceased's name, only once the reader has proved they are the heir. */
+/** The deceased's name, only once the reader has proved they are the executor. */
 async function subjectNameFor(
   ctx: QueryCtx,
   delivery: Doc<"deliveries">
@@ -244,7 +239,7 @@ export const bind = mutation({
       .unique()
     if (delivery === null) throw new Error("Not found")
 
-    if (delivery.heirUserId === user._id) return { deliveryId: delivery._id }
+    if (delivery.executorUserId === user._id) return { deliveryId: delivery._id }
     if (delivery.status === "ready") {
       throw new Error("This delivery has already been received")
     }
@@ -255,7 +250,7 @@ export const bind = mutation({
 
     const now = Date.now()
     await ctx.db.patch("deliveries", delivery._id, {
-      heirUserId: user._id,
+      executorUserId: user._id,
       boundAt: now,
       status: "identity_pending",
     })
@@ -264,8 +259,8 @@ export const bind = mutation({
       event: "delivery.bound",
       meta: {
         deliveryId: delivery._id,
-        heirUserId: user._id,
-        takenOver: delivery.heirUserId !== undefined,
+        executorUserId: user._id,
+        takenOver: delivery.executorUserId !== undefined,
       },
       at: now,
     })
@@ -276,8 +271,8 @@ export const bind = mutation({
   },
 })
 
-/** The signed-in heir's view of one delivery. */
-export const forHeir = query({
+/** The signed-in executor's view of one delivery. */
+export const forExecutor = query({
   // A string, normalised here: the id comes from a URL, and a truncated one
   // should read as "not found" rather than crash the validator.
   args: { deliveryId: v.string() },
@@ -286,7 +281,7 @@ export const forHeir = query({
     const deliveryId = ctx.db.normalizeId("deliveries", args.deliveryId)
     if (deliveryId === null) return null
     const delivery = await ctx.db.get("deliveries", deliveryId)
-    if (delivery === null || delivery.heirUserId !== user._id) return null
+    if (delivery === null || delivery.executorUserId !== user._id) return null
     return {
       deliveryId: delivery._id,
       status: delivery.status,
@@ -306,7 +301,7 @@ export const mine = query({
     const user = await getCurrentUserOrThrow(ctx)
     const rows = await ctx.db
       .query("deliveries")
-      .withIndex("by_heirUserId", (q) => q.eq("heirUserId", user._id))
+      .withIndex("by_executorUserId", (q) => q.eq("executorUserId", user._id))
       .order("desc")
       .take(20)
     return await Promise.all(
@@ -338,12 +333,12 @@ export const adminTable = query({
 
     const table = await Promise.all(
       rows.slice(0, ADMIN_TABLE_CAP).map(async (row) => {
-        const heir = await ctx.db.get("heirs", row.heirId)
+        const executor = await ctx.db.get("executors", row.executorId)
         const subject = await ctx.db.get("users", row.subjectUserId)
         const bound =
-          row.heirUserId === undefined
+          row.executorUserId === undefined
             ? null
-            : await ctx.db.get("users", row.heirUserId)
+            : await ctx.db.get("users", row.executorUserId)
         const last = await ctx.db
           .query("deliveryContacts")
           .withIndex("by_deliveryId", (q) => q.eq("deliveryId", row._id))
@@ -353,8 +348,7 @@ export const adminTable = query({
           deliveryId: row._id,
           claimId: row.claimId,
           status: row.status,
-          heirName: heir?.name ?? null,
-          heirRelation: heir?.relation ?? null,
+          executorName: executor?.name ?? null,
           subjectName: subject?.identityVerifiedName ?? subject?.name ?? null,
           boundVerified: bound?.identityStatus === "verified",
           identityMatch: row.identityMatch ?? null,
@@ -378,12 +372,12 @@ export const adminDetail = query({
     await requirePermission(ctx, "deliveries.read")
     const delivery = await ctx.db.get("deliveries", deliveryId)
     if (delivery === null) return null
-    const heir = await ctx.db.get("heirs", delivery.heirId)
+    const executor = await ctx.db.get("executors", delivery.executorId)
     const subject = await ctx.db.get("users", delivery.subjectUserId)
     const bound =
-      delivery.heirUserId === undefined
+      delivery.executorUserId === undefined
         ? null
-        : await ctx.db.get("users", delivery.heirUserId)
+        : await ctx.db.get("users", delivery.executorUserId)
     const contacts = await ctx.db
       .query("deliveryContacts")
       .withIndex("by_deliveryId", (q) => q.eq("deliveryId", deliveryId))
@@ -400,20 +394,17 @@ export const adminDetail = query({
     for (const id of staffIds) {
       staff.set(id, (await ctx.db.get("users", id))?.name ?? null)
     }
-    const contact = contactOf(delivery, heir)
+    const contact = contactOf(delivery, executor)
 
     return {
       deliveryId: delivery._id,
       claimId: delivery.claimId,
       status: delivery.status,
       subjectName: subject?.identityVerifiedName ?? subject?.name ?? null,
-      heir: {
-        name: heir?.name ?? null,
-        relation: heir?.relation ?? null,
-        birthDate: heir?.birthDate ?? null,
-        hasIdNumber: heir?.idNumberHash !== undefined,
-        registeredPhone: heir?.phone ?? null,
-        registeredEmail: heir?.email ?? null,
+      executor: {
+        name: executor?.name ?? null,
+        registeredPhone: executor?.phone ?? null,
+        registeredEmail: executor?.email ?? null,
       },
       contact: {
         phone: contact.phone,
@@ -421,7 +412,7 @@ export const adminDetail = query({
         phoneOverridden: delivery.contactPhone !== undefined,
         emailOverridden: delivery.contactEmail !== undefined,
       },
-      // What staff compare when there is no ID-number match.
+      // What staff compare when the ID number did not match.
       boundPerson:
         bound === null
           ? null
@@ -430,8 +421,8 @@ export const adminDetail = query({
               birthDate: bound.identityBirthDate ?? null,
               identityStatus: bound.identityStatus ?? "unverified",
               idNumberMatches:
-                heir?.idNumberHash !== undefined &&
-                (bound.identityDocHashes ?? []).includes(heir.idNumberHash),
+                executor !== null &&
+                (bound.identityDocHashes ?? []).includes(executor.idNumberHash),
             },
       link: (await appLink(ctx, deliveryPath(delivery.contactToken))) ?? null,
       identityMatch: delivery.identityMatch ?? null,
@@ -481,7 +472,7 @@ async function requireLiveDelivery(
   return delivery
 }
 
-/** Staff record an attempt to reach the heir, by any route. */
+/** Staff record an attempt to reach the executor, by any route. */
 export const adminLogContact = mutation({
   args: {
     deliveryId: v.id("deliveries"),
@@ -513,7 +504,7 @@ export const adminLogContact = mutation({
 })
 
 /**
- * Staff record where the heir can be reached now. The heir record is the
+ * Staff record where the executor can be reached now. The executor record is the
  * owner's and stays as they left it; these win for every later send.
  * An empty string clears an override.
  */
@@ -566,10 +557,10 @@ export const adminResend = mutation({
     const actor = await requirePermission(ctx, "deliveries.contact")
     const delivery = await requireLiveDelivery(ctx, deliveryId)
     if (delivery.status === "ready" || delivery.status === "rejected") {
-      throw new Error("There is nothing left to invite this heir to")
+      throw new Error("There is nothing left to invite this executor to")
     }
-    const heir = await ctx.db.get("heirs", delivery.heirId)
-    const contact = contactOf(delivery, heir)
+    const executor = await ctx.db.get("executors", delivery.executorId)
+    const contact = contactOf(delivery, executor)
     if ((channel === "sms" ? contact.phone : contact.email) === null) {
       throw new Error(
         `No ${channel === "sms" ? "phone number" : "email"} to send to`
@@ -581,7 +572,7 @@ export const adminResend = mutation({
         "No SMS provider is configured — copy the link and send it by hand"
       )
     }
-    await inviteHeir(ctx, delivery, {
+    await inviteExecutor(ctx, delivery, {
       email: channel === "email",
       sms: channel === "sms",
     })
@@ -597,7 +588,7 @@ export const adminResend = mutation({
 
 /**
  * Kill the current link and issue a new one — for a link that reached the
- * wrong person or a contact that is no longer the heir's. A binding that is
+ * wrong person or a contact that is no longer the executor's. A binding that is
  * not yet final is released with it, so a stranger who bound the old link is
  * out. The new link goes to the current contacts on every channel.
  */
@@ -613,8 +604,8 @@ export const adminReissueLink = mutation({
     }
     await ctx.db.patch("deliveries", deliveryId, {
       contactToken: randomToken(),
-      status: "awaiting_heir",
-      heirUserId: undefined,
+      status: "awaiting_executor",
+      executorUserId: undefined,
       boundAt: undefined,
       identityMatch: undefined,
     })
@@ -622,17 +613,18 @@ export const adminReissueLink = mutation({
       actor,
       subject: delivery.subjectUserId,
       event: "delivery.link_reissued",
-      meta: { deliveryId, releasedBinding: delivery.heirUserId !== undefined },
+      meta: { deliveryId, releasedBinding: delivery.executorUserId !== undefined },
     })
     const fresh = await ctx.db.get("deliveries", deliveryId)
-    if (fresh !== null) await inviteHeir(ctx, fresh)
+    if (fresh !== null) await inviteExecutor(ctx, fresh)
     return null
   },
 })
 
 /**
- * Staff decide an identity the ID number could not: the bound person's
- * verified name and birth date against the heir the owner registered.
+ * Staff decide an identity the ID number could not match — a mistyped number,
+ * a document that carries it differently — from the bound person's verified
+ * name against the executor the owner registered.
  */
 export const adminDecideIdentity = mutation({
   args: {
@@ -646,11 +638,11 @@ export const adminDecideIdentity = mutation({
     if (delivery === null) throw new Error("Not found")
     if (
       delivery.status !== "identity_pending" ||
-      delivery.heirUserId === undefined
+      delivery.executorUserId === undefined
     ) {
       throw new Error("This delivery is not waiting for an identity decision")
     }
-    const bound = await ctx.db.get("users", delivery.heirUserId)
+    const bound = await ctx.db.get("users", delivery.executorUserId)
     if (approve && bound?.identityStatus !== "verified") {
       throw new Error("The person has not completed identity verification yet")
     }
@@ -669,11 +661,11 @@ export const adminDecideIdentity = mutation({
       meta: { deliveryId, match: "staff" },
       at: now,
     })
-    // The heir was told on the page that we would write when it is ready.
+    // The executor was told on the page that we would write when it is ready.
     if (approve) {
       await sendDeliveryReady(
         ctx,
-        delivery.heirUserId,
+        delivery.executorUserId,
         deliveryId,
         delivery.expiresAt
       )
@@ -684,20 +676,20 @@ export const adminDecideIdentity = mutation({
 
 // ── Internal ────────────────────────────────────────────────────────────────
 
-/** The heir's phone and link, for `outreach.contactHeir` only. */
+/** The executor's phone and link, for `outreach.contactExecutor` only. */
 export const contactDetails = internalQuery({
   args: { deliveryId: v.id("deliveries") },
   handler: async (ctx, { deliveryId }) => {
     const delivery = await ctx.db.get("deliveries", deliveryId)
     if (delivery === null) return null
     if (
-      delivery.status !== "awaiting_heir" &&
+      delivery.status !== "awaiting_executor" &&
       delivery.status !== "identity_pending"
     ) {
       return null
     }
-    const heir = await ctx.db.get("heirs", delivery.heirId)
-    const { phone } = contactOf(delivery, heir)
+    const executor = await ctx.db.get("executors", delivery.executorId)
+    const { phone } = contactOf(delivery, executor)
     if (phone === null) return null
     return {
       phone,
@@ -706,7 +698,7 @@ export const contactDetails = internalQuery({
   },
 })
 
-/** Written by `outreach.contactHeir` with the provider's answer. */
+/** Written by `outreach.contactExecutor` with the provider's answer. */
 export const recordSms = internalMutation({
   args: { deliveryId: v.id("deliveries"), sent: v.boolean() },
   handler: async (ctx, { deliveryId, sent }) => {
@@ -723,7 +715,7 @@ export const recordSms = internalMutation({
 })
 
 /**
- * Daily. Warns each bound heir thirty days before their delivery closes, then
+ * Daily. Warns each bound executor thirty days before their delivery closes, then
  * closes every delivery past its window and, with the last one, deletes the
  * vault (`vault.purge`), so after a year nobody — Wassiya included — can open
  * it again.
@@ -750,14 +742,14 @@ export const expire = internalMutation({
       for (const delivery of closing) {
         if (
           delivery.remindedAt !== undefined ||
-          delivery.heirUserId === undefined
+          delivery.executorUserId === undefined
         ) {
           continue
         }
         await ctx.db.patch("deliveries", delivery._id, { remindedAt: now })
         await sendDeliveryExpiring(
           ctx,
-          delivery.heirUserId,
+          delivery.executorUserId,
           delivery._id,
           delivery.expiresAt
         )
@@ -778,8 +770,8 @@ export const expire = internalMutation({
           status: "expired",
           destroyedAt: now,
         })
-        // Heirs share assets through "allHeirs", so the vault goes only once
-        // the last of this report's deliveries has closed.
+        // Every executor receives the same vault, so it goes only once the last
+        // of this report's deliveries has closed.
         const siblings = await ctx.db
           .query("deliveries")
           .withIndex("by_claimId", (q) => q.eq("claimId", delivery.claimId))
@@ -795,7 +787,7 @@ export const expire = internalMutation({
         await writeAudit(ctx, {
           userId: delivery.subjectUserId,
           event: "delivery.expired",
-          meta: { deliveryId: delivery._id, heirId: delivery.heirId },
+          meta: { deliveryId: delivery._id, executorId: delivery.executorId },
           at: now,
         })
         expired += 1

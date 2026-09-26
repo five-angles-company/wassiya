@@ -33,7 +33,7 @@ export const ATTACHMENT_TYPES = [
 ] as const
 /**
  * An attachment must have been uploaded recently. Storage ids of vault blobs
- * are not secret to an heir who received a delivery, and this — with the type
+ * are not secret to an executor who received a delivery, and this — with the type
  * allow-list, which excludes the octet-stream every ciphertext is — stops a
  * thread from being used to mint fresh URLs for someone else's files.
  */
@@ -180,16 +180,16 @@ export function randomToken(bytes = 32): string {
 }
 
 /**
- * A recovery sheet code, pasted or typed: `WSY1-` and fourteen groups of four
- * from the sheet's Base32 alphabet.
+ * A sheet code, pasted or typed — the owner's recovery sheet (`WSY1-`) or an
+ * executor's (`WSE1-`) — and fourteen groups of four from the Base32 alphabet.
  *
  * ⚠️ Mirrors `looksLikeRecoveryCode` in `@workspace/crypto/papercode`, which
- * the composers use to warn before sending. The backend cannot import that
- * package (`verify-invariants.mjs` confines it to `escrow.ts`), so the two
- * must change together. Requiring a digit in the run is what keeps ordinary
- * four-letter English words from matching.
+ * the composers use to warn before sending. The backend does not import that
+ * package (`verify-invariants.mjs` forbids it), so the two must change
+ * together. Requiring a digit in the run is what keeps ordinary four-letter
+ * English words from matching.
  */
-const SHEET_PREFIX = /WSY[A-Z]?\d+\s*-/i
+const SHEET_PREFIX = /WS[YE][A-Z]?\d+\s*-/i
 const SHEET_RUN = /(?:[2-9A-HJ-NP-Z]{4}[\s\-–—]*){8,}/g
 
 export function looksLikeRecoveryCode(text: string): boolean {
@@ -272,7 +272,7 @@ export async function assertOwnContext(
   }
   if (context.deliveryId !== undefined) {
     const delivery = await ctx.db.get("deliveries", context.deliveryId)
-    if (delivery?.heirUserId !== requester.user._id) refuse("context")
+    if (delivery?.executorUserId !== requester.user._id) refuse("context")
   }
 }
 

@@ -1,16 +1,17 @@
 import type { Metadata } from "next"
 
-import { ReceiveEntry } from "@/features/box/components/receive-entry"
+import { ReceiveEntry } from "@/features/handover/components/receive-entry"
 
 /**
- * ⚠️ **Never indexed.** The token is a capability sent to one heir's phone.
- * Holding it opens nothing — identity does — but it names the deceased.
+ * ⚠️ **Never indexed.** The token is a capability sent to one executor's phone.
+ * Holding it opens nothing — identity and the sheet do — but it names the
+ * deceased.
  */
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-/** The link in the message Wassiya sends each heir after release. Public. */
+/** The link in the message Wassiya sends each executor after release. Public. */
 export default async function ReceivePage({
   params,
 }: {

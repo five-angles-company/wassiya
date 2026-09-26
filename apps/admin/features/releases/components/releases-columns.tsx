@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip"
+import { cn } from "@workspace/ui/lib/utils"
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
 import type { FunctionReturnType } from "convex/server"
 
@@ -136,15 +137,16 @@ export function releaseColumns(
       },
     }),
 
-    // A report counting down with no receiving heir will release on schedule and
-    // reach nobody. It is the one genuinely alarming row this screen can show,
-    // so it is a column rather than something an operator has to go and check.
-    helper.accessor("heirsReceiving", {
-      id: "receiving",
+    // A report counting down with no executor, or none holding a printed sheet,
+    // will release on schedule and reach nobody who can open it. It is the one
+    // genuinely alarming row this screen can show, so it is a column rather
+    // than something an operator has to go and check.
+    helper.accessor("executors", {
+      id: "delivery",
       enableSorting: false,
       header: () => labels.colDelivery,
       cell: ({ row }) => {
-        const receiving = row.original.heirsReceiving
+        const executors = row.original.executors
         const deliveries = row.original.deliveries
 
         if (deliveries !== null) {
@@ -174,24 +176,44 @@ export function releaseColumns(
           )
         }
 
-        if (receiving === null) {
+        if (executors === null) {
           return <NotApplicable />
         }
-        return receiving === 0 ? (
+        if (executors.total === 0) {
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="destructive" className="whitespace-nowrap">
+                  {labels.executorsNone}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                {labels.deliveryNoneHint}
+              </TooltipContent>
+            </Tooltip>
+          )
+        }
+        const summary = (
+          <span
+            className={cn(
+              "whitespace-nowrap tabular-nums",
+              executors.withSheet === 0 && "text-destructive"
+            )}
+          >
+            {labels.executorsWithSheet
+              .replace("{n}", fmtNumber(executors.withSheet, locale))
+              .replace("{total}", fmtNumber(executors.total, locale))}
+          </span>
+        )
+        return executors.withSheet === 0 ? (
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive" className="whitespace-nowrap">
-                {labels.receivingNone}
-              </Badge>
-            </TooltipTrigger>
+            <TooltipTrigger asChild>{summary}</TooltipTrigger>
             <TooltipContent className="max-w-xs">
-              {labels.deliveryNoneHint}
+              {labels.noSheetHint}
             </TooltipContent>
           </Tooltip>
         ) : (
-          <span className="whitespace-nowrap tabular-nums">
-            {labels.receivingCount.replace("{n}", fmtNumber(receiving, locale))}
-          </span>
+          summary
         )
       },
     }),
@@ -234,7 +256,7 @@ export function releaseColumnLabels(locale: Locale): Record<string, string> {
     band: labels.colBand,
     claimant: labels.colClaimant,
     remaining: labels.colRemaining,
-    receiving: labels.colDelivery,
+    delivery: labels.colDelivery,
     deadline: labels.colDeadline,
     releasedAt: labels.colReleased,
   }

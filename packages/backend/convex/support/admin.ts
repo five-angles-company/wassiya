@@ -2,8 +2,8 @@
 //
 // Staff see what the requester wrote and what is already bound to the
 // requester's own account — never a vault, and never whether a stranger's
-// email belongs to one. Heirs are silent until release, and a support thread is
-// not an exception: nothing here may confirm that someone is an heir or that a
+// email belongs to one. Executors are silent until release, and a support thread is
+// not an exception: nothing here may confirm that someone is an executor or that a
 // vault exists to anyone but its owner.
 //
 // Staff actions are audited against the staff member themselves: the message

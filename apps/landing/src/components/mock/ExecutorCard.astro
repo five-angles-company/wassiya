@@ -1,0 +1,39 @@
+---
+import { Image } from "astro:assets"
+import { Check } from "lucide-react"
+
+import mark from "@/assets/brand/mark.png"
+import Faces from "@/components/ui/Faces.astro"
+import { t, type Locale } from "@/i18n/locale"
+import { MOCK } from "@/i18n/strings/mock"
+
+interface Props {
+  locale: Locale
+}
+
+const m = t(MOCK, Astro.props.locale)
+---
+
+<div>
+  <div class="bg-card border-border flex items-center gap-3 rounded-[22px] border px-4 py-3">
+    <Faces initials={[m.executorName.charAt(0)]} size={36} />
+    <span class="min-w-0 flex-1">
+      <span class="block truncate text-[14px] font-semibold">{m.executorName}</span>
+      <span class="text-olive-700 flex items-center gap-1 text-[12px] font-semibold">
+        <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+        {m.executorSheetPrinted}
+      </span>
+    </span>
+    <span class="text-muted-foreground text-[12px]">{m.executorRole}</span>
+  </div>
+
+  <div class="bg-sand-50 border-border mx-3 mt-3 rotate-[-2deg] rounded-[14px] border p-3.5 shadow-[var(--shadow-sheet)]" aria-hidden="true">
+    <div class="flex items-center gap-2">
+      <Image src={mark} alt="" width={64} height={32} class="h-3.5 w-auto" />
+      <span class="font-heading text-[13px] font-black">{m.executorSheetMasthead}</span>
+    </div>
+    <p class="mt-2 text-center font-mono text-[13px] font-semibold tracking-[0.12em]" dir="ltr">WSE1 · •••• · ••••</p>
+  </div>
+
+  <p class="bg-olive-100 text-olive-700 mt-4 rounded-[18px] px-3.5 py-2.5 text-[12px] leading-[1.7]">{m.executorNote}</p>
+</div>

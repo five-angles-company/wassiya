@@ -52,7 +52,7 @@ export const RECOVERY = {
     ar: "لا توجد خزنة على هذا الحساب بعد.",
     en: "There's no vault on this account yet.",
   },
-  // The vault was handed to the heirs after a verified death. The one person
+  // The vault was handed to the executors after a verified death. The one person
   // who can undo that is the owner, alive, through us.
   closed: {
     ar: "أُغلقت هذه الخزنة بعد التحقق من وفاة صاحبها، ولا يمكن استردادها بالوثيقة. إن كنت صاحبها، راسلنا لنتحقق من هويتك.",

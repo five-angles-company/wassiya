@@ -7,18 +7,16 @@ import { Text } from "@workspace/ui-native/components/ui/text"
 import { Sheet } from "@workspace/ui-native/components/wassiya/sheet"
 import { router } from "expo-router"
 import { useEffect } from "react"
-import { Pressable, View } from "react-native"
+import { Pressable } from "react-native"
 
 import { useStrings } from "@/i18n/use-strings"
 
 /**
  * Deleting an asset — consequence before confirmation.
  *
- * The sheet names **the people who lose access**, because the cost of deleting
- * an asset is never the asset. An owner who has forgotten that this wallet is
- * the one routed to their daughter finds out here, at the only moment the
- * information can still change anything. Those names are hairline rows: two
- * people who lose something are a list, not a warning box.
+ * A handed-over asset says that the executors will not receive it, because the
+ * cost of deleting it is never the asset — and this is the only moment that
+ * can still change anything.
  *
  * **Destructive is outlined, safe is filled.** The rule is deliberate — a solid
  * button in this system means *proceed calmly*, and keeping the asset is the
@@ -29,8 +27,8 @@ export type DeleteAssetSheetProps = {
   assetId: Id<"assets">
   /** The asset's decrypted name, for the question. */
   name: string
-  /** Who loses access. Empty gives the shorter sheet. */
-  recipients: string[]
+  /** Handed over: the executors lose it, and the sheet says so. */
+  handedOver: boolean
   open: boolean
   onClose: () => void
 }
@@ -38,7 +36,7 @@ export type DeleteAssetSheetProps = {
 export function DeleteAssetSheet({
   assetId,
   name,
-  recipients,
+  handedOver,
   open,
   onClose,
 }: DeleteAssetSheetProps) {
@@ -90,30 +88,8 @@ export function DeleteAssetSheet({
         {t.deleteFinal}
       </Text>
 
-      {recipients.length > 0 ? (
-        <View className="mb-6">
-          {recipients.map((who, i) => (
-            <View key={`${who}-${i}`}>
-              <View className="flex-row items-center gap-[13px] py-3">
-                <View
-                  className={`size-[34px] shrink-0 items-center justify-center rounded-full ${
-                    i % 2 === 0 ? "bg-olive-200" : "bg-olive-300"
-                  }`}
-                >
-                  <Text className="font-body-bold text-olive-900 text-[13px]">
-                    {[...who.trim()][0] ?? "?"}
-                  </Text>
-                </View>
-                <Text className="flex-1 text-[14.5px]">
-                  {t.losesAccess!.replace("{name}", who)}
-                </Text>
-              </View>
-              {i < recipients.length - 1 ? (
-                <View className="bg-border ms-[47px] h-px" />
-              ) : null}
-            </View>
-          ))}
-        </View>
+      {handedOver ? (
+        <Text className="mb-6 text-[15px] leading-[1.75]">{t.executorsLoseIt}</Text>
       ) : null}
 
       {failed ? (

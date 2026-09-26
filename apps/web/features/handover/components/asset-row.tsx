@@ -22,8 +22,8 @@ import {
   fetchAndDecrypt,
   type OpenedItem,
   type SecretField,
-} from "@/features/box/lib/open-box"
-import { HEIR_BOX } from "@/features/box/strings/heir-box"
+} from "@/features/handover/lib/open-handover"
+import { ASSET_LABELS } from "@/features/handover/strings/asset-labels"
 
 const ICON: Record<string, LucideIcon> = {
   crypto: CoinsIcon,
@@ -34,9 +34,9 @@ const ICON: Record<string, LucideIcon> = {
   note: StickyNoteIcon,
 }
 
-type Labels = Resolved<typeof HEIR_BOX>
+type Labels = Resolved<typeof ASSET_LABELS>
 
-const TYPE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
+const TYPE_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   crypto: "typeCrypto",
   bank: "typeBank",
   document: "typeDocument",
@@ -45,7 +45,7 @@ const TYPE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
   note: "typeNote",
 }
 
-const FIELD_LABEL: Record<string, keyof typeof HEIR_BOX> = {
+const FIELD_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   phrase: "fieldPhrase",
   network: "fieldNetwork",
   kind: "fieldKind",
@@ -68,8 +68,8 @@ const FIELD_LABEL: Record<string, keyof typeof HEIR_BOX> = {
   body: "fieldBody",
 }
 
-/** The stored value is a key; the heir reads the word the owner chose. */
-const VALUE_LABEL: Record<string, keyof typeof HEIR_BOX> = {
+/** The stored value is a key; the executor reads the word the owner chose. */
+const VALUE_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   hardware: "valueHardware",
   software: "valueSoftware",
   exchange: "valueExchange",
@@ -102,17 +102,17 @@ const EXACT_FIELDS = new Set([
 ])
 
 /**
- * One thing that was left to this heir.
+ * One handed-over item.
  *
  * The secret fields are shown as text — a seed phrase or a password is read,
  * not downloaded. Each file is its own download, fetched and decrypted in this
  * tab and handed to the browser as an object URL; the plaintext never leaves
- * the tab. The filename is the decrypted title, because a downloads folder of
- * `k97a3f…bin` is not an inheritance.
+ * the tab. The filename is the decrypted title, so a downloads folder can be
+ * told apart and passed on.
  */
 export function AssetRow({ item }: { item: OpenedItem }) {
   const locale = useLocale()
-  const labels = t(HEIR_BOX, locale)
+  const labels = t(ASSET_LABELS, locale)
   const [busy, setBusy] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -167,7 +167,6 @@ export function AssetRow({ item }: { item: OpenedItem }) {
                   item.subtitle,
                   typeName,
                   item.byteSize === undefined ? undefined : formatBytes(item.byteSize),
-                  item.via === "allHeirs" ? labels.viaAllHeirs : labels.viaDirect,
                 ]
                   .filter((part) => part !== undefined && part.length > 0)
                   .join(" · ")}

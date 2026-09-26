@@ -6,9 +6,10 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * vault lives elsewhere. What it is for is answering "what does this service
  * know about me?".
  *
- * ⚠️ `seeBody` must keep the escrow trade (AGENTS.md): nobody opens a vault
- * while its owner lives, but at release Wassiya opens what was set aside for
- * each heir, to hand it over. Never "we cannot open an heir's box".
+ * ⚠️ `seeBody` must stay true to the handover (AGENTS.md): nobody opens a vault
+ * while its owner lives, and after release only an executor's sheet or the
+ * owner's recovery sheet opens what was handed over. Wassiya holds no key —
+ * never say it can open, recover or reset anything.
  */
 export const ACCOUNT = {
   notificationsLink: { ar: "كل الإشعارات", en: "All notifications" },
@@ -33,14 +34,14 @@ export const ACCOUNT = {
   identityVerifiedAt: { ar: "التاريخ", en: "Date" },
   identityAttempts: { ar: "بقيت {n} محاولات", en: "{n} attempts left" },
   identityWhy: {
-    ar: "يتحقق الوارث من هويته قبل أن يستلم ما تُرك له. الإبلاغ عن وفاة لا يحتاج هذا التحقق.",
-    en: "An heir confirms who they are before receiving what was left to them. Reporting a death doesn't need this check.",
+    ar: "يتحقق الوصي من هويته قبل أن يفتح ما سُلِّم إليه. الإبلاغ عن وفاة لا يحتاج هذا التحقق.",
+    en: "An executor confirms who they are before opening what was handed over to them. Reporting a death doesn't need this check.",
   },
 
   seeTitle: { ar: "ما نراه وما لا نراه", en: "What we can and can't see" },
   seeBody: {
-    ar: "ما دام صاحب الخزنة حيّاً، لا يفتح خزنته أحد — ولا نحن. بعد التأكد من الوفاة ومن هوية الوارث، نفتح فقط ما خصّصه لذلك الوارث لنسلّمه له. وما لم يُخصّص لأحد لا يُفتح أبداً.",
-    en: "While a vault's owner is alive, nobody opens their vault — not even us. After the death and an heir's identity are confirmed, we open only what was set aside for that heir, to hand it over. Anything set aside for no one is never opened.",
+    ar: "ما دام صاحب الخزنة حيّاً، لا يفتح خزنته أحد — ولا نحن. وبعد التأكد من الوفاة ومن هوية الوصي، يفتح الوصي على جهازه ما اختار صاحب الخزنة تسليمه، بورقة الوصي أو بورقة استرداد صاحب الخزنة. لا نملك أي مفتاح، فلا نستطيع فتح شيء بأنفسنا، وما أبقاه صاحبه خاصاً لا يُفتح أبداً.",
+    en: "While a vault's owner is alive, nobody opens their vault — not even us. After the death and the executor's identity are confirmed, the executor opens what the owner chose to hand over on their own device, with their executor sheet or the owner's recovery sheet. We hold no key, so we can't open anything ourselves, and what the owner kept private is never opened.",
   },
 
   languageTitle: { ar: "اللغة", en: "Language" },

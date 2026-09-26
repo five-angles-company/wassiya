@@ -52,8 +52,8 @@ export const NOTIFICATIONS = {
   },
   claimReleased: { ar: "انتهت فترة الانتظار", en: "The waiting period is over" },
   claimReleasedBody: {
-    ar: "نتواصل الآن مباشرة مع كل وارث سمّاه صاحب الخزنة.",
-    en: "We're now contacting each heir the vault's owner named, directly.",
+    ar: "نتواصل الآن مباشرة مع كل وصيّ سمّاه صاحب الخزنة.",
+    en: "We're now contacting each executor the vault's owner named, directly.",
   },
 
   // An owner's own, read here only because the feed is shared.

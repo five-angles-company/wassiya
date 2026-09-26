@@ -49,7 +49,7 @@ function addMonths(from: number, months: number): number {
  * ## A negative `months` is deliberate
  *
  * It is how a lapse is produced: a plan whose `renewsAt` has passed, with
- * everything else intact. That state has its own behaviour — reads and heir
+ * everything else intact. That state has its own behaviour — reads and executor
  * delivery keep working while adding stops — and it cannot be verified without
  * a way to enter it. Revoking outright is `plan: "free"` instead, which is a
  * different thing and reads differently in the audit log.
@@ -129,7 +129,7 @@ const limitArg = v.union(v.number(), v.null())
 const limitsArg = v.object({
   storageBytes: limitArg,
   assets: limitArg,
-  heirs: limitArg,
+  executors: limitArg,
   photos: v.boolean(),
   maxFileBytes: limitArg,
 })
@@ -142,7 +142,7 @@ const limitsArg = v.object({
  * that is a quieter way to do it than granting subscriptions one by one.
  *
  * The new limits apply immediately, to everyone on the plan. An owner already
- * past a lowered cap keeps every asset and every heir and simply cannot add
+ * past a lowered cap keeps every asset and every executor and simply cannot add
  * the next one — limits gate adding, never reading, and never release. Nothing
  * here can delete anything.
  *
@@ -177,7 +177,7 @@ export const adminSetLimits = mutation({
         plan,
         storageBytes: limits.storageBytes,
         assets: limits.assets,
-        heirs: limits.heirs,
+        executors: limits.executors,
         photos: limits.photos,
         maxFileBytes: limits.maxFileBytes,
       },
@@ -204,7 +204,7 @@ export const adminSetOverride = mutation({
       v.object({
         storageBytes: v.optional(limitArg),
         assets: v.optional(limitArg),
-        heirs: v.optional(limitArg),
+        executors: v.optional(limitArg),
         photos: v.optional(v.boolean()),
         maxFileBytes: v.optional(limitArg),
       }),

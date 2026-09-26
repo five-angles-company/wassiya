@@ -49,14 +49,14 @@ export default defineSchema({
     identityVerifiedAt: v.optional(v.number()),
     // Keyed hashes of every identity number read off the verified document
     // (document number, personal number) — see `model/identityHash.ts`. What
-    // an heir delivery is matched against. Never the numbers themselves.
+    // an executor's delivery is matched against. Never the numbers themselves.
     identityDocHashes: v.optional(v.array(v.string())),
     // As printed on the verified document, "YYYY-MM-DD".
     identityBirthDate: v.optional(v.string()),
-    // When the owner last confirmed every heir's phone and email are still
-    // theirs. Numbers get recycled; the yearly prompt is the cheapest defence
-    // against a delivery link reaching a stranger.
-    heirContactsConfirmedAt: v.optional(v.number()),
+    // When the owner last confirmed every executor's phone and email are
+    // still theirs, and that each still has their sheet. Numbers get recycled
+    // and paper gets lost; the yearly prompt is the cheapest defence.
+    executorsConfirmedAt: v.optional(v.number()),
     diditSessionId: v.optional(v.string()),
     // Failed Didit attempts. Incremented in `applyWebhookResult` on a
     // rejection, not when a session opens — the flow caps *failures* at three,
@@ -145,7 +145,7 @@ export default defineSchema({
       v.object({
         storageBytes: v.optional(v.union(v.number(), v.null())),
         assets: v.optional(v.union(v.number(), v.null())),
-        heirs: v.optional(v.union(v.number(), v.null())),
+        executors: v.optional(v.union(v.number(), v.null())),
         photos: v.optional(v.boolean()),
         maxFileBytes: v.optional(v.union(v.number(), v.null())),
       })
@@ -260,7 +260,7 @@ export default defineSchema({
     key: v.union(v.literal("free"), v.literal("annual")),
     storageBytes: v.union(v.number(), v.null()),
     assets: v.union(v.number(), v.null()),
-    heirs: v.union(v.number(), v.null()),
+    executors: v.union(v.number(), v.null()),
     photos: v.boolean(),
     maxFileBytes: v.union(v.number(), v.null()),
     updatedAt: v.number(),
@@ -273,8 +273,8 @@ export default defineSchema({
   //
   // **Settings only — never a credential.** Every field here is safe to read
   // off a database export: a sender address, a toggle, a phone number, a URL.
-  // API keys, webhook signing secrets, the identity HMAC and the escrow private
-  // key stay in the deployment env, where a leaked table cannot reach them.
+  // API keys, webhook signing secrets and the identity HMAC stay in the
+  // deployment env, where a leaked table cannot reach them.
   // `settings.status` reports whether each of those is present, as a boolean,
   // and never returns one.
   //
@@ -340,6 +340,10 @@ export default defineSchema({
     paperPrintedAt: v.optional(v.number()),
     paperUsedAt: v.optional(v.number()),
     rotatedAt: v.number(),
+    // The release key under MK (`@workspace/crypto/release`): the owner's copy,
+    // and after death the fallback that lets the owner's recovery sheet open
+    // what was handed over. Absent until the phone first needs it.
+    releaseKeyWrappedByMk: v.optional(v.bytes()),
   }).index("by_userId", ["userId"]),
 
   assets: defineTable({
@@ -356,9 +360,9 @@ export default defineSchema({
     // own DEK by `@workspace/crypto/label`. Opaque here, like every other
     // `v.bytes()` column.
     //
-    // Under the DEK rather than MK on purpose: heirs never receive MK, so a
-    // label wrapped by it would reach an heir as content they hold the key to
-    // and cannot name. This way the label travels with the asset.
+    // Under the DEK rather than MK on purpose: executors never receive MK, so
+    // a label wrapped by it would reach an executor as content they hold the
+    // key to and cannot name. This way the label travels with the asset.
     //
     // It is not a nicety. A plaintext `title` column would hold
     // "مصرف الراجحي" and "iCloud · fatima@icloud.com", which is precisely what
@@ -385,88 +389,36 @@ export default defineSchema({
         thumbnailId: v.optional(v.id("_storage")),
       })
     ),
-    recipientRule: v.union(v.literal("default"), v.literal("explicit")),
-    // The DEK sealed on the owner's device to the escrow key, bound to this
-    // owner and this asset. Present exactly while the asset is routed — only
-    // routed items are escrowed. Read by `escrow.openDelivery` alone.
-    escrowedDek: v.optional(v.bytes()),
-    escrowKeyId: v.optional(v.string()),
+    // The DEK wrapped under the owner's release key, bound to owner and asset.
+    // Present exactly while the asset is handed over; absent means private — it
+    // dies with the owner, because nothing but MK can open it.
+    dekWrappedByRelease: v.optional(v.bytes()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_and_type", ["userId", "type"]),
 
-  assetRecipients: defineTable({
-    assetId: v.id("assets"),
-    // Denormalised owner, so an authorisation check is one indexed read rather
-    // than a join back through `assets`.
-    userId: v.id("users"),
-    recipient: v.union(
-      v.object({ kind: v.literal("heir"), heirId: v.id("heirs") }),
-      v.object({ kind: v.literal("executor") }),
-      v.object({ kind: v.literal("allHeirs") })
-    ),
-    // Denormalised copies of the union's discriminant and its heir id, because
-    // Convex indexes columns, not branches of a union. Both are written only by
-    // `routing.setRecipients`, in the same statement as `recipient` itself.
-    //
-    // `recipientKind` is not redundant with `recipientHeirId`: executor and
-    // allHeirs rows share `recipientHeirId: undefined`, so without it an
-    // "allHeirs" lookup would have to scan every executor row and could silently
-    // miss one past the take() window — which would drop an asset out of an
-    // heir's bundle without any error.
-    recipientKind: v.union(
-      v.literal("heir"),
-      v.literal("executor"),
-      v.literal("allHeirs")
-    ),
-    recipientHeirId: v.optional(v.id("heirs")),
-  })
-    .index("by_assetId", ["assetId"])
-    .index("by_userId_and_recipientHeirId", ["userId", "recipientHeirId"])
-    .index("by_userId_and_recipientKind", ["userId", "recipientKind"]),
-
-  heirs: defineTable({
+  // الأوصياء. Each receives everything handed over, alone. Silent in the app:
+  // no invitation, no account, nothing before release — the owner hands them
+  // their printed sheet, or leaves it with the paper will.
+  executors: defineTable({
     userId: v.id("users"),
     name: v.string(),
-    relation: v.string(),
     phone: v.string(),
     // A second channel at release: if the number was recycled, the email may
-    // still reach the real heir, and the other way round.
+    // still reach the real executor, and the other way round.
     email: v.optional(v.string()),
-    // Keyed hash of the national ID number the owner registered, if any — see
-    // `model/identityHash.ts`. Optional by product decision: without it, a
-    // delivery needs a staff identity decision instead of an automatic match.
-    idNumberHash: v.optional(v.string()),
-    // "YYYY-MM-DD", compared by staff when there is no ID number to match.
-    birthDate: v.optional(v.string()),
-    /**
-     * Every heir is silent: they learn nothing until release.
-     *
-     * There was a "notified" mode — invited, still seeing no content — and it
-     * was removed as a product decision, not a cleanup. It never worked either:
-     * nothing in this deployment has ever sent an invite, so `inviteStatus` was
-     * only ever written as "none" and a notified heir sat at "pending" forever.
-     *
-     * Both stay as one-member unions rather than being dropped, because
-     * removing a field a live document still carries fails schema validation.
-     * Widening either back is one literal.
-     */
-    mode: v.literal("silent"),
-    inviteStatus: v.literal("none"),
-    // The message itself is encrypted; only its kind, blob id and its key live
-    // here — wrapped by MK for the owner, and sealed to the escrow key for this
-    // heir at release, exactly like a routed asset's DEK.
-    messageMeta: v.optional(
+    // Keyed hash of the national ID number — see `model/identityHash.ts`.
+    // Required: their verified document is matched against it before any
+    // delivery opens.
+    idNumberHash: v.string(),
+    // The release key under this executor's printed sheet. Absent until the
+    // sheet is printed and confirmed; `version` is bound into the wrapper, so a
+    // reprint voids the old sheet the moment it is saved.
+    sheet: v.optional(
       v.object({
-        kind: v.union(
-          v.literal("text"),
-          v.literal("audio"),
-          v.literal("video")
-        ),
-        storageId: v.id("_storage"),
-        messageKeyWrappedByMk: v.bytes(),
-        messageKeyEscrowed: v.bytes(),
-        escrowKeyId: v.string(),
+        releaseKeyWrapped: v.bytes(),
+        version: v.number(),
+        printedAt: v.number(),
       })
     ),
   }).index("by_userId", ["userId"]),
@@ -567,7 +519,7 @@ export default defineSchema({
     closedReason: v.optional(
       v.union(v.literal("no_vault_matched"), v.literal("review_failed"))
     ),
-    /** Admin-only. Never returned to a claimant or an heir by any function. */
+    /** Admin-only. Never returned to a claimant or an executor by any function. */
     staffNote: v.optional(v.string()),
 
     /**
@@ -650,27 +602,28 @@ export default defineSchema({
     .index("by_status_and_vetoDeadline", ["status", "vetoDeadline"]),
 
   /**
-   * One heir's share of a released death report.
+   * One executor's copy of a released death report.
    *
    * A report (`claims`) is about the owner and may be filed by anyone; a
-   * delivery is about one recipient. Created by `claims.advance` for every heir
-   * with a bundle when a report reaches `released`, never by a client.
+   * delivery is about one executor. Created by `claims.advance` for every
+   * executor when a report reaches `released`, never by a client.
    *
-   *   awaiting_heir → identity_pending → ready → expired
-   *                                    ↘ rejected (staff refused the match)
+   *   awaiting_executor → identity_pending → ready → expired
+   *                                        ↘ rejected (staff refused the match)
    *
-   * `contactToken` is the capability in the link sent to the heir. It is stored
-   * as-is because staff send it by hand until an SMS provider exists; that is
-   * safe only because the link merely lets a signed-in person *claim* the
-   * delivery — nothing opens until their own Didit identity matches this heir.
-   * Returned to admins only.
+   * `contactToken` is the capability in the link sent to the executor. It is
+   * stored as-is because staff send it by hand until an SMS provider exists;
+   * that is safe only because the link merely lets a signed-in person *claim*
+   * the delivery — nothing is served until their own Didit identity matches
+   * this executor, and nothing opens without their sheet. Returned to admins
+   * only.
    */
   deliveries: defineTable({
     claimId: v.id("claims"),
     subjectUserId: v.id("users"),
-    heirId: v.id("heirs"),
+    executorId: v.id("executors"),
     status: v.union(
-      v.literal("awaiting_heir"),
+      v.literal("awaiting_executor"),
       v.literal("identity_pending"),
       v.literal("ready"),
       v.literal("rejected"),
@@ -678,18 +631,18 @@ export default defineSchema({
     ),
     contactToken: v.string(),
     contactedAt: v.optional(v.number()),
-    // Set by staff when the heir is reached some other way; they win over the
-    // heir record's phone and email for every later send.
+    // Set by staff when the executor is reached some other way; they win over
+    // the executor record's phone and email for every later send.
     contactPhone: v.optional(v.string()),
     contactEmail: v.optional(v.string()),
-    heirUserId: v.optional(v.id("users")),
+    executorUserId: v.optional(v.id("users")),
     boundAt: v.optional(v.number()),
     identityMatch: v.optional(
       v.union(v.literal("id_number"), v.literal("staff"))
     ),
     readyAt: v.optional(v.number()),
     lastOpenedAt: v.optional(v.number()),
-    // Release + one year. After it the owner's escrowed keys are destroyed.
+    // Release + one year. When the last delivery closes, the vault is deleted.
     expiresAt: v.number(),
     remindedAt: v.optional(v.number()),
     destroyedAt: v.optional(v.number()),
@@ -697,14 +650,14 @@ export default defineSchema({
     staffNote: v.optional(v.string()),
   })
     .index("by_claimId", ["claimId"])
-    .index("by_heirUserId", ["heirUserId"])
+    .index("by_executorUserId", ["executorUserId"])
     .index("by_contactToken", ["contactToken"])
-    .index("by_heirId", ["heirId"])
+    .index("by_executorId", ["executorId"])
     .index("by_status", ["status"])
     .index("by_status_and_expiresAt", ["status", "expiresAt"]),
 
   /**
-   * Every attempt to reach an heir, automatic or by staff. Append-only in
+   * Every attempt to reach an executor, automatic or by staff. Append-only in
    * practice — nothing edits a past attempt — so it reads as the delivery's
    * contact timeline. Never carries the link: a note is free text staff type.
    */
@@ -927,7 +880,7 @@ export default defineSchema({
     slug: v.string(),
     audience: v.union(
       v.literal("owner"),
-      v.literal("heir"),
+      v.literal("executor"),
       v.literal("reporter"),
       v.literal("all")
     ),

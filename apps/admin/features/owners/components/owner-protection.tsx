@@ -10,7 +10,7 @@ import {
   OwnerFacts,
 } from "@/features/owners/components/owner-facts"
 import { OWNERS } from "@/features/owners/strings/owners"
-import { fmtDate } from "@/lib/format"
+import { fmtDate, fmtNumber } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 
 /**
@@ -22,8 +22,8 @@ import { t, type Locale } from "@/lib/i18n/locale"
 type Detail = NonNullable<FunctionReturnType<typeof api.admin.ownerDetail>>
 
 /**
- * The vault, the check-in and the deliveries — the three things that decide
- * whether anything this owner stored ever reaches anyone.
+ * The vault, the check-in and the executor sheets — the three things that
+ * decide whether anything this owner stored ever reaches anyone.
  *
  * ## What the vault card deliberately does not show
  *
@@ -46,7 +46,7 @@ export function OwnerProtection({
   locale: Locale
 }) {
   const labels = t(OWNERS, locale)
-  const { vault, checkin, heirs } = detail
+  const { vault, checkin, executors } = detail
 
   return (
     <div className="flex flex-col gap-4">
@@ -116,28 +116,35 @@ export function OwnerProtection({
       </OwnerFacts>
 
       <OwnerFacts title={labels.sectionDelivery}>
-        {heirs.length === 0 ? (
+        {executors.length === 0 ? (
           <FactsEmpty>{labels.deliveryNone}</FactsEmpty>
         ) : (
-          heirs.map((heir) => (
-            <Fact
-              key={heir.id}
-              label={heir.relation}
-              value={
-                <span className="flex items-center justify-end gap-2">
-                  <span>{heir.name}</span>
-                  {heir.receives ? (
-                    <Badge variant="secondary">{labels.heirReceives}</Badge>
+          <>
+            {executors.map((executor) => (
+              <Fact
+                key={executor.id}
+                label={executor.name}
+                value={
+                  executor.sheetPrintedAt === null ? (
+                    <span className="text-destructive">{labels.sheetNone}</span>
                   ) : (
-                    <Badge variant="destructive">{labels.heirGetsNothing}</Badge>
-                  )}
-                  {!heir.hasIdNumber && (
-                    <Badge variant="outline">{labels.noIdNumber}</Badge>
-                  )}
-                </span>
-              }
-            />
-          ))
+                    labels.sheetPrinted
+                      .replace(
+                        "{date}",
+                        fmtDate(executor.sheetPrintedAt, locale)
+                      )
+                      .replace(
+                        "{version}",
+                        fmtNumber(executor.sheetVersion ?? 0, locale)
+                      )
+                  )
+                }
+              />
+            ))}
+            <p className="px-4 py-2.5 text-xs leading-relaxed text-muted-foreground">
+              {labels.deliveryNote}
+            </p>
+          </>
         )}
       </OwnerFacts>
     </div>

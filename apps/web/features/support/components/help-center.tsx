@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useRef } from "react"
 import { api } from "@workspace/backend/api"
 import { useQuery } from "convex/react"
 import { MessagesSquareIcon, PlusIcon } from "lucide-react"
@@ -13,15 +14,30 @@ import { SUPPORT } from "@/features/support/strings/support"
 import { t } from "@/lib/i18n/locale"
 
 /**
- * The help centre for the web's two audiences, heirs and people reporting a
+ * The help centre for the web's two audiences, executors and people reporting a
  * death — owners have theirs in the app. `<details>` so it works before
  * hydration.
+ *
+ * Each article's id is its slug, so another screen can link to `/help#<slug>`.
+ * The articles arrive after the browser has already looked for that anchor,
+ * so the linked one is opened and scrolled to here, once.
  */
 export function HelpCenter() {
   const locale = useLocale()
   const labels = t(SUPPORT, locale)
   const common = t(COMMON, locale)
-  const articles = useQuery(api.support.help.articles, { audiences: ["heir", "reporter"], locale })
+  const articles = useQuery(api.support.help.articles, { audiences: ["executor", "reporter"], locale })
+  const anchored = useRef(false)
+
+  useEffect(() => {
+    if (articles === undefined || anchored.current) return
+    anchored.current = true
+    const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)))
+    if (target instanceof HTMLDetailsElement) {
+      target.open = true
+      target.scrollIntoView({ block: "start" })
+    }
+  }, [articles])
 
   return (
     <div className="flex flex-col gap-8">
@@ -33,7 +49,8 @@ export function HelpCenter() {
             {articles.map((article) => (
               <details
                 key={article.slug}
-                className="group border-border bg-card/50 open:bg-card rounded-card border transition-[background-color,box-shadow] open:shadow-[var(--shadow-raised)]"
+                id={article.slug}
+                className="group border-border bg-card/50 open:bg-card rounded-card scroll-mt-28 border transition-[background-color,box-shadow] open:shadow-[var(--shadow-raised)]"
               >
                 <summary className="font-heading flex cursor-pointer list-none items-center justify-between gap-6 px-6 py-5 text-[17px] leading-[1.6] font-extrabold [&::-webkit-details-marker]:hidden">
                   {article.title}

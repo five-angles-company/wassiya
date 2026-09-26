@@ -115,7 +115,7 @@ export const RECOVERY_COPY = {
 
 // ── The claimant's side ──────────────────────────────────────────────────────
 //
-// Until these existed the heir received **nothing** across a claim's whole life:
+// Until these existed the reporter received **nothing** across a claim's whole life:
 // two in-app rows at the very end and no mail at all, while `apps/web` promised
 // "we email you at each change". These are that promise.
 //
@@ -134,7 +134,7 @@ export const RECOVERY_COPY = {
 // to refresh a page daily. The objection period is the clearest case: thirty days
 // where the correct action is none.
 
-/** Filed. The receipt — and the first thing the product has ever sent a heir. */
+/** Filed. The receipt — and the first thing the product ever sends a reporter. */
 export const CLAIM_FILED_COPY = {
   ar: {
     subject: "استلمنا بلاغك",
@@ -154,11 +154,11 @@ export const CLAIM_FILED_COPY = {
 export const CLAIM_IN_REVIEW_COPY = {
   ar: {
     subject: "اكتملت المراجعة — بدأت مهلة الاعتراض",
-    body: "اكتملت مراجعتنا للبلاغ، وبدأت مهلة اعتراض مدّتها ثلاثون يوماً يستطيع خلالها صاحب الخزنة إيقافه. لا شيء مطلوب منك. إن لم يحدث اعتراض حتى {date}، نتواصل بأنفسنا مع الورثة الذين سمّاهم.",
+    body: "اكتملت مراجعتنا للبلاغ، وبدأت مهلة اعتراض مدّتها ثلاثون يوماً يستطيع خلالها صاحب الخزنة إيقافه. لا شيء مطلوب منك. إن لم يحدث اعتراض حتى {date}، نتواصل بأنفسنا مع الأوصياء الذين سمّاهم.",
   },
   en: {
     subject: "Review complete — the objection period has started",
-    body: "We have finished reviewing the report, and a thirty-day objection period has begun in which the vault owner can stop it. Nothing is needed from you. If no objection comes by {date}, we contact the heirs the owner named ourselves.",
+    body: "We have finished reviewing the report, and a thirty-day objection period has begun in which the vault owner can stop it. Nothing is needed from you. If no objection comes by {date}, we contact the executors the owner named ourselves.",
   },
 } as const satisfies LocalisedCopy
 
@@ -199,18 +199,19 @@ export const CLAIM_VETOED_COPY = {
 } as const satisfies LocalisedCopy
 
 /**
- * Released. Sent to the reporter, who receives nothing by reporting: each heir
- * the owner named is contacted directly and proves their own identity. Saying
- * so stops a reporter who is also an heir from waiting on this message.
+ * Released. Sent to the reporter, who receives nothing by reporting: each
+ * executor the owner named is contacted directly and proves their own identity.
+ * Saying so stops a reporter who is also an executor from waiting on this
+ * message.
  */
 export const CLAIM_RELEASED_COPY = {
   ar: {
     subject: "انتهت مهلة الاعتراض",
-    body: "انتهت مهلة الاعتراض دون اعتراض. نتواصل الآن مباشرةً مع كل وارث سمّاه صاحب الخزنة، على الرقم الذي سجّله، ليُثبت هويته ويستلم ما تُرك له. إن كنت أحدهم، ستصلك رسالة منفصلة.",
+    body: "انتهت مهلة الاعتراض دون اعتراض. نتواصل الآن مباشرةً مع كل وصيّ سمّاه صاحب الخزنة، على الرقم الذي سجّله، ليُثبت هويته ويستلم ما تُرك. إن كنت أحدهم، ستصلك رسالة منفصلة.",
   },
   en: {
     subject: "The objection period has ended",
-    body: "The objection period ended with no objection. We are now contacting each heir the vault owner named, on the number they registered, to prove their identity and receive what was left to them. If you are one of them, you will get a separate message.",
+    body: "The objection period ended with no objection. We are now contacting each executor the vault owner named, on the number they registered, to prove their identity and receive what was left. If you are one of them, you will get a separate message.",
   },
 } as const satisfies LocalisedCopy
 
@@ -237,48 +238,48 @@ export const CLAIM_CLOSED_COPY = {
 } as const satisfies LocalisedCopy
 
 /**
- * The heir's identity matched and the delivery can be opened. Names no one and
- * nothing: the link leads to a page that asks them to sign in first.
+ * The executor's identity matched and the delivery can be opened. Names no one
+ * and nothing: the link leads to a page that asks them to sign in first.
  */
 export const DELIVERY_READY_COPY = {
   ar: {
-    subject: "ما تُرك لك جاهز للفتح",
-    body: "تحقّقنا من هويتك، وأصبح ما تُرك لك جاهزاً. يُفتح على جهازك فقط، ويبقى متاحاً حتى {date} — نزّل ما تحتاجه قبل ذلك.",
+    subject: "ما تُرك جاهز للفتح",
+    body: "تحقّقنا من هويتك، وأصبح ما تُرك جاهزاً. تفتحه بورقة الوصي على جهازك فقط، ويبقى متاحاً حتى {date} — نزّل ما تحتاجه قبل ذلك.",
   },
   en: {
-    subject: "What was left to you is ready to open",
-    body: "We have verified your identity and what was left to you is ready. It opens on your device only and stays available until {date} — download what you need before then.",
+    subject: "What was left is ready to open",
+    body: "We have verified your identity and what was left is ready. You open it with the executor sheet, on your device only, and it stays available until {date} — download what you need before then.",
   },
 } as const satisfies LocalisedCopy
 
 /**
- * Thirty days before a delivery's key is destroyed. `{date}` is the day it
- * closes: after it, nobody can open the delivery again, Wassiya included.
+ * Thirty days before the vault is deleted. `{date}` is the day it closes:
+ * after it, nobody can open anything in it again, Wassiya included.
  */
 export const DELIVERY_EXPIRING_COPY = {
   ar: {
-    subject: "يُغلق ما تُرك لك بعد ثلاثين يوماً",
-    body: "في {date} يُتلف مفتاح ما تُرك لك نهائياً، ولا يستطيع أحد فتحه بعد ذلك — ولا نحن. إن لم تكن نزّلت ما تحتاجه، افتحه الآن.",
+    subject: "يُغلق ما تُرك بعد ثلاثين يوماً",
+    body: "في {date} يُحذف ما تُرك نهائياً، ولا يستطيع أحد فتحه بعد ذلك — ولا نحن. إن لم تكن نزّلت ما تحتاجه، افتحه الآن.",
   },
   en: {
-    subject: "What was left to you closes in thirty days",
-    body: "On {date} the key to what was left to you is destroyed for good, and nobody can open it after that — us included. If you have not downloaded what you need, open it now.",
+    subject: "What was left closes in thirty days",
+    body: "On {date} what was left is deleted for good, and nobody can open it after that — us included. If you have not downloaded what you need, open it now.",
   },
 } as const satisfies LocalisedCopy
 
 /**
- * The link to an heir. Names no one and nothing: a phone number or address can
- * be recycled, and whoever reads this may not be the heir. Everything after
- * the link asks for sign-in and identity first.
+ * The link to an executor. Names no one and nothing: a phone number or address
+ * can be recycled, and whoever reads this may not be the executor. Everything
+ * after the link asks for sign-in and identity first.
  */
 export const DELIVERY_INVITE_COPY = {
   ar: {
-    subject: "تُرك لك شيء لدى وصيّة",
-    body: "تُرك لك شيء لدى وصيّة. افتح الرابط وأثبت هويتك لتستلمه. إن لم تكن تعرف سبب هذه الرسالة، تجاهلها — لا يُفتح شيء دون التحقّق من الهوية.",
+    subject: "سمّاك شخص وصياً لدى وصيّة",
+    body: "سمّاك شخص وصياً على ما تركه لدى وصيّة. افتح الرابط وأثبت هويتك، وجهّز ورقة الوصي — قد تكون معك، أو مع وصيّته. إن لم تكن تعرف سبب هذه الرسالة، تجاهلها — لا يُفتح شيء دون التحقّق من الهوية.",
   },
   en: {
-    subject: "Something was left for you at Wassiya",
-    body: "Something was left for you at Wassiya. Open the link and verify your identity to receive it. If this message means nothing to you, ignore it — nothing opens without an identity check.",
+    subject: "Someone named you as their executor at Wassiya",
+    body: "Someone named you as the executor of what they left at Wassiya. Open the link, verify your identity, and have the executor sheet ready — you may have it, or it may be with their will. If this message means nothing to you, ignore it — nothing opens without an identity check.",
   },
 } as const satisfies LocalisedCopy
 

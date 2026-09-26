@@ -35,9 +35,9 @@ function rowsFor(limits: Limits): Row[] {
       kind: count(limits.assets),
     },
     {
-      label: home.planHeirs,
-      value: limits.heirs === null ? home.planUnlimited : fmtNumber(limits.heirs, locale),
-      kind: count(limits.heirs),
+      label: home.planExecutors,
+      value: limits.executors === null ? home.planUnlimited : fmtNumber(limits.executors, locale),
+      kind: count(limits.executors),
     },
     {
       label: home.planPhotos,

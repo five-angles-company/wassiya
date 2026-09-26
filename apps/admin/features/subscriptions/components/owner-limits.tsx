@@ -18,7 +18,7 @@ import { t, type Locale } from "@/lib/i18n/locale"
 export type Override = {
   storageBytes?: number | null
   assets?: number | null
-  heirs?: number | null
+  executors?: number | null
   photos?: boolean
   maxFileBytes?: number | null
 }
@@ -150,11 +150,11 @@ export function OwnerLimits({
         />
         <LimitField
           inheritable
-          label={labels.fieldHeirs}
+          label={labels.fieldExecutors}
           unlimitedLabel={labels.unlimited}
           inheritLabel={labels.inherit}
-          value={draft.heirs}
-          onChange={(next) => edit({ heirs: next })}
+          value={draft.executors}
+          onChange={(next) => edit({ executors: next })}
         />
         <LimitField
           inheritable

@@ -10,8 +10,8 @@ import { unwrap, wrap } from "./wrap"
  * Editing an asset reuses its DEK. It does not rotate it.
  *
  * That is forced by the release model rather than chosen for convenience: a
- * routed asset's DEK is sealed to the escrow key at routing time, so minting a
- * fresh key on an ordinary rename would leave that sealed copy opening nothing —
+ * handed-over asset's DEK is wrapped under the release key, so minting a fresh
+ * key on an ordinary rename would leave that wrapper opening nothing —
  * silently, and only discoverable years later at a claim, by someone who cannot
  * fix it.
  *
@@ -103,13 +103,13 @@ describe("editing an asset under its existing DEK", () => {
   })
 
   /**
-   * The escrow lock holds the DEK itself, not the wrapper. So the test that
+   * The handover holds the DEK itself, not the MK wrapper. So the test that
    * actually matters for delivery: a key captured at routing time still opens
    * what the owner saved afterwards.
    */
   it("keeps a DEK captured at routing time able to open later edits", () => {
     const dek = generateDek()
-    // What the escrow lock sealed, whenever routing last ran.
+    // What the handover wrapped, whenever the asset was first saved.
     const routed = Uint8Array.from(dek)
 
     const laterEdit = encryptAsset(utf8ToBytes("edited long after routing"), dek)

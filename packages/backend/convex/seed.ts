@@ -10,10 +10,9 @@
 //  1. **Everything is an `internalMutation`.** Nothing here is reachable from a
 //     client, only from `npx convex run`, which needs deployment credentials.
 //
-//  2. **No escrowed keys.** A real one needs `@workspace/crypto`, which
-//     `scripts/verify-invariants.mjs` allows in `escrow.ts` alone. Seeded
-//     routed assets carry none, so a seeded delivery opens to items it cannot
-//     name — which is what the console needs, and all it needs.
+//  2. **No real keys.** Every seeded wrapper is zero bytes, so a seeded
+//     delivery opens to nothing — which is what the console needs, and all it
+//     needs.
 //
 //  3. **No `auditLog` rows.** The log is append-only by the same build gate, so
 //     anything written here could never be wiped. Audit-derived views run on
@@ -38,6 +37,9 @@ const SEED_PREFIX = "seed_"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const OWNER_COUNT = 40
+
+/** Matches no real document: a seeded executor's verification never auto-matches. */
+const SEED_ID_HASH = "0".repeat(64)
 
 /**
  * A tiny deterministic generator, so two runs produce the same fixture and a
@@ -106,7 +108,7 @@ export const demo = internalMutation({
     confirm: v.literal("seed-dev"),
     /**
      * Also build one owner whose report can be driven end to end: verified
-     * reporter, two heirs, a matching certificate name. Off by default because
+     * reporter, two executors, a matching certificate name. Off by default because
      * it is the one scenario that implies a real flow rather than numbers.
      */
     withScenario: v.optional(v.boolean()),
@@ -183,8 +185,7 @@ export const demo = internalMutation({
         const assetCount = Math.floor(rand() * 6)
         for (let a = 0; a < assetCount; a += 1) {
           const type = pick(ASSET_TYPES)
-          const routed = rand() < 0.6
-          const assetId = await ctx.db.insert("assets", {
+          await ctx.db.insert("assets", {
             userId,
             type,
             labelSealed: fakeBytes(96),
@@ -197,27 +198,25 @@ export const demo = internalMutation({
             },
             dekWrappedByMk: fakeBytes(60),
             files: [],
-            recipientRule: routed ? "explicit" : "default",
+            dekWrappedByRelease: rand() < 0.7 ? fakeBytes(72) : undefined,
           })
-          if (routed) {
-            await ctx.db.insert("assetRecipients", {
-              assetId,
-              userId,
-              recipient: { kind: "allHeirs" },
-              recipientKind: "allHeirs",
-            })
-          }
         }
 
-        const heirCount = Math.floor(rand() * 4)
-        for (let h = 0; h < heirCount; h += 1) {
-          await ctx.db.insert("heirs", {
+        const executorCount = Math.floor(rand() * 3)
+        for (let e = 0; e < executorCount; e += 1) {
+          await ctx.db.insert("executors", {
             userId,
             name: `${pick(FIRST)} ${pick(LAST)}`,
-            relation: pick(["ابنة", "ابن", "زوجة", "أخ"]),
             phone: `+9665${Math.floor(rand() * 90_000_000 + 10_000_000)}`,
-            mode: "silent" as const,
-            inviteStatus: "none" as const,
+            idNumberHash: SEED_ID_HASH,
+            sheet:
+              rand() < 0.6
+                ? {
+                    releaseKeyWrapped: fakeBytes(72),
+                    version: 1,
+                    printedAt: now - Math.floor(rand() * 40) * DAY_MS,
+                  }
+                : undefined,
           })
         }
 
@@ -243,7 +242,7 @@ export const demo = internalMutation({
     //
     // Everything above is random, which is right for the dashboard's numbers
     // and useless for exercising the review flow: the odds that some owner
-    // happens to have a vault, heirs, *and* a verified claimant are
+    // happens to have a vault, executors, *and* a verified claimant are
     // poor, and the first attempt at this seed produced a claim that tripped
     // both admin guards and could not be completed at all.
     //
@@ -286,16 +285,22 @@ export const demo = internalMutation({
         rotatedAt: now - 20 * DAY_MS,
       })
 
-      for (const heir of [
-        { name: "بدر الدوسري", relation: "ابن" },
-        { name: "نورة الدوسري", relation: "ابنة" },
+      // Real hashes of known numbers, so `simulateDidit` with the same number
+      // takes the automatic match rather than the staff decision.
+      for (const executor of [
+        { name: "بدر الدوسري", idNumber: "1000000001" },
+        { name: "نورة الدوسري", idNumber: "1000000002" },
       ]) {
-        await ctx.db.insert("heirs", {
+        await ctx.db.insert("executors", {
           userId: ownerId,
-          ...heir,
+          name: executor.name,
           phone: "+966551234567",
-          mode: "silent" as const,
-          inviteStatus: "none" as const,
+          idNumberHash: await identityNumberHash(executor.idNumber),
+          sheet: {
+            releaseKeyWrapped: fakeBytes(72),
+            version: 1,
+            printedAt: now - 20 * DAY_MS,
+          },
         })
       }
 
@@ -362,7 +367,7 @@ export const wipe = internalMutation({
         "devices",
         "keyring",
         "assets",
-        "heirs",
+        "executors",
         "checkinConfig",
         "notifications",
       ] as const) {
@@ -376,21 +381,6 @@ export const wipe = internalMutation({
         }
       }
 
-      // `assetRecipients` has no `by_userId` index on its own — its indexes all
-      // pair `userId` with a recipient column — so it is reached through the
-      // kind buckets, which together cover every row.
-      for (const kind of ["heir", "executor", "allHeirs"] as const) {
-        const rows = await ctx.db
-          .query("assetRecipients")
-          .withIndex("by_userId_and_recipientKind", (q) =>
-            q.eq("userId", user._id).eq("recipientKind", kind)
-          )
-          .take(500)
-        for (const row of rows) {
-          await ctx.db.delete("assetRecipients", row._id)
-          deleted += 1
-        }
-      }
 
       const claims = await ctx.db
         .query("claims")
@@ -457,9 +447,8 @@ const PURGE_TABLES = [
   "notifications",
   "deliveries",
   "jobRuns",
-  "assetRecipients",
   "assets",
-  "heirs",
+  "executors",
   "checkinConfig",
   "keyring",
   "devices",

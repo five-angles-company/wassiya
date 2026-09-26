@@ -26,10 +26,10 @@ import { useLastLoaded } from "@/lib/use-last-loaded"
 /**
  * ٱلحسابات — every owner, and the door to everything about one.
  *
- * The keystone of the Accounts group. Heirs, devices and a subscription are all
- * *per owner* and neither `heirs` nor `devices` carries an index that is not
- * `by_userId`, so they are reached through an account rather than listed
- * globally — see `admin.ownerDetail`.
+ * The keystone of the Accounts group. Executors, devices and a subscription
+ * are all *per owner* and neither `executors` nor `devices` carries an index
+ * that is not `by_userId`, so an account is where they meet — see
+ * `admin.ownerDetail`.
  *
  * Search is a real search here, not the exact-email lookup the identity queue
  * settles for: `users` gained a `searchText` column and a search index, so a

@@ -150,8 +150,8 @@ export function NewPhotosScreen() {
 
     if (saved) {
       router.replace({
-        pathname: "/assets/[id]/recipients",
-        params: { id: saved, step: "2" },
+        pathname: "/assets/[id]",
+        params: { id: saved },
       })
       return
     }

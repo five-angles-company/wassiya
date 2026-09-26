@@ -12,7 +12,7 @@ export type Topic =
   | "claim"
   | "delivery"
   | "other"
-export type Audience = "owner" | "heir" | "reporter" | "all"
+export type Audience = "owner" | "executor" | "reporter" | "all"
 
 export function statusLabel(status: ThreadStatus, locale: Locale): string {
   const labels = t(SUPPORT, locale)
@@ -46,7 +46,7 @@ export function topicLabel(topic: Topic, locale: Locale): string {
 
 const AUDIENCE_KEY = {
   owner: "audienceOwner",
-  heir: "audienceHeir",
+  executor: "audienceExecutor",
   reporter: "audienceReporter",
   all: "audienceAll",
 } as const satisfies Record<Audience, keyof typeof SUPPORT>

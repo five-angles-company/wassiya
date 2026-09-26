@@ -32,12 +32,12 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
   },
   "deliveries.read": { ar: "قراءة التسليمات", en: "Read deliveries" },
   "deliveries.contact": {
-    ar: "التواصل مع الورثة: تسجيل محاولة، تصحيح رقم، إعادة الرابط",
-    en: "Reach heirs: log an attempt, fix a number, reissue the link",
+    ar: "التواصل مع الأوصياء: تسجيل محاولة، تصحيح رقم، إعادة الرابط",
+    en: "Reach executors: log an attempt, fix a number, reissue the link",
   },
   "deliveries.decide": {
-    ar: "البتّ في هوية الوارث يدوياً",
-    en: "Decide an heir's identity by hand",
+    ar: "البتّ في هوية الوصي يدوياً",
+    en: "Decide an executor's identity by hand",
   },
   "identity.read": {
     ar: "قراءة طوابير التحقّق",
@@ -60,8 +60,8 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
     en: "Assign threads to others and edit the help center",
   },
   "owners.read": {
-    ar: "قراءة الحسابات: الملّاك، الورثة، الأجهزة، النبض",
-    en: "Read accounts: owners, heirs, devices, check-ins",
+    ar: "قراءة الحسابات: الملّاك، الأوصياء، الأجهزة، النبض",
+    en: "Read accounts: owners, executors, devices, check-ins",
   },
   "billing.read": {
     ar: "قراءة الاشتراكات والخطط",
@@ -89,8 +89,8 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
     en: "Run the unmatched-claims sweep",
   },
   "jobs.run:deliveries.expire": {
-    ar: "تشغيل إتلاف التسليمات المنتهية — لا رجعة فيه",
-    en: "Run delivery expiry — destroys keys, irreversibly",
+    ar: "تشغيل إغلاق التسليمات المنتهية وحذف الخزنة بعد آخرها — لا رجعة فيه",
+    en: "Run delivery expiry — closes deliveries and deletes the vault after the last, irreversibly",
   },
   "jobs.run:support.purgeFiles": {
     ar: "تشغيل حذف مرفقات الدعم القديمة",

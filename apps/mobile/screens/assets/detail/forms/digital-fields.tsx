@@ -19,7 +19,7 @@ import type {
  *
  * The password and the recovery codes hide behind a plain eye. The **two-factor
  * field does not** — it is free text and unmasked by design,
- * because a rotating six-digit code is worthless to an heir and *where the
+ * because a rotating six-digit code is worthless to an executor and *where the
  * second factor lives* is everything. Masking "Authy on the iPad" would protect
  * nothing and hide the only part that gets someone in.
  *

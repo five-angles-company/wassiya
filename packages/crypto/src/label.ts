@@ -12,11 +12,11 @@
  * ## Sealed under the DEK, deliberately not under MK
  *
  * The obvious choice is MK — one key, already in memory, no extra unwrap. It is
- * the wrong one. Heirs never receive MK, only the routed DEKs, so a label
- * wrapped by MK would reach an heir as content they hold the key to and cannot
- * name. Under the DEK the
+ * the wrong one. Executors never receive MK, only the handed-over DEKs, so a
+ * label wrapped by MK would reach an executor as content they hold the key to
+ * and cannot name. Under the DEK the
  * label travels with the asset to whoever legitimately holds it — the owner
- * today, the heir after release — and costs one extra `unwrap` per row, which
+ * today, the executor after release — and costs one extra `unwrap` per row, which
  * is noise next to the network round trip that fetched it.
  *
  * ## Domain separation instead of a version header

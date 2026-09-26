@@ -2,7 +2,7 @@
  * Scanned pages → one PDF, entirely on the device — ٤.٥: *"pages are encrypted
  * individually and assembled into one PDF client-side. No OCR to any server."*
  * A deed photographed in three parts is one document, and shipping three loose
- * images would leave an heir to work out the order.
+ * images would leave an executor to work out the order.
  *
  * **Pages are embedded as base64 data URIs, not `file://` paths.** The print
  * WebView resolves relative to its own origin and a `file://` src fails

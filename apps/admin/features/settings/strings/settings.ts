@@ -12,7 +12,7 @@ export const SETTINGS = {
   },
 
   sectionEmail: { ar: "البريد", en: "Email" },
-  sectionOutreach: { ar: "التواصل مع الورثة", en: "Heir outreach" },
+  sectionOutreach: { ar: "التواصل مع الأوصياء", en: "Executor outreach" },
   sectionLinks: { ar: "الروابط", en: "Links" },
   sectionCredentials: { ar: "المفاتيح", en: "Credentials" },
   sectionEmailHint: {
@@ -20,8 +20,8 @@ export const SETTINGS = {
     en: "Every notice goes through this: the escalation ladder, claim notices, the recovery alert.",
   },
   sectionOutreachHint: {
-    ar: "أول ما يسمعه الوارث بعد انقضاء مهلة الاعتراض.",
-    en: "The first thing an heir ever hears, after the objection period closes.",
+    ar: "أول ما يصل الوصي منّا، بعد انقضاء مهلة الاعتراض.",
+    en: "The first thing an executor ever hears from us, after the objection period closes.",
   },
   sectionLinksHint: {
     ar: "يُبنى منه كل رابط يخرج من هذا النظام.",
@@ -65,8 +65,8 @@ export const SETTINGS = {
 
   appUrl: { ar: "عنوان الموقع", en: "App URL" },
   appUrlHint: {
-    ar: "يُبنى منه كل رابط في كل رسالة، ومنه رابط التسليم الذي يفتح به الوارث. قيمة خاطئة تكسرها جميعاً.",
-    en: "Every link in every message is built from this, including the delivery link an heir opens. A wrong value breaks all of them.",
+    ar: "يُبنى منه كل رابط في كل رسالة، ومنه رابط التسليم الذي يفتحه الوصي. قيمة خاطئة تكسرها جميعاً.",
+    en: "Every link in every message is built from this, including the delivery link an executor opens. A wrong value breaks all of them.",
   },
 
   consoleUrl: { ar: "عنوان لوحة التحكّم", en: "Console URL" },
@@ -131,8 +131,8 @@ export const SETTINGS = {
   },
   sectionDelivery: { ar: "التسليم", en: "Delivery" },
   sectionDeliveryHint: {
-    ar: "كم يبقى الباب مفتوحاً للوارث.",
-    en: "How long the door stays open for an heir.",
+    ar: "كم يبقى الباب مفتوحاً للوصي.",
+    en: "How long the door stays open for an executor.",
   },
   sectionCheckin: { ar: "نبض الحياة", en: "Life check-in" },
   sectionCheckinHint: {
@@ -156,8 +156,8 @@ export const SETTINGS = {
   },
   deliveryWindow: { ar: "نافذة التسليم", en: "Delivery window" },
   deliveryWindowHint: {
-    ar: "بعدها تُتلف المفاتيح المحفوظة للتسليم، ولا يفتحه أحد — نحن أيضاً.",
-    en: "After this the escrowed keys are destroyed and nobody can open it, us included.",
+    ar: "بعدها تُحذف الخزنة كلها حين يُغلق آخر تسليم لها، ولا يفتحها أحد — نحن أيضاً.",
+    en: "After this, once its last delivery closes, the whole vault is deleted and nobody can open it, us included.",
   },
   escalation: { ar: "أيام التصعيد", en: "Escalation days" },
   escalationHint: {

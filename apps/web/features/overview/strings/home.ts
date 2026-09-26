@@ -2,7 +2,8 @@ import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
  * The signed-in front door. It answers one question — is anything waiting for
- * me? — for two people: someone who reported a death, and an heir we contacted.
+ * me? — for two people: someone who reported a death, and an executor we
+ * contacted.
  * Someone with neither gets two doors and no dashboard.
  */
 export const HOME = {
@@ -25,21 +26,21 @@ export const HOME = {
   },
   doorClaimTitle: { ar: "فقدت شخصاً عزيزاً", en: "I've lost someone" },
   doorClaimBody: {
-    ar: "إن كان يستخدم وصيّة، ابدأ بالإبلاغ عن وفاته. لن تحصل على شيء بتقديم البلاغ — نحن نتواصل مع ورثته مباشرة.",
-    en: "If they used Wassiya, start by reporting their death. Reporting doesn't give you anything — we contact their heirs directly.",
+    ar: "إن كان يستخدم وصيّة، ابدأ بالإبلاغ عن وفاته. لن تحصل على شيء بتقديم البلاغ — نحن نتواصل مع أوصيائه مباشرة.",
+    en: "If they used Wassiya, start by reporting their death. Reporting doesn't give you anything — we contact their executors directly.",
   },
   doorClaimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
   doorClaimMeta: {
     ar: "دقائق قليلة، ويمكنك الإكمال لاحقاً",
     en: "A few minutes, and you can finish later",
   },
-  doorHeirTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
-  doorHeirBody: {
-    ar: "افتح الرابط الموجود في الرسالة التي وصلتك. الرابط هو ما يربط الإرث بك، ثم نتأكد من هويتك قبل أن يُفتح شيء.",
-    en: "Open the link in the message you received. The link is what ties the inheritance to you, and we confirm who you are before anything opens.",
+  doorExecutorTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
+  doorExecutorBody: {
+    ar: "إن سمّاك أحدهم وصيّاً، فافتح الرابط الموجود في الرسالة التي وصلتك — هو ما يربط التسليم بك. نتأكد من هويتك أولاً، ثم تفتح ما سُلِّم إليك بورقة الوصي.",
+    en: "If someone named you as their executor, open the link in the message you received — it's what ties the handover to you. We confirm who you are first, then you open it with the executor sheet.",
   },
-  doorHeirMeta: { ar: "ابحث عن رسالة باسم وصيّة", en: "Look for a message from Wassiya" },
-  doorHeirWarning: {
+  doorExecutorMeta: { ar: "ابحث عن رسالة باسم وصيّة", en: "Look for a message from Wassiya" },
+  doorExecutorWarning: {
     ar: "لن نطلب منك مالاً أو كلمة مرور، ولن نتصل بك لنطلبها.",
     en: "We'll never ask you for money or a password, or call to ask for them.",
   },
@@ -48,12 +49,12 @@ export const HOME = {
   // own promise, not a missing feature.
   ownerTitle: { ar: "خزنتك على جوّالك", en: "Your vault lives on your phone" },
   ownerBody: {
-    ar: "لا تُفتح الخزنة من المتصفّح ولا نحفظ مفتاحها. هذا الموقع للإبلاغ عن وفاة وللورثة فقط.",
-    en: "A vault can't be opened in a browser, and we don't hold its key. This site is only for reporting a death and for heirs.",
+    ar: "لا تُفتح الخزنة من المتصفّح ولا نحفظ مفتاحها. هذا الموقع للإبلاغ عن وفاة وللأوصياء فقط.",
+    en: "A vault can't be opened in a browser, and we don't hold its key. This site is only for reporting a death and for executors.",
   },
 
-  deliveryTitle: { ar: "ما تركه لك {name}", en: "What {name} left you" },
-  deliveryUnknown: { ar: "شيء تُرك لك", en: "Something left for you" },
+  deliveryTitle: { ar: "ما سلّمه {name}", en: "What {name} handed over" },
+  deliveryUnknown: { ar: "تسليم بانتظارك", en: "A handover waiting for you" },
   deliveryIdentity: { ar: "أثبت هويتك ليُفتح", en: "Confirm who you are to open it" },
   deliveryChecking: { ar: "نراجع هويتك، وسنراسلك", en: "We're checking your identity — we'll email you" },
   deliveryReady: { ar: "جاهز للفتح", en: "Ready to open" },

@@ -11,7 +11,7 @@
  *
  * The round trip is deliberately asymmetric: the form holds recovery codes as
  * one newline-delimited string because that is what a multi-line field edits,
- * the payload stores a filtered array because that is what an heir reads.
+ * the payload stores a filtered array because that is what an executor reads.
  */
 import type { AssetLabel } from "@workspace/crypto/label"
 
@@ -109,7 +109,7 @@ export function toDigitalPayload(
       title: `${form.service.trim()} · ${form.username.trim()}`,
       subtitle: `${labels.title} · ${dispositionLabel(form.disposition, labels)}`,
     },
-    // One blob holding everything an heir needs, as JSON. The disposition
+    // One blob holding everything an executor needs, as JSON. The disposition
     // travels *inside* the ciphertext: it is an instruction about the owner's
     // account, and the server has no business reading it.
     secret: JSON.stringify({

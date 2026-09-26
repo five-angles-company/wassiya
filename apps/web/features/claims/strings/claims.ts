@@ -9,7 +9,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * - *"We're sorry for your loss"* appears **once**, in `newIntro`, and nowhere
  *   else in the app — repeated condolence reads as a script.
  * - The person filing is not a recipient. Nothing here may promise them what
- *   was left: Wassiya contacts the heirs itself.
+ *   was left: Wassiya contacts the executors itself.
  */
 export const CLAIMS = {
   listBody: {
@@ -46,8 +46,8 @@ export const CLAIMS = {
   // ---- the form -------------------------------------------------------------
   newTitle: { ar: "بلاغ وفاة", en: "Report a death" },
   newIntro: {
-    ar: "نأسف لفقدك. سنطلب منك شهادة الوفاة. بعد أن نتأكد من كل شيء، نتواصل نحن مع الورثة مباشرة — فتقديم البلاغ لا يمنحك شيئاً بنفسه.",
-    en: "We're sorry for your loss. We'll ask you to upload the death certificate. Once we've checked everything, we contact the heirs ourselves — filing the report doesn't give you anything by itself.",
+    ar: "نأسف لفقدك. سنطلب منك شهادة الوفاة. بعد أن نتأكد من كل شيء، نتواصل نحن مع الأوصياء مباشرة — فتقديم البلاغ لا يمنحك شيئاً بنفسه.",
+    en: "We're sorry for your loss. We'll ask you to upload the death certificate. Once we've checked everything, we contact the executors ourselves — filing the report doesn't give you anything by itself.",
   },
   timing: {
     ar: "دقائق قليلة · يمكنك الإكمال لاحقاً",
@@ -97,12 +97,12 @@ export const CLAIMS = {
   // that a vault was found.
 
   disclaimer: {
-    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات؛ تقسيم الميراث يحكمه الشرع والقانون. نحن نوصل لكل وارث ما خصّصه له صاحب الخزنة باسمه فقط.",
-    en: "Wassiya is not a legal authority and doesn't divide estates — that is set by law. We deliver to each heir only what the vault's owner set aside for them by name.",
+    ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات؛ تقسيم الميراث يحكمه الشرع والقانون. نحن نوصل ما اختار صاحب الخزنة تسليمه إلى الأوصياء الذين سمّاهم فقط، وهم من ينفّذون وصيّته.",
+    en: "Wassiya is not a legal authority and doesn't divide estates — that is set by law. We deliver what the vault's owner chose to hand over only to the executors they named, who carry out their will.",
   },
   needPrivacy: {
-    ar: "نستخدم شهادة الوفاة للتحقق من البلاغ فقط، ولا نعطيها لأي وارث.",
-    en: "We use the death certificate only to check this report, and never share it with any heir.",
+    ar: "نستخدم شهادة الوفاة للتحقق من البلاغ فقط، ولا نعطيها لأحد.",
+    en: "We use the death certificate only to check this report, and never share it with anyone.",
   },
 
   // ---- the case page ----------------------------------------------------------

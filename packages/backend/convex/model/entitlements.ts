@@ -1,5 +1,5 @@
 // What a plan lets an owner add, enforced at the two chokepoints that can grow
-// a vault: `assets.create`/`assets.update` and `heirs.add`.
+// a vault: `assets.create`/`assets.update` and `executors.add`.
 //
 // ## These throw `ConvexError`, as do support's refusals and nothing else
 //
@@ -31,7 +31,7 @@ import {
 } from "./plans"
 
 /** Which wall the caller hit. The mobile paywall branches on exactly this. */
-export type LimitCode = "assets" | "storage" | "heirs" | "photos" | "fileSize"
+export type LimitCode = "assets" | "storage" | "executors" | "photos" | "fileSize"
 
 export type LimitError = {
   code: "limit"
@@ -46,7 +46,7 @@ function refuse(limit: LimitCode, plan: PlanId): never {
 /** Rows up to `cap + 1`, which is all a cap check ever needs to know. */
 async function countUpTo(
   ctx: QueryCtx,
-  table: "assets" | "heirs",
+  table: "assets" | "executors",
   userId: Id<"users">,
   cap: number
 ): Promise<number> {
@@ -102,7 +102,7 @@ export async function assertCanAddAsset(
 
 /**
  * The growth half of an edit. Called only when the payload got bigger, so an
- * owner already over quota can still rename, re-route, shrink or re-wrap what
+ * owner already over quota can still rename, hand over, shrink or re-wrap what
  * they have — a vault that cannot be repaired after a plan change would be a
  * worse outcome than one that is slightly over.
  */
@@ -139,19 +139,19 @@ function assertStorageHeadroom(
  * should receive your vault is the product working, and a card that expired
  * last night is not a reason to stop someone recording a daughter's name.
  */
-export async function assertCanAddHeir(
+export async function assertCanAddExecutor(
   ctx: QueryCtx,
   user: Doc<"users">,
   now: number
 ): Promise<void> {
   const plan = planOf(user)
   const limits = await limitsFor(ctx, user, now)
-  if (limits.heirs === null) {
+  if (limits.executors === null) {
     return
   }
-  const count = await countUpTo(ctx, "heirs", user._id, limits.heirs)
-  if (count >= limits.heirs) {
-    refuse("heirs", plan)
+  const count = await countUpTo(ctx, "executors", user._id, limits.executors)
+  if (count >= limits.executors) {
+    refuse("executors", plan)
   }
 }
 
@@ -163,7 +163,7 @@ export async function usageFor(
 ): Promise<{
   storageBytesUsed: number
   assets: number | null
-  heirs: number | null
+  executors: number | null
 }> {
   return {
     storageBytesUsed: storageUsed(user),
@@ -171,9 +171,9 @@ export async function usageFor(
       limits.assets === null
         ? null
         : await countUpTo(ctx, "assets", user._id, limits.assets),
-    heirs:
-      limits.heirs === null
+    executors:
+      limits.executors === null
         ? null
-        : await countUpTo(ctx, "heirs", user._id, limits.heirs),
+        : await countUpTo(ctx, "executors", user._id, limits.executors),
   }
 }

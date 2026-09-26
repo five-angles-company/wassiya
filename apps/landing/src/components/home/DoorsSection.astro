@@ -36,15 +36,15 @@ const home = t(HOME, locale)
       <span class="bg-olive-100 text-olive-800 flex size-14 items-center justify-center rounded-2xl">
         <MailOpen className="size-7" strokeWidth={1.75} aria-hidden="true" />
       </span>
-      <h3 class="mt-6 text-[24px]">{home.doorHeirTitle}</h3>
-      <p class="text-sand-700 mt-3 text-[16px] leading-[1.9]">{home.doorHeirBody}</p>
+      <h3 class="mt-6 text-[24px]">{home.doorExecutorTitle}</h3>
+      <p class="text-sand-700 mt-3 text-[16px] leading-[1.9]">{home.doorExecutorBody}</p>
       <p class="bg-terracotta-100 text-terracotta-800 mt-5 flex items-start gap-3 rounded-[18px] px-4 py-3 text-[14.5px] leading-[1.7] font-semibold">
         <ShieldAlert className="mt-0.5 size-5 shrink-0" strokeWidth={2.25} aria-hidden="true" />
-        {home.doorHeirWarning}
+        {home.doorExecutorWarning}
       </p>
       <div class="mt-auto pt-8">
-        <ButtonLink href={webUrl(locale, "/help")} variant="outline" data-track="heir_help_click">
-          {home.doorHeirAction}
+        <ButtonLink href={webUrl(locale, "/help")} variant="outline" data-track="executor_help_click">
+          {home.doorExecutorAction}
         </ButtonLink>
       </div>
     </article>

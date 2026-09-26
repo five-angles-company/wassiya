@@ -61,9 +61,9 @@ export function useAssetSubmit(): AssetSubmit {
 
   const submit = useCallback(
     async ({ type, label, secret, files, meta, onProgress }: AssetSubmitInput) => {
-      // `null`, not `false`: the id is the return value now, because the wizard
-      // hands off to recipient selection for that asset and cannot ask for it
-      // afterwards without a round trip.
+      // `null`, not `false`: the id is the return value, because the wizard
+      // opens the new asset and cannot ask for it afterwards without a round
+      // trip.
       if (inFlight.current) return null
       inFlight.current = true
       setSubmitting(true)

@@ -21,7 +21,7 @@ import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { barValueLabel } from "@/features/dashboard/components/bar-value-label"
 import { STORAGE } from "@/features/dashboard/strings/storage"
-import { fmtBytes } from "@/lib/format"
+import { fmtBytes, fmtNumber, fmtTally } from "@/lib/format"
 
 const TYPE_KEYS = [
   "crypto",
@@ -128,6 +128,20 @@ export function StoragePanel() {
               </Bar>
             </BarChart>
           </ChartContainer>
+        )}
+
+        {storage.assetCount > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {labels.privateAssets
+              .replace("{n}", fmtNumber(storage.privateAssets, locale))
+              .replace(
+                "{total}",
+                fmtTally(
+                  { count: storage.assetCount, more: storage.assetsCapped },
+                  locale
+                )
+              )}
+          </p>
         )}
 
         {storage.billingUnwired && (

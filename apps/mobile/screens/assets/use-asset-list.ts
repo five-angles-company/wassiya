@@ -30,33 +30,19 @@ export type AssetListRow = {
   subtitle?: string
   /** True when this row's label failed to decrypt. The row still renders. */
   undecryptable: boolean
-  recipientCount: number
-  /**
-   * Who receives it, by name, resolved against `heirs.list`.
-   *
-   * The vault list draws faces from these. Names rather than a count because
-   * "٢ مستلمين" tells an owner nothing they can act on, while seeing who is
-   * there lets them notice who isn't — which is the only mistake this screen
-   * can help catch.
-   */
-  recipients: string[]
-  /** The shared bucket is routed here; it gets a word, not an initial. */
-  allHeirs: boolean
-  /** `recipientRule === "explicit"` — the badge and the list's sort key. */
-  routed: boolean
+  /** False when the owner kept it private: it dies with them. */
+  handedOver: boolean
   createdAt: number
 }
 
 /**
  * What the chip row can be set to.
  *
- * `null` is "الكل". `"unrouted"` is not a category — it is the one *state* worth
- * filtering by, and it exists because ٤.١ groups by type now: an asset that
- * reaches nobody used to sort to the top of one flat list, and grouping
- * scatters those across every heading. This filter is what gives that answer
- * back, and it is where Home's التوجيه tile and the vault's own alarm both land.
+ * `null` is "الكل". `"private"` is not a category — it is the one *state* worth
+ * filtering by, because grouping by type scatters private assets across every
+ * heading.
  */
-export type AssetFilter = AssetType | "unrouted" | null
+export type AssetFilter = AssetType | "private" | null
 
 export type AssetListResult = {
   /** Undefined until the query answers; the screen shows skeletons meanwhile. */
@@ -72,15 +58,13 @@ export type AssetListResult = {
    * the two screens agree.
    */
   vaultSize: number
-  /** Heir names, for the faces the locked screen shows. Also un-gated by MK. */
-  heirNames: string[]
+  /** Executor names, for the faces the locked screen shows. Un-gated by MK. */
+  executorNames: string[]
   /**
-   * How many of the **whole vault** reach someone — never just the current
-   * view. The header line and the unrouted alarm both read from this, and a
-   * filter that changed the alarm would let someone hide their own gap by
-   * tapping a chip.
+   * How many of the **whole vault** are handed over — never just the current
+   * view, so a chip cannot renumber the header.
    */
-  routedTotal: number
+  handedOverTotal: number
   /**
    * How many assets each category holds, ignoring the search and the active
    * chip — a chip has to report the vault, not the current view, or selecting
@@ -99,14 +83,10 @@ export type AssetListResult = {
 export function useAssetList(
   search: string,
   filter: AssetFilter,
-  undecryptableLabel: string,
-  /** Copy for the two non-person destinations. */
-  routingLabels: { executor: string } = { executor: "" }
+  undecryptableLabel: string
 ): AssetListResult {
   const assets = useQuery(api.assets.list, {})
-  // Names live on the heir record, not on the routing row — the deployment
-  // ships ids and this is where they become people.
-  const heirs = useQuery(api.heirs.list)
+  const executors = useQuery(api.executors.list)
   // Subscribing to `mk` rather than reading it off `getState()` is what makes this
   // recompute on unlock: the getter would read the key without telling React
   // anything changed, and the list would stay locked until some other state
@@ -119,16 +99,7 @@ export function useAssetList(
       const base = {
         id: asset.id,
         type: asset.type,
-        recipientCount: asset.recipientCount,
-        recipients: asset.recipients
-          .map((to) => {
-            if (to.kind === "executor") return routingLabels.executor
-            if (to.kind === "allHeirs") return ""
-            return heirs?.find((heir) => heir.id === to.heirId)?.name ?? ""
-          })
-          .filter((name) => name.length > 0),
-        allHeirs: asset.recipients.some((to) => to.kind === "allHeirs"),
-        routed: asset.recipientRule === "explicit",
+        handedOver: asset.handedOver,
         createdAt: asset.createdAt,
       }
       try {
@@ -151,7 +122,7 @@ export function useAssetList(
         return { ...base, title: undecryptableLabel, undecryptable: true }
       }
     })
-  }, [assets, mk, undecryptableLabel, heirs, routingLabels.executor])
+  }, [assets, mk, undecryptableLabel])
 
   const rows = useMemo(() => {
     if (decrypted === undefined) return undefined
@@ -160,8 +131,8 @@ export function useAssetList(
       .filter((row) =>
         filter === null
           ? true
-          : filter === "unrouted"
-            ? !row.routed
+          : filter === "private"
+            ? !row.handedOver
             : row.type === filter
       )
       .filter(
@@ -183,8 +154,7 @@ export function useAssetList(
 
   /**
    * Grouped after the sort, so `compareRows` still decides the order *inside* a
-   * section — unrouted first, then newest. Grouping only decides which heading
-   * a row sits under.
+   * section. Grouping only decides which heading a row sits under.
    */
   const sections = useMemo(() => {
     if (rows === undefined) return []
@@ -198,22 +168,17 @@ export function useAssetList(
     rows,
     sections,
     total: decrypted?.length ?? 0,
-    routedTotal: (decrypted ?? []).filter((row) => row.recipientCount > 0).length,
+    handedOverTotal: (decrypted ?? []).filter((row) => row.handedOver).length,
     vaultSize: assets?.length ?? 0,
-    heirNames: (heirs ?? []).map((heir) => heir.name),
+    executorNames: (executors ?? []).map((executor) => executor.name),
     byType,
   }
 }
 
 /**
- * "Sort: unrouted first, then recently edited" — 4.1's own spec.
- *
- * The second key is *created*, not edited: nothing on `assets` records an edit
- * time, and `_creationTime` is the only timestamp the row carries. It orders
- * identically until the first `assets.update` lands, at which point this wants
- * an `updatedAt` column rather than a cleverer comparator.
+ * Newest first. *Created*, not edited: nothing on `assets` records an edit time,
+ * and `_creationTime` is the only timestamp the row carries.
  */
 function compareRows(a: AssetListRow, b: AssetListRow): number {
-  if (a.routed !== b.routed) return a.routed ? 1 : -1
   return b.createdAt - a.createdAt
 }

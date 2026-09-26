@@ -154,8 +154,6 @@ function titleFor(
       return t.claimBlocked!
     case "claim.vetoed":
       return t.claimVetoed!
-    case "release.bundles_rebuilt":
-      return t.bundlesRebuilt!
     case "support.reply":
       return t.supportReply!
     default:

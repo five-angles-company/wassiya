@@ -14,24 +14,19 @@ import { StatCard } from "@/components/stat-card"
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { DASHBOARD } from "@/features/dashboard/strings/dashboard"
-import { fmtDate, fmtNumber, fmtTally } from "@/lib/format"
+import { fmtDate, fmtTally } from "@/lib/format"
 
 /**
  * The four numbers that change what someone does today — a claim nobody has
  * ruled on, a veto window running down toward an automatic release, an owner the
- * product has begun escalating against, and heirs who would receive nothing
- * tonight. An earlier version carried a card for every count the backend could
- * produce, and because everything was highlighted, nothing was.
+ * product has begun escalating against, and executors whose sheet was never
+ * printed.
  *
- * Three of the four open the rows they count, and each `href` reproduces its own
- * number exactly. Clicking a tile and counting the rows on arrival is the
- * acceptance test, and the reason the filters moved into the URL.
- *
- * **The fourth stays unlinked, deliberately.** `heirsAtRisk` is heirs who would
- * receive nothing — no asset and no message — summed across owners, while
- * `/heirs` filters on `unroutedOnly`, which ignores messages. There is no URL
- * that reproduces the number, so there is no link; its detail is the risk table
- * further down this same page.
+ * Each tile opens the rows it counts, and each `href` reproduces its own
+ * number. Clicking a tile and counting the rows on arrival is the acceptance
+ * test, and the reason the filters moved into the URL. The executors tile sums
+ * `admin.risk`, which evaluates a bounded number of owners, so it carries a `+`
+ * when that evaluation stopped short.
  */
 export function SummaryBar() {
   const locale = useLocale()
@@ -64,10 +59,16 @@ export function SummaryBar() {
       overview.checkin.countdown.more,
   }
 
-  const heirsAtRisk =
+  const withoutSheet =
     risk === undefined
       ? null
-      : risk.rows.reduce((sum, row) => sum + row.heirsAtRisk, 0)
+      : {
+          count: risk.rows.reduce(
+            (sum, row) => sum + row.executorsWithoutSheet,
+            0
+          ),
+          more: risk.more,
+        }
 
   return (
     <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -101,10 +102,11 @@ export function SummaryBar() {
       />
       <StatCard
         icon={UsersIcon}
-        label={labels.heirsNothing}
-        value={heirsAtRisk === null ? "—" : fmtNumber(heirsAtRisk, locale)}
-        hint={labels.heirsNothingHint}
-        emphasis={(heirsAtRisk ?? 0) > 0}
+        label={labels.executorsWithoutSheet}
+        value={withoutSheet === null ? "—" : fmtTally(withoutSheet, locale)}
+        hint={labels.executorsWithoutSheetHint}
+        href="/executors?noSheet=true"
+        emphasis={(withoutSheet?.count ?? 0) > 0}
       />
     </div>
   )

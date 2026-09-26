@@ -38,8 +38,8 @@ export const OWNERS = {
   sectionIdentity: { ar: "الهوية", en: "Identity" },
   sectionVault: { ar: "الخزنة", en: "Vault" },
   sectionCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
-  sectionHeirs: { ar: "الورثة", en: "Heirs" },
-  sectionDelivery: { ar: "التسليم للورثة", en: "Delivery to heirs" },
+  sectionExecutors: { ar: "الأوصياء", en: "Executors" },
+  sectionDelivery: { ar: "أوراق الأوصياء", en: "Executor sheets" },
   sectionDevices: { ar: "الأجهزة", en: "Devices" },
   sectionClaims: { ar: "الطلبات", en: "Claims" },
 
@@ -66,14 +66,22 @@ export const OWNERS = {
   cadence: { ar: "كل {n} شهر", en: "Every {n} months" },
   nextDue: { ar: "التالي", en: "Next due" },
 
-  heirsNone: { ar: "لم يُضف ورثة", en: "No heirs" },
+  executorsNone: { ar: "لم يُسمَّ وصي", en: "No executors" },
   deliveryNone: {
-    ar: "لا ورثة — لا شيء يُسلَّم عند الوفاة.",
-    en: "No heirs — nothing is delivered at death.",
+    ar: "لا وصي — لا شيء يُسلَّم عند الوفاة.",
+    en: "No executor — nothing is delivered at death.",
   },
-  heirReceives: { ar: "يستلم", en: "Receives" },
-  heirGetsNothing: { ar: "لا يستلم شيئاً", en: "Gets nothing" },
-  noIdNumber: { ar: "بلا رقم هوية", en: "No ID number" },
+  sheetPrinted: {
+    ar: "طُبعت {date} · الإصدار {version}",
+    en: "Printed {date} · version {version}",
+  },
+  sheetNone: { ar: "لا ورقة", en: "No sheet" },
+  // Said here because this is where an operator is asked to "recover" a
+  // handover, and there is nothing Wassiya could recover it with.
+  deliveryNote: {
+    ar: "لا نملك أي مفتاح: يفتح الوصي ما سُلِّم بورقته، أو بورقة استرجاع المالك. إن ضاعت كلها فلا يفتحه أحد، ولا نحن.",
+    en: "We hold no key: an executor opens the handover with their sheet, or with the owner's recovery sheet. If all of them are lost, nobody can open it — us included.",
+  },
   devicesNone: { ar: "لا أجهزة", en: "No devices" },
   claimsNone: { ar: "لا طلبات", en: "No claims" },
   deviceRevoked: { ar: "مُلغى", en: "Revoked" },

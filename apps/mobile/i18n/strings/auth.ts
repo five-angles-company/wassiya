@@ -44,16 +44,16 @@ export const WELCOME = {
   },
 
   releaseTitle: {
-    ar: "ورثتك يستلمون بعد التحقق من الوفاة",
-    en: "Your heirs receive only after death is verified",
+    ar: "أوصياؤك يستلمون بعد التحقق من الوفاة",
+    en: "Your executors receive only after death is verified",
   },
   releaseBody: {
-    ar: "الوارث الصامت لا يعرف شيئاً قبل ذلك — ولا يرى محتوى خزنتك أبداً قبل الإفراج.",
-    en: "A silent heir knows nothing before then, and sees nothing inside your vault until release.",
+    ar: "لا نخبر الوصي بشيء قبل ذلك — ولا يرى محتوى خزنتك أبداً قبل الإفراج.",
+    en: "We tell your executor nothing before then, and they see nothing inside your vault until release.",
   },
   gateIdentity: {
-    ar: "تحقّق من هوية الوارث",
-    en: "The heir's identity is verified",
+    ar: "تحقّق من هوية الوصي",
+    en: "The executor's identity is verified",
   },
   gateCertificate: {
     ar: "شهادة وفاة رسمية تُطابق هويتك",

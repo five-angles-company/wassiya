@@ -2,7 +2,7 @@
 import { ArrowRight, Check, LockKeyhole, ShieldCheck } from "lucide-react"
 
 import StoreBadges from "@/components/StoreBadges.astro"
-import HeirLetter from "@/components/mock/HeirLetter.astro"
+import ExecutorSheet from "@/components/mock/ExecutorSheet.astro"
 import Faces from "@/components/ui/Faces.astro"
 import { HOME } from "@/i18n/strings/home"
 import { MOCK } from "@/i18n/strings/mock"
@@ -16,7 +16,6 @@ const { locale } = Astro.props
 const home = t(HOME, locale)
 const m = t(MOCK, locale)
 const trust = [home.heroTrustDevice, home.heroTrustPasswords, home.heroTrustFree]
-const heirInitials = [m.heirSara, m.heirMohammed, m.heirNoura].map((name) => name.charAt(0))
 ---
 
 <section class="grain relative -mt-16 overflow-hidden pt-16 md:-mt-[72px] md:pt-[72px]">
@@ -84,16 +83,16 @@ const heirInitials = [m.heirSara, m.heirMohammed, m.heirNoura].map((name) => nam
       <div class="bg-sand-100 border-border absolute inset-x-8 top-6 bottom-16 -rotate-[7deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
       <div class="bg-card border-border absolute inset-x-6 top-8 bottom-14 rotate-[5deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
       <div class="relative rotate-[-1.5deg]">
-        <HeirLetter locale={locale} />
+        <ExecutorSheet locale={locale} />
       </div>
 
       <div
         class="float-b bg-card border-border absolute -top-1 -end-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-end-10"
       >
-        <Faces initials={heirInitials} size={32} />
+        <Faces initials={[m.executorName.charAt(0)]} size={32} />
         <span class="text-start">
-          <span class="block text-[14px] leading-tight font-bold">{home.floatHeirsTitle}</span>
-          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatHeirsMeta}</span>
+          <span class="block text-[14px] leading-tight font-bold">{home.floatExecutorTitle}</span>
+          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatExecutorMeta}</span>
         </span>
       </div>
 

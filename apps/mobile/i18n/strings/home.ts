@@ -36,73 +36,30 @@ export const HOME = {
   stateUnverified: { ar: "غير موثّقة", en: "Not verified" },
   statePrinted: { ar: "مطبوعة", en: "Printed" },
   stateNotPrinted: { ar: "غير مطبوعة", en: "Not printed" },
-  stateRouted: { ar: "الكل موجَّه", en: "All routed" },
-  stateUnrouted: { ar: "{n} بلا وجهة", en: "{n} with no destination" },
+  stateAllHandedOver: { ar: "لا شيء", en: "None" },
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
   itemSheet: { ar: "الوثيقة", en: "Sheet" },
-  itemHeirs: { ar: "الورثة", en: "Heirs" },
-  itemRouting: { ar: "التوجيه", en: "Routing" },
+  itemExecutors: { ar: "الأوصياء", en: "Executors" },
+  itemPrivate: { ar: "الخاص", en: "Private" },
   itemDelivery: { ar: "التسليم", en: "Delivery" },
 
-  // The yearly contact check. Numbers get recycled and inboxes get abandoned;
-  // the owner is the only person who can fix that while it still matters.
-  contactsTitle: { ar: "هل بيانات ورثتك ما زالت صحيحة؟", en: "Are your heirs' contacts still right?" },
+  // The yearly check. Numbers get recycled and paper gets lost; the owner is
+  // the only person who can fix either while it still matters.
+  contactsTitle: {
+    ar: "هل ما زال أوصياؤك على حالهم؟",
+    en: "Are your executors still set?",
+  },
   contactsBody: {
-    ar: "نتواصل مع ورثتك على الرقم والبريد اللذين سجّلتهما. مرّت سنة — تأكّد أنهما ما زالا لهم.",
-    en: "We reach your heirs on the number and email you registered. It has been a year — check they are still theirs.",
+    ar: "مرّت سنة. تأكّد أن أرقامهم ما زالت لهم، وأن كل واحد ما زال يحتفظ بورقته.",
+    en: "It has been a year. Check their numbers are still theirs, and that each still has their sheet.",
   },
-  contactsReview: { ar: "راجع الورثة", en: "Review heirs" },
-  contactsConfirm: { ar: "كلها صحيحة", en: "All correct" },
-  stateDeliveryReady: { ar: "جاهز للورثة", en: "Ready for heirs" },
-  stateDeliveryStale: { ar: "وارث بلا شيء", en: "An heir gets nothing" },
+  contactsReview: { ar: "راجع الأوصياء", en: "Review executors" },
+  contactsConfirm: { ar: "كل شيء صحيح", en: "All correct" },
+  stateDeliveryReady: { ar: "جاهز", en: "Ready" },
+  stateDeliveryStale: { ar: "ورقة ناقصة", en: "A sheet is missing" },
   itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
-  notSet: { ar: "غير مفعّل", en: "not on" },
-
-  assetsTitle: { ar: "أصولك", en: "Your assets" },
-  seeAll: { ar: "الكل", en: "All" },
-  emptyAssets: { ar: "لم تُضف أصولاً بعد", en: "No assets yet" },
-  vaultLine: { ar: "{assets} · {heirs}", en: "{assets} · {heirs}" },
-  whoReceives: { ar: "من يستلم", en: "Who receives" },
-  receives: { ar: "يستلم {n}", en: "Receives {n}" },
-  receivesNothing: { ar: "لا يستلم شيئاً بعد", en: "Receives nothing yet" },
-  unrouted: { ar: "بلا وجهة", en: "unrouted" },
-  // The number that actually matters on this row: an asset with no
-  // destination is the commonest silent failure in the product.
-  unroutedLine: {
-    ar: "{n} منها بلا وجهة",
-    en: "{n} with no destination",
-  },
-
-  heirsSummary: {
-    ar: "{heirs} · {routed} من {total} أصلاً لها مستلم",
-    en: "{heirs} · {routed} of {total} assets have a recipient",
-  },
-  defaultRule: {
-    ar: "{n} أصلاً تتبع القاعدة الافتراضية: جميع الورثة",
-    en: "{n} assets follow the default rule: all heirs",
-  },
-  noHeirs: { ar: "لم تضف ورثة بعد", en: "No heirs yet" },
-
-  // The single amber row. Exactly one at a time, the highest-ranked gap.
-  gapPrefix: { ar: "{label}", en: "{label}" },
-  gapNotOn: { ar: "غير مفعّل — أكمله لتكتمل السلسلة", en: "Not set — finish it to complete the chain" },
-  fix: { ar: "أكمله", en: "Finish" },
-
-  // Assets need their own forms: "١ أصلاً" is the 11+ accusative applied to
-  // one thing, which reads the way "1 assets" does. See i18n/plural.ts.
-  assetZero: { ar: "لا أصول", en: "No assets" },
-  assetOne: { ar: "أصل واحد", en: "1 asset" },
-  assetTwo: { ar: "أصلان", en: "2 assets" },
-  assetFew: { ar: "{n} أصول", en: "{n} assets" },
-  assetMany: { ar: "{n} أصلاً", en: "{n} assets" },
-
-  countZero: { ar: "لا ورثة", en: "No heirs" },
-  countOne: { ar: "وارث واحد", en: "1 heir" },
-  countTwo: { ar: "وارثان", en: "2 heirs" },
-  countFew: { ar: "{n} ورثة", en: "{n} heirs" },
-  countMany: { ar: "{n} وارثاً", en: "{n} heirs" },
 } satisfies LabelSet<string>
 
 /** ٣.٢ — the vault lock. */
@@ -166,7 +123,6 @@ export const NOTIFICATIONS = {
     en: "An inheritance claim attempt was blocked",
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },
-  bundlesRebuilt: { ar: "حُدّثت مفاتيح التسليم", en: "Delivery keys were updated" },
   supportReply: { ar: "ردّ فريق الدعم على رسالتك", en: "Support replied to your message" },
   generic: { ar: "تحديث في خزنتك", en: "An update in your vault" },
 } satisfies LabelSet<string>

@@ -7,18 +7,14 @@
  * empty."* Search is an icon, and the design note expects it to become a
  * permanent field only past a hundred items.
  *
- * One flat list, irreplaceable first — a seed phrase, then a deed, then a
- * password. Nothing labels the order; the order simply is that, and type lives
- * in the small tile rather than a heading.
- *
- * The terracotta line at the top is the only urgent thing on the screen, and it
- * vanishes at zero rather than turning olive: "everything is fine" is not news.
+ * Each row says whether it is handed over to the executors or kept private.
+ * Private is the owner's choice, not a fault, so nothing on this screen is
+ * urgent.
  */
 import { useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { VaultRow } from "@workspace/ui-native/components/wassiya/vault-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Plus, Search } from "lucide-react-native"
@@ -54,32 +50,27 @@ const FILTER_KEY = {
 
 export function AssetsScreen() {
   const { t, locale } = useStrings("assets")
-  const { t: routing } = useStrings("assets/recipients")
   const { status, unlocked, unlock } = useVaultGate()
   const [search, setSearch] = useState("")
   const [searching, setSearching] = useState(false)
   const [filter, setFilter] = useState<AssetFilter>(null)
 
   /**
-   * Home's التوجيه tile arrives with `?filter=unrouted`.
+   * Home's tile arrives with `?filter=private`.
    *
-   * Adjusted during render rather than in an effect — the React-sanctioned way
-   * to react to a changed prop — so the first paint after the tap is already
-   * filtered instead of flashing the whole vault. Tapping the الخزنة tab plainly
-   * arrives with no param, which resets the view, and that is the behaviour you
-   * want: the tab means "my vault", not "wherever I last was".
+   * Adjusted during render rather than in an effect, so the first paint after
+   * the tap is already filtered. Tapping the الخزنة tab plainly arrives with no
+   * param, which resets the view: the tab means "my vault".
    */
   const { filter: filterParam } = useLocalSearchParams<{ filter?: string }>()
   const [seenParam, setSeenParam] = useState<string | undefined>(undefined)
   if (filterParam !== seenParam) {
     setSeenParam(filterParam)
-    setFilter(filterParam === "unrouted" ? "unrouted" : null)
+    setFilter(filterParam === "private" ? "private" : null)
   }
 
-  const { rows, sections, total, routedTotal, vaultSize, heirNames, byType } =
-    useAssetList(search, filter, t.undecryptable, {
-      executor: routing.executor!,
-    })
+  const { rows, sections, total, handedOverTotal, vaultSize, executorNames, byType } =
+    useAssetList(search, filter, t.undecryptable)
 
   /**
    * The chip row. Fixed set, always in this order — a filter that reorders
@@ -88,21 +79,11 @@ export function AssetsScreen() {
    * `byType` deliberately counts the whole vault rather than the current view,
    * so selecting a chip does not renumber the others.
    */
-  const unrouted = total - routedTotal
+  const privateCount = total - handedOverTotal
   const chips: FilterChip<NonNullable<AssetFilter>>[] = [
     { key: null, label: t.filterAll!, count: total },
-    // Second, not last: it is the only chip that can be urgent, and a chip you
-    // may need is worth more than one more category you already know you have.
-    // Absent at zero — see the component's own note.
-    ...(unrouted > 0
-      ? [
-          {
-            key: "unrouted" as const,
-            label: t.filterUnrouted!,
-            count: unrouted,
-            urgent: true,
-          },
-        ]
+    ...(privateCount > 0
+      ? [{ key: "private" as const, label: t.filterPrivate!, count: privateCount }]
       : []),
     ...ASSET_TYPES.map((type) => ({
       key: type,
@@ -131,12 +112,12 @@ export function AssetsScreen() {
           status={t.lockedStatus!}
           count={num(vaultSize)}
           countUnit={t.lockedCountUnit!}
-          heirsLine={
-            heirNames.length > 0
-              ? t.lockedHeirs!.replace("{n}", num(heirNames.length))
+          executorsLine={
+            executorNames.length > 0
+              ? t.lockedExecutors!.replace("{n}", num(executorNames.length))
               : undefined
           }
-          heirNames={heirNames.slice(0, 3)}
+          executorNames={executorNames.slice(0, 3)}
           deliveryLine={t.lockedDelivery!}
           actionLabel={status === "unlocking" ? t.unlocking! : t.unlockCta!}
           footnote={t.lockedFootnote!}
@@ -177,8 +158,6 @@ export function AssetsScreen() {
     )
   }
 
-  // From the whole vault, never the filtered view — see `routedTotal`.
-  const routed = routedTotal
 
   return (
     <Screen
@@ -217,7 +196,7 @@ export function AssetsScreen() {
           <Text variant="metaSm">
             {t
               .vaultCount!.replace("{n}", num(total))
-              .replace("{m}", num(routed))}
+              .replace("{m}", num(handedOverTotal))}
           </Text>
           <Text variant="pageTitle">{t.vaultTitle}</Text>
         </View>
@@ -246,31 +225,6 @@ export function AssetsScreen() {
       ) : null}
 
       <FilterChips chips={chips} selected={filter} onSelect={setFilter} />
-
-      {/* The same banner Home uses for its own alarm. One per screen, and gone
-          at zero rather than turning olive — "everything is fine" is not news. */}
-      {unrouted > 0 && !searching ? (
-        <AlertBanner
-          variant="notice"
-          description={t.unroutedAlert!.replace("{n}", num(unrouted))}
-          actions={
-            <Pressable
-              accessibilityRole="button"
-              // Selects the chip rather than pushing a screen. "من يستلم ماذا؟"
-              // was a whole route whose only job was this list, filtered.
-              onPress={() => setFilter("unrouted")}
-              hitSlop={8}
-            >
-              <Text
-                variant="action"
-                className="font-body-bold text-terracotta-800"
-              >
-                {t.unroutedAction}
-              </Text>
-            </Pressable>
-          }
-        />
-      ) : null}
 
       {/* A filter or a search can empty a vault that is not empty. Different
           state, different words: nothing is missing, the view is just narrow. */}
@@ -318,19 +272,8 @@ export function AssetsScreen() {
                   key={row.id}
                   icon={ASSET_TYPE_ICON[row.type]}
                   title={row.title}
-                  // The shared bucket is not a name, so it never reaches
-                  // `recipients` — without this the card's second line is blank and
-                  // the row is a different height from every other one.
-                  recipients={
-                    row.allHeirs
-                      ? [routing.allHeirs!, ...row.recipients].join("، ")
-                      : row.recipients.join("، ")
-                  }
-                  unroutedLabel={
-                    row.recipientCount === 0 ? t.recipientsZero : undefined
-                  }
-                  faces={row.recipients}
-                  allHeirsLabel={row.allHeirs ? t.allHeirsShort : undefined}
+                  detail={row.handedOver ? t.rowHandedOver! : t.rowPrivate!}
+                  isPrivate={!row.handedOver}
                   onPress={() =>
                     router.push({
                       pathname: "/assets/[id]",

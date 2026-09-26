@@ -7,7 +7,7 @@
  *
  * The IBAN is held as typed and stored normalised: the field displays
  * `groupIban(...)` because that is how one is printed on a statement and checked
- * against paper, storage gets `normalizeIban(...)` because that is what an heir
+ * against paper, storage gets `normalizeIban(...)` because that is what an executor
  * pastes into a bank form. The form holds raw keystrokes so the cursor does not
  * jump while the grouping recomputes.
  *

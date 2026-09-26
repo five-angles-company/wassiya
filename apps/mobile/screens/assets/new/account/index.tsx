@@ -1,7 +1,7 @@
 /**
  * ٤.٧ — a digital account.
  *
- * The disposition is the point of the screen: *"most heirs don't want the
+ * The disposition is the point of the screen: *"most executors don't want the
  * account, they want it closed; make the choice explicit at capture time rather
  * than guessing at release."* Radio rows with a sentence each, not chips — these
  * are three different instructions to a grieving person. Nothing is
@@ -9,7 +9,7 @@
  * strongly about and "delete" chosen by accident cannot be undone.
  *
  * The two-factor field is free text and deliberately unmasked. A rotating code
- * is worthless to an heir; *where the second factor lives* is everything, and
+ * is worthless to an executor; *where the second factor lives* is everything, and
  * masking it would hide the only useful part while protecting nothing.
  *
  * Password and recovery codes get ٤.٣'s treatment: screenshots blocked,
@@ -95,8 +95,8 @@ export function NewAccountScreen() {
     })
     if (saved) {
       router.replace({
-        pathname: "/assets/[id]/recipients",
-        params: { id: saved, step: "2" },
+        pathname: "/assets/[id]",
+        params: { id: saved },
       })
     }
   }

@@ -6,18 +6,18 @@ import { View } from "react-native"
 import { GhostRow } from "@/components/ghost-row"
 
 /**
- * An owner list with nobody in it yet — ٥.١b heirs, and any list that follows its pattern.
+ * An owner list with nobody in it yet — ٥.١b executors, and any list that follows its pattern.
  *
  * Deliberately the twin of `assets-empty.tsx`: same block, same sizes, same
  * ghost cards. These are the two lists an owner meets first, and they were
  * telling different stories — the vault said "a page not filled in yet", the
- * heirs list a centred medallion that reads as a state the app got into rather
+ * executors list a centred medallion that reads as a state the app got into rather
  * than one the owner simply has not left yet.
  *
  * Left-aligned and low in the frame for the reason the vault gives: **a centred
  * empty state reads as an error.**
  *
- * The ghosts carry no trailing disc. A heir card has none, and a ghost that
+ * The ghosts carry no trailing disc. An executor card has none, and a ghost that
  * promises one teaches a layout that never arrives.
  *
  * ⚠️ **Mount it in a `gap-header` `Screen`.** This returns a fragment, so the

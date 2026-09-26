@@ -28,7 +28,7 @@ const SHARED = [
  */
 const FEATURES = [
   "account",
-  "box",
+  "handover",
   "claims",
   "notifications",
   "overview",

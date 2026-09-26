@@ -18,10 +18,9 @@ export const STORAGE = {
   assetsTitle: { ar: "الأصول", en: "Assets" },
   assetsHint: { ar: "عدد الأصول المسجّلة.", en: "Assets on record." },
 
-  unroutedTitle: { ar: "أصول بلا مستلم", en: "Unrouted assets" },
-  unroutedHint: {
-    ar: "لم يُحدَّد لها مستلم صراحةً — أشيع عطب صامت في المنتج.",
-    en: "No recipient set explicitly. The commonest silent failure in the product.",
+  privateAssets: {
+    ar: "{n} من {total} أصلاً خاصة: لا تُسلَّم للأوصياء، ولا يفتحها أحد بعد رحيل المالك.",
+    en: "{n} of {total} assets are kept private: not handed over to the executors, and nobody can open them after the owner dies.",
   },
 
   byTypeTitle: { ar: "التخزين حسب النوع", en: "Storage by type" },

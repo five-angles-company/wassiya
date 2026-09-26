@@ -44,9 +44,9 @@ export const PERMISSIONS = [
   /** Rule on a death report: link a subject, set the name match, close it. */
   { key: "claims.rule", group: "review" },
   { key: "deliveries.read", group: "review" },
-  /** Reach an heir: log an attempt, correct a number, resend, reissue. */
+  /** Reach an executor: log an attempt, correct a number, resend, reissue. */
   { key: "deliveries.contact", group: "review" },
-  /** Decide an heir's identity by hand when no ID number matched. */
+  /** Decide an executor's identity by hand when no ID number matched. */
   { key: "deliveries.decide", group: "review" },
   { key: "identity.read", group: "review" },
   /** Give an owner their three Didit attempts back. */
@@ -70,7 +70,7 @@ export const PERMISSIONS = [
   /**
    * One key per job, not one for the lot.
    *
-   * `deliveries.expire` destroys escrowed keys forever; a staff
+   * `deliveries.expire` can delete a whole vault forever; a staff
    * member who should be able to nudge `claims.advance` must not inherit that
    * because both happen to be buttons on the same screen.
    */
@@ -126,7 +126,7 @@ export function isPermissionKey(value: string): value is PermissionKey {
  * The four roles a deployment starts with, seeded by `staff.seedRoles`.
  *
  * Shaped by what the console is actually worked as: a **Reviewer** rules on
- * death reports, a **Delivery agent** gets the estate to the heir, and
+ * death reports, a **Delivery agent** gets the estate to the executor, and
  * **Support** answers the phone — which needs to see almost everything and
  * change almost nothing, plus the one unblocking action (Didit attempts) that
  * is the most common ticket.
@@ -170,7 +170,7 @@ export const SEEDED_ROLES = [
     name: { ar: "مسؤول التسليم", en: "Delivery agent" },
     description: {
       ar: "يتواصل مع الورثة ويبتّ في مطابقة هوياتهم.",
-      en: "Contacts heirs and decides their identity match.",
+      en: "Contacts executors and decides their identity match.",
     },
     permissions: [
       "dashboard.read",

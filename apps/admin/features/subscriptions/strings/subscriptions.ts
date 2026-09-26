@@ -56,8 +56,8 @@ export const SUBSCRIPTIONS = {
   // and the lapsed state has behaviour of its own that has to be testable.
   expireTitle: { ar: "إنهاء الاشتراك الآن", en: "Expire this subscription now" },
   expireBody: {
-    ar: "يصبح تاريخ تجديد {name} في الماضي: تتوقّف إضافة الأصول، وتبقى الخزنة مقروءة وتسليم الورثة يعمل كما هو.",
-    en: "{name}'s renewal date moves into the past: adding assets stops, while the vault stays readable and heir delivery keeps working.",
+    ar: "يصبح تاريخ تجديد {name} في الماضي: تتوقّف إضافة الأصول، وتبقى الخزنة مقروءة والتسليم للأوصياء يعمل كما هو.",
+    en: "{name}'s renewal date moves into the past: adding assets stops, while the vault stays readable and delivery to the executors keeps working.",
   },
   revokeTitle: { ar: "العودة إلى الخطة المجانية", en: "Back to the free plan" },
   revokeBody: {
@@ -101,7 +101,7 @@ export const SUBSCRIPTIONS = {
 
   fieldStorage: { ar: "المساحة", en: "Storage" },
   fieldAssets: { ar: "عدد الأصول", en: "Assets" },
-  fieldHeirs: { ar: "عدد الورثة", en: "Heirs" },
+  fieldExecutors: { ar: "عدد الأوصياء", en: "Executors" },
   fieldPhotos: { ar: "يسمح بالصور", en: "Photos allowed" },
   fieldMaxFile: { ar: "أكبر ملف", en: "Largest file" },
   unlimited: { ar: "بلا حد", en: "Unlimited" },

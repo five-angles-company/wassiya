@@ -45,10 +45,13 @@ export const DASHBOARD = {
     en: "They cannot try again. Only a person can unblock this.",
   },
 
-  heirsNothing: { ar: "ورثة لا يستلمون شيئاً", en: "Heirs who get nothing" },
-  heirsNothingHint: {
-    ar: "لن يستلموا شيئاً لو وقع الإفراج الليلة.",
-    en: "They would receive nothing if a claim released tonight.",
+  executorsWithoutSheet: {
+    ar: "أوصياء بلا ورقة",
+    en: "Executors without a sheet",
+  },
+  executorsWithoutSheetHint: {
+    ar: "لم تُطبع ورقتهم، فلو وقع الإفراج الليلة لما فتحوا شيئاً إلا بورقة استرجاع المالك.",
+    en: "Their sheet was never printed: if a claim released tonight, they could open nothing without the owner's recovery sheet.",
   },
 
   cappedNote: {

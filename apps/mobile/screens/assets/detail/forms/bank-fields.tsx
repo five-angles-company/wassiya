@@ -22,7 +22,7 @@ import type { BankForm } from "@/screens/assets/detail/forms/bank"
  *
  * **Nothing here is masked, and the IBAN can be copied.** A bank account has no
  * password; the IBAN is printed on statements and handed out to receive money,
- * so masking it would make the one value an heir has to transcribe the hardest
+ * so masking it would make the one value an executor has to transcribe the hardest
  * one to read — and buy nothing, since its tail already shows unmasked in the
  * vault list. It gets a copy affordance instead, mono, LTR, in four-character
  * groups: the form it has to be transcribed in.

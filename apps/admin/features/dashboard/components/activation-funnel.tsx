@@ -68,7 +68,7 @@ function stageLabel(key: string, locale: Locale): string {
     identityVerified: labels.stageIdentityVerified,
     vaultCreated: labels.stageVaultCreated,
     sheetPrinted: labels.stageSheetPrinted,
-    heirNamed: labels.stageHeirNamed,
+    executorNamed: labels.stageExecutorNamed,
     deliveryPrepared: labels.stageDeliveryPrepared,
     checkinConfigured: labels.stageCheckinConfigured,
   }

@@ -19,7 +19,7 @@ import { COMMON } from "@/lib/i18n/strings/common"
 import { CLAIM_STATUS } from "@/features/claims/strings/claim-status"
 
 /** What the page knows about the claim, from whichever query could read it. */
-export type HeirCaseFacts = {
+export type CaseFacts = {
   status: string
   submittedAt: number
   vetoDeadline: number | null
@@ -33,9 +33,9 @@ export type HeirCaseFacts = {
 }
 
 /** Which errand the reader owes. `null` is the commonest answer by far. */
-export type HeirAsk = "certificate" | null
+export type CaseAsk = "certificate" | null
 
-export type HeirView = {
+export type CaseView = {
   /** One sentence about the report — never a status name. */
   headline: string
   tone: "settled" | "attention"
@@ -44,7 +44,7 @@ export type HeirView = {
   body: string[]
   /** A recorded date to show beside the headline — never a countdown. */
   date?: { label: string; value: string }
-  ask: HeirAsk
+  ask: CaseAsk
   askTitle: string | null
   ledger: LedgerEntry[]
 }
@@ -56,13 +56,13 @@ export type HeirView = {
  * "what does this reader see" can be read in one place without a browser.
  *
  *  - **The order follows the state machine:** staff review sets the waiting
- *    period's end, and release is when Wassiya contacts the heirs. The reporter
- *    receives nothing by reporting, so there is no box step here.
+ *    period's end, and release is when Wassiya contacts the executors. The reporter
+ *    receives nothing by reporting, so there is no handover step here.
  *  - **A terminal report has no future.** `vetoed`, `locked` and `closed`
  *    stop the record where they happened; a greyed step is one still awaited.
  *  - **At most one ask.** A grieving reader acts on one thing or none.
  */
-export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
+export function caseView(facts: CaseFacts, locale: Locale): CaseView {
   const labels = t(CLAIM_STATUS, locale)
   const common = t(COMMON, locale)
   const { status, isMine, certificateReceived } = facts
@@ -137,11 +137,11 @@ export function heirView(facts: HeirCaseFacts, locale: Locale): HeirView {
   // An errand belongs only to the person who filed. A forwarded link shows the
   // whole record and asks for nothing — the page offers that reader a way in
   // instead, which is the only thing they can actually do.
-  const ask: HeirAsk = isMine && !certificateReceived ? "certificate" : null
+  const ask: CaseAsk = isMine && !certificateReceived ? "certificate" : null
 
   const askTitle = ask === "certificate" ? labels.stepCertificate : null
 
-  const standing: Omit<HeirView, "ask" | "askTitle" | "ledger"> = !certificateReceived
+  const standing: Omit<CaseView, "ask" | "askTitle" | "ledger"> = !certificateReceived
     ? { headline: labels.headCertificate, tone: "attention", icon: FileCheckIcon, body: [] }
     : released
       ? { headline: labels.headReleased, tone: "settled", icon: CircleCheckIcon, body: [labels.releasedBody] }

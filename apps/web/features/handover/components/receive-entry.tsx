@@ -14,10 +14,10 @@ import { NoticeCard } from "@/components/notice-card"
 import { Placeholder } from "@/components/placeholder"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
-import { DELIVERY } from "@/features/box/strings/delivery"
+import { DELIVERY } from "@/features/handover/strings/delivery"
 
 /**
- * The link from our message to an heir. Signed in, it binds the delivery to
+ * The link from our message to an executor. Signed in, it binds the delivery to
  * the account on its own and moves on; signed out, it offers a way in.
  *
  * ⚠️ It names nobody. A recycled number or address can put this page in front

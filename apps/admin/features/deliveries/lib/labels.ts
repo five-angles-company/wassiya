@@ -2,7 +2,7 @@ import { DELIVERIES } from "@/features/deliveries/strings/deliveries"
 import { t, type Locale } from "@/lib/i18n/locale"
 
 export type DeliveryStatus =
-  | "awaiting_heir"
+  | "awaiting_executor"
   | "identity_pending"
   | "ready"
   | "rejected"
@@ -17,7 +17,7 @@ export type ContactOutcome =
   | "other"
 
 export const DELIVERY_STATUSES: readonly DeliveryStatus[] = [
-  "awaiting_heir",
+  "awaiting_executor",
   "identity_pending",
   "ready",
   "rejected",
@@ -43,7 +43,7 @@ export const MANUAL_OUTCOMES: readonly ContactOutcome[] = [
 type Labels = ReturnType<typeof t<typeof DELIVERIES>>
 
 const STATUS_KEY: Record<DeliveryStatus, keyof Labels> = {
-  awaiting_heir: "statusAwaiting",
+  awaiting_executor: "statusAwaiting",
   identity_pending: "statusIdentity",
   ready: "statusReady",
   rejected: "statusRejected",

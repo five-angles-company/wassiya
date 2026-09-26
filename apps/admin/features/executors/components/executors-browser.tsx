@@ -3,7 +3,6 @@
 import { useMemo } from "react"
 import Link from "next/link"
 import { api } from "@workspace/backend/api"
-import { Badge } from "@workspace/ui/components/badge"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   createColumnHelper,
@@ -19,42 +18,63 @@ import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { FacetedFilter } from "@/components/data-table-faceted-filter"
 import { useLocale } from "@/components/locale-provider"
-import { HEIRS } from "@/features/heirs/strings/heirs"
+import { EXECUTORS } from "@/features/executors/strings/executors"
 import type { DataTableFeatures } from "@/lib/data-table-features"
-import { fmtDate } from "@/lib/format"
+import { fmtDate, fmtNumber } from "@/lib/format"
 import { t, type Locale } from "@/lib/i18n/locale"
 import { DATA_TABLE } from "@/lib/i18n/strings/data-table"
 import { useLastLoaded } from "@/lib/use-last-loaded"
 import { useTableUrlState } from "@/lib/use-table-url-state"
 
-type HeirRow = FunctionReturnType<typeof api.admin.heirsPage>["page"][number]
+type ExecutorRow = FunctionReturnType<
+  typeof api.admin.executorsPage
+>["page"][number]
 
 const DEFAULT_SORTING: SortingState = [{ id: "addedAt", desc: true }]
 
 /** The one column the server can order by. */
 const SORTABLE = ["addedAt"] as const
 
-const helper = createColumnHelper<DataTableFeatures, HeirRow>()
+const helper = createColumnHelper<DataTableFeatures, ExecutorRow>()
 
-function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
-  const labels = t(HEIRS, locale)
+function executorColumns(
+  locale: Locale
+): ColumnDef<DataTableFeatures, ExecutorRow>[] {
+  const labels = t(EXECUTORS, locale)
 
   return helper.columns([
     helper.accessor("name", {
-      id: "heir",
+      id: "executor",
       enableSorting: false,
-      header: () => labels.colHeir,
+      header: () => labels.colExecutor,
       cell: ({ row }) => (
-        <div className="flex flex-col">
-          <span className="font-medium">{row.original.name}</span>
-          <span className="text-xs text-muted-foreground">
-            {row.original.relation} ·{" "}
-            <span dir="ltr" className="inline-block">
-              {row.original.phone}
-            </span>
-          </span>
-        </div>
+        <span className="font-medium">{row.original.name}</span>
       ),
+    }),
+
+    helper.accessor("phone", {
+      id: "phone",
+      enableSorting: false,
+      header: () => labels.colPhone,
+      cell: ({ row }) => (
+        <span dir="ltr" className="inline-block tabular-nums">
+          {row.original.phone}
+        </span>
+      ),
+    }),
+
+    helper.accessor("email", {
+      id: "email",
+      enableSorting: false,
+      header: () => labels.colEmail,
+      cell: ({ row }) =>
+        row.original.email === null ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <span dir="ltr" className="inline-block">
+            {row.original.email}
+          </span>
+        ),
     }),
 
     helper.accessor("ownerName", {
@@ -77,28 +97,22 @@ function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
       ),
     }),
 
-    // The column this screen exists for. An heir who receives nothing is the
-    // commonest silent failure in the product: the owner added them and
-    // believes they are provided for.
-    helper.accessor("receivesCount", {
-      id: "receives",
+    // Without a printed sheet a release reaches this executor with nothing to
+    // open it — only the owner's own recovery sheet could stand in.
+    helper.accessor("sheetPrintedAt", {
+      id: "sheet",
       enableSorting: false,
-      header: () => labels.colReceives,
+      header: () => labels.colSheet,
       cell: ({ row }) => {
-        const { receivesCount, sharedCount } = row.original
-        if (receivesCount === 0) {
-          return <Badge variant="destructive">{labels.receivesNothing}</Badge>
+        const { sheetPrintedAt, sheetVersion } = row.original
+        if (sheetPrintedAt === null) {
+          return <span className="text-destructive">{labels.sheetNone}</span>
         }
         return (
-          <span className="flex flex-col">
-            <span className="tabular-nums">
-              {labels.receives.replace("{n}", String(receivesCount))}
-            </span>
-            {sharedCount > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {labels.receivesShared.replace("{n}", String(sharedCount))}
-              </span>
-            )}
+          <span className="whitespace-nowrap tabular-nums">
+            {labels.sheetPrinted
+              .replace("{date}", fmtDate(sheetPrintedAt, locale))
+              .replace("{version}", fmtNumber(sheetVersion ?? 0, locale))}
           </span>
         )
       },
@@ -119,63 +133,54 @@ function heirColumns(locale: Locale): ColumnDef<DataTableFeatures, HeirRow>[] {
 }
 
 /**
- * Every heir, across every account.
+ * Every executor, across every account.
  *
- * A global heir list earns a screen because of one column: what each would
- * actually receive. The name and relation are already on the owner's own page;
- * **which heirs would receive nothing** is a question no other screen asks, and
- * it is the product's commonest silent failure.
+ * The total counts every executor, not the filtered set, so a filtered page
+ * can come back short: `isDone`, not a row count, says whether another follows.
  *
- * Two things this screen is honest about rather than hiding. The routing filter
- * is applied *after* the count, because the count takes two indexed probes per
- * row and cannot be an index range — so a filtered page can come back short,
- * and `isDone` rather than a row count is what says whether another follows.
- * And the total counts every heir, not the filtered set, because producing the
- * filtered number would mean running those probes across the whole table.
- *
- * Search matches the **owner**, not the heir. `heirs` has nothing worth
- * indexing of its own, and denormalising an owner onto every heir row would go
- * stale the first time somebody changed their name — so the term resolves
- * against `users.search_owner` and narrows this stream by `userId`.
+ * Search matches the **owner**, not the executor — the term resolves against
+ * `users.search_owner` and narrows this stream by `userId`.
  */
-export function HeirsBrowser() {
+export function ExecutorsBrowser() {
   const locale = useLocale()
-  const labels = useMemo(() => t(HEIRS, locale), [locale])
+  const labels = useMemo(() => t(EXECUTORS, locale), [locale])
   const tableLabels = useMemo(() => t(DATA_TABLE, locale), [locale])
 
-  const [unroutedOnly, setUnroutedOnly] = useQueryState(
-    "unrouted",
+  const [withoutSheetOnly, setWithoutSheetOnly] = useQueryState(
+    "noSheet",
     parseAsBoolean.withDefault(false)
   )
   const url = useTableUrlState({
     defaultSorting: DEFAULT_SORTING,
     sortableIds: SORTABLE,
-    facetKey: String(unroutedOnly),
+    facetKey: String(withoutSheetOnly),
   })
 
   const { data: page, loading } = useLastLoaded(
-    useQuery(api.admin.heirsPage, {
-      unroutedOnly,
+    useQuery(api.admin.executorsPage, {
+      withoutSheetOnly,
       search: url.search,
       sort: url.sorting[0]?.desc === false ? "oldest" : "newest",
       paginationOpts: { numItems: url.pageSize, cursor: url.cursor },
     })
   )
-  const { data: tally } = useLastLoaded(useQuery(api.admin.heirsTally, {}))
+  const { data: tally } = useLastLoaded(useQuery(api.admin.executorsTally, {}))
 
-  const columns = useMemo(() => heirColumns(locale), [locale])
+  const columns = useMemo(() => executorColumns(locale), [locale])
   const columnLabels = useMemo(
     () => ({
-      heir: labels.colHeir,
+      executor: labels.colExecutor,
+      phone: labels.colPhone,
+      email: labels.colEmail,
       owner: labels.colOwner,
-      receives: labels.colReceives,
+      sheet: labels.colSheet,
       addedAt: labels.colAdded,
     }),
     [labels]
   )
-  const routingSelection = useMemo(
-    () => new Set<string>(unroutedOnly ? ["unrouted"] : []),
-    [unroutedOnly]
+  const sheetSelection = useMemo(
+    () => new Set<string>(withoutSheetOnly ? ["noSheet"] : []),
+    [withoutSheetOnly]
   )
 
   if (page === undefined) {
@@ -183,7 +188,7 @@ export function HeirsBrowser() {
   }
 
   return (
-    <DataTable<HeirRow>
+    <DataTable<ExecutorRow>
       columns={columns}
       data={page.page}
       busy={loading}
@@ -195,11 +200,11 @@ export function HeirsBrowser() {
       getRowId={(row) => row.id}
       filters={
         <FacetedFilter
-          title={labels.filterRouting}
-          options={[{ value: "unrouted", label: labels.unroutedOnly }]}
-          selected={routingSelection}
-          onToggle={(_value, checked) => void setUnroutedOnly(checked)}
-          onClear={() => void setUnroutedOnly(false)}
+          title={labels.filterSheet}
+          options={[{ value: "noSheet", label: labels.withoutSheetOnly }]}
+          selected={sheetSelection}
+          onToggle={(_value, checked) => void setWithoutSheetOnly(checked)}
+          onClear={() => void setWithoutSheetOnly(false)}
           count={() => undefined}
           clearLabel={tableLabels.resetFilters}
         />
@@ -209,8 +214,8 @@ export function HeirsBrowser() {
         onSearchChange: url.setSearch,
         sorting: url.sorting,
         onSortingChange: url.setSorting,
-        // Owner matches are ranked by the search index, but the heirs stream
-        // itself is still ordered by creation — so the sort headers keep working.
+        // Owner matches are ranked by the search index, but the executors
+        // stream itself is still ordered by creation — the sort keeps working.
         sortLocked: false,
         page: url.pageNumber,
         pageSize: url.pageSize,

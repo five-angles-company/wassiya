@@ -3,15 +3,16 @@ import type { LabelSet } from "@/i18n/locale"
 /**
  * The short, plain-words version of the help-centre seed
  * (`packages/backend/convex/support/help.ts`). Like it, no answer may state a
- * limit or a price — and the first answer must keep saying what happens to
- * what an owner leaves their heirs.
+ * limit or a price. The first answer must keep saying that Wassiya holds no
+ * key, and the lost-sheet answer must keep its price: with every sheet lost,
+ * nobody can open what was handed over.
  */
 export const FAQ: readonly { q: LabelSet; a: LabelSet }[] = [
   {
     q: { ar: "هل تستطيعون رؤية ما في خزنتي؟", en: "Can you see what's in my vault?" },
     a: {
-      ar: "لا. خزنتك تُقفل على جوّالك قبل أن تصلنا، ولا نملك مفتاحها. أما ما خصّصته لورثتك فنقفل نسخة منه بمفتاح التسليم الخاص بنا لنستطيع تسليمه: لا نفتحه إلا بعد التأكد من الوفاة ومن هوية الوارث، وكل فتح يُسجَّل. وما لم تخصّصه لأحد لا يستطيع أحد فتحه — ولا نحن.",
-      en: "No. Your vault is locked on your phone before it reaches us, and we don't have its key. For what you set aside for your heirs, we lock a copy with our delivery key so that we can hand it over: we open it only once we've confirmed the death and who the heir is, and every opening is recorded. Anything you set aside for no one, nobody can open — not even us.",
+      ar: "لا، ولا بعد رحيلك. خزنتك تُقفل على جوّالك قبل أن تصلنا، ولا نملك مفتاحها. وما تسلّمه لوصيّك لا يفتحه إلا ورقة الوصي أو ورقة استردادك، ولا نملك أياً منهما. وما أبقيته خاصاً لا يفتحه أحد.",
+      en: "No — not even after you're gone. Your vault is locked on your phone before it reaches us, and we don't have its key. What you hand over to your executor opens only with their executor sheet or your recovery sheet, and we hold neither. What you keep private, nobody opens.",
     },
   },
   {
@@ -22,10 +23,17 @@ export const FAQ: readonly { q: LabelSet; a: LabelSet }[] = [
     },
   },
   {
-    q: { ar: "لماذا لا يعلم ورثتي بشيء الآن؟", en: "Why don't my heirs know anything now?" },
+    q: { ar: "ماذا لو ضاعت ورقة الوصي؟", en: "What if the executor sheet is lost?" },
     a: {
-      ar: "لحمايتك وحمايتهم. لا نتواصل مع أي وارث قبل التأكد من الوفاة وانتهاء فترة الانتظار. لذلك احرص أن تبقى أرقامهم صحيحة.",
-      en: "To protect you and them. We don't contact any heir until the death is confirmed and the waiting period is over. So keep their phone numbers up to date.",
+      ar: "وأنت حيّ: اطبع له ورقة جديدة من التطبيق، فتبطل القديمة. وبعد رحيلك: يستطيع وصيّك أن يستعمل ورقة استردادك بدلاً منها. وإن ضاعت الورقتان معاً فلا يستطيع أحد فتح ما تركته — ولا نحن، لأننا لا نملك أي مفتاح.",
+      en: "While you're alive, print a new one in the app and the old one stops working. After you're gone, your executor can use your recovery sheet instead. If both are lost, nobody can open what you left — not even us, because we hold no key.",
+    },
+  },
+  {
+    q: { ar: "هل تخبرون وصيّي بشيء الآن؟", en: "Do you tell my executor anything now?" },
+    a: {
+      ar: "لا. لا نراسل الوصي بشيء قبل التحقق من الوفاة وانتهاء فترة الانتظار. أنت من يخبره: أعطه ورقته، أو ضعها مع وصيّتك. واحرص أن يبقى رقمه صحيحاً.",
+      en: "No. We send your executor nothing until the death is verified and the waiting period is over. Telling them is up to you — give them their sheet, or keep it with your will. And keep their number up to date.",
     },
   },
   {
@@ -41,29 +49,29 @@ export const FAQ: readonly { q: LabelSet; a: LabelSet }[] = [
   {
     q: { ar: "هل تقسم وصيّة الميراث؟", en: "Does Wassiya divide the inheritance?" },
     a: {
-      ar: "لا. أنت تختار ما يأخذه كل شخص، ونحن نوصله كما هو. أما تقسيم الميراث فيحكمه الشرع والقانون.",
-      en: "No. You choose what each person gets, and we deliver it as it is. Dividing an inheritance is set by law.",
+      ar: "لا. يستلم وصيّك ما اخترت تسليمه كما هو، ويُنفّذ وصيّتك. أما تقسيم الميراث فيحكمه الشرع والقانون.",
+      en: "No. Your executor receives what you chose to hand over, as it is, and carries out your will. Dividing an inheritance is set by law.",
     },
   },
   {
-    q: { ar: "ماذا يستلم الوارث، وإلى متى؟", en: "What does an heir receive, and for how long?" },
+    q: { ar: "ماذا يستلم الوصي، وإلى متى؟", en: "What does my executor receive, and for how long?" },
     a: {
-      ar: "يستلم ما خصّصته له فقط، ويفتحه على جهازه. يبقى متاحاً سنة كاملة، ثم تُحذف الخزنة كلها نهائياً ولا يستطيع أحد فتح شيء منها بعدها — ولا نحن.",
-      en: "Only what you set aside for them, and they open it on their own device. It stays available for a full year, then the whole vault is deleted for good and nobody can open any of it again — not even us.",
+      ar: "كل ما اخترت تسليمه، كاملاً، يفتحه على جهازه بورقته بعد أن يثبت هويته. أما ما أبقيته خاصاً فلا يصل لأحد. يبقى التسليم متاحاً سنة كاملة، ثم تُحذف الخزنة كلها نهائياً ولا يستطيع أحد فتح شيء منها بعدها — ولا نحن.",
+      en: "Everything you chose to hand over, whole. They open it on their own device with their sheet, after proving who they are; what you kept private reaches no one. It stays available for a full year, then the whole vault is deleted for good and nobody can open any of it again — not even us.",
     },
   },
   {
     q: { ar: "ماذا لو توقف اشتراكي؟", en: "What if my subscription stops?" },
     a: {
-      ar: "تبقى خزنتك كما هي، ويصل ما تركته لورثتك. فقط لن تستطيع إضافة شيء جديد حتى تجدّد.",
-      en: "Your vault stays as it is, and your heirs still receive what you left them. You just can't add anything new until you renew.",
+      ar: "تبقى خزنتك كما هي، ويبقى التسليم لوصيّك قائماً. فقط لن تستطيع إضافة شيء جديد حتى تجدّد.",
+      en: "Your vault stays as it is, and your executor still receives what you chose to hand over. You just can't add anything new until you renew.",
     },
   },
   {
     q: { ar: "هل أستطيع فتح خزنتي من الكمبيوتر؟", en: "Can I open my vault on a computer?" },
     a: {
-      ar: "لا، خزنتك تُفتح من جوّالك فقط، وهذا جزء من حمايتها. موقعنا على الإنترنت مخصّص للإبلاغ عن وفاة وللورثة.",
-      en: "No — your vault opens only on your phone, and that's part of what keeps it safe. Our website is for reporting a death and for heirs.",
+      ar: "لا، خزنتك تُفتح من جوّالك فقط، وهذا جزء من حمايتها. موقعنا على الإنترنت مخصّص للإبلاغ عن وفاة وللأوصياء.",
+      en: "No — your vault opens only on your phone, and that's part of what keeps it safe. Our website is for reporting a death and for executors.",
     },
   },
   {

@@ -55,7 +55,7 @@ export const SUPPORT = {
   topicBilling: { ar: "الاشتراك", en: "Billing" },
   topicRecovery: { ar: "الاسترداد", en: "Recovery" },
   topicClaim: { ar: "بلاغ وفاة", en: "A death report" },
-  topicDelivery: { ar: "ما تُرك لي", en: "Something left to me" },
+  topicDelivery: { ar: "تسليم بصفتي وصيّاً", en: "A handover, as executor" },
   topicOther: { ar: "شيء آخر", en: "Something else" },
 
   statusOpen: { ar: "بانتظار ردّنا", en: "Waiting for us" },
@@ -90,14 +90,14 @@ export const SUPPORT = {
   },
 
   // The line under every composer. Chat is not end-to-end encrypted, and the
-  // sheet is a bearer token.
+  // sheets are bearer tokens — the executor's and the owner's recovery sheet.
   guardrail: {
-    ar: "هذه المحادثة لا تحظى بحماية الخزنة — يقرؤها فريقنا. لن نطلب منك أبداً ورقة الاسترداد أو رمزها أو كلمات مرورك.",
-    en: "This chat isn't protected like your vault — our team reads it. We'll never ask for your recovery sheet, its code or your passwords.",
+    ar: "هذه المحادثة لا تحظى بحماية الخزنة — يقرؤها فريقنا. لن نطلب منك أبداً ورقة الوصي أو ورقة الاسترداد أو رموزهما أو كلمات مرورك.",
+    en: "This chat isn't protected like a vault — our team reads it. We'll never ask for an executor sheet, a recovery sheet, their codes or your passwords.",
   },
   recoveryWarning: {
-    ar: "يبدو أن رسالتك فيها رمز ورقة استرداد. احذفه — لا أحد في وصيّة يحتاجه، ومن يملكه يستطيع فتح الخزنة.",
-    en: "Your message seems to contain a recovery sheet code. Remove it — nobody at Wassiya needs it, and whoever has it can open the vault.",
+    ar: "يبدو أن رسالتك فيها رمز ورقة وصيّ أو ورقة استرداد. احذفه — لا أحد في وصيّة يحتاجه، ومن يملكه يستطيع فتح ما تحميه الورقة.",
+    en: "Your message seems to contain the code from an executor or recovery sheet. Remove it — nobody at Wassiya needs it, and whoever has it can open what the sheet protects.",
   },
   refusedGuest: {
     ar: "تحقّق من الاسم والبريد الإلكتروني.",

@@ -22,7 +22,7 @@ export type CryptoForm = {
    * A hardware wallet's PIN, and where the device physically is.
    *
    * The asset screen carries both, and it is right to: a seed phrase
-   * recovers a wallet, but an heir who finds the Ledger in a drawer and knows
+   * recovers a wallet, but an executor who finds the Ledger in a drawer and knows
    * its PIN never has to type twelve words at all. ٤.٣ does not collect them,
    * so absent and empty are the same thing here.
    */

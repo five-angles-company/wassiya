@@ -36,7 +36,7 @@ function blockedLabel(
  * does not, which is what keeps the two from being clicked interchangeably.
  *
  * Each button carries its own refusal reason rather than being merely disabled.
- * A greyed-out approve with no explanation is the same screen for "no heir
+ * A greyed-out approve with no explanation is the same screen for "no vault
  * linked yet" and "someone already ruled on this", and those need different
  * next actions from the reviewer.
  */

@@ -59,11 +59,10 @@ type DataTableToolbarProps<TData extends RowData> = {
   /**
    * Whether this table has anything to search.
    *
-   * Removed once as unused and restored when heirs and devices arrived: both
-   * are server-paginated with no search index behind them, so a box could only
-   * ever filter the page in front of you while appearing to search the set. A
-   * control that quietly means less than it looks like is worse than its
-   * absence.
+   * A server-paginated table with no search index behind it sets this false:
+   * a box there could only ever filter the page in front of you while
+   * appearing to search the set. A control that quietly means less than it
+   * looks like is worse than its absence.
    */
   searchable: boolean
   /**

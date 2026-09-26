@@ -2,9 +2,9 @@
  * The paywall: one sheet, opened from wherever a plan limit was hit.
  *
  * It lives in a provider rather than in each screen because the refusal is
- * thrown at the mutation, not at the button — six asset wizards and the heir
+ * thrown at the mutation, not at the button — six asset wizards and the executor
  * form would otherwise each mount their own copy and each wire the same catch.
- * `useAssetSubmit` and `heirs/new` call `open(limit)` from the catch block, and
+ * `useAssetSubmit` and `executors/new` call `open(limit)` from the catch block, and
  * the sheet appears over whatever screen they are on.
  *
  * The copy rule is in the strings file and is load-bearing: this sheet says
@@ -81,7 +81,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
 const COPY = {
   assets: ["assetsTitle", "assetsBody"],
   storage: ["storageTitle", "storageBody"],
-  heirs: ["heirsTitle", "heirsBody"],
+  executors: ["executorsTitle", "executorsBody"],
   photos: ["photosTitle", "photosBody"],
   fileSize: ["fileSizeTitle", "fileSizeBody"],
   lapsed: ["lapsedTitle", "lapsedBody"],
@@ -136,7 +136,7 @@ function Paywall({
 
   const unlocks = [
     count(paid?.assets, t.unlockAssets, t.unlockAssetsCount, locale),
-    count(paid?.heirs, t.unlockHeirs, t.unlockHeirsCount, locale),
+    count(paid?.executors, t.unlockExecutors, t.unlockExecutorsCount, locale),
     t.unlockPhotos,
     paid?.storageBytes == null
       ? t.unlockStorage.replace("{paid}", t.unlimited)
@@ -221,7 +221,7 @@ function Paywall({
 type Limits = {
   storageBytes: number | null
   assets: number | null
-  heirs: number | null
+  executors: number | null
   maxFileBytes: number | null
 }
 
@@ -247,8 +247,8 @@ function freeSide(
   switch (limit) {
     case "assets":
       return plural(limits.assets, t.assetsCount!, t.unlimited!, locale)
-    case "heirs":
-      return plural(limits.heirs, t.heirsCount!, t.unlimited!, locale)
+    case "executors":
+      return plural(limits.executors, t.executorsCount!, t.unlimited!, locale)
     case "storage":
       return size(limits.storageBytes, t.unlimited!, locale, units)
     case "fileSize":
@@ -292,7 +292,7 @@ function size(
   return value === null ? unlimited : fmtBytes(value, locale, units)
 }
 
-/** An unlocked line: "unlimited heirs", or the number when there is a cap. */
+/** An unlocked line: "unlimited executors", or the number when there is a cap. */
 function count(
   value: number | null | undefined,
   unlimitedLine: string,

@@ -1,5 +1,5 @@
 ---
-import HeirPreview from "@/components/mock/HeirPreview.astro"
+import ExecutorCard from "@/components/mock/ExecutorCard.astro"
 import ReleaseChecks from "@/components/mock/ReleaseChecks.astro"
 import VaultRows from "@/components/mock/VaultRows.astro"
 import SectionHead from "@/components/ui/SectionHead.astro"
@@ -15,7 +15,7 @@ const { locale } = Astro.props
 const home = t(HOME, locale)
 const steps = [
   { title: home.step1Title, body: home.step1Body, figure: VaultRows },
-  { title: home.step2Title, body: home.step2Body, figure: HeirPreview },
+  { title: home.step2Title, body: home.step2Body, figure: ExecutorCard },
   { title: home.step3Title, body: home.step3Body, figure: ReleaseChecks },
 ]
 ---

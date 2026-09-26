@@ -3,8 +3,8 @@
  * under the asset's DEK and stored on the row itself, not as a file.
  *
  * Under the DEK, like the label, so it reaches whoever legitimately holds that
- * key: the owner today, the routed heir after release. The AAD keeps a secret
- * from being opened as a label or a message sealed under the same key.
+ * key: the owner today, the executor after release. The AAD keeps a secret
+ * from being opened as a label under the same key.
  */
 import { assertKey, bytesToUtf8, utf8ToBytes } from "./bytes"
 import { open, seal } from "./wrap"

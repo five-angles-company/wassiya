@@ -3,7 +3,7 @@
  *
  * The seed grid is the only enclosed thing on the screen, so the one 24px
  * surface reads as the vault-within-the-vault without copy saying so. Word
- * pills keep their index because an heir reads the phrase back in order into a
+ * pills keep their index because an executor reads the phrase back in order into a
  * wallet that rejects the lot if any position is wrong.
  *
  * The checksum is verified on device on every change, and an invalid phrase
@@ -84,8 +84,8 @@ export function NewCryptoScreen() {
     })
     if (saved) {
       router.replace({
-        pathname: "/assets/[id]/recipients",
-        params: { id: saved, step: "2" },
+        pathname: "/assets/[id]",
+        params: { id: saved },
       })
     }
   }

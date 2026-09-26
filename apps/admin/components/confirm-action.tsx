@@ -24,7 +24,7 @@ import { cn } from "@workspace/ui/lib/utils"
  * `tone` makes the two non-interchangeable on sight — different title, body,
  * verb, and a destructive button that does not look like the neutral one.
  * `destructive` means genuinely irreversible: nothing anywhere moves a claim out
- * of `locked`. Linking an heir is reversible until release.
+ * of `locked`. Linking a claim to a vault is reversible until release.
  *
  * **The open state is controlled** because the action is async and can fail.
  * Uncontrolled, the dialog would dismiss the instant the button is pressed and a

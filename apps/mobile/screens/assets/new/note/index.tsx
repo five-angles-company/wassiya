@@ -9,7 +9,7 @@
  *
  *  - **Plain text, no formatting, and no strip of controls under the body.**
  *    The body is a UTF-8 string with no markers and no editor behind it, so it
- *    encrypts, round-trips, and renders in an heir's browser with nothing at
+ *    encrypts, round-trips, and renders in an executor's browser with nothing at
  *    either end that has to understand it. The bold/italic/list row was
  *    removed at the owner's request and must not come back; what sits under
  *    the composer is one line of text, not buttons.
@@ -127,8 +127,8 @@ export function NewNoteScreen() {
       draft.clear()
       voice.clear()
       router.replace({
-        pathname: "/assets/[id]/recipients",
-        params: { id: saved, step: "2" },
+        pathname: "/assets/[id]",
+        params: { id: saved },
       })
     }
   }

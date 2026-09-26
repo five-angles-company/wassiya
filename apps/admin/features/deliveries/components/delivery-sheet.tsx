@@ -87,7 +87,7 @@ export function DeliverySheet({
       open={deliveryId !== null}
       onOpenChange={(open) => !open && onClose()}
       size="xl"
-      title={loaded ? (detail.heir.name ?? "—") : labels.loading}
+      title={loaded ? (detail.executor.name ?? "—") : labels.loading}
       badge={
         loaded ? (
           <Badge variant={statusVariant(detail.status)}>
@@ -98,8 +98,6 @@ export function DeliverySheet({
       description={
         loaded ? (
           <>
-            <span>{detail.heir.relation}</span>
-            <SheetDot />
             <span>{detail.subjectName ?? "—"}</span>
             <SheetDot />
             <span>
@@ -214,7 +212,7 @@ function IdentityVerdict({
 function StatusCallout({ detail, labels }: { detail: Detail; labels: Labels }) {
   const [text, tone, Icon] = (() => {
     switch (detail.status) {
-      case "awaiting_heir":
+      case "awaiting_executor":
         return detail.timeline.some(
           (row) => row.outcome === "sent" || row.outcome === "reached"
         )
@@ -257,9 +255,9 @@ function StatusCallout({ detail, labels }: { detail: Detail; labels: Labels }) {
 }
 
 /**
- * The comparison, and it *judges*: every row says match, differs, or nothing to
- * compare. A grid of four values with no verdict is the reviewer's work left
- * undone, and the disagreement is what they are looking for.
+ * The comparison, and it *judges* where it can: the ID number says match or
+ * differs, and the name is left to the reviewer. The disagreement is what they
+ * are looking for.
  */
 function IdentitySection({
   detail,
@@ -268,37 +266,10 @@ function IdentitySection({
   detail: Detail
   labels: Labels
 }) {
-  const decide = useMutation(api.deliveries.adminDecideIdentity)
-  const { has } = usePermissions()
   const bound = detail.boundPerson
-  // The comparison is readable by anyone who may see a delivery; the verdict
-  // is a decision, and only a delivery agent takes it.
-  const pending =
-    detail.status === "identity_pending" &&
-    bound?.identityStatus === "verified" &&
-    has("deliveries.decide")
-
-  async function rule(approve: boolean) {
-    try {
-      await decide({ deliveryId: detail.deliveryId, approve })
-      toast.success(approve ? labels.nextReady : labels.nextRejected)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : labels.failed)
-    }
-  }
 
   const idVerdict: Verdict =
-    !detail.heir.hasIdNumber || bound === null
-      ? "unknown"
-      : bound.idNumberMatches
-        ? "yes"
-        : "no"
-  const birthVerdict: Verdict =
-    detail.heir.birthDate === null || bound?.birthDate == null
-      ? "unknown"
-      : detail.heir.birthDate === bound.birthDate
-        ? "yes"
-        : "no"
+    bound === null ? "unknown" : bound.idNumberMatches ? "yes" : "no"
 
   return (
     <SheetSection
@@ -319,29 +290,15 @@ function IdentitySection({
         <div className="flex flex-col divide-y">
           <CompareRow
             label={labels.name}
-            left={detail.heir.name ?? labels.none}
+            left={detail.executor.name ?? labels.none}
             right={bound.verifiedName ?? labels.none}
             verdict="unknown"
             labels={labels}
           />
           <CompareRow
-            label={labels.birthDate}
-            left={detail.heir.birthDate ?? labels.none}
-            right={bound.birthDate ?? labels.none}
-            verdict={birthVerdict}
-            numeric
-            labels={labels}
-          />
-          <CompareRow
             label={labels.idNumber}
-            left={detail.heir.hasIdNumber ? labels.idRegistered : labels.idNone}
-            right={
-              !detail.heir.hasIdNumber
-                ? labels.none
-                : bound.idNumberMatches
-                  ? labels.idMatches
-                  : labels.idNoMatch
-            }
+            left={labels.idRegistered}
+            right={bound.idNumberMatches ? labels.idMatches : labels.idNoMatch}
             verdict={idVerdict}
             labels={labels}
           />
@@ -450,7 +407,8 @@ function ContactSection({
   const [email, setEmail] = useState(detail.contact.email ?? "")
   const open =
     canContact &&
-    (detail.status === "awaiting_heir" || detail.status === "identity_pending")
+    (detail.status === "awaiting_executor" ||
+      detail.status === "identity_pending")
   const canReissue =
     canContact && detail.status !== "ready" && detail.status !== "expired"
 

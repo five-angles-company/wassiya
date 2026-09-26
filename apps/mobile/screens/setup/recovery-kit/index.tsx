@@ -68,7 +68,7 @@ export function RecoveryKitScreen() {
     if (state.status !== "ready" || me === undefined || me === null) return null
 
     // Refuse to print rather than print a blank identity line. This sheet is
-    // filed with a will for decades, and the email is how the heir-claim funnel
+    // filed with a will for decades, and the email is how the death-report funnel
     // finds the deceased — a document missing it looks complete and is not.
     // (Both fields come from webhook-synced columns, so a null here means a
     // sync has not landed, not that the user has no name or address.)
@@ -76,6 +76,7 @@ export function RecoveryKitScreen() {
     if (ownerName === null || me.email === null) return null
 
     return await buildRecoverySheetHtml({
+      prefix: "WSY",
       codeGroups: state.material.groups,
       qrDataUri,
       // The verified name, not the typed one: this is the string a death

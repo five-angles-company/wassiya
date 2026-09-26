@@ -34,7 +34,7 @@ import { router } from "expo-router"
 import {
   BadgeCheck,
   FileText,
-  Route as RouteIcon,
+  Lock,
   ShieldCheck,
   Users,
   Wallet,
@@ -53,11 +53,11 @@ export function HomeScreen() {
   const { t: claimCopy } = useStrings("protection/claim")
   const me = useQuery(api.users.me)
   const rows = useQuery(api.assets.list, {})
-  const heirs = useQuery(api.heirs.list)
+  const executors = useQuery(api.executors.list)
   const claims = useQuery(api.claims.againstMe)
 
-  const contacts = useQuery(api.heirs.contactCheck)
-  const confirmContacts = useMutation(api.heirs.confirmContacts)
+  const yearly = useQuery(api.executors.yearlyCheck)
+  const confirmYearly = useMutation(api.executors.confirmYearlyCheck)
 
   const checkin = useCheckInState()
   // The gate. The bar renders the button; this runs the fingerprint.
@@ -70,17 +70,15 @@ export function HomeScreen() {
     identity: t.itemIdentity,
     key: t.itemKey,
     sheet: t.itemSheet,
-    heirs: t.itemHeirs,
-    routing: t.itemRouting,
+    executors: t.itemExecutors,
     delivery: t.itemDelivery,
     checkin: t.itemCheckin,
   })
 
   const openClaim = claims?.find((claim) => claim.open) ?? null
   const total = rows?.length ?? 0
-  const unrouted =
-    rows?.filter((row) => row.recipientRule !== "explicit").length ?? 0
-  const heirCount = heirs?.length ?? 0
+  const privateCount = rows?.filter((row) => !row.handedOver).length ?? 0
+  const executorCount = executors?.length ?? 0
 
   const has = (id: string) =>
     score.items.find((item) => item.id === id)?.done === true
@@ -126,22 +124,22 @@ export function HomeScreen() {
         <AlertBanner variant="success" description={claimCopy.stopped} />
       ) : null}
 
-      {/* Yearly, and only once a year: an owner who is asked about the same
-          four numbers every week stops reading the question. */}
-      {contacts?.due === true ? (
+      {/* Yearly, and only once a year: an owner who is asked the same thing
+          every week stops reading the question. */}
+      {yearly?.due === true ? (
         <AlertBanner
           variant="info"
           title={t.contactsTitle}
           description={t.contactsBody}
           actions={
             <>
-              <Button size="sm" onPress={() => router.push("/heirs")}>
+              <Button size="sm" onPress={() => router.push("/executors")}>
                 <Text>{t.contactsReview}</Text>
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onPress={() => void confirmContacts({})}
+                onPress={() => void confirmYearly({})}
               >
                 <Text>{t.contactsConfirm}</Text>
               </Button>
@@ -191,30 +189,27 @@ export function HomeScreen() {
           />
           <StatTile
             icon={Users}
-            label={t.itemHeirs}
-            value={fmtNum(heirCount, locale)}
+            label={t.itemExecutors}
+            value={fmtNum(executorCount, locale)}
             emphasis="count"
-            tone={heirCount === 0 ? "terracotta" : "sand"}
-            onPress={() => router.push("/heirs")}
+            tone={executorCount === 0 ? "terracotta" : "sand"}
+            onPress={() => router.push("/executors")}
           />
-          {/* The commonest silent failure in the product gets a tile of its own
-              rather than a footnote on the assets one. */}
+          {/* Private is the owner's choice, so it is a count, never a warning. */}
           <StatTile
-            icon={RouteIcon}
-            label={t.itemRouting}
+            icon={Lock}
+            label={t.itemPrivate}
             value={
-              unrouted === 0
-                ? t.stateRouted
-                : t.stateUnrouted.replace("{n}", fmtNum(unrouted, locale))
+              privateCount === 0
+                ? t.stateAllHandedOver
+                : fmtNum(privateCount, locale)
             }
-            tone={unrouted === 0 ? "olive" : "terracotta"}
-            // Into ٤.١ with its "بلا مستلم" chip already set. "من يستلم ماذا؟"
-            // was a separate screen whose only content was this same list,
-            // grouped and filtered — so it is now this same list, filtered.
+            emphasis={privateCount === 0 ? undefined : "count"}
+            tone="sand"
             onPress={() =>
               router.push({
                 pathname: "/assets",
-                params: { filter: "unrouted" },
+                params: { filter: "private" },
               })
             }
           />
@@ -223,7 +218,7 @@ export function HomeScreen() {
             label={t.itemDelivery}
             value={has("delivery") ? t.stateDeliveryReady : t.stateDeliveryStale}
             tone={has("delivery") ? "olive" : "terracotta"}
-            onPress={() => router.push("/heirs")}
+            onPress={() => router.push("/executors")}
           />
           <StatTile
             icon={FileText}

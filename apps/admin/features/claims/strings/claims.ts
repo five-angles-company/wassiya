@@ -44,7 +44,6 @@ export const CLAIMS = {
     en: "Copy contact",
   },
   colActions: { ar: "إجراءات", en: "Actions" },
-  colHeir: { ar: "الوريث", en: "Heir" },
 
   certificateView: { ar: "فتح الملف", en: "Open file" },
   certificateNone: { ar: "لم تصل", en: "Not received" },
@@ -82,15 +81,21 @@ export const CLAIMS = {
   claimantLabel: { ar: "مقدّم الطلب", en: "Claimant" },
   contactLabel: { ar: "وسيلة التواصل", en: "Contact" },
 
-  heirTitle: { ar: "الورثة المستلمون", en: "Receiving heirs" },
-  heirHint: {
-    ar: "بعد مدة الاعتراض يستلم كل وارث وُجِّه إليه شيء تسليماً خاصاً به، ويُثبت هويته بنفسه.",
-    en: "After the objection period every heir with something routed to them gets their own delivery and proves their own identity.",
+  executorTitle: { ar: "الأوصياء", en: "Executors" },
+  executorHint: {
+    ar: "بعد مدة الاعتراض يستلم كل وصي كل ما اختار المالك تسليمه، ويُثبت هويته بنفسه، ثم يفتحه بورقته.",
+    en: "After the objection period each executor receives everything the owner chose to hand over, proves their own identity, then opens it with their sheet.",
   },
-  heirAssets: { ar: "{n} أصل", en: "{n} assets" },
-  heirNone: {
-    ar: "لا يوجد ورثة مسجّلون لهذا المالك — لن يُسلَّم شيء لأحد.",
-    en: "This owner has no heirs on record — nothing will be delivered to anyone.",
+  executorSheet: { ar: "ورقته مطبوعة", en: "Sheet printed" },
+  executorNoSheet: { ar: "لا ورقة", en: "No sheet" },
+  executorNone: {
+    ar: "لم يُسمِّ هذا المالك وصياً — لن يُسلَّم شيء لأحد.",
+    en: "This owner named no executor — nothing will be delivered to anyone.",
+  },
+  // Only the owner's recovery sheet could stand in; Wassiya holds no key.
+  executorNoSheetNote: {
+    ar: "وصيّ بلا ورقة لا يفتح شيئاً إلا بورقة استرجاع المالك — لا نملك أي مفتاح.",
+    en: "An executor without a sheet can open nothing except with the owner's recovery sheet — we hold no key.",
   },
 
   priorTitle: {
@@ -117,15 +122,18 @@ export const CLAIMS = {
   stateReleased: { ar: "أُفرج عنه {date}", en: "Released {date}" },
   stateClosed: { ar: "انتهى هذا الطلب.", en: "This claim has ended." },
   deliveriesSummary: {
-    ar: "{ready} من {total} ورثة استلموا",
-    en: "{ready} of {total} heirs have received",
+    ar: "{ready} من {total} أوصياء تحقّقت هويتهم",
+    en: "{ready} of {total} executors have been verified",
   },
   deliveriesNone: {
-    ar: "لم يُوجَّه شيء لأي وارث — لا شيء يصل لأحد.",
-    en: "Nothing was routed to any heir — nothing reaches anyone.",
+    ar: "لا وصي لهذا المالك — لا شيء يصل لأحد.",
+    en: "This owner has no executor — nothing reaches anyone.",
   },
-  deliveriesOpen: { ar: "تابع التواصل مع الورثة", en: "Follow up with the heirs" },
-  tabHeirs: { ar: "الورثة", en: "Heirs" },
+  deliveriesOpen: {
+    ar: "تابع التواصل مع الأوصياء",
+    en: "Follow up with the executors",
+  },
+  tabExecutors: { ar: "الأوصياء", en: "Executors" },
   tabHistory: { ar: "السجل", en: "History" },
   historyTitle: { ar: "ما حدث لهذا الطلب", en: "What has happened" },
   historyEmpty: { ar: "لا سجل بعد", en: "Nothing recorded yet" },
@@ -137,8 +145,8 @@ export const CLAIMS = {
 
   approveDialogTitle: { ar: "تأكيد التطابق؟", en: "Confirm the match?" },
   approveDialogBody: {
-    ar: "تبدأ مدة اعتراض مدتها ٣٠ يوماً يستطيع المالك خلالها إيقافه، ثم نتواصل مع ورثته.",
-    en: "A 30-day window opens in which the owner can stop it; after it, we contact their heirs.",
+    ar: "تبدأ مدة اعتراض مدتها ٣٠ يوماً يستطيع المالك خلالها إيقافه، ثم نتواصل مع أوصيائه.",
+    en: "A 30-day window opens in which the owner can stop it; after it, we contact their executors.",
   },
   approveConfirm: { ar: "نعم، الاسمان متطابقان", en: "Yes, they match" },
 
@@ -155,14 +163,6 @@ export const CLAIMS = {
   },
   rejectConfirm: { ar: "أغلق الطلب", en: "Close the claim" },
 
-  linkDialogTitle: {
-    ar: "ربط الطلب بهذا الوريث؟",
-    en: "Link the claim to this heir?",
-  },
-  linkDialogBody: {
-    ar: "يمكن تغيير الربط لاحقاً ما لم يقع الإفراج.",
-    en: "This can be changed later, any time before release.",
-  },
   cancel: { ar: "تراجع", en: "Cancel" },
 
   // Why an action is unavailable — the same reasons the mutation throws.
@@ -187,7 +187,7 @@ export const CLAIMS = {
     en: "What approving does",
   },
   approveNextBody: {
-    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وارث وُجِّه إليه شيء ونتواصل معه ليُثبت هويته.",
-    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every heir with something routed to them and contact each one to prove their identity.",
+    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وصي ونتواصل معه ليُثبت هويته.",
+    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every executor and contact each one to prove their identity.",
   },
 } as const satisfies Dictionary

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 
 import { HelpLink } from "@/components/help-link"
-import { HeirCase } from "@/features/claims/components/heir-case"
+import { ReportCase } from "@/features/claims/components/report-case"
 import { getLocale } from "@/lib/i18n/server"
 
 /**
@@ -31,7 +31,7 @@ export default async function CasePage({
   const { id } = await params
   return (
     <>
-      <HeirCase claimId={id} />
+      <ReportCase claimId={id} />
       <HelpLink locale={await getLocale()} topic="claim" claimId={id} />
     </>
   )

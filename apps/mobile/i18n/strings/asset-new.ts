@@ -5,7 +5,7 @@
  * own routes (`/assets/new/crypto`, `/assets/new/bank`, …).
  *
  * The footer button was to read "التالي: من يستلمه؟" on every one of these,
- * because each wizard is two steps and the second is heir assignment (5.3).
+ * because every wizard shares the same save.
  * That screen is not built, so `save`/`unroutedNote` below say what actually
  * happens instead. See `WizardFrame` for why that label was not kept
  * over a button that does not go there.
@@ -39,8 +39,8 @@ export const ASSET_NEW = {
   // because the rule is that a lapsed card never costs anyone their
   // inheritance — only adding is paused.
   quotaExceeded: {
-    ar: "إضافة الأصول متوقّفة حتى تجديد الاشتراك. خزنتك وكل ما فيها يبقى كما هو، وتسليم الورثة يعمل.",
-    en: "Adding assets is paused until your subscription renews. Your vault and everything in it is untouched, and heir delivery still works.",
+    ar: "إضافة الأصول متوقّفة حتى تجديد الاشتراك. خزنتك وكل ما فيها يبقى كما هو، والتسليم لأوصيائك يعمل.",
+    en: "Adding assets is paused until your subscription renews. Your vault and everything in it is untouched, and delivery to your executors still works.",
   },
 } satisfies LabelSet<string>
 
@@ -115,7 +115,7 @@ export const NEW_CRYPTO = {
   },
 
   // ٤.٣'s exchange variant. A wallet held on an exchange has no seed phrase —
-  // the account *is* the custody — so the form asks for what an heir would
+  // the account *is* the custody — so the form asks for what an executor would
   // actually need, and the BIP-39 gate does not apply.
   exchangeName: { ar: "اسم المنصة", en: "Exchange" },
   exchangeNamePlaceholder: { ar: "Binance", en: "Binance" },
@@ -168,7 +168,7 @@ export const NEW_BANK = {
   currencyLabel: { ar: "العملة", en: "Currency" },
   branchLabel: { ar: "الفرع (اختياري)", en: "Branch (optional)" },
   branchPlaceholder: { ar: "مثال: فرع العليا", en: "e.g. Olaya branch" },
-  instructionsLabel: { ar: "تعليمات للوارث", en: "Instructions for your heir" },
+  instructionsLabel: { ar: "تعليمات للوصي", en: "Instructions for your executor" },
   instructionsPlaceholder: {
     ar: "راجع مدير العلاقات، الطابق ٣. يوجد صندوق أمانات باسمي.",
     en: "Ask for the relationship manager, 3rd floor. There is a safe deposit box in my name.",
@@ -246,7 +246,7 @@ export const NEW_ACCOUNT = {
   passwordLabel: { ar: "كلمة المرور", en: "Password" },
   recoveryLabel: { ar: "رموز الاسترداد (اختياري)", en: "Recovery codes (optional)" },
   // Free text, not a code: where the second factor lives outlives any code it
-  // would generate, and an heir locked out by 2FA is locked out for good.
+  // would generate, and an executor locked out by 2FA is locked out for good.
   twoFactorLabel: { ar: "التحقق بخطوتين (اختياري)", en: "Two-factor (optional)" },
   twoFactorPlaceholder: {
     ar: "مثال: تطبيق Authy على الآيباد، ورموز الاحتياط في الخزنة",
@@ -258,10 +258,10 @@ export const NEW_ACCOUNT = {
   },
 
   dispositionLabel: {
-    ar: "ما الذي تريده من الوارث؟",
-    en: "What should your heir do?",
+    ar: "ما الذي تريده من الوصي؟",
+    en: "What should your executor do?",
   },
-  dispositionHandOver: { ar: "سلّمه إلى وارث", en: "Hand it over" },
+  dispositionHandOver: { ar: "يُسلَّم كما تنصّ الوصية", en: "Hand it over as the will says" },
   dispositionDelete: { ar: "احذفه نهائياً", en: "Delete it permanently" },
   // What choosing each one actually does. Every option gets a line,
   // because these are three different instructions to a grieving person.
@@ -286,8 +286,8 @@ export const NEW_ACCOUNT = {
     en: "Turn it into a memorial account",
   },
   dispositionNote: {
-    ar: "سيرى الوارث هذه التعليمات مكتوبة بخطك عند الإفراج.",
-    en: "Your heir will see this instruction in your own words at release.",
+    ar: "سيرى الوصي هذه التعليمات مكتوبة بخطك عند الإفراج.",
+    en: "Your executor will see this instruction in your own words at release.",
   },
 } satisfies LabelSet<string>
 
@@ -304,8 +304,8 @@ export const NEW_NOTE = {
   },
   // The placeholder changes with the kind pill, which is what the pills are for.
   bodyInstructions: {
-    ar: "اكتب هنا ما تريد أن يفعله الوارث، خطوة بخطوة…",
-    en: "Write what you want your heir to do, step by step…",
+    ar: "اكتب هنا ما تريد أن يفعله الوصي، خطوة بخطوة…",
+    en: "Write what you want your executor to do, step by step…",
   },
   bodyWhereabouts: {
     ar: "مفتاح الخزنة الحديدية في المكتب، الدرج الثاني، خلف ملف «الضمان».",
@@ -327,10 +327,10 @@ export const NEW_NOTE = {
     en: "Tap to start recording — up to {n} minutes",
   },
   // Said where the recording is reviewed, because a spoken note is the one
-  // thing in the vault an heir hears in the owner's own voice.
+  // thing in the vault an executor hears in the owner's own voice.
   voiceNote: {
-    ar: "سيسمع الوارث صوتك كما سجّلته. يُشفَّر التسجيل على جهازك قبل الحفظ.",
-    en: "Your heir will hear this in your own voice. The recording is encrypted on your device before saving.",
+    ar: "سيسمع الوصي صوتك كما سجّلته. يُشفَّر التسجيل على جهازك قبل الحفظ.",
+    en: "Your executor will hear this in your own voice. The recording is encrypted on your device before saving.",
   },
   rerecord: { ar: "سجّل من جديد", en: "Record again" },
   // Says why there is no play button over a saved take, rather than leaving

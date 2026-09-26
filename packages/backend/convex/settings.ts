@@ -1,7 +1,7 @@
 // Deployment settings, from the console.
 //
 // What lives here is what an operator tunes: who mail comes from, whether it is
-// live, whether heir outreach sends, and where the app is. What does not live
+// live, whether executor outreach sends, and where the app is. What does not live
 // here is every credential — see `model/settings.ts` for why, and `status`
 // below for how the console reports them without ever returning one.
 import { v } from "convex/values"
@@ -114,7 +114,7 @@ export const adminSave = mutation({
     // Refused rather than saved-and-ignored: a provider set to twilio with no
     // sender sends nothing, and the console would have shown it as on.
     if (args.outreachProvider === "twilio" && twilioFrom === "") {
-      throw new Error("Heir outreach needs an SMS sender before it can be on")
+      throw new Error("Executor outreach needs an SMS sender before it can be on")
     }
 
     const next = {
@@ -209,7 +209,7 @@ function isTwilioSender(value: string): boolean {
  * **Deliberately no writer.** Several of these are promises AGENTS.md marks
  * LOCKED — the veto window and the one-year delivery window in particular —
  * and a mistyped box is not the way to change how long a grieving family
- * waits, or when an heir's key is destroyed forever. Changing one stays a code
+ * waits, or when an executor's key is destroyed forever. Changing one stays a code
  * change and a review.
  */
 export const policy = query({

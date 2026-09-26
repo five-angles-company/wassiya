@@ -17,12 +17,12 @@ import { ConvexError } from "convex/values"
 export type PlanLimit =
   | "assets"
   | "storage"
-  | "heirs"
+  | "executors"
   | "photos"
   | "fileSize"
   | "lapsed"
 
-const LIMITS = ["assets", "storage", "heirs", "photos", "fileSize"] as const
+const LIMITS = ["assets", "storage", "executors", "photos", "fileSize"] as const
 
 /** The wall this error hit, or `null` if it is not a plan refusal at all. */
 export function planLimitOf(cause: unknown): PlanLimit | null {

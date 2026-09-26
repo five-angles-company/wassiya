@@ -57,8 +57,7 @@ const CREDENTIALS = [
  * a channel. The other half is every credential, which stays in the deployment
  * environment and is listed here as present or absent, never as a value — an
  * operator still has to be able to tell "no mail is going out" from "the sender
- * address is wrong". The escrow private key is not listed at all; see
- * `credentialStatus` for why.
+ * address is wrong".
  */
 export function IntegrationsForm() {
   const locale = useLocale()

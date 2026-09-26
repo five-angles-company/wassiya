@@ -30,9 +30,9 @@ import { t } from "@/lib/i18n/locale"
  * **It reports; it does not act.** The one write anywhere near an owner is
  * resetting identity attempts, and that lives on the identity queue where the
  * blocked accounts are already gathered. Nothing here revokes a device or edits
- * an heir — those are the owner's decisions, made on their own device, and a
- * console that could make them for them would be a far larger security surface
- * than a console that reads.
+ * an executor — those are the owner's decisions, made on their own device, and
+ * a console that could make them for them would be a far larger security
+ * surface than a console that reads.
  */
 export function OwnerDetail({ userId }: { userId: string }) {
   const locale = useLocale()
@@ -53,7 +53,7 @@ export function OwnerDetail({ userId }: { userId: string }) {
     )
   }
 
-  const { owner, devices, heirs, claims } = detail
+  const { owner, devices, executors, claims } = detail
 
   return (
     <div className="flex flex-col gap-4">
@@ -99,20 +99,22 @@ export function OwnerDetail({ userId }: { userId: string }) {
 
         <OwnerProtection detail={detail} locale={locale} />
 
-        <OwnerFacts title={labels.sectionHeirs}>
-          {heirs.length === 0 ? (
-            <FactsEmpty>{labels.heirsNone}</FactsEmpty>
+        <OwnerFacts title={labels.sectionExecutors}>
+          {executors.length === 0 ? (
+            <FactsEmpty>{labels.executorsNone}</FactsEmpty>
           ) : (
-            heirs.map((heir) => (
+            executors.map((executor) => (
               <Fact
-                key={heir.id}
-                label={heir.relation}
+                key={executor.id}
+                label={executor.name}
                 value={
                   <span className="flex flex-col items-end">
-                    <span>{heir.name}</span>
-                    <span dir="ltr" className="text-xs text-muted-foreground">
-                      {heir.phone}
-                    </span>
+                    <span dir="ltr">{executor.phone}</span>
+                    {executor.email !== null && (
+                      <span dir="ltr" className="text-xs text-muted-foreground">
+                        {executor.email}
+                      </span>
+                    )}
                   </span>
                 }
               />

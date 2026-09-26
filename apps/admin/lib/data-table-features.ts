@@ -38,7 +38,7 @@ import {
  * `adminSetNameMatch` routes a rejected claim to `locked` with a 90-day bar and
  * `nameMatchBlockedReason` then answers `"past-review"` for every later call, so
  * there is no admin path back and a mis-aimed bulk reject would permanently lock
- * legitimate heirs out of an inheritance. Bulk operations here are read-only by
+ * legitimate executors out of an estate. Bulk operations here are read-only by
  * construction; see `data-table-bulk-bar.tsx`.
  */
 export const features = tableFeatures({

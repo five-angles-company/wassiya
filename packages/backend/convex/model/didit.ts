@@ -3,7 +3,7 @@
 // ⚠️ **The approval webhook usually carries no document block.** Didit sends
 // several webhooks per session, and the one that says "Approved" arrived with
 // `id_verification` absent — so name, birth date and document numbers were
-// never stored, staff had nothing to compare and an heir's ID number could
+// never stored, staff had nothing to compare and an executor's ID number could
 // never match. `verifiedDocument` therefore falls back to the decision API
 // whenever a verified payload lacks the block. Confirmed against a real
 // decision: `id_verification.{full_name, date_of_birth, document_number,
@@ -58,7 +58,7 @@ function verifiedNameOf(v: Record<string, unknown>): string | undefined {
 /**
  * Keyed hashes of every identity number on the document. A national number
  * sits in `personal_number` on some documents and `document_number` on others,
- * so both are kept and an heir matches either. A missing secret must not fail
+ * so both are kept and an executor matches either. A missing secret must not fail
  * the webhook — the verdict would never land — so it degrades to none.
  */
 async function documentNumberHashes(

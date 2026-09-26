@@ -30,7 +30,7 @@ import { discardLocalFile, fileSize } from "@/lib/asset-upload"
 /**
  * Speech, not music: one channel at 64 kbit/s AAC. The `.m4a` container is the
  * same on both platforms, so everything downstream — the stored mime type, the
- * heir's download, the filename extension — has one case to handle.
+ * executor's download, the filename extension — has one case to handle.
  */
 const VOICE_RECORDING: RecordingOptions = {
   ...RecordingPresets.HIGH_QUALITY,

@@ -89,6 +89,7 @@ describe("a released vault is closed", () => {
         mkWrappedByRecovery: new ArrayBuffer(72),
         paperVersion: 1,
         wrapperVersion: 2,
+        releaseKeyWrappedByMk: new ArrayBuffer(72),
         rotatedAt: Date.now(),
       })
       await ctx.db.insert("devices", {
@@ -115,6 +116,7 @@ describe("a released vault is closed", () => {
     const keyring = await t.withIdentity({ subject: "owner" }).query(api.keyring.get, {})
     expect(keyring?.closed).toBe(true)
     expect(keyring?.mkWrappedByRecovery).toBeNull()
+    expect(keyring?.releaseKeyWrappedByMk).toBeNull()
 
     await expect(
       t.withIdentity({ subject: "owner" }).mutation(api.devices.register, {
@@ -137,14 +139,12 @@ describe("a released vault is closed", () => {
 
   test("reopening, for an owner proven alive, stops every open delivery", async () => {
     const { t, owner } = await releasedOwner()
-    const heir = await t.run((ctx) =>
-      ctx.db.insert("heirs", {
+    const executor = await t.run((ctx) =>
+      ctx.db.insert("executors", {
         userId: owner,
-        name: "Heir",
-        relation: "son",
+        name: "Executor",
         phone: "+966500000000",
-        mode: "silent",
-        inviteStatus: "none",
+        idNumberHash: "0".repeat(64),
       })
     )
     const claim = await t.run(async (ctx) =>
@@ -154,8 +154,8 @@ describe("a released vault is closed", () => {
       ctx.db.insert("deliveries", {
         claimId: claim,
         subjectUserId: owner,
-        heirId: heir,
-        status: "awaiting_heir",
+        executorId: executor,
+        status: "awaiting_executor",
         contactToken: "token",
         expiresAt: Date.now() + 365 * DAY,
       })
@@ -174,20 +174,25 @@ describe("a released vault is closed", () => {
   test("after the year, the whole vault is deleted", async () => {
     const { t, owner } = await releasedOwner()
     await t.run(async (ctx) => {
-      const assetId = await ctx.db.insert("assets", {
+      await ctx.db.insert("assets", {
         userId: owner,
         type: "note",
         labelSealed: new ArrayBuffer(40),
         meta: {},
         dekWrappedByMk: new ArrayBuffer(72),
+        dekWrappedByRelease: new ArrayBuffer(72),
         files: [],
-        recipientRule: "explicit",
       })
-      await ctx.db.insert("assetRecipients", {
-        assetId,
+      await ctx.db.insert("executors", {
         userId: owner,
-        recipient: { kind: "allHeirs" },
-        recipientKind: "allHeirs",
+        name: "Executor",
+        phone: "+966500000000",
+        idNumberHash: "0".repeat(64),
+        sheet: {
+          releaseKeyWrapped: new ArrayBuffer(72),
+          version: 1,
+          printedAt: Date.now(),
+        },
       })
     })
 
@@ -198,14 +203,17 @@ describe("a released vault is closed", () => {
         .query("assets")
         .withIndex("by_userId", (q) => q.eq("userId", owner))
         .collect(),
-      routes: await ctx.db.query("assetRecipients").collect(),
+      executors: await ctx.db
+        .query("executors")
+        .withIndex("by_userId", (q) => q.eq("userId", owner))
+        .collect(),
       keyring: await ctx.db
         .query("keyring")
         .withIndex("by_userId", (q) => q.eq("userId", owner))
         .unique(),
     }))
     expect(left.assets).toEqual([])
-    expect(left.routes).toEqual([])
+    expect(left.executors).toEqual([])
     expect(left.keyring).toBeNull()
   })
 })

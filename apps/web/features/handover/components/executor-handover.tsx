@@ -1,74 +1,120 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
+import { LockKeyholeIcon, PackageXIcon, RotateCwIcon, ShieldAlertIcon } from "lucide-react"
 
+import { Button } from "@/components/button"
 import { useLocale } from "@/components/locale-provider"
+import { NoticeCard } from "@/components/notice-card"
+import { Placeholder } from "@/components/placeholder"
 import { t } from "@/lib/i18n/locale"
-import { BoxGate } from "@/features/box/components/box-gate"
-import { OpenedBox } from "@/features/box/components/opened-box"
+import { COMMON } from "@/lib/i18n/strings/common"
+import { OpenedHandover } from "@/features/handover/components/opened-handover"
+import { SheetGate } from "@/features/handover/components/sheet-gate"
 import {
-  openDeliveryResponse,
-  wipeDelivery,
-  type OpenedDelivery,
-} from "@/features/box/lib/open-box"
-import { HEIR_BOX } from "@/features/box/strings/heir-box"
+  sheetsOnRecord,
+  unlockHandover,
+  wipeHandover,
+  type HandoverResponse,
+  type OpenedHandover as Opened,
+} from "@/features/handover/lib/open-handover"
+import { HANDOVER } from "@/features/handover/strings/handover"
 
-type BoxState =
-  | { status: "locked" }
-  | { status: "opening" }
-  | { status: "open"; delivery: OpenedDelivery }
+type State =
+  | { status: "fetching" }
   | { status: "failed" }
+  | { status: "locked"; response: HandoverResponse }
+  | { status: "open"; handover: Opened }
 
 /**
- * ٧.٦ — the heir's box: the gate, and what is behind it.
+ * ٧.٦ — the executor's handover: the sheet code, and what it opens.
  *
- * Opening is one call: the release gate checks everything again and returns
- * this heir's items with their keys. The keys live exactly as long as this
+ * `handover.open` re-checks every gate and audits the visit, so it is called
+ * once per mount, not per attempt at the code. It returns wrappers only; the
+ * sheet opens them in this tab, and the keys live exactly as long as this
  * component is mounted.
  */
-export function HeirBox({
-  deliveryId,
-  expiresAt,
-}: {
-  deliveryId: Id<"deliveries">
-  expiresAt: number
-}) {
-  const labels = t(HEIR_BOX, useLocale())
-  const openDelivery = useMutation(api.escrow.openDelivery)
-  const [state, setState] = useState<BoxState>({ status: "locked" })
+export function ExecutorHandover({ deliveryId }: { deliveryId: Id<"deliveries"> }) {
+  const locale = useLocale()
+  const labels = t(HANDOVER, locale)
+  const common = t(COMMON, locale)
+  const openHandover = useMutation(api.handover.open)
+  const [state, setState] = useState<State>({ status: "fetching" })
+  const sent = useRef(false)
 
-  // Zeroed when the box leaves the screen, not when it opens: every item
+  // Zeroed when the handover leaves the screen, not when it opens: every item
   // decrypts against its key while it is shown. A ref rather than a dependency
   // on `state`, so navigating away wipes the keys that are actually held.
-  const held = useRef<OpenedDelivery | null>(null)
+  const held = useRef<Opened | null>(null)
   useEffect(() => {
-    held.current = state.status === "open" ? state.delivery : null
+    held.current = state.status === "open" ? state.handover : null
   }, [state])
-  useEffect(() => () => wipeDelivery(held.current), [])
+  useEffect(() => () => wipeHandover(held.current), [])
 
-  async function unlock() {
-    setState({ status: "opening" })
-    try {
-      const response = await openDelivery({ deliveryId })
-      setState({ status: "open", delivery: openDeliveryResponse(response) })
-    } catch {
-      setState({ status: "failed" })
-    }
+  const load = useCallback(
+    () =>
+      openHandover({ deliveryId })
+        .then((response) => setState({ status: "locked", response }))
+        .catch(() => setState({ status: "failed" })),
+    [openHandover, deliveryId]
+  )
+
+  useEffect(() => {
+    if (sent.current) return
+    sent.current = true
+    void load()
+  }, [load])
+
+  function retry() {
+    setState({ status: "fetching" })
+    void load()
   }
 
-  if (state.status === "open") {
-    return <OpenedBox delivery={state.delivery} />
+  if (state.status === "fetching") return <Placeholder label={common.loading} className="h-96" />
+
+  if (state.status === "failed") {
+    return (
+      <NoticeCard
+        icon={ShieldAlertIcon}
+        tone="attention"
+        title={labels.loadFailedTitle}
+        body={labels.loadFailedBody}
+        headingLevel="h1"
+        action={
+          <Button variant="outline" onClick={retry}>
+            <RotateCwIcon className="size-4" strokeWidth={2.4} aria-hidden />
+            {common.retry}
+          </Button>
+        }
+      />
+    )
+  }
+
+  if (state.status === "open") return <OpenedHandover handover={state.handover} />
+
+  const { response } = state
+  const sheets = sheetsOnRecord(response)
+
+  if (response.items.length === 0) {
+    return <NoticeCard icon={PackageXIcon} title={labels.emptyTitle} body={labels.emptyBody} headingLevel="h1" />
+  }
+  if (!sheets.executor && !sheets.recovery) {
+    return <NoticeCard icon={LockKeyholeIcon} title={labels.sealedTitle} body={labels.sealedBody} headingLevel="h1" />
   }
 
   return (
-    <BoxGate
-      expiresAt={expiresAt}
-      busy={state.status === "opening"}
-      error={state.status === "failed" ? labels.failed : undefined}
-      onUnlock={() => void unlock()}
+    <SheetGate
+      expiresAt={response.expiresAt}
+      sheets={sheets}
+      onSubmit={(code) => {
+        const result = unlockHandover(response, code)
+        if (result.status === "failed") return result.reason
+        setState({ status: "open", handover: result.handover })
+        return null
+      }}
     />
   )
 }

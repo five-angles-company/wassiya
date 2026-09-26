@@ -2,11 +2,11 @@
  * ٩.٤ — الخطة والتخزين.
  *
  * The lapse rule is a product promise, not a billing detail: a lapsed vault
- * stays readable and heir delivery keeps working; only adding assets is blocked.
+ * stays readable and executor delivery keeps working; only adding assets is blocked.
  * `assertCanAddAssets` is called in `assets.create` and nowhere else.
  *
  * So the lapse banner leads with what still works. A dunning notice that made
- * someone fear for their heirs' access would be both untrue and cruel, and this
+ * someone fear for their executors' access would be both untrue and cruel, and this
  * is the screen where that temptation is strongest.
  *
  * The banner uses `notice`, not `info` — see the ui-native README for why the
@@ -148,9 +148,9 @@ export function PlanScreen() {
             {countLine(t, locale, plan?.usage.assets, plan?.limits.assets)}
           </Text>
         </FieldRow>
-        <FieldRow label={t.heirsLabel}>
+        <FieldRow label={t.executorsLabel}>
           <Text variant="rowTitle">
-            {countLine(t, locale, plan?.usage.heirs, plan?.limits.heirs)}
+            {countLine(t, locale, plan?.usage.executors, plan?.limits.executors)}
           </Text>
         </FieldRow>
       </View>

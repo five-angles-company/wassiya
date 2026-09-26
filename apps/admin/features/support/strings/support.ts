@@ -73,13 +73,13 @@ export const SUPPORT = {
   addNote: { ar: "إضافة", en: "Add" },
   noNotes: { ar: "لا ملاحظات.", en: "No notes." },
   guardrail: {
-    ar: "لا تطلب أبداً وثيقة الاسترداد أو رموزها أو رقم الهوية. الدعم لا يفتح الخزنة ولا يستردّها.",
-    en: "Never ask for the recovery sheet, its code or an ID number. Support cannot open or recover a vault.",
+    ar: "لا تطلب أبداً وثيقة الاسترداد أو ورقة الوصي أو رموزهما أو رقم الهوية. الدعم لا يفتح الخزنة ولا يستردّها.",
+    en: "Never ask for the recovery sheet, an executor sheet, their codes or an ID number. Support cannot open or recover a vault.",
   },
 
   refusedRecovery: {
-    ar: "يبدو أن الرسالة تحتوي رمز وثيقة استرداد — لم تُرسل.",
-    en: "That message looks like it contains a recovery sheet code — not sent.",
+    ar: "يبدو أن الرسالة تحتوي رمز وثيقة استرداد أو ورقة وصي — لم تُرسل.",
+    en: "That message looks like it contains a recovery or executor sheet code — not sent.",
   },
   refusedAttachment: {
     ar: "المرفق غير مقبول: صور أو PDF حتى ١٠ م.ب، خمسة كحدّ أقصى.",
@@ -94,7 +94,7 @@ export const SUPPORT = {
   slug: { ar: "المعرّف", en: "Slug" },
   audience: { ar: "الجمهور", en: "Audience" },
   audienceOwner: { ar: "المالكون", en: "Owners" },
-  audienceHeir: { ar: "الورثة", en: "Heirs" },
+  audienceExecutor: { ar: "الأوصياء", en: "Executors" },
   audienceReporter: { ar: "المُبلِّغون", en: "Reporters" },
   audienceAll: { ar: "الجميع", en: "Everyone" },
   order: { ar: "الترتيب", en: "Order" },

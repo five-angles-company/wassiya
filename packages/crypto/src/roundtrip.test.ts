@@ -1,6 +1,6 @@
 /**
  * The whole path one real asset takes, end to end: saved on the owner's phone,
- * read back there, routed, opened by the release gate, and read by the heir.
+ * read back there, handed over, and read by an executor with their sheet.
  *
  * Every other test in this package covers one primitive. This one covers the
  * composition the apps actually perform, because that is where the pieces can
@@ -12,10 +12,19 @@ import { describe, expect, it } from "vitest"
 
 import { decryptAsset, encryptAsset } from "./asset"
 import { bytesToUtf8, utf8ToBytes } from "./bytes"
-import { openFromEscrow, sealForEscrow } from "./escrow"
 import { generateDek, generateMk } from "./keys"
+import {
+  generateReleaseKey,
+  unwrapDekFromHandover,
+  unwrapReleaseKeyForExecutor,
+  unwrapReleaseKeyForOwner,
+  wrapDekForHandover,
+  wrapReleaseKeyForExecutor,
+  wrapReleaseKeyForOwner,
+} from "./release"
+import { decodeExecutorCode, decodePaperCode, encodeExecutorCode } from "./papercode"
+import { recoverMk, splitRecovery } from "./recovery"
 import { openLabel, sealLabel } from "./label"
-import { generateSealKeypair } from "./seal"
 import { openSecret, sealSecret } from "./secret"
 import { unwrap, wrap } from "./wrap"
 
@@ -44,7 +53,7 @@ function saveAsset(
   return stored
 }
 
-/** What any holder of the DEK does: the owner's detail screen, or the heir. */
+/** What any holder of the DEK does: the owner's detail screen, or an executor. */
 function readAsset(dek: Uint8Array, stored: Stored) {
   return {
     label: openLabel(stored.labelSealed, dek),
@@ -97,24 +106,50 @@ describe("asset round trip", () => {
     expect(() => readAsset(dekA, b)).toThrow()
   })
 
-  it("reaches the heir through the escrow lock, and only for its own row", () => {
-    const escrow = generateSealKeypair()
+  it("reaches an executor through their sheet, and only for its own row", () => {
+    const owner = "owner_1"
     const mk = generateMk()
     const stored = saveAsset(mk, { title: "صك ملكية" }, "{\"kind\":\"deed\"}", utf8ToBytes("deed"))
-    const subject = { ownerId: "owner_1", assetId: "asset_1" }
+    const asset = { ownerId: owner, assetId: "asset_1" }
+    const sheet = { ownerId: owner, executorId: "executor_1", sheetVersion: 1 }
 
-    // Routing: the owner's phone seals the DEK to the pinned public key.
-    const sealed = sealForEscrow(unwrap(stored.dekWrappedByMk, mk), escrow.publicKey, subject)
+    // On the phone: the release key, the handed-over DEK, the printed sheet.
+    const releaseKey = generateReleaseKey()
+    const forAsset = wrapDekForHandover(unwrap(stored.dekWrappedByMk, mk), releaseKey, asset)
+    const sheetSecret = generateReleaseKey()
+    const forExecutor = wrapReleaseKeyForExecutor(releaseKey, sheetSecret, sheet)
+    const printed = encodeExecutorCode(sheetSecret, sheet.sheetVersion)
 
-    // Release: the gate opens it, and the heir's browser reads the asset.
-    const dek = openFromEscrow(sealed, escrow.secretKey, subject)
-    const opened = readAsset(dek, stored)
-    expect(opened.label.title).toBe("صك ملكية")
-    expect(bytesToUtf8(opened.file)).toBe("deed")
+    // After release, in the executor's browser: the typed sheet opens it all.
+    const typed = decodeExecutorCode(printed)
+    const opened = unwrapReleaseKeyForExecutor(forExecutor, typed.sheetSecret, sheet)
+    const dek = unwrapDekFromHandover(forAsset, opened, asset)
+    expect(readAsset(dek, stored).label.title).toBe("صك ملكية")
 
     expect(() =>
-      openFromEscrow(sealed, escrow.secretKey, { ...subject, assetId: "asset_2" })
+      unwrapDekFromHandover(forAsset, opened, { ...asset, assetId: "asset_2" })
     ).toThrow()
+  })
+
+  it("falls back to the owner's recovery sheet after death", () => {
+    const owner = "owner_1"
+    const mk = generateMk()
+    const stored = saveAsset(mk, { title: "wallet" }, "{}", new Uint8Array(0))
+    const asset = { ownerId: owner, assetId: "asset_1" }
+    const releaseKey = generateReleaseKey()
+    const forAsset = wrapDekForHandover(unwrap(stored.dekWrappedByMk, mk), releaseKey, asset)
+    const ownerCopy = wrapReleaseKeyForOwner(releaseKey, mk, owner)
+    const { sPaper, mkWrappedByRecovery } = splitRecovery(mk, owner, 1)
+
+    const recovered = recoverMk(sPaper, mkWrappedByRecovery, owner, 1)
+    const opened = unwrapReleaseKeyForOwner(ownerCopy, recovered, owner)
+    expect(readAsset(unwrapDekFromHandover(forAsset, opened, asset), stored).label.title).toBe("wallet")
+  })
+
+  it("never accepts a recovery code as an executor code, or the reverse", () => {
+    const secret = generateReleaseKey()
+    const executor = encodeExecutorCode(secret, 1)
+    expect(() => decodePaperCode(executor.replace("WSE", "WSY"))).toThrow()
   })
 
   it("survives the ArrayBuffer copy Convex does on the way through", () => {

@@ -5,15 +5,18 @@ import type { Dictionary } from "@/i18n/locale"
  * everyday words, short sentences, no technical terms. "Locked" rather than
  * "encrypted", "a waiting period" rather than "veto window".
  *
- * Three rules this file must keep (AGENTS.md):
- *   - **The escrow trade is stated, never hidden.** "Not even us" is true while
- *     the owner lives. What is set aside for heirs Wassiya *can* open, after the
- *     death and the heir are confirmed, and `securityEscrowBody` and the first
- *     FAQ say so in plain words.
+ * Rules this file must keep (AGENTS.md):
+ *   - **Wassiya holds no key, and the price of that is stated.** The executor
+ *     opens what was handed over with their own sheet, or the owner's recovery
+ *     sheet; if every sheet is lost nobody can open it. `securityHandoverBody`
+ *     and the FAQ say so in plain words. Never write that Wassiya can open,
+ *     recover or reset anything.
+ *   - **Delivery goes to the executor**, who carries out the will — never "to
+ *     the people you chose". Arabic says الوصي / الأوصياء, never وريث / ورثة.
  *   - **No number is written here.** Plan limits arrive from `plans.published`
  *     at build time, and there is never a price — the fallbacks included.
- *   - **No "am I an heir?" path.** Every heir is silent; the heir door explains
- *     the message they may receive and nothing more.
+ *   - **No "am I an executor?" path.** Every executor is silent; the executor
+ *     door explains the message they may receive and nothing more.
  */
 export const HOME = {
   metaTitle: {
@@ -21,62 +24,62 @@ export const HOME = {
     en: "Wassiya — keep what matters for the people you love",
   },
   metaDescription: {
-    ar: "احفظ حساباتك ومستنداتك ورسائلك في خزنة آمنة على جوّالك. لا يراها أحد غيرك، وبعد رحيلك تصل لمن اخترتهم فقط.",
-    en: "Keep your accounts, documents and messages in a safe vault on your phone. Nobody else can see them, and after you're gone they reach only the people you chose.",
+    ar: "احفظ حساباتك ومستنداتك ورسائلك في خزنة آمنة على جوّالك. لا يراها أحد غيرك، وبعد رحيلك يستلم وصيّك ما اخترت تسليمه فقط. ولا نملك نحن أي مفتاح.",
+    en: "Keep your accounts, documents and messages in a safe vault on your phone. Nobody else can see them, and after you're gone your executor receives only what you chose to hand over. We hold no key.",
   },
 
   heroBadge: { ar: "خزنة آمنة لإرثك الرقمي", en: "A safe vault for your digital legacy" },
-  heroTitleLead: { ar: "ما يهمّك، يصل", en: "What matters to you, kept for" },
-  heroTitleAccent: { ar: "لمن تحب.", en: "the people you love." },
+  heroTitleLead: { ar: "ما يهمّك،", en: "What matters to you," },
+  heroTitleAccent: { ar: "بيد من تثق به.", en: "in hands you trust." },
   heroBody: {
-    ar: "احفظ حساباتك ومستنداتك ورسائلك في خزنة على جوّالك. ما دمت حيّاً لا يراها أحد غيرك — ولا نحن. وبعد رحيلك، نسلّم كل شخص ما اخترته له فقط.",
-    en: "Keep your accounts, documents and messages in a vault on your phone. While you're alive, nobody else can see them — not even us. After you're gone, we give each person only what you chose for them.",
+    ar: "احفظ حساباتك ومستنداتك ورسائلك في خزنة على جوّالك. ما دمت حيّاً لا يراها أحد غيرك — ولا نحن. وبعد رحيلك، يستلم وصيّك ما اخترت تسليمه فقط، ويُنفّذ وصيّتك.",
+    en: "Keep your accounts, documents and messages in a vault on your phone. While you're alive, nobody else can see them — not even us. After you're gone, the executor you named receives only what you chose to hand over, and carries out your will.",
   },
   heroHow: { ar: "كيف تعمل", en: "See how it works" },
   heroTrustDevice: { ar: "لا يراها أحد غيرك", en: "Only you can see it" },
   heroTrustPasswords: { ar: "بلا كلمات مرور", en: "No passwords" },
   heroTrustFree: { ar: "مجاني للبدء", en: "Free to start" },
 
-  floatLockTitle: { ar: "لا يفتحها أحد", en: "Nobody opens it" },
-  floatLockMeta: { ar: "ما دمت حيّاً — ولا نحن", en: "While you're alive — not even us" },
-  floatHeirsTitle: { ar: "ثلاثة ورثة", en: "Three heirs" },
-  floatHeirsMeta: { ar: "لا يعلمون شيئاً قبل وقته", en: "They learn nothing until it's time" },
+  floatLockTitle: { ar: "لا نملك أي مفتاح", en: "We hold no key" },
+  floatLockMeta: { ar: "لا في حياتك، ولا بعدها", en: "Not in your lifetime, nor after" },
+  floatExecutorTitle: { ar: "وصيّك: محمد", en: "Your executor: Mohammed" },
+  floatExecutorMeta: { ar: "لا نراسله بشيء قبل وقته", en: "We send him nothing until it's time" },
 
   proofDeviceTitle: { ar: "خاصة بك وحدك", en: "Private to you" },
   proofDeviceBody: { ar: "حتى نحن لا نرى ما تحفظه", en: "Not even we can see what you keep" },
   proofFingerprintTitle: { ar: "تُفتح ببصمتك", en: "Opens with your fingerprint" },
   proofFingerprintBody: { ar: "بلا كلمات مرور تنساها", en: "No passwords to forget" },
-  proofVaultTitle: { ar: "لمن اخترتهم فقط", en: "Only to the people you chose" },
-  proofVaultBody: { ar: "كل شخص يأخذ ما خصّصته له", en: "Each gets what you set aside for them" },
+  proofHandoverTitle: { ar: "لوصيّك وحده", en: "Only to your executor" },
+  proofHandoverBody: { ar: "يستلم ما اخترت تسليمه، لا أكثر", en: "What you chose to hand over, nothing more" },
   proofHumanTitle: { ar: "نتأكد قبل كل خطوة", en: "We check before every step" },
-  proofHumanBody: { ar: "من الوفاة ومن هوية كل شخص", en: "The death, and each person's identity" },
+  proofHumanBody: { ar: "من الوفاة ومن هوية الوصي", en: "The death, and your executor's identity" },
 
   stepsEyebrow: { ar: "كيف تعمل", en: "How it works" },
   stepsTitle: { ar: "ثلاث خطوات بسيطة", en: "Three simple steps" },
   step1Title: { ar: "أضف ما يهمّك", en: "Add what matters" },
   step1Body: {
-    ar: "حساباتك ومستنداتك وصورك، ورسائل بصوتك لمن تحب.",
-    en: "Your accounts, documents, photos, and voice messages for the people you love.",
+    ar: "حساباتك ومستنداتك وصورك ورسائلك. ولكلٍّ منها تختار: يُسلَّم لوصيّك، أو يبقى خاصاً فلا يصل لأحد.",
+    en: "Your accounts, documents, photos and messages. For each one you choose: handed over to your executor, or kept private so it reaches no one.",
   },
-  step2Title: { ar: "اختر لمن يذهب كل شيء", en: "Choose who gets what" },
+  step2Title: { ar: "سمِّ وصيّك", en: "Name your executor" },
   step2Body: {
-    ar: "حدّد لكل شخص ما يصله. ولا يعرف أحد منهم شيئاً قبل وقته.",
-    en: "Decide what goes to each person. None of them knows anything until it's time.",
+    ar: "اختر من تثق به — واحداً أو أكثر — واطبع لكلٍّ منهم ورقته. أعطه إياها، أو ضعها مع وصيّتك.",
+    en: "Choose someone you trust — one person or more — and print each of them their sheet. Hand it to them, or keep it with your will.",
   },
-  step3Title: { ar: "نسلّمها بعد رحيلك", en: "We hand it over after you" },
+  step3Title: { ar: "يستلمها بعد رحيلك", en: "They receive it after you" },
   step3Body: {
-    ar: "بعد التأكد من الوفاة ومن هوية كل شخص، يصله ما اخترته له فقط.",
-    en: "Once we've confirmed the death and each person's identity, they receive only what you chose.",
+    ar: "بعد التأكد من الوفاة ومن هويته، يفتح وصيّك ما اخترت تسليمه بورقته، ويُنفّذ وصيّتك.",
+    en: "Once the death and their identity are confirmed, your executor opens what you chose to hand over with their sheet, and carries out your will.",
   },
 
   securityEyebrow: { ar: "الخصوصية", en: "Privacy" },
   securityTitle: {
-    ar: "حتى نحن لا نستطيع رؤية ما تحفظه",
-    en: "Not even we can see what you keep",
+    ar: "لا نملك أي مفتاح لخزنتك",
+    en: "We hold no key to your vault",
   },
   securityBody: {
-    ar: "كل شيء يُقفل على جوّالك قبل أن يصل إلينا، ومفتاح خزنتك يبقى معك وحدك.",
-    en: "Everything is locked on your phone before it reaches us, and only you hold your vault's key.",
+    ar: "كل شيء يُقفل على جوّالك قبل أن يصل إلينا. مفتاح خزنتك معك وحدك، وما تسلّمه لوصيّك لا تفتحه إلا ورقته.",
+    en: "Everything is locked on your phone before it reaches us. Only you hold your vault's key, and what you hand over opens only with your executor's sheet.",
   },
   diagramPhone: { ar: "على جوّالك", en: "On your phone" },
   diagramPhoneNote: {
@@ -87,21 +90,21 @@ export const HOME = {
   diagramServer: { ar: "ما يصلنا نحن", en: "What we receive" },
   securityItemTitle: { ar: "لكل شيء قفله", en: "Everything has its own lock" },
   securityItemBody: {
-    ar: "كل ملف وكل سرّ له قفل خاص، ولا يفتحه إلا جوّالك.",
-    en: "Every file and every secret has its own lock that only your phone can open.",
+    ar: "كل ملف وكل سرّ له قفل خاص به، يُقفل على جوّالك قبل أن يُرفع.",
+    en: "Every file and every secret has its own lock, closed on your phone before it's uploaded.",
   },
   securityPhoneTitle: { ar: "على جوّالك فقط", en: "On your phone only" },
   securityPhoneBody: {
-    ar: "لا تُفتح خزنتك من أي موقع أو جهاز آخر، ولا نملك مفتاحها.",
-    en: "Your vault can't be opened from a website or another device, and we don't have its key.",
+    ar: "ما دمت حيّاً لا تُفتح خزنتك من أي موقع أو جهاز آخر، ولا نملك مفتاحها.",
+    en: "While you're alive, your vault can't be opened from a website or another device, and we don't have its key.",
   },
-  securityEscrowTitle: {
-    ar: "وما تتركه لورثتك محفوظ لهم",
-    en: "What you leave your heirs is kept for them",
+  securityHandoverTitle: {
+    ar: "وبعد رحيلك، بورقة وصيّك",
+    en: "After you, with your executor's sheet",
   },
-  securityEscrowBody: {
-    ar: "نقفل نسخة مما خصّصته لورثتك بمفتاح التسليم، ولا نفتحها إلا بعد التأكد من الوفاة ومن هوية الوارث. وما لم تخصّصه لأحد لا يفتحه أحد — ولا نحن.",
-    en: "We lock a copy of what you set aside for your heirs with our delivery key, and open it only once the death and the heir are confirmed. What you set aside for no one, nobody can open — not even us.",
+  securityHandoverBody: {
+    ar: "يفتح وصيّك ما اخترت تسليمه بورقته، على جهازه، بعد التحقق من الوفاة ومن هويته. وما أبقيته خاصاً لا يفتحه أحد. ولأننا لا نملك أي مفتاح: إن ضاعت ورقته وورقة استردادك معاً، فلا يستطيع أحد فتحه — ولا نحن.",
+    en: "Your executor opens what you chose to hand over with their sheet, on their own device, once the death and their identity are verified. What you kept private, nobody opens. And because we hold no key: if their sheet and your recovery sheet are both lost, nobody can open it — not even us.",
   },
   securityLink: { ar: "اقرأ كيف نحمي خزنتك", en: "Read how we protect your vault" },
 
@@ -134,8 +137,8 @@ export const HOME = {
   },
   vaultNotesLabel: { ar: "رسائل لمن تحب", en: "Messages to loved ones" },
   vaultNotesValue: {
-    ar: "اكتبها أو سجّلها بصوتك، وتصل لصاحبها فقط.",
-    en: "Write them or record them in your voice — only the right person receives them.",
+    ar: "اكتبها أو سجّلها بصوتك، ويوصلها وصيّك لأصحابها.",
+    en: "Write them or record them in your voice, and your executor passes them on.",
   },
   voiceTo: { ar: "إلى ابنتي", en: "To my daughter" },
 
@@ -153,12 +156,12 @@ export const HOME = {
   },
   keysPaperLabel: { ar: "ورقة الاسترداد، عند الحاجة", en: "The recovery sheet, just in case" },
   keysPaperValue: {
-    ar: "ورقة مطبوعة تفتح خزنتك إذا ضاع جوّالك. احفظها مع أوراقك المهمة، فمن يملكها يستطيع فتح خزنتك. وبعد التحقق من وفاتك تتوقف عن العمل نهائياً.",
-    en: "A printed sheet that opens your vault if you lose your phone. Keep it with your important papers — whoever has it can open your vault. Once your death is verified, it stops working for good.",
+    ar: "ورقة مطبوعة تفتح خزنتك إذا ضاع جوّالك. احفظها مع أوراقك المهمة، فمن يملكها يستطيع فتح خزنتك. وبعد التحقق من وفاتك لا تفتح إلا ما اخترت تسليمه، ولوصيّك بعد التحقق من هويته.",
+    en: "A printed sheet that opens your vault if you lose your phone. Keep it with your important papers — whoever has it can open your vault. Once your death is verified, it opens only what you chose to hand over, and only for your verified executor.",
   },
   keysNever: {
-    ar: "لن نطلب منك هذه الورقة أبداً. من يطلبها منك ليس نحن.",
-    en: "We will never ask you for this sheet. Anyone who does is not us.",
+    ar: "لن نطلب منك هذه الورقة أبداً، ولا ورقة وصيّك. من يطلبها منك ليس نحن.",
+    en: "We will never ask you for this sheet, or your executor's. Anyone who does is not us.",
   },
 
   releaseEyebrow: { ar: "بعد رحيلك", en: "After you're gone" },
@@ -167,8 +170,8 @@ export const HOME = {
     en: "Nothing is handed over until we're sure",
   },
   releaseBody: {
-    ar: "ورثتك لا يعلمون شيئاً مسبقاً. أول ما يسمعونه منّا رسالتنا إليهم، في وقتها.",
-    en: "Your heirs don't know anything in advance. The first they hear from us is our message, when the time comes.",
+    ar: "لا نراسل وصيّك بشيء مسبقاً. أول ما يسمعه منّا رسالتنا إليه، بعد التحقق من الوفاة وانتهاء فترة الانتظار.",
+    en: "We send your executor nothing in advance. The first they hear from us is our message, once the death is verified and the waiting period is over.",
   },
   gateCertificate: { ar: "شهادة وفاة رسمية", en: "An official death certificate" },
   gateCertificateMeta: { ar: "يرسلها إلينا من يعرفك", en: "Sent to us by someone who knows you" },
@@ -182,22 +185,25 @@ export const HOME = {
     ar: "نخبرك، وتستطيع إيقاف كل شيء ببصمتك",
     en: "We tell you, and you can stop everything with your fingerprint",
   },
-  gateIdentity: { ar: "نتأكد من هوية الوارث", en: "We confirm who the heir is" },
-  gateIdentityMeta: { ar: "ليصل كل شيء لصاحبه", en: "So everything reaches the right person" },
+  gateIdentity: { ar: "نتأكد من هوية الوصي", en: "We confirm who your executor is" },
+  gateIdentityMeta: {
+    ar: "ونطابقها برقم الهوية الذي سجّلته له",
+    en: "Matched to the ID number you registered for them",
+  },
   gateDelivery: { ar: "التسليم", en: "Handed over" },
   gateDeliveryMeta: {
-    ar: "يفتحه الوارث على جهازه، خلال سنة",
-    en: "The heir opens it on their device, within a year",
+    ar: "يفتحه الوصي بورقته على جهازه، خلال سنة",
+    en: "Your executor opens it with their sheet, on their device, within a year",
   },
   checkinTitle: { ar: "ونطمئن عليك", en: "And we check in on you" },
   checkinBody: {
     ar: "من وقت لآخر نسألك: هل أنت بخير؟ لمسة ببصمتك تكفي للرد، وهي نفسها توقف أي بلاغ عن وفاتك. ولا نسلّم شيئاً أبداً دون شهادة وفاة رسمية.",
     en: "Every so often we ask: are you well? One touch of your fingerprint is enough — and the same touch stops any report of your death. Nothing is ever handed over without an official death certificate.",
   },
-  sharesTitle: { ar: "أنت تختار ما يأخذه كل شخص", en: "You choose what each person gets" },
+  sharesTitle: { ar: "وصيّك يُنفّذ وصيّتك", en: "Your executor carries out your will" },
   sharesBody: {
-    ar: "نوصل ما اخترته كما هو، ولا نقسّم الميراث. تقسيم الميراث يحكمه الشرع والقانون.",
-    en: "We deliver what you chose, as it is. We don't divide inheritances — that is set by law.",
+    ar: "نسلّمه ما اخترته كما هو، ولا نقسّم الميراث. تقسيم الميراث يحكمه الشرع والقانون.",
+    en: "We hand over what you chose, as it is. We don't divide inheritances — that is set by law.",
   },
 
   plansEyebrow: { ar: "الخطط", en: "Plans" },
@@ -212,12 +218,12 @@ export const HOME = {
   planAnnualTagline: { ar: "لكل ما يهمّك", en: "For everything that matters" },
   planFreeFallback: { ar: "مساحة لتبدأ خزنتك.", en: "Room to start your vault." },
   planAnnualFallback: {
-    ar: "مساحة أكبر، وورثة أكثر، والصور والملفات الكبيرة.",
-    en: "More room, more heirs, plus photos and large files.",
+    ar: "مساحة أكبر، وأوصياء أكثر، والصور والملفات الكبيرة.",
+    en: "More room, more executors, plus photos and large files.",
   },
   planStorage: { ar: "المساحة", en: "Storage" },
   planAssets: { ar: "العناصر", en: "Items" },
-  planHeirs: { ar: "الورثة", en: "Heirs" },
+  planExecutors: { ar: "الأوصياء", en: "Executors" },
   planPhotos: { ar: "الصور", en: "Photos" },
   planFileSize: { ar: "أكبر ملف", en: "Largest file" },
   planUnlimited: { ar: "بلا حدود", en: "Unlimited" },
@@ -230,32 +236,32 @@ export const HOME = {
     en: "You'll see the price in your app store.",
   },
   plansLapse: {
-    ar: "إذا توقف اشتراكك تبقى خزنتك كما هي، ويصل ما تركته لورثتك. فقط لن تستطيع إضافة الجديد.",
-    en: "If your subscription stops, your vault stays as it is and your heirs still receive what you left them. You just can't add anything new.",
+    ar: "إذا توقف اشتراكك تبقى خزنتك كما هي، ويبقى التسليم لوصيّك قائماً. فقط لن تستطيع إضافة الجديد.",
+    en: "If your subscription stops, your vault stays as it is and your executor still receives what you chose to hand over. You just can't add anything new.",
   },
 
   doorsEyebrow: { ar: "للعائلات", en: "For families" },
   doorsTitle: { ar: "هل أنت هنا من أجل شخص آخر؟", en: "Here because of someone else?" },
   doorClaimTitle: { ar: "فقدت شخصاً عزيزاً", en: "I've lost someone" },
   doorClaimBody: {
-    ar: "إن كان يستخدم وصيّة، ابدأ بالإبلاغ عن وفاته. لن تحصل على شيء بتقديم البلاغ — نحن نتواصل مع ورثته مباشرة.",
-    en: "If they used Wassiya, start by reporting their death. Reporting doesn't give you anything — we contact their heirs directly.",
+    ar: "إن كان يستخدم وصيّة، ابدأ بالإبلاغ عن وفاته. لن تحصل على شيء بتقديم البلاغ — نحن نتواصل مباشرة مع من سمّاه وصياً.",
+    en: "If they used Wassiya, start by reporting their death. Reporting doesn't give you anything — we contact the executor they named directly.",
   },
   doorClaimAction: { ar: "أبلغ عن وفاة", en: "Report a death" },
   doorClaimMeta: {
     ar: "دقائق قليلة، ويمكنك الإكمال لاحقاً",
     en: "A few minutes, and you can finish later",
   },
-  doorHeirTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
-  doorHeirBody: {
-    ar: "يعني ذلك أن شخصاً ترك لك شيئاً. افتح الرابط الموجود في الرسالة، ثم نتأكد من هويتك قبل أن تستلم.",
-    en: "It means someone left you something. Open the link in the message, and we'll confirm who you are before you receive it.",
+  doorExecutorTitle: { ar: "وصلتني رسالة من وصيّة", en: "I got a message from Wassiya" },
+  doorExecutorBody: {
+    ar: "يعني ذلك أن شخصاً سمّاك وصياً على ما تركه لدينا. افتح الرابط في الرسالة وأثبت هويتك، ثم افتح ما تُرك بورقة الوصي — تجدها معك أو مع وصيّته.",
+    en: "It means someone named you the executor of what they left with us. Open the link in the message and confirm who you are, then open what was left with the executor sheet — you have it, or it's with their will.",
   },
-  doorHeirWarning: {
-    ar: "لن نطلب منك مالاً أو كلمة مرور، ولن نتصل بك لنطلبها.",
-    en: "We'll never ask you for money or a password, and we'll never call to ask for them.",
+  doorExecutorWarning: {
+    ar: "لن نطلب منك مالاً ولا كلمة مرور ولا رمز ورقتك، ولن نتصل بك لنطلبها.",
+    en: "We'll never ask you for money, a password or your sheet's code, and we'll never call to ask for them.",
   },
-  doorHeirAction: { ar: "اسألنا إن شككت", en: "Not sure? Ask us" },
+  doorExecutorAction: { ar: "اسألنا إن شككت", en: "Not sure? Ask us" },
 
   faqEyebrow: { ar: "أسئلة", en: "Questions" },
   faqTitle: { ar: "أسئلة شائعة", en: "Common questions" },

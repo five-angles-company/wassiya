@@ -10,7 +10,7 @@
  * step that is not theirs. It still counts against the score.
  *
  * The order is `admin.ts`'s `PROTECTION_ITEMS`; the console and this screen
- * must name the same seven gaps in the same order.
+ * must name the same six gaps in the same order.
  *
  * Every input is server metadata, so this renders before any decryption.
  */
@@ -24,8 +24,7 @@ export type ProtectionId =
   | "identity"
   | "key"
   | "sheet"
-  | "heirs"
-  | "routing"
+  | "executors"
   | "delivery"
   | "checkin"
 
@@ -54,7 +53,7 @@ export function useProtectionScore(
 ): ProtectionScoreResult {
   const me = useQuery(api.users.me)
   const keyring = useQuery(api.keyring.get)
-  const heirs = useQuery(api.heirs.list)
+  const executors = useQuery(api.executors.list)
   const checkin = useQuery(api.checkin.get)
 
   const items = useMemo((): ProtectionEntry[] => {
@@ -73,31 +72,21 @@ export function useProtectionScore(
         href: "/setup/recovery-kit",
       },
       {
-        id: "heirs",
-        label: labels.heirs,
-        done: (heirs?.length ?? 0) > 0,
-        href: "/heirs/new",
+        id: "executors",
+        label: labels.executors,
+        done: (executors?.length ?? 0) > 0,
+        href: "/executors/new",
       },
-      {
-        id: "routing",
-        label: labels.routing,
-        done: heirs?.some((heir) => heir.routedAssetCount > 0) === true,
-        // ٤.١ with its "بلا مستلم" chip set — the routing overview screen was
-        // that same list, grouped and filtered, and ٤.١ now does both itself.
-        href: "/assets?filter=unrouted",
-      },
-      // Every heir receives something — an asset or a message. An heir who
-      // would be contacted with nothing is almost always an oversight.
+      // Every executor holds a printed sheet. Without one an executor could
+      // open nothing at release.
       {
         id: "delivery",
         label: labels.delivery,
         done:
-          heirs !== undefined &&
-          heirs.length > 0 &&
-          heirs.every(
-            (heir) => heir.routedAssetCount > 0 || heir.messageKind !== null
-          ),
-        href: "/heirs",
+          executors !== undefined &&
+          executors.length > 0 &&
+          executors.every((executor) => executor.sheetPrintedAt !== null),
+        href: "/executors",
       },
       {
         id: "checkin",
@@ -106,7 +95,7 @@ export function useProtectionScore(
         href: "/protection/checkin",
       },
     ]
-  }, [me, keyring, heirs, checkin, labels])
+  }, [me, keyring, executors, checkin, labels])
 
   const ranked = useMemo(() => {
     let promoted = false
@@ -131,7 +120,7 @@ export function useProtectionScore(
     loading:
       me === undefined ||
       keyring === undefined ||
-      heirs === undefined ||
+      executors === undefined ||
       checkin === undefined,
   }
 }

@@ -31,7 +31,7 @@ import { t, type Locale } from "@/lib/i18n/locale"
  * Deliberately **not** the same type as `PendingClaim` in `claims-columns.tsx`,
  * and not merged with it. The dashboard's queue reads `claims.pendingReview`,
  * which resolves a certificate URL and only ever returns `submitted`; this
- * query spans every status and carries `heirLinked`, `nameMatch` and
+ * query spans every status and carries `nameMatch` and
  * `vetoDeadline` instead. Folding them into one type with optional fields
  * would make every cell defensive about facts that are always present in one
  * table and never present in the other.

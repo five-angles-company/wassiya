@@ -77,18 +77,18 @@ export const PROFILE = {
   /**
    * The consequence, stated before the change rather than discovered after it.
    *
-   * useHeirForm validates every heir's number against *this* country, so a
-   * number stored as +213… stops round-tripping the moment the country becomes
-   * SA: that heir's form opens with Save already lit and an "invalid number"
-   * error against a number that was fine yesterday.
+   * useExecutorForm validates every executor's number against *this* country,
+   * so a number stored as +213… stops round-tripping the moment the country
+   * becomes SA: that executor's form opens with an "invalid number" error
+   * against a number that was fine yesterday.
    */
   countryNotice: {
-    ar: "تُستخدم لتنسيق أرقام ورثتك وحساباتك البنكية. تغييرها قد يُظهر أرقاماً محفوظة كغير صالحة.",
-    en: "Used to format your heirs' numbers and bank accounts. Changing it can make stored numbers read as invalid.",
+    ar: "تُستخدم لتنسيق أرقام أوصيائك وحساباتك البنكية. تغييرها قد يُظهر أرقاماً محفوظة كغير صالحة.",
+    en: "Used to format your executors' numbers and bank accounts. Changing it can make stored numbers read as invalid.",
   },
-  countryHeirsWarning: {
-    ar: "{n} من أرقام ورثتك محفوظة بترميز دولة أخرى.",
-    en: "{n} of your heirs' numbers are stored under a different country.",
+  countryExecutorsWarning: {
+    ar: "{n} من أرقام أوصيائك محفوظة بترميز دولة أخرى.",
+    en: "{n} of your executors' numbers are stored under a different country.",
   },
 
   emailLabel: { ar: "البريد الإلكتروني", en: "Email" },
@@ -106,7 +106,7 @@ export const PROFILE = {
 } satisfies LabelSet<string>
 
 export const SETTINGS = {
-  // Matches the tab's own label. الرئيسية, الخزنة and الورثة each open with the
+  // Matches the tab's own label. الرئيسية, الخزنة and الأوصياء each open with the
   // word the bar uses; this one opened with "الإعدادات" and was the only tab
   // whose screen disagreed with the button that got you there.
   title: { ar: "حسابي", en: "Account" },
@@ -215,57 +215,37 @@ export const AUDIT = {
   assetRevealed: { ar: "عُرض محتوى أصل", en: "Asset content revealed" },
   keyringCreated: { ar: "أُنشئ مفتاح الخزنة", en: "Vault key created" },
   keyringRotated: { ar: "دُوّر مفتاح الاسترداد", en: "Recovery key rotated" },
-  guardianAttached: { ar: "فُعّل الوصي", en: "Guardian activated" },
-  guardianInvited: { ar: "دُعي وصي", en: "Guardian invited" },
-  guardianAccepted: { ar: "قبِل الوصي الدعوة", en: "Guardian accepted" },
-  guardianRevoked: { ar: "أُلغي الوصي", en: "Guardian removed" },
-  heirAdded: { ar: "أُضيف وارث", en: "Heir added" },
-  routingChanged: { ar: "تغيّر التوجيه", en: "Routing changed" },
-  bundlesRebuilt: { ar: "حُدّثت مفاتيح التسليم", en: "Delivery keys updated" },
+  releaseKeySet: { ar: "أُنشئ مفتاح التسليم", en: "Handover key created" },
+  handoverChanged: { ar: "تغيّر تسليم أصل", en: "An asset's handover changed" },
+  executorAdded: { ar: "أُضيف وصيّ", en: "Executor added" },
+  executorUpdated: { ar: "عُدّل وصيّ", en: "Executor updated" },
+  executorRemoved: { ar: "حُذف وصيّ", en: "Executor removed" },
+  // A new bearer sheet. If the owner did not print it, this is the row that
+  // says so.
+  executorSheetPrinted: { ar: "طُبعت ورقة وصيّ", en: "Executor sheet printed" },
+  executorsChecked: { ar: "أُكّدت بيانات الأوصياء", en: "Executors confirmed" },
   checkinConfirmed: { ar: "أُكّدت الحياة", en: "Life confirmed" },
   claimSubmitted: { ar: "قُدّم طلب وراثة", en: "Inheritance claim filed" },
   claimVetoed: { ar: "أُوقف طلب وراثة", en: "Inheritance claim stopped" },
   deviceRegistered: { ar: "سُجّل جهاز", en: "Device registered" },
   deviceRevoked: { ar: "أُلغي جهاز", en: "Device removed" },
   profileSaved: { ar: "حُدّث الملف الشخصي", en: "Profile updated" },
-  // ٨ — the recovery ceremony. These are the lines an owner scans for when
-  // they suspect someone else moved: a spent sheet and a guardian approval are
-  // the two halves of a recovery, and seeing them side by side is the whole
-  // point of keeping this log.
+  // ٨ — the recovery sheet. A spent sheet is the line an owner scans for when
+  // they suspect someone else moved.
   paperPrinted: { ar: "طُبعت وثيقة استرداد", en: "Recovery sheet printed" },
   paperUsed: { ar: "استُخدمت وثيقة الاسترداد", en: "Recovery sheet used" },
-  recoveryApproved: {
-    ar: "وافق وصيّك على استعادة",
-    en: "Your guardian approved a recovery",
-  },
 
   // The claim path. `released` is the most consequential row this log can ever
   // carry, and it was rendering as "Vault activity".
-  claimHeirLinked: { ar: "رُبط طلب بوارث", en: "Claim linked to an heir" },
   claimCertificate: { ar: "أُرفقت شهادة وفاة", en: "Death certificate attached" },
   claimNameMatch: { ar: "طوبق الاسم القانوني", en: "Legal name checked" },
-  claimGuardianConfirmed: {
-    ar: "أكّد الوصي الوفاة",
-    en: "Guardian confirmed the death",
-  },
-  claimReleased: { ar: "سُلّمت الخزنة للورثة", en: "Vault released to heirs" },
-  serverShareReleased: {
-    ar: "أُفرج عن نصيب الخادم",
-    en: "Server share released",
-  },
-  guardianHandedOver: {
-    ar: "سلّم الوصي نصيبه للوارث",
-    en: "Guardian handed their share to the heir",
-  },
+  claimReleased: { ar: "أُفرج عن الخزنة للأوصياء", en: "Vault released to the executors" },
+  deliveryOpened: { ar: "فتح وصيّ ما سُلّم", en: "An executor opened the handover" },
 
   // Dead-man's-switch bookkeeping.
   checkinConfigured: { ar: "ضُبط نبض الحياة", en: "Life check-in set up" },
   checkinSnoozed: { ar: "أُجّل نبض الحياة", en: "Life check-in postponed" },
   checkinEscalated: { ar: "تصاعد تنبيه الحياة", en: "Life check-in escalated" },
-
-  heirUpdated: { ar: "عُدّل وارث", en: "Heir updated" },
-  heirRemoved: { ar: "حُذف وارث", en: "Heir removed" },
-  heirMessageSet: { ar: "حُفظت رسالة لوارث", en: "Message for an heir saved" },
 
   identityStarted: { ar: "بدأ التحقق من الهوية", en: "Identity check started" },
   identityResult: { ar: "وصلت نتيجة التحقق", en: "Identity check result" },
@@ -287,7 +267,7 @@ export const PLAN = {
   // discovered last.
   usageTitle: { ar: "ما في خزنتك", en: "What is in your vault" },
   assetsLabel: { ar: "الأصول", en: "Assets" },
-  heirsLabel: { ar: "الورثة", en: "Heirs" },
+  executorsLabel: { ar: "الأوصياء", en: "Executors" },
   ofLimit: { ar: "{used} من {limit}", en: "{used} of {limit}" },
   unlimited: { ar: "بلا حد", en: "Unlimited" },
   upgrade: { ar: "وسّع خطتك", en: "See the annual plan" },
@@ -303,8 +283,8 @@ export const PLAN = {
   // never cost anyone their inheritance — only adding is paused.
   lapsedTitle: { ar: "انتهى اشتراكك", en: "Your subscription lapsed" },
   lapsedBody: {
-    ar: "خزنتك تبقى مقروءة، وتسليم الورثة يعمل كما هو. المتوقّف هو إضافة أصول جديدة فقط.",
-    en: "Your vault stays readable and heir delivery still works. Only adding new assets is paused.",
+    ar: "خزنتك تبقى مقروءة، والتسليم لأوصيائك يعمل كما هو. المتوقّف هو إضافة أصول جديدة فقط.",
+    en: "Your vault stays readable and delivery to your executors still works. Only adding new assets is paused.",
   },
   manage: { ar: "إدارة الاشتراك", en: "Manage subscription" },
   // Billing is not wired; saying so beats a button that does nothing.

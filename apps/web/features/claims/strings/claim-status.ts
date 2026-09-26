@@ -17,7 +17,7 @@ export const CLAIM_STATUS = {
   stepNotified: { ar: "أبلغنا صاحب الخزنة", en: "We told the vault's owner" },
   stepReview: { ar: "مراجعة الشهادة", en: "We check the certificate" },
   stepVeto: { ar: "فترة الانتظار", en: "The waiting period" },
-  stepRelease: { ar: "نتواصل مع الورثة", en: "We contact the heirs" },
+  stepRelease: { ar: "نتواصل مع الأوصياء", en: "We contact the executors" },
   timelineTitle: { ar: "مسار البلاغ", en: "Where the report is" },
 
   // One sentence about the report — never a status name.
@@ -36,12 +36,12 @@ export const CLAIM_STATUS = {
   },
   vetoEnds: { ar: "تنتهي في", en: "Ends on" },
   headReleased: {
-    ar: "انتهت فترة الانتظار، ونتواصل الآن مع الورثة.",
-    en: "The waiting period is over, and we're contacting the heirs.",
+    ar: "انتهت فترة الانتظار، ونتواصل الآن مع الأوصياء.",
+    en: "The waiting period is over, and we're contacting the executors.",
   },
   releasedBody: {
-    ar: "تقديم البلاغ لا يمنح صاحبه شيئاً. كل وارث سمّاه صاحب الخزنة تصله رسالة منّا، ويثبت هويته ليستلم ما خُصّص له. إن كنت أحدهم، ستصلك رسالتك.",
-    en: "Filing a report doesn't give anything to the person who filed it. Each heir the owner named gets a message from us and confirms who they are to receive what was set aside for them. If you're one of them, your message will reach you.",
+    ar: "تقديم البلاغ لا يمنح صاحبه شيئاً. كل وصيّ سمّاه صاحب الخزنة تصله رسالة منّا، فيثبت هويته، ثم يفتح بورقته ما اختار صاحب الخزنة تسليمه. إن كنت أحدهم، ستصلك رسالتك.",
+    en: "Filing a report doesn't give anything to the person who filed it. Each executor the owner named gets a message from us, confirms who they are, then opens what the owner chose to hand over with their own sheet. If you're one of them, your message will reach you.",
   },
   writeOn: { ar: "سنراسلك في {date}.", en: "We'll write to you on {date}." },
   nothingBody: {

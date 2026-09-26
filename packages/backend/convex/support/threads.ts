@@ -1,4 +1,4 @@
-// The requester's side of support: owners on mobile, heirs and reporters on
+// The requester's side of support: owners on mobile, executors and reporters on
 // web, and guests with no account. Every function takes an optional
 // `guestToken`; a Clerk session always wins over it. See `model/support.ts`.
 import { paginationOptsValidator } from "convex/server"

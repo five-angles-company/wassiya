@@ -110,9 +110,11 @@ export function ReleasesTable() {
           {
             header: labels.colDelivery,
             value: (row) =>
-              row.deliveries === null
-                ? (row.heirsReceiving ?? "")
-                : `${row.deliveries.ready}/${row.deliveries.total}`,
+              row.deliveries !== null
+                ? `${row.deliveries.ready}/${row.deliveries.total}`
+                : row.executors !== null
+                  ? `${row.executors.withSheet}/${row.executors.total}`
+                  : "",
           },
         ],
       }}

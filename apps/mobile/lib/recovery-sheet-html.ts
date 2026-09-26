@@ -1,7 +1,7 @@
 /**
- * The printed recovery document, as HTML for `expo-print`. It is a legal
- * artefact people keep with a notarised will for decades, so three things
- * matter more than they would on a screen:
+ * The printed recovery document and the executor sheet, as HTML for
+ * `expo-print`. Both are kept with a notarised will for decades, so three
+ * things matter more than they would on a screen:
  *
  *  - **Fonts travel with it.** `expo-print` renders in a WebView that knows
  *    nothing about the app's `expo-font` registrations and may have no network,
@@ -44,6 +44,10 @@ export type RecoverySheetLabels = {
 }
 
 export type RecoverySheetData = {
+  /** "WSY" for the recovery sheet, "WSE" for an executor's. Must match the code. */
+  prefix: "WSY" | "WSE"
+  /** The executor an executor sheet was printed for, shown after the owner. */
+  holder?: { label: string; name: string }
   /** The paper code split on its hyphens: ["WSY1", "K7M2", …] — 15 groups. */
   codeGroups: string[]
   /** PNG data URI of the wrapped-key QR, or null if it could not be rendered. */
@@ -250,7 +254,7 @@ export async function buildRecoverySheetHtml(
     <div class="brand">${logo}<span class="name">${escapeHtml(t.brandName)}</span></div>
     <div class="kind">
       ${escapeHtml(t.documentSubtitle)}<br />
-      <span class="ver">WSY${data.paperVersion}</span>
+      <span class="ver">${data.prefix}${data.paperVersion}</span>
     </div>
   </header>
   <div class="rule"></div>
@@ -268,9 +272,10 @@ export async function buildRecoverySheetHtml(
 
   <section class="fields">
     ${field(t.owner, data.ownerName)}
+    ${data.holder === undefined ? "" : field(data.holder.label, data.holder.name)}
     ${field(t.account, data.accountEmail, true)}
     ${field(t.issued, fmtDate(data.issuedAt, data.locale))}
-    ${field(t.version, `WSY${data.paperVersion}`, true)}
+    ${field(t.version, `${data.prefix}${data.paperVersion}`, true)}
   </section>
 
   <section class="how">

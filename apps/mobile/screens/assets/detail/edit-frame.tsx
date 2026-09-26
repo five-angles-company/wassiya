@@ -5,10 +5,8 @@
  * Save appears only once something has changed, and Cancel takes the overflow
  * menu's place, so the two ways out are always in the same two positions.
  *
- * Labels and values on hairlines, no cards. The **recipient card is the one
- * enclosed thing**, because it is the one thing on the screen that leaves this
- * device — the fields are the owner's own record, that card is the instruction
- * that outlives them.
+ * Labels and values on hairlines, no cards. The **handover card is the one
+ * enclosed thing**, because it is the instruction that outlives the owner.
  *
  * Three levels of protection, three sizes of control: a seed phrase gets a
  * filled Reveal behind a fingerprint, a password a plain eye, a storage location
@@ -20,7 +18,6 @@ import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { RecipientCard } from "@workspace/ui-native/components/wassiya/recipient-card"
 import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import { ScreenTopAction } from "@workspace/ui-native/components/wassiya/screen-top-action"
 import { fmtDate } from "@workspace/ui-native/lib/format"
@@ -33,7 +30,7 @@ import { Screen } from "@/components/screen"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { DeleteAssetSheet } from "@/screens/assets/detail/components/delete-asset-sheet"
-import { useAssetRecipients } from "@/screens/assets/detail/use-asset-recipients"
+import { HandoverCard } from "@/screens/assets/detail/components/handover-card"
 import type { EditorLoad, SaveError } from "@/screens/assets/detail/use-asset-editor"
 
 export type AssetEditFrameProps = {
@@ -73,7 +70,7 @@ export function AssetEditFrame({
   useSecureScreen("assets/detail")
 
   const lastRevealed = useQuery(api.assets.lastRevealedAt, { assetId })
-  const { names, allHeirs } = useAssetRecipients(assetId)
+  const asset = useQuery(api.assets.get, { assetId })
   const [confirming, setConfirming] = useState(false)
 
   function leave() {
@@ -157,17 +154,7 @@ export function AssetEditFrame({
         />
       ) : null}
 
-      <RecipientCard
-        label={t.receivedBy!}
-        value={names.length > 0 ? names.join(locale === "ar" ? " و" : " and ") : t.nobodyYet!}
-        faces={names}
-        allHeirsLabel={allHeirs ? t.allHeirsShort : undefined}
-        unrouted={names.length === 0 && !allHeirs}
-        onPress={() =>
-          router.push({ pathname: "/assets/[id]/recipients", params: { id: assetId } })
-        }
-        className="mb-3"
-      />
+      <HandoverCard assetId={assetId} className="mb-3" />
 
       <Text className="mb-auto text-[11.5px] leading-[1.6] opacity-45">
         {lastRevealed == null
@@ -199,7 +186,7 @@ export function AssetEditFrame({
         name={load.title}
         open={confirming}
         onClose={() => setConfirming(false)}
-        recipients={names}
+        handedOver={asset?.handedOver ?? false}
       />
     </Screen>
   )

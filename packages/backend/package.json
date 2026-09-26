@@ -23,13 +23,13 @@
     "@clerk/backend": "^3.16.10",
     "@convex-dev/rate-limiter": "^0.3.2",
     "@convex-dev/resend": "^0.2.8",
-    "@workspace/crypto": "workspace:*",
     "convex": "^1.44.0",
     "svix": "^2.0.0"
   },
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^20",
+    "@workspace/crypto": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "convex-test": "^0.0.59",
     "typescript": "^5",

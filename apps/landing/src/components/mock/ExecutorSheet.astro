@@ -1,0 +1,64 @@
+---
+import { Image } from "astro:assets"
+import { LockKeyhole } from "lucide-react"
+
+import mark from "@/assets/brand/mark.png"
+import { t, type Locale } from "@/i18n/locale"
+import { MOCK } from "@/i18n/strings/mock"
+import { fmtNumber } from "@/lib/format"
+
+interface Props {
+  locale: Locale
+}
+
+const { locale } = Astro.props
+const m = t(MOCK, locale)
+const steps = [m.executorSheetStep1, m.executorSheetStep2, m.executorSheetStep3]
+
+// Every code group is masked, like the recovery sheet's: a picture of a sheet
+// must never look like a usable code.
+const lines = ["WSE1 · •••• · ••••", "•••• · •••• · ••••", "•••• · •••• · ••••"]
+---
+
+<div class="bg-sand-50 border-border relative rounded-[20px] border p-6 shadow-[var(--shadow-sheet)] md:p-7" aria-hidden="true">
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <Image src={mark} alt="" width={64} height={32} class="h-5 w-auto" />
+        <span class="font-heading text-[19px] font-black">{m.executorSheetMasthead}</span>
+      </div>
+      <p class="text-sand-600 mt-1 text-[10.5px] tracking-[0.14em]" dir="ltr">WASSIYA EXECUTOR SHEET</p>
+    </div>
+    <span class="bg-primary ring-terracotta-100 flex size-12 shrink-0 items-center justify-center rounded-full text-[#f5ead8] ring-[6px]">
+      <LockKeyhole className="size-5" strokeWidth={2.25} aria-hidden="true" />
+    </span>
+  </div>
+
+  <div class="bg-primary mt-5 h-[2px] rounded-full"></div>
+
+  <p class="mt-5 text-[15px] font-bold">{m.executorSheetFor}</p>
+
+  <div class="mt-3 rounded-[14px] border-[1.5px] border-[#201e1d]/80 bg-white/60 px-4 pt-2.5 pb-3">
+    <p class="text-sand-600 text-[11px] font-semibold">{m.executorSheetCodeLabel}</p>
+    <div class="mt-1.5 text-center font-mono text-[15px] leading-[1.9] font-semibold tracking-[0.12em] md:text-[16px]">
+      {lines.map((line) => <p dir="ltr">{line}</p>)}
+    </div>
+  </div>
+
+  <ol class="mt-4 flex flex-col gap-2">
+    {
+      steps.map((step, index) => (
+        <li class="flex items-center gap-2.5 text-[13px] font-semibold">
+          <span class="bg-olive-100 text-olive-800 flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold">
+            {fmtNumber(index + 1, locale)}
+          </span>
+          {step}
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="border-border mt-5 border-t pt-4">
+    <p class="text-sand-700 text-[12px] leading-[1.7]">{m.executorSheetFooter}</p>
+  </div>
+</div>

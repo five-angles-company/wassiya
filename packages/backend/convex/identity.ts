@@ -1,6 +1,6 @@
 // Didit identity verification.
 //
-// Blocking for owners at onboarding and for heirs at claim time. Nothing here
+// Blocking for owners at onboarding and for executors at claim time. Nothing here
 // touches key material: proving who someone is and holding their keys are
 // separate jobs, and this file only ever does the first.
 //
@@ -229,7 +229,7 @@ export const applyWebhookResult = internalMutation({
     })
 
     // A person who bound a delivery before verifying: their document may now
-    // match the heir's registered ID number.
+    // match the executor's registered ID number.
     if (args.status === "verified") {
       const verified = await ctx.db.get("users", user._id)
       if (verified !== null) await reevaluateDeliveriesFor(ctx, verified)

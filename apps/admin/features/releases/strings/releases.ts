@@ -5,8 +5,8 @@ export const RELEASES = {
   pageTitle: { ar: "التسليم", en: "Releases" },
 
   intro: {
-    ar: "ما ينتظر انقضاء مهلة الاعتراض، وما انقضت مهلته وكم من ورثته استلم فعلاً.",
-    en: "What is waiting for its objection period, what has passed it, and how many of its heirs have actually received.",
+    ar: "ما ينتظر انقضاء مهلة الاعتراض، وما انقضت مهلته وكم من أوصيائه صار تسليمه جاهزاً.",
+    en: "What is waiting for its objection period, what has passed it, and how many of its executors are ready to open the handover.",
   },
 
   // The band is a column now, not a panel. Same two words: they label the
@@ -29,15 +29,23 @@ export const RELEASES = {
   remainingToday: { ar: "أقل من يوم", en: "Under a day" },
   overdueSweep: { ar: "انقضت — بانتظار المهمة", en: "Elapsed — awaiting the job" },
 
-  // A report counting down with no receiving heir is the one genuinely alarming
-  // row this screen can show: it will release on schedule and reach nobody.
-  receivingNone: { ar: "لا وارث يستلم", en: "No heir receives" },
-  receivingCount: { ar: "{n} وريثاً يستلم", en: "{n} heirs receive" },
+  // A report counting down with no executor, or none holding a sheet, is the
+  // one genuinely alarming row this screen can show: it will release on
+  // schedule and reach nobody who can open it.
+  executorsNone: { ar: "لا وصي", en: "No executor" },
+  executorsWithSheet: {
+    ar: "{n} من {total} أوصياء بورقة",
+    en: "{n} of {total} executors hold a sheet",
+  },
+  noSheetHint: {
+    ar: "لم يطبع صاحب الخزنة ورقة لأي وصي، فلا يُفتح شيء إلا بورقة استرجاعه.",
+    en: "The owner printed no executor sheet, so nothing opens except with their own recovery sheet.",
+  },
 
   deliveryNone: { ar: "لا تسليمات", en: "No deliveries" },
   deliveryNoneHint: {
-    ar: "لم يُوجِّه صاحب الخزنة شيئاً لأي وارث، فلا شيء يصل لأحد.",
-    en: "The owner routed nothing to any heir, so nothing reaches anyone.",
+    ar: "لم يُسمِّ صاحب الخزنة أي وصي، فلا شيء يصل لأحد.",
+    en: "The owner named no executor, so nothing reaches anyone.",
   },
   deliverySummary: { ar: "{ready} من {total} جاهزة", en: "{ready} of {total} ready" },
 

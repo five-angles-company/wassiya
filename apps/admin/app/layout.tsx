@@ -65,11 +65,11 @@ const cairo = Cairo({
 
 /**
  * ⚠️ **`noindex` is not an oversight, and it is not negotiable.** This console
- * reads death reports, heir records and identity decisions. A crawler reaching
- * it is a leak even if every page refuses without a session, because the URL
- * shapes alone describe the product's internals. Lighthouse's SEO category will
- * always report "blocked from indexing" as a failure here; that is the audit
- * being wrong about what this page is for.
+ * reads death reports, executor records and identity decisions. A crawler
+ * reaching it is a leak even if every page refuses without a session, because
+ * the URL shapes alone describe the product's internals. Lighthouse's SEO
+ * category will always report "blocked from indexing" as a failure here; that
+ * is the audit being wrong about what this page is for.
  *
  * The title is load-bearing for a different reason: without it the browser tab,
  * the history entry and every screen reader announce "localhost".
@@ -77,7 +77,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   title: { default: "وصيّة — لوحة الإدارة", template: "%s · وصيّة" },
   description:
-    "لوحة إدارة وصيّة: مراجعة بلاغات الوفاة، والتحقق من الهوية، وتسليم الورثة.",
+    "لوحة إدارة وصيّة: مراجعة بلاغات الوفاة، والتحقق من الهوية، والتسليم للأوصياء.",
   robots: { index: false, follow: false, nocache: true },
   // The console is not a web page anybody shares; an icon is all it needs.
   applicationName: "Wassiya",

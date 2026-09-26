@@ -1,5 +1,5 @@
 ---
-import { Bitcoin, File, Landmark } from "lucide-react"
+import { Bitcoin, EyeOff, Landmark, NotebookPen } from "lucide-react"
 
 import Faces from "@/components/ui/Faces.astro"
 import { t, type Locale } from "@/i18n/locale"
@@ -10,13 +10,14 @@ interface Props {
 }
 
 const m = t(MOCK, Astro.props.locale)
-const initial = (name: string) => name.charAt(0)
+const executor = m.executorName.charAt(0)
 
-// The app's `VaultRow`: type icon on a sand disc, recipients as faces.
+// The app's `VaultRow`: type icon on a sand disc, the handover choice as one
+// line of text.
 const rows = [
-  { icon: Bitcoin, title: m.assetCrypto, to: m.assetCryptoTo, faces: [initial(m.heirSara), initial(m.heirOmar)] },
-  { icon: Landmark, title: m.assetBank, to: m.assetBankTo, faces: [m.allShort] },
-  { icon: File, title: m.assetDeed, to: m.assetDeedTo, faces: [initial(m.heirMohammed)] },
+  { icon: Bitcoin, title: m.assetCrypto, handedOver: true },
+  { icon: Landmark, title: m.assetBank, handedOver: true },
+  { icon: NotebookPen, title: m.assetDiary, handedOver: false },
 ]
 ---
 
@@ -29,9 +30,22 @@ const rows = [
         </span>
         <span class="min-w-0 flex-1">
           <span class="block truncate text-[14px] font-semibold">{row.title}</span>
-          <span class="text-muted-foreground block truncate text-[12px]">{row.to}</span>
+          <span
+            class:list={[
+              "block truncate text-[12px]",
+              row.handedOver ? "text-olive-700 font-semibold" : "text-muted-foreground",
+            ]}
+          >
+            {row.handedOver ? m.handedOver : m.keptPrivate}
+          </span>
         </span>
-        <Faces initials={row.faces} size={28} />
+        {row.handedOver ? (
+          <Faces initials={[executor]} size={28} />
+        ) : (
+          <span class="bg-sand-200 text-sand-600 flex size-7 shrink-0 items-center justify-center rounded-full">
+            <EyeOff className="size-3.5" strokeWidth={2.5} aria-hidden="true" />
+          </span>
+        )}
       </div>
     ))
   }

@@ -41,7 +41,7 @@ export type PlanLimits = {
   /** Total encrypted payload across every asset. */
   storageBytes: number | null
   assets: number | null
-  heirs: number | null
+  executors: number | null
   /** Whether the `photos` asset type may be created at all. */
   photos: boolean
   /**
@@ -55,14 +55,14 @@ export const PLAN_DEFAULTS: Record<PlanId, PlanLimits> = {
   free: {
     storageBytes: 500 * MB,
     assets: 5,
-    heirs: 1,
+    executors: 1,
     photos: false,
     maxFileBytes: 10 * MB,
   },
   annual: {
     storageBytes: 100 * GB,
     assets: null,
-    heirs: null,
+    executors: null,
     photos: true,
     maxFileBytes: 2 * GB,
   },
@@ -101,7 +101,7 @@ export async function limitsOfPlan(
   return {
     storageBytes: row.storageBytes,
     assets: row.assets,
-    heirs: row.heirs,
+    executors: row.executors,
     photos: row.photos,
     maxFileBytes: row.maxFileBytes,
   }
@@ -116,7 +116,7 @@ export async function limitsOfPlan(
  *
  * It does not take anything away: the limits gate *adding*, never reading, and
  * never release. An owner already over them — because they lapsed, or because
- * a tier was lowered under them — keeps every asset and every heir and simply
+ * a tier was lowered under them — keeps every asset and every executor and simply
  * cannot add the next one. That asymmetry is the whole subscription-lapse
  * promise, and it is why the asset path still calls `assertCanAddAssets`
  * separately: a lapse deserves "renew", not "upgrade".
@@ -144,7 +144,7 @@ export async function limitsFor(
   return {
     storageBytes: pick(override.storageBytes, base.storageBytes),
     assets: pick(override.assets, base.assets),
-    heirs: pick(override.heirs, base.heirs),
+    executors: pick(override.executors, base.executors),
     photos: pick(override.photos, base.photos),
     maxFileBytes: pick(override.maxFileBytes, base.maxFileBytes),
   }

@@ -1,7 +1,7 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * Confirming who an heir is before their delivery opens. `intro` does the work
+ * Confirming who an executor is before their delivery opens. `intro` does the work
  * of not making someone feel accused at the first step.
  *
  * ⚠️ Say only what the check really does: a photo of an ID and of a face,

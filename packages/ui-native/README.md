@@ -129,7 +129,7 @@ Arabic is the default. Every primitive that renders text takes:
 Built-in strings live next to the component as a `LabelSet`, and
 `resolveLabels()` (in `lib/labels.ts`) merges the overrides. There is no i18n
 library yet; when one lands, keep passing `labels` and source them from the
-catalogue instead. Content that is inherently per-record — an heir's name, an
+catalogue instead. Content that is inherently per-record — an executor's name, an
 asset title, a formatted date — is a plain `string` prop, never a label.
 
 ### The components
@@ -149,10 +149,9 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `protection-score-list` | `items[{label,done,priority,pillLabel}]` | per item: done · needed (amber) · later (neutral) | 2.6, Protection Centre |
 | `status-pill` | `status`; `children` overrides the built-in wording | `confirmed` (olive, `مفعّل`) · `action` (terracotta, `مطلوب`) · `waiting` (sand, `قيد المراجعة`) | everywhere a state is named |
 | `key-card` | `icon`, `title`, `description`, `pending` | live · pending | 2.2 the three-keys explainer |
-| `asset-row` | `icon`, `title`, `meta`, `recipientStatus`, `recipientLabel`, `onPress` | routed · unrouted (amber) · pressable | 4.1 assets list, 5.3 routing |
 | `asset-row-skeleton` | `count` | loading | 4.1 while rows decrypt |
 | `asset-type-grid` / `asset-type-tile` | `options[]`; tile takes `icon`, `title`, `description`, `tone` | rows of two, equal height; tone defaults to sand and callers keep it | ٤.٢ category picker — 2×3 inside the add sheet, on `stat-tile` metrics |
-| `heir-card` | `name`, `relation`, `receivesSummary`, `tone`, `onPress` | routed · the terracotta "receives nothing" warning | ٥.١ الورثة. No status pill: every heir is silent, so it said one word on every row |
+| `executor-card` | `name`, `detail`, `sheetSummary`, `tone`, `onPress` | sheet printed · the terracotta "no sheet" warning | ٥.١ الأوصياء. No status pill: every executor is silent, so it said one word on every row |
 | `timeline-steps` / `timeline-step` | `steps[{state,title,meta,daysRemaining}]` | `done` · `current` · `future`; countdown node | 7.4 claim waiting period, check-in escalation |
 | `checklist-card` | `title`, `items[{label,done}]` | counter derived from items; "last step" at 1 remaining | the persistent onboarding widget |
 | `alert-banner` | `variant`, `title`, `description`, `icon`, `actions` | `security` (terracotta + warning) · `notice` (terracotta + info) · `info` (sand) · `success` (olive); paired inline actions | 3.3 notifications, 5.3 default-rule notice, 9.4 lapse notice |
@@ -174,13 +173,11 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 | `radio-row` | `title`, `detail`, `selected`, `onPress`, `divider` | selected · unselected; nothing pre-selected | ٤.٧ disposition — options that each need a sentence |
 | `chat-bubble` | `own`, `body`, `meta`, `attachments[{name,onPress}]` | own (solid terracotta, `--color-bg` text) · theirs (surface) | ٩.٦ support conversation |
 | `chat-composer` | `value`, `onChangeText`, `onSend`, `note`, `warning`, `error`, `files`, `onAttach`, `busy`, `disabled` | ready · blocked (surface-toned send) · busy · warning (terracotta line) | ٩.٦ support conversation — `note` is the standing "not encrypted, we never ask for your sheet" line |
-| `seed-grid` | `words`, `formatIndex` | — | ٤.٣ — the one enclosed thing on that screen; indices kept because an heir reads back in order |
+| `seed-grid` | `words`, `formatIndex` | — | ٤.٣ — the one enclosed thing on that screen; indices kept because an executor reads back in order |
 | `voice-recorder` | `state`, `durationMs`, `levels`, `playing`, `onRecord`, `onStop`, `onPlay`, `onPause`, `onRerecord`, `hint` | `idle` · `recording` (live meter + timer) · `recorded` (play/pause + envelope) | ٤.٨ — a note spoken instead of written. No scrubber: a take is reviewed before it is sealed, not consumed |
 | `stat-tile` | `icon`, `label`, `value`, `emphasis`, `tone`, `onPress` | `emphasis="count"` renders the value as `screenTitle`, else `rowTitle`; `tone` tints disc and value together | ٣.١ Home's 2-up grid (`grow basis-[47%]`) — `vault-row` and `asset-type-tile` reuse its `rounded-card bg-card px-4 py-3.5` surface and `size-9` disc |
-| `vault-row` | `icon`, `title`, `recipients`, `unroutedLabel`, `faces`, `allHeirsLabel`, `onPress` | routed (sand disc + faces) · unrouted (terracotta disc + dashed ring) | **٤.١** the vault list — a full-width `stat-tile`, no hairlines |
-| `recipient-row` | `name`, `detail`, `selected`, `onToggle`, `group`, `divider` | chosen (olive disc + tick) · unchosen · group (icon, never a letter) | ٣ recipients |
-| `recipient-card` | `label`, `value`, `faces`, `allHeirsLabel`, `unrouted`, `onPress` | routed (surface) · unrouted (terracotta + dashed ring) | ٤.٩ — the one card on the asset screen |
-| `avatar-stack` | `names`, `size`, `ring`, `allHeirsLabel` | faces · dashed ring (nobody) · group word | wherever "who receives this" is answered |
+| `vault-row` | `icon`, `title`, `detail`, `isPrivate`, `onPress` | handed over · private (a quiet lock, never terracotta) | **٤.١** the vault list — a full-width `stat-tile`, no hairlines |
+| `avatar-stack` | `names`, `size`, `ring` | faces · dashed ring (nobody) | the locked vault's executor faces |
 | `primary-cta` | `label`, `disabledLabel`, `icon`, `iconSize`, `disabled`, `busy` | live · surface-toned when disabled, **never a faded primary** | every bottom action, 56px |
 | `screen-top` / `screen-top-action` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing text ("إلغاء") | the top of every vault screen |
 | `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every other sheet |

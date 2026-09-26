@@ -23,8 +23,8 @@ import { t, type Locale } from "@/lib/i18n/locale"
  *
  * **Three actions, not one, because they are three different facts.** Expiring
  * leaves an annual plan whose date has passed — the lapsed state, where adding
- * stops and reading and heir delivery do not — while revoking removes the plan
- * outright. Collapsing them would leave the lapsed path unreachable from the
+ * stops and reading and executor delivery do not — while revoking removes the
+ * plan outright. Collapsing them would leave the lapsed path unreachable from the
  * console and therefore untested, and it reads differently in the audit log.
  *
  * Neutral tone throughout: none of this is irreversible, and the dialog

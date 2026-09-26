@@ -7,10 +7,12 @@
 // contains, or even what its owner calls it.
 //
 // The label and the secret are sealed under the asset's DEK rather than MK, so
-// they open for the routed heir at release. Every function below passes them
+// they open for an executor at release. Every function below passes them
 // through untouched; nothing here can name an asset, including the audit log.
-// Nothing here reads or returns `escrowedDek` either — routing writes it, and
-// the release gate alone reads it.
+//
+// An asset is handed over or private, and `dekWrappedByRelease` is the whole of
+// that: present means handed over. Nothing here returns it — the owner's phone
+// only needs to know which, and the release gate alone hands it to an executor.
 //
 // The subscription-lapse rule applies in exactly one place: `create`. Reads
 // and the entire release path never consult the plan, because a lapsed card
@@ -27,7 +29,6 @@ import {
   mutation,
   query,
   type MutationCtx,
-  type QueryCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
@@ -54,6 +55,9 @@ const assetFile = v.object({
   storageId: v.id("_storage"),
   thumbnailId: v.optional(v.id("_storage")),
 })
+
+/** nonce(24) ‖ key(32) ‖ tag(16) — a DEK under `wrap`. */
+const WRAPPED_KEY_BYTES = 72
 
 /** `MAX_SECRET_BYTES` in `@workspace/crypto/secret`, plus nonce and tag. */
 const MAX_SECRET_SEALED_BYTES = 256 * 1024 + 40
@@ -93,10 +97,6 @@ export const generateUploadUrl = mutation({
  * wrapped under MK. Both are ciphertext this deployment cannot open, and `get`
  * already hands the same wrapper to the same authenticated owner, so nothing
  * new is exposed by having the list carry it.
- *
- * `recipientCount` drives the row's badge and 4.1's "unrouted first" sort. It
- * is tallied from three indexed scans over the owner's routing rows rather than
- * one `by_assetId` read per asset, which would be 500 queries for a full page.
  */
 export const list = query({
   args: { type: v.optional(assetType) },
@@ -115,69 +115,18 @@ export const list = query({
             )
             .take(500)
 
-    const routed = await recipientsByAsset(ctx, user._id)
-
-    return rows.map((row) => {
-      const recipients = routed.get(row._id) ?? []
-      return {
-        id: row._id,
-        type: row.type,
-        labelSealed: row.labelSealed,
-        dekWrappedByMk: row.dekWrappedByMk,
-        meta: row.meta,
-        recipientRule: row.recipientRule,
-        // Who, not how many. The list names its recipients — "٢ مستلمين" tells
-        // an owner nothing they can act on, while seeing who is there lets them
-        // notice who isn't. The names themselves are resolved on the client
-        // against `heirs.list`; this deployment ships ids only.
-        recipients,
-        recipientCount: recipients.length,
-        fileCount: row.files.length,
-        createdAt: row._creationTime,
-      }
-    })
+    return rows.map((row) => ({
+      id: row._id,
+      type: row.type,
+      labelSealed: row.labelSealed,
+      dekWrappedByMk: row.dekWrappedByMk,
+      meta: row.meta,
+      handedOver: row.dekWrappedByRelease !== undefined,
+      fileCount: row.files.length,
+      createdAt: row._creationTime,
+    }))
   },
 })
-
-/**
- * Who each of this owner's assets routes to.
- *
- * Convex indexes columns, not union branches, which is why `recipientKind`
- * exists as a denormalised discriminant — sweeping the three kinds covers every
- * routing row the owner has with three scans and no branch left unread.
- *
- * The 2000-row cap is per kind. An owner past it would see fewer faces than
- * they have recipients on their least recently routed assets, never a wrong
- * *state*: an asset with any routing at all still has
- * `recipientRule: "explicit"`, which is what the "بلا مستلم" warning and the
- * sort actually key on.
- */
-async function recipientsByAsset(
-  ctx: QueryCtx,
-  userId: Id<"users">
-): Promise<Map<Id<"assets">, AssetRecipient[]>> {
-  const byAsset = new Map<Id<"assets">, AssetRecipient[]>()
-  for (const kind of ["heir", "executor", "allHeirs"] as const) {
-    const rows = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", userId).eq("recipientKind", kind)
-      )
-      .take(2000)
-    for (const row of rows) {
-      const list = byAsset.get(row.assetId)
-      if (list === undefined) byAsset.set(row.assetId, [row.recipient])
-      else list.push(row.recipient)
-    }
-  }
-  return byAsset
-}
-
-/** The routing union as the list hands it back — ids only, never names. */
-type AssetRecipient =
-  | { kind: "heir"; heirId: Id<"heirs"> }
-  | { kind: "executor" }
-  | { kind: "allHeirs" }
 
 /** The owner's device asks for this when it is about to decrypt an asset. */
 export const get = query({
@@ -205,7 +154,7 @@ export const get = query({
       labelSealed: asset.labelSealed,
       secretSealed: asset.secretSealed ?? null,
       meta: asset.meta,
-      recipientRule: asset.recipientRule,
+      handedOver: asset.dekWrappedByRelease !== undefined,
       dekWrappedByMk: asset.dekWrappedByMk,
       files,
     }
@@ -213,8 +162,9 @@ export const get = query({
 })
 
 /**
- * A new asset is always unrouted: routing is its own save
- * (`routing.setRecipients`), which is where its key is escrowed.
+ * A new asset is created private. The handover wrapper is bound to the asset's
+ * id, so the phone marks it handed over right after (`setHandover`); a crash
+ * in between leaves it private, which is the safe side.
  */
 export const create = mutation({
   args: {
@@ -248,7 +198,6 @@ export const create = mutation({
       meta: args.meta,
       dekWrappedByMk: args.dekWrappedByMk,
       files: args.files,
-      recipientRule: "default",
     })
     await bumpStorageUsed(ctx, user._id, args.meta.byteSize ?? 0)
     await writeAudit(ctx, {
@@ -277,10 +226,9 @@ export const create = mutation({
  * ## The DEK is not rotated here, on purpose
  *
  * A caller re-encrypting a payload reuses the asset's existing DEK and does not
- * pass `dekWrappedByMk`. **This is a requirement, not laziness:** a routed
- * asset's DEK is sealed to the escrow key, so minting a fresh DEK on an ordinary
- * edit would silently break delivery for every heir already routed to this
- * asset, and nothing would surface it until a claim. It is safe because the sealing
+ * pass `dekWrappedByMk`. **This is a requirement, not laziness:** a handed-over
+ * asset's DEK is wrapped under the release key, so minting a fresh DEK on an
+ * ordinary edit would silently break its delivery, and nothing would surface it until a claim. It is safe because the sealing
  * primitives derive fresh per-call randomness — see `wrap.ts` and
  * `assetHeader.ts`, whose salt exists precisely so a deliberately reused DEK
  * stays safe. `dekWrappedByMk` remains accepted for the one case that *is* a
@@ -319,7 +267,7 @@ export const update = mutation({
     // An edit that replaces a 1 KB note with a 400 MB file is an add in
     // everything but name, so growth is charged against the same quota — before
     // the patch, because refusing after it would leave the row and the counter
-    // telling different stories. Shrinking, renaming, re-routing and re-wrapping
+    // telling different stories. Shrinking, renaming, handing over and re-wrapping
     // stay free: a vault that cannot be repaired after a plan change would be a
     // worse outcome than one slightly over its quota.
     if (meta !== undefined) {
@@ -372,13 +320,6 @@ export const remove = mutation({
       throw new Error("Not found")
     }
 
-    const routes = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_assetId", (q) => q.eq("assetId", assetId))
-      .take(200)
-    for (const route of routes) {
-      await ctx.db.delete("assetRecipients", route._id)
-    }
     for (const storageId of blobsOf(asset.files)) {
       await ctx.storage.delete(storageId)
     }
@@ -388,7 +329,40 @@ export const remove = mutation({
     await writeAudit(ctx, {
       userId: user._id,
       event: "asset.removed",
-      meta: { assetId, routesRemoved: routes.length },
+      meta: { assetId },
+    })
+    return null
+  },
+})
+
+/**
+ * Hand an asset over, or make it private. Handing over takes the DEK wrapped
+ * under the owner's release key on the phone; private deletes that wrapper, so
+ * nothing but MK can open the asset and it dies with the owner.
+ */
+export const setHandover = mutation({
+  args: {
+    assetId: v.id("assets"),
+    /** Absent makes the asset private. */
+    dekWrappedByRelease: v.optional(v.bytes()),
+  },
+  handler: async (ctx, { assetId, dekWrappedByRelease }) => {
+    const user = await requireUser(ctx)
+    const asset = await ctx.db.get("assets", assetId)
+    if (asset === null || asset.userId !== user._id) {
+      throw new Error("Not found")
+    }
+    if (
+      dekWrappedByRelease !== undefined &&
+      dekWrappedByRelease.byteLength !== WRAPPED_KEY_BYTES
+    ) {
+      throw new Error("Malformed handover wrapper")
+    }
+    await ctx.db.patch("assets", assetId, { dekWrappedByRelease })
+    await writeAudit(ctx, {
+      userId: user._id,
+      event: "asset.handover_changed",
+      meta: { assetId, handedOver: dekWrappedByRelease !== undefined },
     })
     return null
   },

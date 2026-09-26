@@ -60,7 +60,7 @@ const FEATURES = [
   "dashboard",
   "deliveries",
   "devices",
-  "heirs",
+  "executors",
   "identity",
   "owners",
   "checkins",

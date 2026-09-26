@@ -5,7 +5,7 @@ import {
   FingerprintPattern,
   Heart,
   House,
-  Route,
+  PackageCheck,
   Settings,
   ShieldCheck,
   Users,
@@ -27,8 +27,8 @@ const m = t(MOCK, locale)
 // The app's Home in its "due" state, drawn to `CheckInHero` and `StatTile`.
 const tiles = [
   { icon: Wallet, label: m.tileAssets, value: fmtNumber(12, locale), count: true, settled: false },
-  { icon: Users, label: m.tileHeirs, value: fmtNumber(3, locale), count: true, settled: false },
-  { icon: Route, label: m.tileRouting, value: m.tileRoutingValue, count: false, settled: true },
+  { icon: Users, label: m.tileExecutors, value: fmtNumber(1, locale), count: true, settled: false },
+  { icon: PackageCheck, label: m.tileHandedOver, value: fmtNumber(10, locale), count: true, settled: false },
   { icon: ShieldCheck, label: m.tileDelivery, value: m.tileDeliveryValue, count: false, settled: true },
   { icon: FileText, label: m.tileSheet, value: m.tileSheetValue, count: false, settled: true },
   { icon: BadgeCheck, label: m.tileIdentity, value: m.tileIdentityValue, count: false, settled: true },
@@ -36,7 +36,7 @@ const tiles = [
 const tabs = [
   { icon: House, label: m.tabHome, active: true },
   { icon: Wallet, label: m.tabVault, active: false },
-  { icon: Users, label: m.tabHeirs, active: false },
+  { icon: Users, label: m.tabExecutors, active: false },
   { icon: Settings, label: m.tabAccount, active: false },
 ]
 ---

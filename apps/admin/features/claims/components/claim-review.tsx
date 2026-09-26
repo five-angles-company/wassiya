@@ -18,7 +18,7 @@ import { useLocale } from "@/components/locale-provider"
 import { RecordNotFound } from "@/components/record-not-found"
 import { ClaimCertificate } from "@/features/claims/components/claim-certificate"
 import { ClaimDecision } from "@/features/claims/components/claim-decision"
-import { ClaimHeirs } from "@/features/claims/components/claim-heirs"
+import { ClaimExecutors } from "@/features/claims/components/claim-executors"
 import { ClaimHistory } from "@/features/claims/components/claim-history"
 import {
   claimStatusLabel,
@@ -33,8 +33,8 @@ import { t } from "@/lib/i18n/locale"
  *
  * The certificate and the decision sit side by side, because the decision is a
  * judgement *about* the certificate and the reviewer should never have to
- * scroll between them. Everything else — the heirs, the history — is one tab
- * away rather than stacked on the page.
+ * scroll between them. Everything else — the executors, the history — is one
+ * tab away rather than stacked on the page.
  *
  * The buttons disable on `detail.blocked`, which the server computes with the
  * same `nameMatchBlockedReason` the mutation throws on — one predicate, so a
@@ -61,7 +61,7 @@ export function ClaimReview({ claimId }: { claimId: string }) {
     )
   }
 
-  const { claim, heirs, history } = detail
+  const { claim, executors, history } = detail
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,13 +91,13 @@ export function ClaimReview({ claimId }: { claimId: string }) {
         <ClaimDecision detail={detail} locale={locale} />
       </div>
 
-      <Tabs defaultValue="heirs" className="gap-4">
+      <Tabs defaultValue="executors" className="gap-4">
         <TabsList>
-          <TabsTrigger value="heirs">{labels.tabHeirs}</TabsTrigger>
+          <TabsTrigger value="executors">{labels.tabExecutors}</TabsTrigger>
           <TabsTrigger value="history">{labels.tabHistory}</TabsTrigger>
         </TabsList>
-        <TabsContent value="heirs">
-          <ClaimHeirs heirs={heirs} locale={locale} />
+        <TabsContent value="executors">
+          <ClaimExecutors executors={executors} locale={locale} />
         </TabsContent>
         <TabsContent value="history">
           <ClaimHistory history={history} locale={locale} />

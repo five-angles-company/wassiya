@@ -20,21 +20,17 @@ export const ASSETS = {
   // An Arabic comma, not the "·" used elsewhere: here the separator lands
   // directly against an Arabic-Indic numeral and reads as a zero — "٦ · ٦"
   // renders as "٦٠". The dot is fine everywhere it sits between words.
-  vaultCount: { ar: "{n} أصلاً، {m} لها مستلم", en: "{n} items · {m} reach someone" },
+  vaultCount: { ar: "{n} أصلاً، {m} تُسلَّم", en: "{n} items · {m} handed over" },
   // No count here, and no `{n}`: the whole list decrypts in one pass, so there
   // is no moment where some rows are open and the rest are not — and while the
   // query is still in flight the total is unknown too. A placeholder that never
   // gets substituted is how "{n}" ends up on screen.
   vaultDecrypting: { ar: "تُفتح على جهازك", en: "Opening on your device" },
-  // The screen's only alarm. It vanishes at zero rather than turning green:
-  // "everything is fine" is not news, and a permanent bar is not an alert.
-  unroutedAlert: {
-    ar: "{n} أصول لا يستلمها أحد",
-    en: "{n} items reach nobody",
-  },
-  unroutedAction: { ar: "وجّهها", en: "Route" },
   addAsset: { ar: "أضف", en: "Add" },
-  allHeirsShort: { ar: "الكل", en: "all" },
+  // Each row's second line. Private is a choice, not a fault, so it is stated
+  // plainly rather than in terracotta.
+  rowHandedOver: { ar: "يُسلَّم للوصي", en: "Handed over" },
+  rowPrivate: { ar: "خاص — لا يُسلَّم", en: "Private — not handed over" },
 
   // "٤٣ أصلاً" — the 11+ form, which is where the naive
   // one/other split visibly breaks.
@@ -48,36 +44,15 @@ export const ASSETS = {
 
   // The filter chips name *categories*, so they are plural — where 4.2's tiles
   // name one thing you are about to create and stay singular.
-  // Destination groups. A heading says where its bucket *goes*, so rows inside
-  // don't repeat it — only "بلا وجهة" carries a per-row badge, because there
-  // the count is the whole point.
-  // The header line. Not a count — whether anything reaches nobody.
-  headerAllRouted: { ar: "كل شيء له وجهة", en: "Everything has a destination" },
-  headerUnrouted: { ar: "{n} بلا وجهة", en: "{n} with no destination" },
-
-  groupNone: { ar: "بلا وجهة", en: "No destination" },
-  groupAll: { ar: "إلى جميع الورثة", en: "To all heirs" },
-  groupExplicit: { ar: "موجَّهة", en: "Routed" },
-
   filterAll: { ar: "الكل", en: "All" },
-  // A state, not a category — and the only chip that can be urgent. It is
-  // absent at zero rather than dimmed: an empty category still teaches what the
-  // vault holds, an empty gap is just not news.
-  filterUnrouted: { ar: "بلا مستلم", en: "No recipient" },
+  // A state, not a category. Absent at zero.
+  filterPrivate: { ar: "خاص", en: "Private" },
   filterCrypto: { ar: "عملات رقمية", en: "Crypto" },
   filterBank: { ar: "بنوك", en: "Banks" },
   filterDocument: { ar: "مستندات", en: "Docs" },
   filterPhotos: { ar: "صور", en: "Photos" },
   filterDigital: { ar: "حسابات رقمية", en: "Accounts" },
   filterNote: { ar: "ملاحظات", en: "Notes" },
-
-  // The one badge a row carries. "بلا مستلم" is the warning state: an asset
-  // that reaches nobody is the outcome this product exists to prevent.
-  recipientsZero: { ar: "بلا مستلم", en: "no recipient" },
-  recipientsOne: { ar: "مستلم", en: "1 recipient" },
-  recipientsTwo: { ar: "مستلمان", en: "2 recipients" },
-  recipientsFew: { ar: "{n} مستلمين", en: "{n} recipients" },
-  recipientsMany: { ar: "{n} مستلماً", en: "{n} recipients" },
 
   add: { ar: "أضف أصلاً", en: "Add an asset" },
 
@@ -123,7 +98,7 @@ export const ASSETS = {
     ar: "أصلاً محفوظاً ومشفّراً على هذا الجهاز",
     en: "items saved and encrypted on this device",
   },
-  lockedHeirs: { ar: "يستلمها {n} ورثة", en: "{n} heirs receive them" },
+  lockedExecutors: { ar: "الأوصياء: {n}", en: "Executors: {n}" },
   lockedDelivery: {
     ar: "التسليم يعمل حتى وهي مغلقة",
     en: "Delivery works even while it's locked",
@@ -171,7 +146,7 @@ export const ADD_ASSET = {
     en: "A seed phrase or an exchange",
   },
   bankName: { ar: "حساب بنكي", en: "Bank account" },
-  bankExamples: { ar: "آيبان وتعليمات للوارث", en: "An IBAN and instructions" },
+  bankExamples: { ar: "آيبان وتعليمات للوصي", en: "An IBAN and instructions" },
   documentName: { ar: "مستند", en: "Document" },
   documentExamples: {
     ar: "صك، عقد، شهادة",
@@ -190,8 +165,8 @@ export const ADD_ASSET = {
 
   title: { ar: "ما الذي تريد حفظه؟", en: "What do you want to keep safe?" },
   description: {
-    ar: "كل نوع له نموذج مختلف — نطلب فقط ما يحتاجه الوارث فعلاً.",
-    en: "Each type has its own form — we only ask for what an heir will actually need.",
+    ar: "كل نوع له نموذج مختلف — نطلب فقط ما يحتاجه الوصي فعلاً.",
+    en: "Each type has its own form — we only ask for what an executor will actually need.",
   },
 
   crypto: { ar: "عملات رقمية", en: "Crypto" },
@@ -226,7 +201,6 @@ export const ADD_ASSET = {
  */
 export const ASSET_DETAIL = {
   // Row labels for the asset's grouped list.
-  toLabel: { ar: "إلى", en: "To" },
   lastOpenedLabel: { ar: "آخر فتح", en: "Last opened" },
   filesRowLabel: { ar: "الملفات", en: "Files" },
   recordingRowLabel: { ar: "تسجيل صوتي", en: "Voice recording" },
@@ -267,11 +241,6 @@ export const ASSET_DETAIL = {
     en: "In-app file viewing arrives in a later stage",
   },
 
-  // Field labels for a revealed secret. Before these existed the screen
-  // printed the stored JSON, key names and all.
-  // The two section headings. "من يستلمه بعدك" is the sentence that makes this
-  // an inheritance vault rather than a password manager.
-  handoverLabel: { ar: "من يستلمه بعدك", en: "Who receives it after you" },
   contentLabel: { ar: "المحتوى المحمي", en: "Protected content" },
 
   fieldService: { ar: "الخدمة", en: "Service" },
@@ -290,20 +259,9 @@ export const ASSET_DETAIL = {
   fieldAccount: { ar: "الحساب", en: "Account" },
   fieldBody: { ar: "النص", en: "Text" },
 
-  recipientsLabel: { ar: "من يستلمه؟", en: "Who receives it?" },
-  recipientsNone: { ar: "بلا مستلم", en: "No recipient" },
-  recipientsNoneBody: {
-    ar: "لن يصل هذا الأصل إلى أحد. اختر من يستلمه.",
-    en: "This asset reaches nobody. Choose who receives it.",
-  },
-  recipientsEdit: { ar: "من يستلمه؟", en: "Who receives it?" },
-
   // ── The asset screen ────────────────────────────────────────────────────
   cancel: { ar: "إلغاء", en: "Cancel" },
   more: { ar: "المزيد", en: "More" },
-  receivedBy: { ar: "يستلمها", en: "Received by" },
-  nobodyYet: { ar: "لا أحد بعد", en: "Nobody yet" },
-  allHeirsShort: { ar: "الكل", en: "all" },
   // One line of history, at 45%. "every reveal is logged" is the half that
   // matters: it says the trail exists without making a feature of it.
   lastRevealedLine: {
@@ -317,7 +275,7 @@ export const ASSET_DETAIL = {
     ar: "الحذف نهائي — لا نحفظ نسخة يمكن استعادتها.",
     en: "Deletion is final — we keep no copy to restore.",
   },
-  losesAccess: { ar: "{name} يفقد الوصول", en: "{name} loses access" },
+  executorsLoseIt: { ar: "لن يستلمه أوصياؤك.", en: "Your executors will not receive it." },
   deletePermanently: { ar: "احذف نهائياً", en: "Delete permanently" },
   keepIt: { ar: "إبقاء", en: "Keep it" },
   deleting: { ar: "جارٍ الحذف…", en: "Deleting…" },
@@ -334,7 +292,7 @@ export const ASSET_DETAIL = {
   // pretending the swap already happened.
   pendingReplace: { ar: "بانتظار الحفظ", en: "not saved yet" },
   removePhoto: { ar: "أزل الصورة", en: "Remove photo" },
-  // ٤.٣ does not collect these yet; the asset screen does, because an heir who
+  // ٤.٣ does not collect these yet; the asset screen does, because an executor who
   // finds the device and knows its PIN never has to type twelve words.
   fieldDevicePassword: { ar: "كلمة مرور الجهاز", en: "Device password" },
   fieldDeviceLocation: { ar: "مكان الجهاز", en: "Where the device is" },
@@ -368,17 +326,5 @@ export const ASSET_DETAIL = {
 
   deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
   deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },
-  deleteBodyUnrouted: {
-    ar: "سيُحذف المحتوى المشفّر نهائياً. لا يمكن التراجع.",
-    en: "The encrypted content is destroyed permanently. This cannot be undone.",
-  },
-  // Names the people who lose access — the point of the confirm
-  // is that deletion is a decision about *recipients*, not about storage.
-  deleteBodyRouted: {
-    ar: "سيفقد {names} إمكانية الوصول إليه، ويُحذف المحتوى نهائياً. لا يمكن التراجع.",
-    en: "{names} will lose access and the content is destroyed permanently. This cannot be undone.",
-  },
-  deleteConfirm: { ar: "احذف", en: "Delete" },
-  deleteCancel: { ar: "إلغاء", en: "Cancel" },
   deleteFailed: { ar: "تعذّر الحذف. لم يتغيّر شيء.", en: "Could not delete. Nothing changed." },
 } satisfies LabelSet<string>

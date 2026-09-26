@@ -12,12 +12,13 @@ interface Props {
 
 const { locale } = Astro.props
 const home = t(HOME, locale)
-// The third point is the escrow trade. It sits beside the other two at the
-// same weight on purpose: it is part of the promise, not its small print.
+// The third point is the price of holding no key. It sits beside the other
+// two at the same weight on purpose: it is part of the promise, not its small
+// print.
 const points = [
   { icon: LockKeyhole, title: home.securityItemTitle, body: home.securityItemBody },
   { icon: SmartphoneNfc, title: home.securityPhoneTitle, body: home.securityPhoneBody },
-  { icon: KeyRound, title: home.securityEscrowTitle, body: home.securityEscrowBody },
+  { icon: KeyRound, title: home.securityHandoverTitle, body: home.securityHandoverBody },
 ]
 ---
 

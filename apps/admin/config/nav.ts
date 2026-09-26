@@ -136,9 +136,9 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     items: [
       { key: "owners", icon: UsersIcon, href: "/owners", need: "owners.read" },
       {
-        key: "heirs",
+        key: "executors",
         icon: ScrollTextIcon,
-        href: "/heirs",
+        href: "/executors",
         need: "owners.read",
       },
       {

@@ -26,7 +26,7 @@ export const NAV = {
 
   groupAccounts: { ar: "الحسابات", en: "Accounts" },
   owners: { ar: "المالكون", en: "Owners" },
-  heirs: { ar: "الورثة", en: "Heirs" },
+  executors: { ar: "الأوصياء", en: "Executors" },
   devices: { ar: "الأجهزة", en: "Devices" },
   subscriptions: { ar: "الاشتراكات", en: "Subscriptions" },
 

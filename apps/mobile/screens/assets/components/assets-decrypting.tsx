@@ -11,7 +11,7 @@ import { GhostRow } from "@/components/ghost-row"
  * shifts as real names land, and they fade down the page so the eye stays at
  * the top where the next one appears.
  *
- * The status sits in the subtitle slot the routing figure normally occupies, so
+ * The status sits in the subtitle slot the handover figure normally occupies, so
  * the header never changes height between this screen and the list.
  *
  * ## Why there is no "٢٨ من ٤٣" here

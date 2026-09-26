@@ -140,7 +140,7 @@ async function send(
 /**
  * The one place a message is formatted, enqueued and logged. `auditUserId`
  * is whose log records it — the recipient for account mail, the vault's owner
- * for a message to an heir, who has no account yet.
+ * for a message to an executor, who has no account yet.
  */
 async function deliver(
   ctx: MutationCtx,
@@ -239,7 +239,7 @@ export async function sendRecoveryNotice(
 
 // ── The claimant's side ──────────────────────────────────────────────────────
 //
-// Six notices across a claim's life. Before them the heir was told nothing at
+// Six notices across a claim's life. Before them the executor was told nothing at
 // all: no mail, and two in-app rows at the very end.
 //
 // Each takes the claim id and links to that claim's own page — the id is the
@@ -315,7 +315,7 @@ export async function sendClaimVetoed(
   )
 }
 
-/** Released — Wassiya now contacts each named heir directly. */
+/** Released — Wassiya now contacts each named executor directly. */
 export async function sendClaimReleased(
   ctx: MutationCtx,
   claimantUserId: Id<"users">,
@@ -345,7 +345,7 @@ export async function sendClaimClosed(
   )
 }
 
-// ── The heir's side ──────────────────────────────────────────────────────────
+// ── The executor's side ──────────────────────────────────────────────────────────
 //
 // Both link to the delivery page, which requires sign-in, so an intercepted
 // mail reveals no more than that something is waiting.
@@ -353,13 +353,13 @@ export async function sendClaimClosed(
 /** Identity matched; the delivery can be opened. */
 export async function sendDeliveryReady(
   ctx: MutationCtx,
-  heirUserId: Id<"users">,
+  executorUserId: Id<"users">,
   deliveryId: Id<"deliveries">,
   expiresAt: number
 ): Promise<void> {
   await send(
     ctx,
-    heirUserId,
+    executorUserId,
     DELIVERY_READY_COPY,
     "delivery ready",
     await appLink(ctx, `/delivery/${deliveryId}`),
@@ -370,13 +370,13 @@ export async function sendDeliveryReady(
 /** Thirty days before the delivery's key is destroyed. */
 export async function sendDeliveryExpiring(
   ctx: MutationCtx,
-  heirUserId: Id<"users">,
+  executorUserId: Id<"users">,
   deliveryId: Id<"deliveries">,
   expiresAt: number
 ): Promise<void> {
   await send(
     ctx,
-    heirUserId,
+    executorUserId,
     DELIVERY_EXPIRING_COPY,
     "delivery expiring",
     await appLink(ctx, `/delivery/${deliveryId}`),
@@ -385,7 +385,7 @@ export async function sendDeliveryExpiring(
 }
 
 /**
- * The first message an heir ever gets, to the address the owner registered or
+ * The first message an executor ever gets, to the address the owner registered or
  * staff recorded. Names nobody — see `DELIVERY_INVITE_COPY`. Returns whether
  * it was enqueued, for the contact log.
  */

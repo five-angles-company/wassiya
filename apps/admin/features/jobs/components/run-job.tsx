@@ -29,8 +29,8 @@ export type JobName =
  * **Neutral tone, and that is not a shortcut.** Every job behind this button is
  * an idempotent sweep over rows whose deadline has already passed, so running
  * one early cannot bring anything forward — including `deliveries.expire`,
- * which destroys keys but only for deliveries already past their year. The
- * dialog says so, because "run the job that destroys heir keys" deserves an
+ * which deletes a vault but only once its deliveries are past their year. The
+ * dialog says so, because "run the job that deletes vaults" deserves an
  * explanation rather than a shrug.
  *
  * It schedules rather than awaits: these jobs batch and self-reschedule, so the
@@ -51,7 +51,7 @@ export function RunJob({
   const { has } = usePermissions()
   const run = useMutation(api.jobs.adminRun)
 
-  // Per job, not per screen. `deliveries.expire` destroys locked keys forever
+  // Per job, not per screen. `deliveries.expire` deletes vaults forever
   // and `checkin.sweep` sends email; the backend mints one permission per job
   // name for exactly that reason, so a row an operator may not run shows no
   // button rather than one that throws.

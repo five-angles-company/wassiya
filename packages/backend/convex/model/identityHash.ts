@@ -1,14 +1,14 @@
-// Identity numbers are compared, never stored — AGENTS.md "Escrowed release".
+// Identity numbers are compared, never stored — AGENTS.md "Executors".
 //
-// Both sides of an heir match go through `identityNumberHash`: the number the
-// owner registers for an heir (`heirs.add` / `heirs.update`) and every number
-// Didit reads off the heir's document (`http.ts`). Change the normalisation
+// Both sides of an executor match go through `identityNumberHash`: the number
+// the owner registers (`executors.add` / `executors.update`) and every number
+// Didit reads off the executor's document (`http.ts`). Change the normalisation
 // here and every stored hash stops matching, so bump nothing silently.
 //
 // The number is not hashed with its country: Didit reports ISO alpha-3
 // ("SAU") where the app uses alpha-2, and a mismatch there would fail a
-// genuine heir. A match is also always against one named heir of one owner,
-// so a cross-country collision cannot release anything by itself.
+// genuine executor. A match is also always against one named executor of one
+// owner, so a cross-country collision cannot release anything by itself.
 
 /** Uppercase, letters and digits only — "1 023-456 789" and "1023456789" agree. */
 export function normalizeIdentityNumber(raw: string): string {

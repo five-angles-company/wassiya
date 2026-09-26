@@ -20,15 +20,9 @@ import { useStrings } from "@/i18n/use-strings"
  * Centre render, so the three surfaces can never disagree about how safe the
  * vault is.
  *
- * Ranking is the point, not decoration: heirs are **needed** (terracotta) and
- * the life check-in is **later** (sand). Exactly one amber item at a time is
- * what keeps the colour meaningful — flatten them and the user has five equal
- * chores instead of one next step.
- *
- * The list has no guardian row, by design. That is worth knowing
- * rather than quietly fixing: until a guardian is enrolled in section ٦ the
- * printed sheet has no second key to pair with, so recovery is not yet
- * possible. Nothing on this screen claims otherwise.
+ * Ranking is the point, not decoration: executors are **needed** (terracotta)
+ * and the life check-in is **later** (sand). Exactly one amber item at a time
+ * is what keeps the colour meaningful.
  */
 export function SetupCompleteScreen() {
   const { t, locale } = useStrings("setup/complete")
@@ -47,11 +41,11 @@ export function SetupCompleteScreen() {
       pillLabel: t.needed,
     },
     {
-      id: "heirs",
-      label: t.heirs,
+      id: "executors",
+      label: t.executors,
       done: false,
       // Only one `needed` item may be pending at a time. An unprinted sheet
-      // outranks adding heirs, so heirs drop to `later` in that case.
+      // outranks naming an executor, which drops to `later` in that case.
       priority: printed ? "needed" : "later",
       pillLabel: printed ? t.needed : t.later,
     },
@@ -96,8 +90,8 @@ export function SetupCompleteScreen() {
       <View className="grow" />
 
       <View className="mt-5 gap-2.25">
-        <Button onPress={() => router.replace("/heirs")}>
-          <Text>{t.addHeirs}</Text>
+        <Button onPress={() => router.replace("/executors")}>
+          <Text>{t.addExecutors}</Text>
         </Button>
         <Button
           variant="outline"

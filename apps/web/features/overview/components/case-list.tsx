@@ -22,7 +22,7 @@ type ReportRow = {
 
 type DeliveryRow = {
   deliveryId: string
-  status: "awaiting_heir" | "identity_pending" | "ready" | "rejected" | "expired"
+  status: "awaiting_executor" | "identity_pending" | "ready" | "rejected" | "expired"
   subjectName: string | null
   expiresAt: number
 }
@@ -41,14 +41,14 @@ export function CaseList({
   const labels = t(HOME, locale)
   const common = t(COMMON, locale)
 
-  // `awaiting_heir` still needs the heir's identity check; only
+  // `awaiting_executor` still needs the executor's identity check; only
   // `identity_pending` is ours to finish.
   const deliveryStatus = (row: DeliveryRow) =>
     row.status === "rejected" || row.status === "expired"
       ? { text: labels.deliveryClosed, tone: "quiet" as const }
       : row.status === "ready"
         ? { text: labels.deliveryReady, tone: "settled" as const }
-        : row.status === "awaiting_heir"
+        : row.status === "awaiting_executor"
           ? { text: labels.deliveryIdentity, tone: "attention" as const }
           : { text: labels.deliveryChecking, tone: "settled" as const }
 

@@ -224,8 +224,8 @@ export function NewDocumentScreen() {
       dropPages(pages)
       setPages([])
       router.replace({
-        pathname: "/assets/[id]/recipients",
-        params: { id: saved, step: "2" },
+        pathname: "/assets/[id]",
+        params: { id: saved },
       })
     }
   }

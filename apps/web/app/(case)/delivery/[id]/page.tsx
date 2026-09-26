@@ -7,21 +7,21 @@ import { AuthGate } from "@/components/auth-gate"
 import { HelpLink } from "@/components/help-link"
 import { getLocale } from "@/lib/i18n/server"
 import { safePath } from "@/lib/safe-path"
-import { HeirDelivery } from "@/features/box/components/heir-delivery"
 import { IdentityPanel } from "@/features/claims/components/identity-panel"
+import { ExecutorDelivery } from "@/features/handover/components/executor-delivery"
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
 /**
- * One heir's delivery. Gated here rather than on the `(case)` group, because
- * the group's report pages must stay readable signed out while this one holds
- * decrypted keys. `AuthGate` is the second half: Clerk being signed in is not
- * Convex having caught up, and every read here is Convex's.
+ * One executor's delivery. Gated here rather than on the `(case)` group,
+ * because the group's report pages must stay readable signed out while this
+ * one holds decrypted keys. `AuthGate` is the second half: Clerk being signed
+ * in is not Convex having caught up, and every read here is Convex's.
  *
- * A child route of nothing, so the DEKs `HeirBox` holds are scoped to this
- * page's mount and wiped when the reader leaves it.
+ * A child route of nothing, so the DEKs `ExecutorHandover` holds are scoped to
+ * this page's mount and wiped when the reader leaves it.
  */
 export default async function DeliveryPage({
   params,
@@ -38,7 +38,7 @@ export default async function DeliveryPage({
 
   return (
     <AuthGate>
-      <HeirDelivery
+      <ExecutorDelivery
         deliveryId={id}
         identity={<IdentityPanel returnTo={`/delivery/${id}`} />}
       />

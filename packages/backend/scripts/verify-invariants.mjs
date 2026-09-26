@@ -1,7 +1,7 @@
 // The invariants that are cheap to state and expensive to lose.
 //
 // They are enforced here rather than in a code review because each one fails
-// silently: a second escrowed-key read path, an `auditLog` patch, a
+// silently: a second handover serving path, an `auditLog` patch, a
 // `console.log` of a ciphertext column, or a mutation that hands out a
 // subscription all typecheck perfectly.
 //
@@ -34,7 +34,7 @@ const files = sourceFiles()
 const read = (path) => readFileSync(path, "utf8")
 
 /**
- * Comments are prose, not a leak. The schema documents `escrowedDek` on
+ * Comments are prose, not a leak. The schema documents `releaseKeyWrapped` on
  * purpose, and every check below is about code, so strip comments first.
  */
 const BLOCK_COMMENT = new RegExp("/\\*[\\s\\S]*?\\*/", "g")
@@ -43,68 +43,72 @@ const code = (path) =>
   read(path).replace(BLOCK_COMMENT, "").replace(LINE_COMMENT, "$1")
 const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
 
-// ── 1. Escrowed keys have write paths and exactly one unlock path ──────────
+// ── 1. Handover wrappers have writers and exactly one serving path ──────────
 //
-// `escrowedDek` and `messageKeyEscrowed` are keys sealed to the escrow key. They
-// may appear in the schema, in the mutations that write them (`routing.ts`,
-// `heirs.ts`) and in `escrow.ts`, whose `openDelivery` is the one unlock path.
-// Outside `escrow.ts` no query may mention them, so none can return one. The
-// escrow secret and `@workspace/crypto` live in `escrow.ts` alone.
+// `dekWrappedByRelease`, `releaseKeyWrapped` and the owner's
+// `releaseKeyWrappedByMk` are what an executor sheet opens. The sheet is a
+// bearer secret, so the only thing between whoever finds it and the vault is
+// `handover.open`, which serves them to the Didit-verified executor of a
+// released vault and to nobody else. Any other query returning one would let
+// the sheet alone open everything. So outside `handover.ts` a query may only
+// test a wrapper's presence (`=== undefined`); `keyring.get`, the owner's own
+// read, is the one exception. No server code holds a key: `@workspace/crypto`
+// and any escrow secret appear nowhere.
+//
+// Blocks are split at `export const`, so a helper declared below a mutation is
+// judged as part of it. Keep wrapper-touching helpers inside the mutation.
 {
-  const KEY_COLUMNS = ["escrowedDek", "messageKeyEscrowed"]
-  const WRITERS = ["routing.ts", "heirs.ts"]
-  const ALLOWED_FILES = ["schema.ts", "escrow.ts", ...WRITERS]
-  const ESCROW_ONLY = ["ESCROW_PRIVATE_KEY", "openFromEscrow", "@workspace/crypto"]
-  const ESCROW_EXPORTS = "openDelivery"
+  const WRAPPER_READ =
+    /\b(dekWrappedByRelease|releaseKeyWrapped(?:ByMk)?)\b(?!\s*[!=]==\s*undefined)/
+  const EXEMPT_FILES = ["schema.ts", "handover.ts"]
+  const OWNER_READS = ["keyring.ts:get"]
+  const NOWHERE = ["@workspace/crypto", "ESCROW_PRIVATE_KEY"]
 
   for (const file of files) {
     const name = rel(file)
     const source = code(file)
-    for (const column of KEY_COLUMNS) {
-      if (source.includes(column) && !ALLOWED_FILES.includes(name)) {
+    for (const token of NOWHERE) {
+      if (source.includes(token)) {
+        failures.push(`${token} appears in ${name} — no server code holds a key.`)
+      }
+    }
+    if (EXEMPT_FILES.includes(name)) continue
+    const [preamble, ...blocks] = source.split(/\nexport const /)
+    if (WRAPPER_READ.test(preamble)) {
+      failures.push(
+        `${name} reads a handover wrapper outside any mutation — only handover.open may serve one.`
+      )
+    }
+    for (const block of blocks) {
+      const fn = block.slice(0, block.indexOf(" "))
+      if (/^\w+ = (internalMutation|mutation)\(/.test(block)) continue
+      if (OWNER_READS.includes(`${name}:${fn}`)) continue
+      if (WRAPPER_READ.test(block)) {
         failures.push(
-          `${column} appears in ${name} — only ${ALLOWED_FILES.join(", ")} may mention it.`
+          `${name}: ${fn} reads a handover wrapper and is not a mutation — only handover.open may serve one; elsewhere test presence with === undefined.`
         )
-      }
-    }
-    if (name !== "escrow.ts") {
-      for (const token of ESCROW_ONLY) {
-        if (source.includes(token)) {
-          failures.push(`${token} appears in ${name} — only escrow.ts may use it.`)
-        }
-      }
-    }
-    if (WRITERS.includes(name)) {
-      for (const block of source.split(/\nexport const /).slice(1)) {
-        const fn = block.slice(0, block.indexOf(" "))
-        const mentions = KEY_COLUMNS.some((column) => block.includes(column))
-        if (mentions && !/^\w+ = (internalMutation|mutation)\(/.test(block)) {
-          failures.push(
-            `${name}: ${fn} mentions an escrowed key and is not a mutation — only escrow.openDelivery may read one.`
-          )
-        }
       }
     }
   }
 
-  const escrowPath = files.find((f) => rel(f) === "escrow.ts")
-  if (escrowPath === undefined) {
-    failures.push("escrow.ts is missing — the gated path is gone.")
+  const handoverPath = files.find((f) => rel(f) === "handover.ts")
+  if (handoverPath === undefined) {
+    failures.push("handover.ts is missing — the gated path is gone.")
   } else {
-    const escrow = code(escrowPath)
+    const handover = code(handoverPath)
     const exported = [
-      ...escrow.matchAll(/export (?:const|function|async function) (\w+)/g),
+      ...handover.matchAll(/export (?:const|function|async function) (\w+)/g),
     ]
       .map((match) => match[1])
       .sort()
       .join(",")
-    if (exported !== ESCROW_EXPORTS) {
+    if (exported !== "open") {
       failures.push(
-        `escrow.ts exports ${exported || "nothing"} — only openDelivery may be exported.`
+        `handover.ts exports ${exported || "nothing"} — only open may be exported.`
       )
     }
-    if (!/export const openDelivery = mutation\(/.test(escrow)) {
-      failures.push("escrow.openDelivery must stay a mutation, so its audit line and its read commit together.")
+    if (!/export const open = mutation\(/.test(handover)) {
+      failures.push("handover.open must stay a mutation, so its audit line and its read commit together.")
     }
   }
 }
@@ -381,14 +385,12 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
     name.startsWith("support/") || name === "model/support.ts"
   const VAULT_TOKENS = [
     "keyring",
-    "escrowedDek",
-    "messageKeyEscrowed",
-    "assetRecipients",
     "\"assets\"",
-    "\"heirs\"",
+    "\"executors\"",
     "dekWrappedByMk",
+    "dekWrappedByRelease",
+    "releaseKeyWrapped",
     "mkWrappedByRecovery",
-    "messageMeta",
     "identityDocHashes",
     "idNumberHash",
     "@workspace/crypto",
@@ -429,5 +431,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one escrow unlock path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault."
+  "Backend invariants hold: one handover serving path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault."
 )

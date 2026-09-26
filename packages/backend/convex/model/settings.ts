@@ -12,9 +12,8 @@
 // ## Settings, never credentials
 //
 // Everything here is safe to read off a database export. The API keys, the
-// webhook signing secrets, the identity HMAC and the escrow private key are
-// deliberately absent: a table is the wrong place for a value whose leak is
-// unrecoverable, and `IDENTITY_HASH_SECRET` in particular is the only thing
+// webhook signing secrets and the identity HMAC are deliberately absent: a
+// table is the wrong place for a value whose leak is unrecoverable, and `IDENTITY_HASH_SECRET` in particular is the only thing
 // standing between an ID-number hash and a ten-digit brute force.
 import type { Doc } from "../_generated/dataModel"
 import type { QueryCtx } from "../_generated/server"
@@ -82,11 +81,6 @@ function pick(row: string | undefined, env: string | undefined): string | null {
  * still has to know whether they are there: "no mail is going out" and "the
  * sender address is wrong" look identical from the outside, and this is what
  * tells them apart.
- *
- * The escrow private key is deliberately absent, even as a boolean:
- * `verify-invariants` allows its name in `escrow.ts` and nowhere else, and a
- * status row is not worth an exception to the rule that keeps the one key
- * capable of opening every routed item in a single file.
  */
 export function credentialStatus(): Record<string, boolean> {
   return {

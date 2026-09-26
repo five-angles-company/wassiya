@@ -16,12 +16,11 @@ import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
  *
  * A pure comprehension screen with no side effects, and the **only** place the
  * recovery model is explained. Each card pre-names a later step: the device leg
- * is 2.3, the printed sheet is 2.4, and heirs arrive in section ٥.
+ * is 2.3, the printed sheet is 2.4, and executors arrive in section ٥.
  *
  * Two keys and a card that is not a key. The device opens the vault daily and
- * the **sheet opens it alone** when the device is gone; heirs never open it.
- * The copy must not drift into describing heirs as a way into this vault —
- * that would describe a weaker system than the crypto implements.
+ * the **sheet opens it alone** when the device is gone; executors never open
+ * it — their sheet opens only what was handed over, after a verified death.
  */
 export function ExplainerScreen() {
   const { t, locale } = useStrings("setup/explainer")
@@ -58,8 +57,8 @@ export function ExplainerScreen() {
             about which keys are actually live. */}
         <KeyCard
           icon={Users}
-          title={t.heirsTitle}
-          description={t.heirsBody}
+          title={t.executorsTitle}
+          description={t.executorsBody}
           pending
         />
       </View>

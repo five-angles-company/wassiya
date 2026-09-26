@@ -36,22 +36,14 @@ const helper = createColumnHelper<DataTableFeatures, Row>()
 function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
   const labels = t(DELIVERIES, locale)
   return helper.columns([
-    helper.accessor(
-      (row) => `${row.heirName ?? ""} ${row.heirRelation ?? ""}`,
-      {
-        id: "heir",
-        enableSorting: false,
-        header: () => labels.colHeir,
-        cell: ({ row }) => (
-          <div className="flex flex-col">
-            <span className="font-medium">{row.original.heirName ?? "—"}</span>
-            <span className="text-xs text-muted-foreground">
-              {row.original.heirRelation}
-            </span>
-          </div>
-        ),
-      }
-    ),
+    helper.accessor((row) => row.executorName ?? "", {
+      id: "executor",
+      enableSorting: false,
+      header: () => labels.colExecutor,
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.executorName ?? "—"}</span>
+      ),
+    }),
     helper.accessor((row) => row.subjectName ?? "", {
       id: "owner",
       enableSorting: false,
@@ -130,9 +122,9 @@ function deliveryColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
 }
 
 /**
- * Every delivery, one row per heir, worked from a side sheet so the queue
+ * Every delivery, one row per executor, worked from a side sheet so the queue
  * stays in view. "Needs a decision" is its own badge because it is the only
- * state where an heir is waiting on staff rather than on themselves.
+ * state where an executor is waiting on staff rather than on themselves.
  *
  * `?claim=` narrows to one report — the claim page links here that way.
  * `?delivery=` is the open sheet, so a row can be linked to directly.
@@ -148,7 +140,7 @@ export function DeliveriesTable() {
   const columns = useMemo(() => deliveryColumns(locale), [locale])
   const columnLabels = useMemo(
     () => ({
-      heir: labels.colHeir,
+      executor: labels.colExecutor,
       owner: labels.colOwner,
       status: labels.colStatus,
       contact: labels.colContact,

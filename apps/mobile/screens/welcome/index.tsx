@@ -29,7 +29,7 @@ const SLIDE_COUNT = 4
  * three pops.
  *
  * Slide ٣ is the load-bearing one. It answers the fear the product itself
- * creates — if heirs can be given access, what stops them taking it early? —
+ * creates — if executors can be given access, what stops them taking it early? —
  * by naming the four gates in the order they actually happen, with the owner's
  * veto last so it is the note the user leaves on. It is also where the word
  * "صامت" is introduced, before section ٥ asks the user to choose it.

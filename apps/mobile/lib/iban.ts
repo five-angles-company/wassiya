@@ -1,6 +1,6 @@
 /**
  * IBAN validation — length by country, then the ISO 13616 mod-97 checksum. ٤.٤:
- * *"a wrong IBAN discovered by an heir is unrecoverable"*, and the person who
+ * *"a wrong IBAN discovered by an executor is unrecoverable"*, and the person who
  * would notice the mistake will not be around to be asked. mod-97 is what makes
  * a single mistyped or transposed digit detectable, and both are what people
  * actually do copying 24 characters off a statement.

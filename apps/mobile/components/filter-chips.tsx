@@ -3,7 +3,7 @@ import { cn } from "@workspace/ui-native/lib/utils"
 import { Pressable, ScrollView } from "react-native"
 
 /**
- * The filter row under a list's header — the vault's and the heirs list's.
+ * The filter row under a list's header — the vault's and the executors list's.
  *
  * One component for both on purpose: the two lists are the ones an owner moves
  * between most, and two lookalike rows would drift the first time either was
@@ -14,7 +14,7 @@ import { Pressable, ScrollView } from "react-native"
  * the chip someone reached for last week is still in the same place.
  *
  * An `urgent` chip is a **state, not a category** — it filters by what an item
- * is missing: an asset that reaches nobody, an heir who receives nothing. It
+ * is missing: an executor with no printed sheet. It
  * reads terracotta at rest and the caller omits it at zero rather than dimming
  * it: a gap with no instances is not news.
  *

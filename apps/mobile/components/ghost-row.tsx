@@ -7,13 +7,13 @@ import { View } from "react-native"
  * Three uses, all wanting the same shape: the empty vault draws dashed ones to
  * teach what a card *will* look like, the opening vault draws solid ones under
  * the names that have already resolved so nothing shifts as the rest land, and
- * the empty heirs list does what the empty vault does.
+ * the empty executors list does what the empty vault does.
  *
  * It has to be a **card**, matching `VaultRow` and `HeirCard`. A row-shaped
  * ghost would teach a new owner the one layout they are never going to see,
  * which is worse than showing them nothing.
  *
- * `trailing` is the asset card's recipient disc. A heir card has no such
+ * `trailing` is the asset card's trailing disc. An executor card has no such
  * element, and a ghost that promises one teaches the wrong shape.
  */
 export type GhostRowProps = {
@@ -23,7 +23,7 @@ export type GhostRowProps = {
   title: `${number}%`
   /** Fraction for the recipient bar. Omit for a card with only a name. */
   meta?: `${number}%`
-  /** Draw the trailing disc. True for asset cards, false for heir cards. */
+  /** Draw the trailing disc. True for asset cards, false for executor cards. */
   trailing?: boolean
   className?: string
 }

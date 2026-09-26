@@ -94,10 +94,9 @@ pnpm dev                      # turbo: web + admin + convex dev (+ native if sta
 | `RESEND_FROM`, `RESEND_TEST_MODE` | ✅ (email.ts) | — | — |
 | `APP_URL` | ✅ (email.ts, deliveries) | — | — |
 | `CONSOLE_URL` | ✅ (staff invitations) | — | — |
-| `ESCROW_KEY_ID`, `ESCROW_PRIVATE_KEY`, `WASSIYA_ENV` | ✅ (escrow.ts) | — | — |
+| `WASSIYA_ENV` | ✅ (seed.ts refuses dev helpers on `production`) | — | — |
 | `IDENTITY_HASH_SECRET` | ✅ (identityHash) | — | — |
 | `OUTREACH_PROVIDER`, `TWILIO_*` | ✅ (outreach.ts) | — | — |
-| `EXPO_PUBLIC_WASSIYA_ENV` | — | — | ✅ (escrow-key.ts) |
 
 `APP_URL` is where `apps/web` lives (`http://localhost:3001` in dev). Outbound mail appends a link built from it; unset, the mail still sends without one. It is **not** `CONVEX_SITE_URL`, which is this deployment's own origin — using that would mail people a link to the backend. And `RESEND_TEST_MODE` keeps test mode **on** unless it is exactly `"false"`, so a deployment that has never set it delivers nothing. `CONSOLE_URL` is where `apps/admin` lives, and only a staff invitation links to it — a separate origin, because an invitation that landed on `APP_URL` would sign the new operator into the owner app. Both URLs can also be set from the console's Integrations screen, which takes precedence over the environment.
 

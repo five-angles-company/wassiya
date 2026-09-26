@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@noble/ciphers": "^2.3.0",
-    "@noble/curves": "^2.3.0",
     "@noble/hashes": "^2.3.0",
     "@scure/bip39": "^2.3.0"
   },

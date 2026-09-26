@@ -4,7 +4,7 @@
  *
  * Read from a cookie rather than the signed-in profile, because **most people
  * who open this site are not signed in**: the claim funnel's first screen is
- * for someone just bereaved with no account, and an heir arrives on an
+ * for someone just bereaved with no account, and an executor arrives on an
  * emailed link. It also has to be known before render — `dir` belongs on
  * `<html>`, which a Server Component emits, and a cookie is readable there
  * where `localStorage` is not.

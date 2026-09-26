@@ -26,8 +26,8 @@ import { t } from "@/lib/i18n/locale"
  *
  * **There is no save button, and that is the feature.** Several of these are
  * promises AGENTS.md marks LOCKED. A mistyped veto window changes how long a
- * grieving family waits; a mistyped delivery window changes the day an heir's
- * key is destroyed forever. Both stay a code change and a review.
+ * grieving family waits; a mistyped delivery window changes the day a vault is
+ * deleted forever. Both stay a code change and a review.
  */
 export function PolicyPanel() {
   const locale = useLocale()

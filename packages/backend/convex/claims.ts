@@ -8,7 +8,7 @@
 // the owner's verified legal name (an admin's judgement, never a string
 // comparison) and the veto window has elapsed without the owner confirming
 // they are alive. The reporter is never asked to verify: they receive nothing
-// by reporting. What each heir receives is a `deliveries` row, with its own
+// by reporting. What each executor receives is a `deliveries` row, with its own
 // identity gate. Release also closes the owner's vault (`users.vaultClosedAt`).
 import { v } from "convex/values"
 
@@ -455,7 +455,7 @@ export async function stopOpenClaimsOf(
 /**
  * Attach a vault to a claim that matched none.
  *
- * The ordinary cause is a typo — an heir types the address the deceased used
+ * The ordinary cause is a typo — an executor types the address the deceased used
  * from memory, or off a printed sheet, and gets one character wrong. Before
  * this there was nothing to repair: the filing created no row at all, so the
  * claimant simply waited forever on a claim that did not exist.
@@ -890,7 +890,7 @@ export const advance = internalMutation({
  *   npx convex run claims:reopenVault '{"userId":"…"}'
  *
  * Reopens recovery and new devices, and stops every delivery still open, so no
- * heir receives anything from a living owner and the one-year deletion never
+ * executor receives anything from a living owner and the one-year deletion never
  * runs. Deliberately not in the console: it undoes a death.
  */
 export const reopenVault = internalMutation({
@@ -900,7 +900,7 @@ export const reopenVault = internalMutation({
     await ctx.db.patch("users", userId, { vaultClosedAt: undefined })
 
     let stopped = 0
-    for (const status of ["awaiting_heir", "identity_pending", "ready"] as const) {
+    for (const status of ["awaiting_executor", "identity_pending", "ready"] as const) {
       const live = await ctx.db
         .query("deliveries")
         .withIndex("by_status", (q) => q.eq("status", status))

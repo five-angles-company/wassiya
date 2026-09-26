@@ -14,7 +14,7 @@ import { HOME } from "@/features/overview/strings/home"
  *
  * The two doors are not equal and must not look it — one leads somewhere, the
  * other is an instruction. The report door holds the screen's only button; the
- * heir door deliberately has none, because a delivery opens from the link we
+ * executor door deliberately has none, because a delivery opens from the link we
  * sent, and a button here could only lead to "we need your link".
  */
 export function WelcomeDoors({ name }: { name: string | null }) {
@@ -42,12 +42,12 @@ export function WelcomeDoors({ name }: { name: string | null }) {
 
         <section className="rise-in bg-card border-border rounded-panel flex flex-col items-start border p-7 shadow-[var(--shadow-raised)] md:p-8">
           <IconDisc icon={MailOpenIcon} tone="settled" size="lg" />
-          <h2 className="font-heading mt-6 text-[23px] leading-snug font-black">{labels.doorHeirTitle}</h2>
-          <p className="text-foreground/75 mt-3 text-[15.5px] leading-[1.85]">{labels.doorHeirBody}</p>
-          <p className="text-tone-settled mt-4 text-[14px] font-semibold">{labels.doorHeirMeta}</p>
+          <h2 className="font-heading mt-6 text-[23px] leading-snug font-black">{labels.doorExecutorTitle}</h2>
+          <p className="text-foreground/75 mt-3 text-[15.5px] leading-[1.85]">{labels.doorExecutorBody}</p>
+          <p className="text-tone-settled mt-4 text-[14px] font-semibold">{labels.doorExecutorMeta}</p>
           <p className="bg-tone-attention-soft text-tone-attention rounded-row mt-5 flex items-start gap-3 px-4 py-3 text-[14px] leading-[1.7] font-semibold">
             <ShieldAlertIcon className="mt-0.5 size-5 shrink-0" strokeWidth={2.25} aria-hidden />
-            {labels.doorHeirWarning}
+            {labels.doorExecutorWarning}
           </p>
         </section>
       </div>

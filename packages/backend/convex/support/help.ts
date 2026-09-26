@@ -18,7 +18,7 @@ import { localeValidator } from "../model/support"
 
 const audienceValidator = v.union(
   v.literal("owner"),
-  v.literal("heir"),
+  v.literal("executor"),
   v.literal("reporter"),
   v.literal("all")
 )
@@ -29,7 +29,7 @@ const MAX_ARTICLES = 200
 export const articles = query({
   args: {
     audiences: v.array(
-      v.union(v.literal("owner"), v.literal("heir"), v.literal("reporter"))
+      v.union(v.literal("owner"), v.literal("executor"), v.literal("reporter"))
     ),
     locale: localeValidator,
   },
@@ -145,9 +145,9 @@ export const seedArticles = internalMutation({
 })
 
 /**
- * Put the named articles back to their seed text, after that text changed in
- * code. It overwrites any console edit to those slugs, which is why it takes
- * an explicit list and nothing is refreshed by default.
+ * Put the named articles back to their seed text and audience, after either
+ * changed in code. It overwrites any console edit to those slugs, which is why
+ * it takes an explicit list and nothing is refreshed by default.
  * `npx convex run support/help:refreshSeedArticles '{"slugs":["report-a-death"]}'`
  */
 export const refreshSeedArticles = internalMutation({
@@ -161,6 +161,7 @@ export const refreshSeedArticles = internalMutation({
         .first()
       if (existing === null) continue
       await ctx.db.patch("helpArticles", existing._id, {
+        audience: article.audience,
         title: article.title,
         body: article.body,
         updatedAt: Date.now(),
@@ -216,8 +217,8 @@ const SEED: SeedArticle[] = [
       en: "Can Wassiya read my vault?",
     },
     body: {
-      ar: "لا. تُشفَّر خزنتك على جهازك قبل أن تصلنا، ومفتاحها لا يغادر جهازك إلا مغلقاً. أما ما خصّصته لورثتك فنقفل نسخة منه بمفتاح التسليم الخاص بنا لنستطيع تسليمه: لا نفتحه إلا بعد التحقق من الوفاة ومن هوية الوارث، وكل فتح يُسجَّل. وما لم تخصّصه لأحد لا يستطيع أحد فتحه — ولا نحن. لذلك لا يستطيع فريق الدعم رؤية ما في خزنتك ولا استرجاعه لك.",
-      en: "No. Your vault is encrypted on your phone before it reaches us, and its key only leaves your phone locked. For what you set aside for your heirs, we lock a copy with our delivery key so that we can hand it over: we open it only after a verified death and a verified heir, and every opening is recorded. Anything you set aside for no one, nobody can open — us included. That is also why support cannot see what is in your vault or recover it for you.",
+      ar: "لا، ولا بعد رحيلك. تُشفَّر خزنتك على جهازك قبل أن تصلنا، ومفتاحها لا يغادر جهازك إلا مغلقاً. وما تسلّمه لأوصيائك لا يفتحه إلا ورقة الوصي أو ورقة استردادك، ولا نملك أياً منهما. لذلك لا يستطيع فريق الدعم رؤية ما في خزنتك ولا استرجاعه لك.",
+      en: "No — not even after you are gone. Your vault is encrypted on your phone before it reaches us, and its key only leaves your phone locked. What you hand over to your executors opens only with an executor sheet or your recovery sheet, and we hold neither. That is also why support cannot see what is in your vault or recover it for you.",
     },
   },
   {
@@ -245,12 +246,21 @@ const SEED: SeedArticle[] = [
     slug: "why-heirs-know-nothing",
     audience: "owner",
     title: {
-      ar: "لماذا لا يعرف ورثتي شيئاً الآن؟",
-      en: "Why do my heirs not know anything yet?",
+      ar: "هل يعرف الوصي أنني اخترته؟",
+      en: "Does my executor know I chose them?",
     },
     body: {
-      ar: "كل وارث صامت: لا نراسله ولا نخبره بشيء قبل أن تتحقق الوفاة وتنتهي مهلة الاعتراض. أول ما يسمعه منّا هو رسالتنا إليه على الرقم الذي سجّلته. لذلك احرص على أن تبقى أرقامهم صحيحة.",
-      en: "Every heir is silent: we do not contact them or tell them anything until a death is verified and the objection period has ended. The first thing they hear from us is our message on the number you registered — so keep their numbers up to date.",
+      ar: "منّا لا: لا نراسل الوصي ولا نخبره بشيء قبل أن تتحقق الوفاة وتنتهي مهلة الاعتراض. أما ورقة الوصي فأنت تقرّر: تعطيها له الآن، أو تضعها مع وصيّتك. احرص على أن يبقى رقمه صحيحاً.",
+      en: "Not from us: we do not contact your executor or tell them anything until a death is verified and the objection period has ended. The executor sheet is your call — give it to them now, or keep it with your will. Keep their number up to date.",
+    },
+  },
+  {
+    slug: "executor-sheet",
+    audience: "owner",
+    title: { ar: "ما ورقة الوصي؟", en: "What is the executor sheet?" },
+    body: {
+      ar: "ورقة يطبعها التطبيق لكل وصيّ. لا تفتح شيئاً وأنت حيّ؛ وبعد التحقق من وفاتك يفتح بها الوصي ما اخترت تسليمه. إن ضاعت وأنت حيّ، اطبع ورقة جديدة فتبطل القديمة. ولن نطلبها منك أبداً.",
+      en: "A sheet the app prints for each executor. It opens nothing while you are alive; after your death is verified, your executor opens what you chose to hand over with it. If it is lost while you are alive, print a new one and the old one stops working. We will never ask you for it.",
     },
   },
   {
@@ -267,26 +277,35 @@ const SEED: SeedArticle[] = [
   },
   {
     slug: "message-from-wassiya",
-    audience: "heir",
+    audience: "executor",
     title: {
       ar: "وصلتني رسالة من وصيّة — ما هذه؟",
       en: "I got a message from Wassiya — what is it?",
     },
     body: {
-      ar: "تعني الرسالة أن شخصاً ترك لك شيئاً لدينا. افتح الرابط، وسجّل الدخول، وأثبت هويتك — لا يُفتح شيء قبل ذلك. لا نذكر في الرسالة اسم أحد ولا ما تُرك، حمايةً لك إن وصلت إلى غيرك.",
-      en: "It means someone left something for you with us. Open the link, sign in and verify your identity — nothing opens before that. The message names no one and nothing, in case it reached someone else.",
+      ar: "تعني الرسالة أن شخصاً سمّاك وصياً على ما تركه لدينا. افتح الرابط، وسجّل الدخول، وأثبت هويتك، ثم افتح ما تُرك بورقة الوصي — لا يُفتح شيء قبل ذلك. لا نذكر في الرسالة اسم أحد ولا ما تُرك، حمايةً لك إن وصلت إلى غيرك.",
+      en: "It means someone named you as the executor of what they left with us. Open the link, sign in, verify your identity, then open what was left with the executor sheet — nothing opens before that. The message names no one and nothing, in case it reached someone else.",
+    },
+  },
+  {
+    slug: "lost-executor-sheet",
+    audience: "executor",
+    title: { ar: "لم أجد ورقة الوصي", en: "I cannot find the executor sheet" },
+    body: {
+      ar: "ابحث عنها مع وصيّة المتوفّى وأوراقه المهمة. إن لم تجدها وعثرت على ورقة استرداده، تستطيع استعمالها بدلاً منها، وتفتح ما اختار تسليمه فقط. إن لم تجد أياً منهما فلا نستطيع فتح شيء، لأننا لا نملك أي مفتاح.",
+      en: "Look with the deceased's will and important papers. If you cannot find it but find their recovery sheet, you can use that instead — it opens only what they chose to hand over. If you find neither, we cannot open anything: we hold no key.",
     },
   },
   {
     slug: "heir-identity",
-    audience: "heir",
+    audience: "executor",
     title: {
       ar: "لماذا يجب أن أُثبت هويتي؟",
       en: "Why do I have to verify my identity?",
     },
     body: {
-      ar: "لأننا نسلّم فقط لمن سمّاه صاحب الخزنة. نطابق هويتك الموثّقة مع ما سجّله عنك، وإن لم تتطابق تلقائياً يراجعها أحد أفراد فريقنا بنفسه.",
-      en: "Because we deliver only to the person the vault owner named. We match your verified identity against what they registered for you, and if it does not match automatically a member of our team reviews it by hand.",
+      ar: "لأننا نسلّم فقط لمن سمّاه صاحب الخزنة وصياً. نطابق هويتك الموثّقة مع رقم الهوية الذي سجّله عنك، وإن لم تتطابق تلقائياً يراجعها أحد أفراد فريقنا بنفسه.",
+      en: "Because we deliver only to the person the vault owner named as executor. We match your verified identity against the ID number they registered for you, and if it does not match automatically a member of our team reviews it by hand.",
     },
   },
   {
@@ -294,8 +313,8 @@ const SEED: SeedArticle[] = [
     audience: "reporter",
     title: { ar: "كيف أبلّغ عن وفاة؟", en: "How do I report a death?" },
     body: {
-      ar: "أدخل بريد المتوفّى الذي استخدمه في وصيّة، وأرفق شهادة الوفاة. نراجع البلاغ ونراسلك عند كل تغيّر. لا تستلم شيئاً بتقديم البلاغ — نتواصل نحن مع الورثة مباشرة.",
-      en: "Enter the email the person used with Wassiya and attach the death certificate. We review the report and email you at each change. Filing a report gives you nothing yourself — we contact the heirs directly.",
+      ar: "أدخل بريد المتوفّى الذي استخدمه في وصيّة، وأرفق شهادة الوفاة. نراجع البلاغ ونراسلك عند كل تغيّر. لا تستلم شيئاً بتقديم البلاغ — نتواصل نحن مع الأوصياء مباشرة.",
+      en: "Enter the email the person used with Wassiya and attach the death certificate. We review the report and email you at each change. Filing a report gives you nothing yourself — we contact the executors directly.",
     },
   },
 ]

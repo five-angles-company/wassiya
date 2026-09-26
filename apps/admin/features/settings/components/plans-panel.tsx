@@ -23,7 +23,7 @@ import { t } from "@/lib/i18n/locale"
 type Limits = {
   storageBytes: number | null
   assets: number | null
-  heirs: number | null
+  executors: number | null
   photos: boolean
   maxFileBytes: number | null
 }
@@ -101,7 +101,7 @@ export function PlansPanel() {
   const limitRows = [
     ["fieldStorage", "storageBytes", labels.megabytes],
     ["fieldAssets", "assets", undefined],
-    ["fieldHeirs", "heirs", undefined],
+    ["fieldExecutors", "executors", undefined],
     ["fieldMaxFile", "maxFileBytes", labels.megabytes],
   ] as const
 

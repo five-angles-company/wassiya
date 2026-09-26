@@ -47,13 +47,12 @@ import {
   SETTINGS,
 } from "@/i18n/strings/settings"
 import {
-  HEIRS,
-  HEIR_NEW,
-  HEIR_EDIT,
-  HEIR_MESSAGE,
-  HEIR_PREVIEW,
-  RECIPIENTS,
-} from "@/i18n/strings/heirs"
+  EXECUTORS,
+  EXECUTOR_EDIT,
+  EXECUTOR_NEW,
+  EXECUTOR_SHEET,
+  HANDOVER,
+} from "@/i18n/strings/executors"
 import {
   CHECKIN,
   CLAIM_VETO,
@@ -109,12 +108,11 @@ export const SCREEN_STRINGS = {
   "assets/new/account": NEW_ACCOUNT,
   "assets/new/note": NEW_NOTE,
 
-  heirs: HEIRS,
-  "heirs/new": HEIR_NEW,
-  "heirs/edit": HEIR_EDIT,
-  "heirs/message": HEIR_MESSAGE,
-  "assets/recipients": RECIPIENTS,
-  "heirs/preview": HEIR_PREVIEW,
+  executors: EXECUTORS,
+  "executors/new": EXECUTOR_NEW,
+  "executors/edit": EXECUTOR_EDIT,
+  "executors/sheet": EXECUTOR_SHEET,
+  "assets/handover": HANDOVER,
 
   protection: PROTECTION,
   "protection/checkin": CHECKIN,

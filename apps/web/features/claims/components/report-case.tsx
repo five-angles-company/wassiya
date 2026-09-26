@@ -18,7 +18,7 @@ import { fmtDate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { CertificatePanel } from "@/features/claims/components/certificate-panel"
-import { heirView } from "@/features/claims/lib/heir-view"
+import { caseView } from "@/features/claims/lib/case-view"
 import { CLAIM_STATUS } from "@/features/claims/strings/claim-status"
 import { CLAIMS } from "@/features/claims/strings/claims"
 
@@ -38,7 +38,7 @@ import { CLAIMS } from "@/features/claims/strings/claims"
  * reader, and this page is rendered for exactly that person. Gate on
  * `useConvexAuth`, never on Clerk's state.
  */
-export function HeirCase({ claimId }: { claimId: string }) {
+export function ReportCase({ claimId }: { claimId: string }) {
   const locale = useLocale()
   const labels = t(CLAIMS, locale)
   const status = t(CLAIM_STATUS, locale)
@@ -56,7 +56,7 @@ export function HeirCase({ claimId }: { claimId: string }) {
   const isMine = own !== undefined && own !== null
   const name = claim.subjectName ?? labels.unknownVault
 
-  const view = heirView(
+  const view = caseView(
     {
       status: claim.status,
       submittedAt: claim.submittedAt,

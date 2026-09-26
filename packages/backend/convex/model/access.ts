@@ -73,7 +73,7 @@ export function excludeStaff(
 
 /**
  * The subscription-lapse rule, in the one place it is allowed to apply: adding
- * assets. Reading the vault and releasing to heirs must never call this — a
+ * assets. Reading the vault and releasing to executors must never call this — a
  * lapsed subscription is a billing problem, not a reason to lose an
  * inheritance.
  *
@@ -84,7 +84,7 @@ export function assertCanAddAssets(user: Doc<"users">, now: number): void {
   const renewsAt = user.subscription?.renewsAt
   if (renewsAt !== undefined && renewsAt < now) {
     throw new Error(
-      "Subscription lapsed: adding assets is paused. Existing assets and heir delivery are unaffected."
+      "Subscription lapsed: adding assets is paused. Existing assets and executor delivery are unaffected."
     )
   }
 }
@@ -93,8 +93,8 @@ export function assertCanAddAssets(user: Doc<"users">, now: number): void {
  * The owner-side half of "identity verification is mandatory and blocking".
  *
  * Called from `keyring.save` on the *first* write only. That is the real
- * chokepoint: no keyring means no MK wrapper, which means no assets, no heirs
- * worth routing to, and nothing to release — so gating vault creation gates
+ * chokepoint: no keyring means no MK wrapper, which means no assets, nothing to
+ * hand over, and nothing to release — so gating vault creation gates
  * onboarding as a whole. Rotation is deliberately not gated: an owner whose
  * Didit record later lapses must still be able to replace a lost paper sheet.
  */

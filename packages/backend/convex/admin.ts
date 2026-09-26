@@ -32,7 +32,6 @@ import {
   requirePermission,
 } from "./model/access"
 import { planOf, storageUsed } from "./model/plans"
-import { heirsWhoReceive } from "./model/receivers"
 import { JOB_EVERY_HOURS, JOB_NAMES } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
 
@@ -259,27 +258,16 @@ export const activation = query({
 
     const printed = vaults.filter((row) => row.paperPrintedAt !== undefined)
 
-    // Owners with at least one heir. `heirs` carries no ciphertext column, so
-    // this is the cheapest scan in the file.
-    const heirRows = await ctx.db.query("heirs").take(SCAN_CAP + 1)
-    const heirOwners = new Set(
-      heirRows.slice(0, SCAN_CAP).map((row) => row.userId as string)
-    )
-
-    // Owners with at least one heir who would receive something — an asset
-    // routed to them or to all heirs, or a message. Without one a released
-    // report delivers nothing, however complete the rest.
-    const routes = await ctx.db.query("assetRecipients").take(SCAN_CAP + 1)
-    const deliveryCapped =
-      routes.length > SCAN_CAP || heirRows.length > SCAN_CAP
+    // Owners with at least one executor, and with at least one whose sheet is
+    // printed. Without a sheet a released report opens nothing, however
+    // complete the rest — only the owner's recovery sheet could stand in.
+    const executorRows = await ctx.db.query("executors").take(SCAN_CAP + 1)
+    const executorsCapped = executorRows.length > SCAN_CAP
+    const executorOwners = new Set<string>()
     const deliveryPrepared = new Set<string>()
-    for (const row of routes.slice(0, SCAN_CAP)) {
-      if (row.recipientKind !== "executor" && heirOwners.has(row.userId)) {
-        deliveryPrepared.add(row.userId)
-      }
-    }
-    for (const heir of heirRows.slice(0, SCAN_CAP)) {
-      if (heir.messageMeta !== undefined) deliveryPrepared.add(heir.userId)
+    for (const row of executorRows.slice(0, SCAN_CAP)) {
+      executorOwners.add(row.userId)
+      if (row.sheet !== undefined) deliveryPrepared.add(row.userId)
     }
 
     // Five indexed ranges rather than a scan — the index this table was built
@@ -320,12 +308,12 @@ export const activation = query({
         { key: "vaultCreated", count: vaults.length, more: keyringCapped },
         { key: "sheetPrinted", count: printed.length, more: keyringCapped },
         {
-          key: "heirNamed",
-          ...setTally(heirOwners, heirRows.length > SCAN_CAP),
+          key: "executorNamed",
+          ...setTally(executorOwners, executorsCapped),
         },
         {
           key: "deliveryPrepared",
-          ...setTally(deliveryPrepared, deliveryCapped),
+          ...setTally(deliveryPrepared, executorsCapped),
         },
         { key: "checkinConfigured", count: checkinCount, more: checkinCapped },
       ],
@@ -381,22 +369,21 @@ export const signups = query({
 })
 
 /**
- * The seven protection items, in the order that **is** their ranking.
+ * The six protection items, in the order that **is** their ranking.
  *
  * Lifted verbatim from `apps/mobile/hooks/use-protection-score.ts`, whose header
  * states the reason two surfaces must never compute this separately: "If the two
  * computed it separately they would eventually disagree about how safe the vault
  * is, which is the one thing a security summary may never do." The app shows an
  * owner their own gaps; this shows an operator everyone's. They have to be the
- * same seven, in the same order, or the console will tell someone they are fine
+ * same six, in the same order, or the console will tell someone they are fine
  * while their phone tells them they are not.
  */
 const PROTECTION_ITEMS = [
   "identity",
   "key",
   "sheet",
-  "heirs",
-  "routing",
+  "executors",
   "delivery",
   "checkin",
 ] as const
@@ -439,51 +426,34 @@ export const risk = query({
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
         .unique()
 
-      const heirs = await ctx.db
-        .query("heirs")
+      const executors = await ctx.db
+        .query("executors")
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
-        .take(100)
+        .take(20)
 
       const checkin = await ctx.db
         .query("checkinConfig")
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
         .unique()
 
-      // "Has this owner routed anything at all?" Two indexed probes rather than
-      // a per-asset walk. `allHeirs` is a bucket every heir receives, so an
-      // owner with only that entry still has live routing.
-      let routed = false
-      for (const kind of ["heir", "allHeirs"] as const) {
-        const hit = await ctx.db
-          .query("assetRecipients")
-          .withIndex("by_userId_and_recipientKind", (q) =>
-            q.eq("userId", owner._id).eq("recipientKind", kind)
-          )
-          .take(1)
-        if (hit.length > 0) {
-          routed = true
-          break
-        }
-      }
-
-      // The heir-side question, which is the one that matters at release: how
-      // many of this owner's heirs would receive nothing today.
-      const receiving = await heirsWhoReceive(ctx, owner._id, heirs)
-      const heirsAtRisk = heirs.length - receiving.size
+      // The question that matters at release: how many executors could open
+      // nothing today, because their sheet was never printed.
+      const executorsWithoutSheet = executors.filter(
+        (executor) => executor.sheet === undefined
+      ).length
 
       const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
         identity: owner.identityStatus === "verified",
         key: keyring !== null,
         sheet: keyring?.paperPrintedAt !== undefined,
-        heirs: heirs.length > 0,
-        routing: routed,
-        // Every heir receives something: an asset, or at least a message.
-        delivery: heirs.length > 0 && heirsAtRisk === 0,
+        executors: executors.length > 0,
+        // Every executor holds a printed sheet.
+        delivery: executors.length > 0 && executorsWithoutSheet === 0,
         checkin: checkin !== null,
       }
 
       const missing = PROTECTION_ITEMS.filter((item) => !done[item])
-      if (missing.length === 0 && heirsAtRisk === 0) continue
+      if (missing.length === 0) continue
 
       rows.push({
         userId: owner._id,
@@ -492,15 +462,18 @@ export const risk = query({
         missing,
         /** The highest-ranked gap — the app's one-amber rule, same order. */
         worstGap: missing[0] ?? null,
-        heirsAtRisk,
-        heirCount: heirs.length,
+        executorsWithoutSheet,
+        executorCount: executors.length,
         earned: PROTECTION_ITEMS.length - missing.length,
         total: PROTECTION_ITEMS.length,
       })
     }
 
-    // Worst first: fewest items earned, then most heirs who would get nothing.
-    rows.sort((a, b) => a.earned - b.earned || b.heirsAtRisk - a.heirsAtRisk)
+    // Worst first: fewest items earned, then most executors without a sheet.
+    rows.sort(
+      (a, b) =>
+        a.earned - b.earned || b.executorsWithoutSheet - a.executorsWithoutSheet
+    )
 
     return { rows, more, limit, itemCount: PROTECTION_ITEMS.length }
   },
@@ -587,11 +560,11 @@ export const storage = query({
       digital: { count: 0, bytes: 0 },
       note: { count: 0, bytes: 0 },
     }
-    let unrouted = 0
+    let privateAssets = 0
     for (const asset of assets.slice(0, STORAGE_SCAN_CAP)) {
       byType[asset.type].count += 1
       byType[asset.type].bytes += asset.meta.byteSize ?? 0
-      if (asset.recipientRule !== "explicit") unrouted += 1
+      if (asset.dekWrappedByRelease === undefined) privateAssets += 1
     }
 
     return {
@@ -603,7 +576,8 @@ export const storage = query({
       byType,
       assetCount: Math.min(assets.length, STORAGE_SCAN_CAP),
       assetsCapped,
-      unrouted,
+      /** Assets that die with their owner — not handed over to the executors. */
+      privateAssets,
       /**
        * True while no subscription anywhere came from a store.
        *
@@ -1060,17 +1034,18 @@ export const ownersTally = query({
  * Everything about one account, on one screen.
  *
  * This is what makes the Accounts group's other three entries reachable rather
- * than three more tables. Heirs, devices and a subscription are all *per
- * owner*, and neither `heirs` nor `devices` carries an index that is not
- * `by_userId` — a global list of every heir in the deployment would be a table
- * scan answering a question nobody asks. The operator's question is always
- * "this owner's heirs".
+ * than three more tables. Executors, devices and a subscription are all *per
+ * owner*, and neither `executors` nor `devices` carries an index that is not
+ * `by_userId` — a global list of every executor in the deployment would be a
+ * table scan answering a question nobody asks. The operator's question is
+ * always "this owner's executors".
  *
  * The same indexed probes `risk` runs across many owners, run once here.
  *
  * **Nothing returned is ciphertext or key material.** The keyring is reported
- * as dates and a version, never as `mkWrappedByRecovery`; an heir is reported
- * as whether they receive anything, never with an escrowed key.
+ * as dates and a version, never as `mkWrappedByRecovery`; an executor's sheet
+ * as a version and a date, never as `releaseKeyWrapped`; an ID number never at
+ * all.
  */
 export const ownerDetail = query({
   // `v.string()` rather than `v.id("users")`, and the id checked in the body.
@@ -1094,11 +1069,10 @@ export const ownerDetail = query({
       .query("devices")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .take(50)
-    const heirs = await ctx.db
-      .query("heirs")
+    const executors = await ctx.db
+      .query("executors")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .take(50)
-    const receiving = await heirsWhoReceive(ctx, userId, heirs)
+      .take(20)
     const keyring = await ctx.db
       .query("keyring")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -1149,15 +1123,7 @@ export const ownerDetail = query({
         lastUnlockAt: row.lastUnlockAt ?? null,
         registeredAt: row._creationTime,
       })),
-      heirs: heirs.map((row) => ({
-        id: row._id,
-        name: row.name,
-        relation: row.relation,
-        phone: row.phone,
-        hasIdNumber: row.idNumberHash !== undefined,
-        // False when a release today would reach this heir with nothing.
-        receives: receiving.has(row._id),
-      })),
+      executors: executors.map(executorRow),
       claims: claims.map((row) => ({
         id: row._id,
         status: row.status,
@@ -1169,11 +1135,11 @@ export const ownerDetail = query({
 })
 
 // ---------------------------------------------------------------------------
-// Heirs and devices, listed across every account.
+// Executors and devices, listed across every account.
 //
 // Both tables are indexed only `by_userId`, so neither list can seek — they
 // scan in creation order and filter. That is affordable because both are
-// bounded by *owners* rather than by traffic (a handful of heirs and one or two
+// bounded by *owners* rather than by traffic (a handful of executors and one or two
 // devices per vault), and pagination bounds the scan either way. If either ever
 // stops being true, the fix is an index, not a smaller page.
 // ---------------------------------------------------------------------------
@@ -1184,11 +1150,11 @@ const OWNER_MATCH_CAP = 100
 /**
  * Resolve a search term to the owners it matches.
  *
- * `heirs` and `devices` have nothing worth searching of their own — a device is
+ * `executors` and `devices` have nothing worth searching of their own — a device is
  * called "iPhone 15" and identifies nobody — and denormalising the owner onto
  * their rows would go stale the moment somebody's name changed. What an
  * operator actually has is the *owner*: a name or an address from a support
- * ticket, and a question about that person's heirs or devices.
+ * ticket, and a question about that person's executors or devices.
  *
  * So the term is answered against `users.search_owner` and the result narrows
  * the child query by `userId`. Two steps, both indexed, and no new column to
@@ -1213,114 +1179,92 @@ async function ownerIdsMatching(
   }
 }
 
-const heirFilterArgs = {
-  /** `true` narrows to heirs who would receive nothing today. */
-  unroutedOnly: v.boolean(),
-  /** Matched against the *owner*, not the heir — see `ownerIdsMatching`. */
+/**
+ * What the console may know about one executor.
+ *
+ * Name and contact, because staff reach them if outreach fails; whether their
+ * sheet is printed, because without it a release opens nothing for them. Never
+ * `idNumberHash` and never the sheet's wrapper.
+ */
+function executorRow(row: Doc<"executors">) {
+  return {
+    id: row._id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email ?? null,
+    sheetVersion: row.sheet?.version ?? null,
+    sheetPrintedAt: row.sheet?.printedAt ?? null,
+    addedAt: row._creationTime,
+  }
+}
+
+const executorFilterArgs = {
+  /** `true` narrows to executors whose sheet was never printed. */
+  withoutSheetOnly: v.boolean(),
+  /** Matched against the *owner*, not the executor — see `ownerIdsMatching`. */
   search: v.string(),
   sort: v.union(v.literal("newest"), v.literal("oldest")),
 }
 
 /**
- * Every heir, with what each would actually receive.
+ * Every executor, with whether they could open anything today.
  *
- * The count is the point. A list of names and relations answers nothing an
- * owner's own screen does not, but **"which heirs would receive nothing"** is a
- * question no other screen in the console asks — and it is the commonest silent
- * failure in the product, because an owner who added an heir believes they are
- * provided for.
- *
- * Two probes per row, both indexed, and the second deduplicated per owner:
- * assets routed to this heir *directly*, plus assets routed to every heir at
- * once. Counting only the first would report a `0` against an heir who is in
- * fact covered by the default rule — a wrong answer that looks like a finding.
+ * **"Which executors hold no sheet"** is the question no other screen asks, and
+ * the commonest silent failure: an owner who named an executor believes the
+ * handover is arranged, while a release would reach someone with nothing to
+ * open it — only the owner's own recovery sheet could stand in.
  */
-export const heirsPage = query({
-  args: { paginationOpts: paginationOptsValidator, ...heirFilterArgs },
-  handler: async (ctx, { paginationOpts, sort, unroutedOnly, search }) => {
+export const executorsPage = query({
+  args: { paginationOpts: paginationOptsValidator, ...executorFilterArgs },
+  handler: async (ctx, { paginationOpts, sort, withoutSheetOnly, search }) => {
     await requirePermission(ctx, "owners.read")
 
     const ownerMatch = await ownerIdsMatching(ctx, search)
     if (ownerMatch !== null && ownerMatch.ids.length === 0) {
-      // A term that matched no owner matches no heir. Returning the unfiltered
-      // stream here would read as "search found everything".
+      // A term that matched no owner matches no executor. Returning the
+      // unfiltered stream here would read as "search found everything".
       return { page: [], isDone: true, continueCursor: "" }
     }
 
     const result = await ctx.db
-      .query("heirs")
+      .query("executors")
       .order(sort === "oldest" ? "asc" : "desc")
-      .filter((q) =>
-        ownerMatch === null
-          ? true
-          : q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
-      )
+      .filter((q) => {
+        const byOwner =
+          ownerMatch === null
+            ? true
+            : q.or(...ownerMatch.ids.map((id) => q.eq(q.field("userId"), id)))
+        return withoutSheetOnly
+          ? q.and(byOwner, q.eq(q.field("sheet"), undefined))
+          : byOwner
+      })
       .paginate(paginationOpts)
 
     const owners = new Map<string, Doc<"users"> | null>()
-    const sharedCounts = new Map<string, number>()
-
-    const rows = []
-    for (const heir of result.page) {
-      const ownerKey = heir.userId as string
+    const page = []
+    for (const executor of result.page) {
+      const ownerKey = executor.userId as string
       if (!owners.has(ownerKey)) {
-        owners.set(ownerKey, await ctx.db.get("users", heir.userId))
-        const shared = await ctx.db
-          .query("assetRecipients")
-          .withIndex("by_userId_and_recipientKind", (q) =>
-            q.eq("userId", heir.userId).eq("recipientKind", "allHeirs")
-          )
-          .take(200)
-        sharedCounts.set(ownerKey, shared.length)
+        owners.set(ownerKey, await ctx.db.get("users", executor.userId))
       }
-
-      const direct = await ctx.db
-        .query("assetRecipients")
-        .withIndex("by_userId_and_recipientHeirId", (q) =>
-          q.eq("userId", heir.userId).eq("recipientHeirId", heir._id)
-        )
-        .take(200)
-
       const owner = owners.get(ownerKey) ?? null
-      rows.push({
-        id: heir._id,
-        name: heir.name,
-        relation: heir.relation,
-        phone: heir.phone,
-        ownerId: heir.userId,
+      page.push({
+        ...executorRow(executor),
+        ownerId: executor.userId,
         ownerName: owner?.name ?? null,
         ownerEmail: owner?.email ?? null,
-        directCount: direct.length,
-        sharedCount: sharedCounts.get(ownerKey) ?? 0,
-        receivesCount: direct.length + (sharedCounts.get(ownerKey) ?? 0),
-        addedAt: heir._creationTime,
       })
     }
-
-    // Filtered after counting, because the count is what the filter is about
-    // and it cannot be expressed as an index range. A page may therefore come
-    // back shorter than asked for; `isDone` still says whether another follows.
-    return {
-      ...result,
-      page: unroutedOnly ? rows.filter((row) => row.receivesCount === 0) : rows,
-    }
+    return { ...result, page }
   },
 })
 
-/**
- * Bounded count of heirs.
- *
- * Unlike the claims and owners tallies this one ignores `unroutedOnly`: that
- * filter needs two indexed probes per row to evaluate, and running them across
- * five hundred rows to produce a number would cost more than the page it
- * describes. The console labels this as the total rather than the filtered
- * count, so the number is not read as something it is not.
- */
-export const heirsTally = query({
+/** Bounded count of executors, ignoring filters — labelled as the total. */
+export const executorsTally = query({
   args: {},
   handler: async (ctx) => {
     await requirePermission(ctx, "owners.read")
-    const rows = await ctx.db.query("heirs").take(CLAIMS_TALLY_CAP + 1)
+    const rows = await ctx.db.query("executors").take(CLAIMS_TALLY_CAP + 1)
     return {
       count: Math.min(rows.length, CLAIMS_TALLY_CAP),
       more: rows.length > CLAIMS_TALLY_CAP,
@@ -1607,11 +1551,11 @@ type ReleaseRow = {
   claimantName: string
   vetoDeadline: number | null
   remainingMs: number | null
-  heirsReceiving: number | null
+  executors: { total: number; withSheet: number } | null
   releasedAt: number | null
   deliveries: {
     total: number
-    awaitingHeir: number
+    awaitingExecutor: number
     identityPending: number
     ready: number
     rejected: number
@@ -1630,10 +1574,10 @@ type ReleaseRow = {
  * Bounded rather than paginated: a countdown an operator pages through has
  * stopped being a countdown, and the table says when it was cut short.
  *
- * A counting-down report carries how many heirs receive anything, because a
- * report that releases into an owner with none delivers nothing to anyone. A released
- * one carries its deliveries by state — the per-heir work lives on the
- * deliveries screen, and a row here links to it.
+ * A counting-down report carries the owner's executors and how many hold a
+ * printed sheet, because a release into an owner with none reaches nobody who
+ * can open it. A released one carries its deliveries by state — the
+ * per-executor work lives on the deliveries screen, and a row here links to it.
  */
 export const releasesTable = query({
   args: { now: v.number() },
@@ -1668,19 +1612,13 @@ export const releasesTable = query({
     for (const row of pending.slice(0, RELEASE_BAND_CAP)) {
       const subject = await subjectOf(row)
       const ownerId = row.subjectUserId
-      const heirsReceiving =
+      const executorRows =
         ownerId === undefined
-          ? 0
-          : (
-              await heirsWhoReceive(
-                ctx,
-                ownerId,
-                await ctx.db
-                  .query("heirs")
-                  .withIndex("by_userId", (q) => q.eq("userId", ownerId))
-                  .take(100)
-              )
-            ).size
+          ? []
+          : await ctx.db
+              .query("executors")
+              .withIndex("by_userId", (q) => q.eq("userId", ownerId))
+              .take(20)
       rows.push({
         id: row._id,
         band: "counting",
@@ -1690,7 +1628,10 @@ export const releasesTable = query({
         vetoDeadline: row.vetoDeadline ?? null,
         /** Negative once the deadline has passed and the sweep has not run. */
         remainingMs: (row.vetoDeadline ?? now) - now,
-        heirsReceiving,
+        executors: {
+          total: executorRows.length,
+          withSheet: executorRows.filter((e) => e.sheet !== undefined).length,
+        },
         releasedAt: null,
         deliveries: null,
       })
@@ -1712,11 +1653,11 @@ export const releasesTable = query({
         claimantName: row.claimantName,
         vetoDeadline: null,
         remainingMs: null,
-        heirsReceiving: null,
+        executors: null,
         releasedAt: row.releasedAt ?? row.vetoDeadline ?? row._creationTime,
         deliveries: {
           total: deliveries.length,
-          awaitingHeir: count("awaiting_heir"),
+          awaitingExecutor: count("awaiting_executor"),
           identityPending: count("identity_pending"),
           ready: count("ready"),
           rejected: count("rejected"),
@@ -1905,19 +1846,19 @@ const AUDIT_DOMAINS = [
   "billing",
   "checkin",
   "claim",
+  "delivery",
   "device",
   "email",
-  "guardian",
-  "heir",
+  "executor",
   "help",
   "identity",
   "job",
   "keyring",
   "profile",
   "release",
-  "routing",
   "settings",
   "support",
+  "vault",
 ] as const
 
 const auditDomainValidator = v.union(
@@ -2236,13 +2177,12 @@ const HISTORY_SCAN = 400
  * order make that unsafe in Arabic and in every other script this ships to."*
  * So both names come back, and the console puts them side by side.
  *
- * ## Heirs are another owner's data, so they are projected
+ * ## Executors are another owner's data, so they are projected
  *
- * Nothing else in this console reads an owner's heir list. `heirs` carries
- * plaintext `name`, `relation` and `phone`; only the first two and a routed
- * count come back, never the phone and never a spread document. Same discipline
- * `release.ts` states for itself: every read projects named fields, so a future
- * edit cannot widen one into a leak.
+ * Only a name and whether their sheet is printed come back — never contact
+ * details, never `idNumberHash`, never a spread document. A reviewer ruling on a
+ * death needs to know whether a release would reach anyone who can open it, not
+ * how to reach them.
  *
  * ## Prior claims are included because the lockout does not catch them
  *
@@ -2310,35 +2250,13 @@ export const claimDetail = query({
       subjectUserId === undefined
         ? null
         : await ctx.db.get("users", subjectUserId)
-    const heirRows =
+    const executorRows =
       subjectUserId === undefined
         ? []
         : await ctx.db
-            .query("heirs")
+            .query("executors")
             .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
-            .take(100)
-
-    // Assets routed to each heir, folding in the "all heirs" bucket — the same
-    // arithmetic `heirs.list` does for the owner, so the console and the app
-    // cannot report a different number for the same heir.
-    const direct = new Map<string, number>()
-    const named = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", subjectUserId!).eq("recipientKind", "heir")
-      )
-      .take(2000)
-    for (const row of named) {
-      if (row.recipientHeirId === undefined) continue
-      const key = row.recipientHeirId as string
-      direct.set(key, (direct.get(key) ?? 0) + 1)
-    }
-    const shared = await ctx.db
-      .query("assetRecipients")
-      .withIndex("by_userId_and_recipientKind", (q) =>
-        q.eq("userId", subjectUserId!).eq("recipientKind", "allHeirs")
-      )
-      .take(2000)
+            .take(20)
 
     // Other claims this person has filed against this vault. Matched on the
     // claimant's account where there is one, because that is the identity the
@@ -2384,7 +2302,7 @@ export const claimDetail = query({
         ? null
         : await ctx.db.system.get("_storage", claim.certificateStorageId)
 
-    // Once released, how its heirs are being reached — the page's next step.
+    // Once released, how its executors are being reached — the page's next step.
     const deliveries =
       claim.status !== "released"
         ? []
@@ -2414,7 +2332,7 @@ export const claimDetail = query({
       },
       deliveries: deliveries.map((row) => ({
         id: row._id,
-        heirId: row.heirId,
+        executorId: row.executorId,
         status: row.status,
         contactedAt: row.contactedAt ?? null,
       })),
@@ -2423,11 +2341,10 @@ export const claimDetail = query({
         email: subject?.email ?? null,
         verifiedName: subject?.identityVerifiedName ?? null,
       },
-      heirs: heirRows.map((heir) => ({
-        id: heir._id,
-        name: heir.name,
-        relation: heir.relation,
-        routedAssetCount: (direct.get(heir._id as string) ?? 0) + shared.length,
+      executors: executorRows.map((executor) => ({
+        id: executor._id,
+        name: executor.name,
+        hasSheet: executor.sheet !== undefined,
       })),
       priorClaims,
       history,
