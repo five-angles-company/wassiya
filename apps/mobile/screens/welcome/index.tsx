@@ -19,10 +19,10 @@ import { SlideDots } from "@/screens/welcome/components/slide-dots"
 import { WelcomeSlide } from "@/screens/welcome/components/welcome-slide"
 import { usePreferences } from "@/stores/preferences"
 
-const SLIDE_COUNT = 4
+const SLIDE_COUNT = 3
 
 /**
- * 1.2a–d — the four-slide introduction.
+ * 1.2 — the three-slide introduction.
  *
  * One route, not four: the slides are a single horizontal pager, so a swipe
  * never touches the navigation stack and "skip" is one action rather than
@@ -114,11 +114,6 @@ export function WelcomeScreen() {
             )
           )}
         </WelcomeSlide>
-        <WelcomeSlide
-          width={width}
-          title={t.nothingToMemoriseTitle}
-          body={t.nothingToMemoriseBody}
-        />
       </ScrollView>
 
       <View className="px-gutter gap-2.5">

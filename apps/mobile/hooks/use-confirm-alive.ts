@@ -1,8 +1,8 @@
 /**
  * The single confirmation path in the product, and the one gate it runs behind.
  *
- * The affordance lives in exactly one place — Home's `CheckInHero`;
- * `screens/protection/checkin` configures cadence and reports state only. It is
+ * The affordance lives in exactly one place — Home's `CheckInHero`; its
+ * settings sheet configures cadence only and never confirms. It is
  * also the veto: confirming stops every open death report against the owner.
  * The gate is a hook rather than inline code so a second copy cannot quietly
  * lose its `disableDeviceFallback`.

@@ -8,7 +8,6 @@
 import { OTP, SIGN_IN, SIGN_UP, SPLASH, WELCOME } from "@/i18n/strings/auth"
 import {
   BIOMETRICS,
-  BIOMETRICS_DONE,
   EXPLAINER,
   KYC,
   KYC_PENDING,
@@ -94,7 +93,6 @@ export const SCREEN_STRINGS = {
   "setup/kyc/verified": KYC_VERIFIED,
   "setup/explainer": EXPLAINER,
   "setup/biometrics": BIOMETRICS,
-  "setup/biometrics/done": BIOMETRICS_DONE,
   "setup/recovery-kit": RECOVERY_KIT,
   "setup/complete": SETUP_COMPLETE,
 

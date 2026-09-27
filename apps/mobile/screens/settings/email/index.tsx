@@ -173,6 +173,7 @@ export function EmailChangeScreen() {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoFocus
             autoCapitalize="none"
             autoComplete="email"
             className="text-left"

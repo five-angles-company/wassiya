@@ -129,7 +129,6 @@ export function ProfileScreen() {
           value={value.name}
           onChangeText={(name) => edit({ name })}
           autoComplete="name"
-          hint={t.nameNotice}
           error={
             value.name.trim().length === 0 && draft !== null
               ? t.nameRequired

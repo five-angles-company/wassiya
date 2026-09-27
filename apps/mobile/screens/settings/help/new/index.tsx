@@ -88,10 +88,11 @@ export function NewSupportThreadScreen() {
           onChangeText={setBody}
           placeholder={t.placeholder}
           multiline
+          autoFocus
           error={sheetInText ? support.recoveryWarning : (error ?? undefined)}
         />
         <Text variant="footnote">
-          {t.attachLater} {support.guardrail}
+          {support.guardrail}
         </Text>
       </View>
     </Screen>

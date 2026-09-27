@@ -85,7 +85,6 @@ export function ExecutorsScreen() {
           body={t.emptyLead!}
           actionLabel={t.add!}
           onAction={add}
-          footnote={t.lossNotice}
         />
       </Screen>
     )

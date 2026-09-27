@@ -33,8 +33,8 @@ export const PAYWALL = {
 
   executorsTitle: { ar: "وصلت إلى حدّ الأوصياء", en: "You have reached your executor limit" },
   executorsBody: {
-    ar: "خطتك الحالية تتيح {free}. الخطة السنوية تتيح لك تسمية أكثر من وصيّ، فلا يتوقف التسليم على ورقة واحدة.",
-    en: "Your current plan allows {free}. The annual plan lets you name more than one executor, so the handover never rests on a single sheet.",
+    ar: "خطتك الحالية تتيح {free}. السنوية تتيح أكثر من وصيّ.",
+    en: "Your plan allows {free}. The annual plan allows more than one executor.",
   },
 
   photosTitle: {
@@ -42,8 +42,8 @@ export const PAYWALL = {
     en: "Photos and videos come with the annual plan",
   },
   photosBody: {
-    ar: "خطتك الحالية تحفظ النصوص والمستندات. الصور والفيديو والملفات الكبيرة تحتاج الخطة السنوية.",
-    en: "Your current plan holds text and documents. Photos, videos and large files need the annual plan.",
+    ar: "خطتك الحالية للنصوص والمستندات فقط.",
+    en: "Your current plan holds text and documents only.",
   },
 
   fileSizeTitle: { ar: "هذا الملف أكبر من خطتك", en: "This file is larger than your plan" },
@@ -54,8 +54,8 @@ export const PAYWALL = {
 
   lapsedTitle: { ar: "اشتراكك انتهى", en: "Your subscription has ended" },
   lapsedBody: {
-    ar: "خزنتك تبقى مقروءة والتسليم لأوصيائك يعمل كما هو. التجديد يعيد الإضافة فقط.",
-    en: "Your vault stays readable and delivery to your executors still works. Renewing only brings adding back.",
+    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
+    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
   },
 
   /** What the annual plan is, in four lines. Order is deliberate: value first. */
@@ -78,7 +78,6 @@ export const PAYWALL = {
   renew: { ar: "جدّد الاشتراك", en: "Renew" },
   perYear: { ar: "سنوياً", en: "per year" },
   notNow: { ar: "ليس الآن", en: "Not now" },
-  restore: { ar: "استعادة عملية شراء", en: "Restore a purchase" },
 
   // Billing is not wired yet. The same rule the OTP resend and the ٩.٤ manage
   // row follow: a button that looks live and does nothing is worse than a

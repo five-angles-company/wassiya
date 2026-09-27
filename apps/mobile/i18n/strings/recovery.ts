@@ -55,15 +55,15 @@ export const RECOVERY = {
   // The vault was handed to the executors after a verified death. The one person
   // who can undo that is the owner, alive, through us.
   closed: {
-    ar: "أُغلقت هذه الخزنة بعد التحقق من وفاة صاحبها، ولا يمكن استردادها بالوثيقة. إن كنت صاحبها، راسلنا لنتحقق من هويتك.",
-    en: "This vault was closed after its owner's death was verified, and a sheet cannot recover it. If it is yours, write to us so we can verify who you are.",
+    ar: "أُغلقت هذه الخزنة بعد التحقق من وفاة صاحبها. إن كنت صاحبها، راسلنا.",
+    en: "This vault was closed after its owner's death was verified. If you are the owner, message us.",
   },
   // Says what to do rather than what went wrong, and does not pretend the code
   // might still work. Honest about needing the other device, because that is
   // the only thing that helps.
   staleWrapper: {
-    ar: "وثيقتك صادرة بنسخة أقدم لم يعد هذا الإصدار يقرأها. افتح وصيّة على جهاز ما يزال يحمل مفتاح خزنتك — سيطلب منك طباعة وثيقة جديدة تعمل في كل مكان.",
-    en: "Your sheet was issued by an older version this build can no longer read. Open Wassiya on a device that still holds your vault key — it will ask you to print a new sheet, and that one works everywhere.",
+    ar: "وثيقتك من إصدار قديم لا يُقرأ هنا. افتح وصيّة على جهاز يحمل مفتاحك واطبع وثيقة جديدة.",
+    en: "Your sheet is from an older version this app cannot read. Open Wassiya on a device that has your key and print a new sheet.",
   },
 
   doneTitle: { ar: "عادت خزنتك", en: "Your vault is back" },
@@ -74,8 +74,8 @@ export const RECOVERY = {
   // Stated as a consequence, not a chore. The sheet still works — that is
   // precisely the problem — and only printing a new one ends that.
   reprintUrgent: {
-    ar: "الوثيقة التي استخدمتها ما تزال صالحة، ومن يحصل عليها يفتح خزنتك. طباعة وثيقة جديدة هي ما يُبطلها.",
-    en: "The sheet you just used still works, and whoever holds it can open your vault. Printing a new one is what voids it.",
+    ar: "الوثيقة التي استخدمتها ما زالت تفتح خزنتك. اطبع جديدة لإبطالها.",
+    en: "The sheet you used still opens your vault. Print a new one to cancel it.",
   },
   reprint: { ar: "اطبع وثيقة جديدة", en: "Print a new sheet" },
   later: { ar: "لاحقاً", en: "Later" },

@@ -27,9 +27,6 @@ export const ASSETS = {
   // gets substituted is how "{n}" ends up on screen.
   vaultDecrypting: { ar: "تُفتح على جهازك", en: "Opening on your device" },
   addAsset: { ar: "أضف", en: "Add" },
-  // Each row's second line. Private is a choice, not a fault, so it is stated
-  // plainly rather than in terracotta.
-  rowHandedOver: { ar: "يُسلَّم للوصي", en: "Handed over" },
   rowPrivate: { ar: "خاص — لا يُسلَّم", en: "Private — not handed over" },
 
   // "٤٣ أصلاً" — the 11+ form, which is where the naive
@@ -70,9 +67,6 @@ export const ASSETS = {
   },
   clearFilters: { ar: "أظهر كل الأصول", en: "Show all assets" },
 
-  // The locked state. The vault holds the key that decrypts every name on this
-  // screen, so there is genuinely nothing to show until the user asks.
-  lockedTitle: { ar: "خزنتك مقفلة", en: "Your vault is locked" },
   lockedBody: {
     ar: "أسماء أصولك مشفّرة بمفتاحك. افتح الخزنة ببصمتك لعرضها.",
     en: "Your asset names are encrypted with your key. Unlock with your fingerprint to see them.",
@@ -84,14 +78,14 @@ export const ASSETS = {
   // A locked vault should read as intact, not withheld: it says what is inside
   // and that delivery is unaffected, rather than blurring the list behind a
   // padlock. None of this decrypts anything, which is why it paints instantly.
-  lockedStatus: { ar: "مغلقة", en: "Locked" },
+  lockedStatus: { ar: "مقفلة", en: "Locked" },
   lockedCountUnit: {
-    ar: "أصلاً محفوظاً ومشفّراً على هذا الجهاز",
-    en: "items saved and encrypted on this device",
+    ar: "أصلاً في خزنتك، مشفّراً",
+    en: "items in your vault, encrypted",
   },
   lockedExecutors: { ar: "الأوصياء: {n}", en: "Executors: {n}" },
   lockedDelivery: {
-    ar: "التسليم يعمل حتى وهي مغلقة",
+    ar: "التسليم يعمل حتى وهي مقفلة",
     en: "Delivery works even while it's locked",
   },
   unlockCta: { ar: "افتح ببصمتك", en: "Open with your fingerprint" },
@@ -162,23 +156,13 @@ export const ADD_ASSET = {
   close: { ar: "إغلاق", en: "Close" },
 
   title: { ar: "ما الذي تريد حفظه؟", en: "What do you want to keep safe?" },
-  description: {
-    ar: "كل نوع له نموذج مختلف — نطلب فقط ما يحتاجه الوصي فعلاً.",
-    en: "Each type has its own form — we only ask for what an executor will actually need.",
-  },
 
   crypto: { ar: "عملات رقمية", en: "Crypto" },
-  cryptoHint: { ar: "محافظ ومنصات", en: "Wallets and exchanges" },
   bank: { ar: "حساب بنكي", en: "Bank account" },
-  bankHint: { ar: "آيبان وتعليمات", en: "IBAN and instructions" },
   document: { ar: "مستند", en: "Document" },
-  documentHint: { ar: "عقود وشهادات", en: "Contracts and certificates" },
   photos: { ar: "صور وفيديو", en: "Photos & videos" },
-  photosHint: { ar: "ألبومات مشفّرة", en: "Encrypted albums" },
   digital: { ar: "حساب رقمي", en: "Digital account" },
-  digitalHint: { ar: "بريد، نطاقات، اشتراكات", en: "Email, domains, subscriptions" },
   note: { ar: "ملاحظة", en: "Note" },
-  noteHint: { ar: "وصايا وأماكن أشياء", en: "Wishes and where things are" },
 
   // 4.3–4.8 are the six wizards behind these tiles and are not built. Naming
   // the chosen type is what keeps this from reading as a broken tile.
@@ -187,7 +171,6 @@ export const ADD_ASSET = {
     ar: "نموذج «{type}» يصل في المرحلة التالية. خزنتك جاهزة ومفتاحك في مكانه.",
     en: "The “{type}” form arrives in the next stage. Your vault is ready and your key is in place.",
   },
-  soonDismiss: { ar: "حسناً", en: "Got it" },
 } satisfies LabelSet<string>
 
 /**
@@ -198,13 +181,7 @@ export const ADD_ASSET = {
  * "آخر إظهار" stamp is the visible end of the audit trail every reveal writes.
  */
 export const ASSET_DETAIL = {
-  // Row labels for the asset's grouped list.
-  lastOpenedLabel: { ar: "آخر فتح", en: "Last opened" },
-  filesRowLabel: { ar: "الملفات", en: "Files" },
   recordingRowLabel: { ar: "تسجيل صوتي", en: "Voice recording" },
-  // The live countdown, replacing a static "يختفي بعد ١٠ ثوانٍ" — a timer the
-  // owner can watch is one they do not walk away from.
-  countdown: { ar: "يختفي بعد {n} ثوانٍ", en: "Hides in {n}s" },
 
   secretLabel: { ar: "المحتوى المحمي", en: "Protected content" },
   revealPrompt: { ar: "المس البصمة للإظهار", en: "Touch to reveal" },
@@ -213,53 +190,17 @@ export const ASSET_DETAIL = {
     ar: "أثبت هويتك لإظهار محتوى هذا الأصل",
     en: "Confirm it's you to reveal this asset",
   },
-  revealTerms: {
-    ar: "{n} ثوانٍ · محجوبة عن لقطات الشاشة",
-    en: "{n} seconds · hidden from screenshots",
-  },
-  lastRevealed: { ar: "آخر إظهار {date}", en: "Last revealed {date}" },
   neverRevealed: { ar: "لم يُعرض بعد", en: "Never revealed" },
-  hide: { ar: "إخفاء", en: "Hide" },
-  revealing: { ar: "لحظة…", en: "One moment…" },
-  revealDenied: {
-    ar: "لم يتم التحقق. لم يُعرض شيء ولم يُفك تشفير شيء.",
-    en: "Not verified. Nothing was shown and nothing was decrypted.",
-  },
   revealFailed: {
     ar: "تعذّر فتح المحتوى. إن تكرّر ذلك فقد يكون الملف تالفاً.",
     en: "Could not open the content. If this repeats, the file may be damaged.",
   },
 
-  // File-backed types have no phrase to peek at; opening them needs a viewer
-  // that does not exist yet, so the row says what is stored rather than
-  // offering a button that cannot deliver.
-  filesCount: { ar: "{n} ملف · {size}", en: "{n} files · {size}" },
-  viewerSoon: {
-    ar: "عرض الملفات داخل التطبيق يصل في مرحلة لاحقة",
-    en: "In-app file viewing arrives in a later stage",
-  },
 
-  contentLabel: { ar: "المحتوى المحمي", en: "Protected content" },
 
-  fieldService: { ar: "الخدمة", en: "Service" },
-  fieldUsername: { ar: "اسم المستخدم", en: "Username" },
-  fieldPassword: { ar: "كلمة المرور", en: "Password" },
-  fieldTwoFactor: { ar: "التحقق بخطوتين", en: "Two-factor" },
-  fieldRecoveryCodes: { ar: "رموز الاسترداد", en: "Recovery codes" },
-  fieldDisposition: { ar: "ما يُفعل بالحساب", en: "What to do with it" },
-  fieldBank: { ar: "المصرف", en: "Bank" },
-  fieldIban: { ar: "الآيبان", en: "IBAN" },
-  fieldAccountType: { ar: "نوع الحساب", en: "Account type" },
-  fieldBranch: { ar: "الفرع", en: "Branch" },
-  fieldCurrency: { ar: "العملة", en: "Currency" },
-  fieldInstructions: { ar: "تعليمات", en: "Instructions" },
-  fieldNetwork: { ar: "الشبكة", en: "Network" },
-  fieldAccount: { ar: "الحساب", en: "Account" },
-  fieldBody: { ar: "النص", en: "Text" },
 
   // ── The asset screen ────────────────────────────────────────────────────
   cancel: { ar: "إلغاء", en: "Cancel" },
-  more: { ar: "المزيد", en: "More" },
   // One line of history, at 45%. "every reveal is logged" is the half that
   // matters: it says the trail exists without making a feature of it.
   lastRevealedLine: {
@@ -281,10 +222,6 @@ export const ASSET_DETAIL = {
   // ── Editing ──────────────────────────────────────────────────────────────
   save: { ar: "حفظ", en: "Save" },
   saving: { ar: "يُحفظ…", en: "Saving…" },
-  // The collapsed summary on the recovery-codes row. A count, not the codes.
-  codesCount: { ar: "{n} رموز", en: "{n} codes" },
-  choosePlaceholder: { ar: "اختر", en: "Choose" },
-  copyIban: { ar: "انسخ الآيبان", en: "Copy IBAN" },
   revealShort: { ar: "إظهار", en: "Reveal" },
   // A replacement is staged until Save, and the row says so rather than
   // pretending the swap already happened.
@@ -312,15 +249,6 @@ export const ASSET_DETAIL = {
     ar: "أُقفلت الخزنة أثناء التحرير. افتحها ثم احفظ مرة أخرى.",
     en: "The vault locked while you were editing. Unlock it, then save again.",
   },
-  // Leaving with edits in hand. A password typed and silently dropped is worse
-  // than a question.
-  discardTitle: { ar: "تترك دون حفظ؟", en: "Leave without saving?" },
-  discardBody: {
-    ar: "تعديلاتك على هذا الأصل لم تُحفظ بعد.",
-    en: "Your edits to this asset have not been saved.",
-  },
-  discardConfirm: { ar: "تجاهل التعديلات", en: "Discard edits" },
-  keepEditing: { ar: "متابعة التحرير", en: "Keep editing" },
 
   deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
   deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },

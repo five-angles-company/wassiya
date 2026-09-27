@@ -54,16 +54,14 @@ export function HandoverCard({
     }
   }
 
-  const body = !asset.handedOver
-    ? t.privateBody
-    : noExecutor
-      ? t.noExecutor
-      : t.handedOverBody
+  // The chip already says "handed over"; only the two states with a
+  // consequence the owner may not expect get a line.
+  const body = !asset.handedOver ? t.privateBody : noExecutor ? t.noExecutor : null
 
   return (
     <View
       className={cn(
-        "gap-3 rounded-[24px] px-[17px] py-[15px]",
+        "rounded-card gap-3 p-4",
         asset.handedOver && noExecutor ? "bg-terracotta-100" : "bg-card",
         className
       )}
@@ -77,16 +75,14 @@ export function HandoverCard({
         value={asset.handedOver ? "handedOver" : "private"}
         onChange={(value) => void choose(value)}
       />
-      <Text
-        className={cn(
-          "text-[13.5px] leading-[1.6]",
-          asset.handedOver && noExecutor
-            ? "font-body-semibold text-terracotta-900"
-            : "opacity-75"
-        )}
-      >
-        {body}
-      </Text>
+      {body !== null ? (
+        <Text
+          variant="metaSm"
+          className={asset.handedOver && noExecutor ? "text-terracotta-800" : undefined}
+        >
+          {body}
+        </Text>
+      ) : null}
       {asset.handedOver && noExecutor ? (
         <Pressable
           accessibilityRole="button"
@@ -94,9 +90,7 @@ export function HandoverCard({
           hitSlop={8}
           className="self-start"
         >
-          <Text variant="action" className="font-body-bold text-terracotta-800">
-            {t.addExecutor}
-          </Text>
+          <Text variant="action">{t.addExecutor}</Text>
         </Pressable>
       ) : null}
       {failed ? (

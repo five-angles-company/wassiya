@@ -131,14 +131,35 @@ the inconsistency this list exists to prevent.
   a filled form. Never `Alert.alert`.
 - **Cards are borderless** (`rounded-card bg-card`, or `Surface`). A list is
   rows inside one card with inset dividers (`SettingsRow`, `AuditRow`); a list
-  of things is cards spaced `gap-row` (`VaultRow`, `ExecutorCard`).
+  of things is cards spaced `gap-row` (`VaultRow`, `ExecutorCard`). A labelled
+  group is a `Section`; sections sit 24pt apart (`gap-6` / `mb-6`).
 - **States have one component each**: `LoadingScreen` (keeps its back
   control — never a dead end), `EmptyTab` for a list tab with nothing in it
   (icon, question, one sentence, the add button, centred under the header),
   `EmptyState` for an empty list inside a screen, `NoResults` when a filter
-  empties a list, `LoadMore` (a text link).
+  empties a list, `LoadMore` (a text link), `CenteredNote` for a short state —
+  locked, waiting — so the space under the header is never left empty.
+- **No dead space, no noise.** The button stays pinned at the bottom; a screen
+  whose content is short centres it (`CenteredNote`, `EmptyTab`) rather than
+  leaving a gap. A tinted `AlertBanner` is only for a real warning — a death
+  report, a recovery attempt, a lost key. Anything informational is one plain
+  line, or nothing.
+- **Text is cut hard.** A title and at most one short line under it. No intro
+  paragraphs, no footnotes that restate the screen, a field hint only where it
+  prevents a mistake. A fact the product must state (missed check-ins release
+  nothing, lost sheets mean nothing is delivered, the auto-lock trade) stays —
+  as one short sentence.
+- **One word per concept**: تأكيد الحياة (never النبض / التحقق من الحياة);
+  وثيقة الاسترداد for the owner's paper, ورقة for an executor's; العبارة
+  السرّية for a seed phrase; رموز الاحتياط and التحقق بخطوتين for 2FA; التسليم
+  and بعد وفاتك (never الإفراج / بعد رحيلك); بلاغ وفاة (never طلب وراثة);
+  مقفلة; الإصدار for a sheet version; صاحب الخزنة.
+- **A setting that is one choice is a `SheetSelect` from its row**, applied on
+  tap (language, auto-lock). A setting with more than one choice is a sheet
+  with a Save button (the life check-in).
 - **Chips are `ChipRow` only**: pills on `--color-surface`, the selected one
-  solid terracotta. Banner actions are text links.
+  solid terracotta; `fill` makes two or three options share the row. Banner
+  actions are text links.
 - **Text uses the `Text` variants.** `prose`, `proseSm`, `footnote`, `meta`,
   `metaSm` are already muted; never dim with `opacity-*`. Error text is
   `terracotta-800`.
@@ -254,7 +275,7 @@ Zero-knowledge digital-inheritance vault. Arabic-first RTL. Multi-country, Saudi
 ## Product rules
 - **Handover, not shares:** handed-over assets go to every executor whole, and the executor carries out the will. No inheritance-share math anywhere (الأنصبة يحدّدها القانون، لا التطبيق). A personal message is an ordinary note, handed over like any asset.
 - **Every executor is silent in the app** — Wassiya sends them nothing until release: no invitation, no account, no notification. The owner tells them and hands over the sheet, or leaves it with the paper will. The first thing Wassiya ever sends an executor is the outreach after the veto window.
-- Dead man's switch: cadence + grace + escalation reminders (day 0/7/14/30). **Missed check-ins release nothing** — only a verified death report can, and no copy may say otherwise. **The check-in is the veto:** `checkin.confirm` also stops every open report against the owner (`stopOpenClaimsOf`) and bars its reporter for 90 days, and it works with the check-in turned off. Confirming is ALWAYS biometric-gated and exists in exactly one place — **Home's `CheckInHero`**, via the single gate in `hooks/use-confirm-alive.ts` (`disableDeviceFallback: true`; the mutation runs only after `auth.success`). While a report is open, Home shows it above the hero and the hero asks, whatever the check-in state. `screens/protection/checkin` is status + cadence settings only; there is no separate veto screen. No *second* confirm affordance may ever be added — rows, notifications and widgets report and navigate only. The protected property is that a tap alone can never say "still alive": an unlocked phone in the wrong hands must not be able to suppress delivery forever. It is the fingerprint that provides that, not the route.
+- Dead man's switch: cadence + grace + escalation reminders (day 0/7/14/30). **Missed check-ins release nothing** — only a verified death report can, and no copy may say otherwise. **The check-in is the veto:** `checkin.confirm` also stops every open report against the owner (`stopOpenClaimsOf`) and bars its reporter for 90 days, and it works with the check-in turned off. Confirming is ALWAYS biometric-gated and exists in exactly one place — **Home's `CheckInHero`**, via the single gate in `hooks/use-confirm-alive.ts` (`disableDeviceFallback: true`; the mutation runs only after `auth.success`). While a report is open, Home shows it above the hero and the hero asks, whatever the check-in state. Home's check-in settings sheet (`screens/home/components/checkin-settings-sheet.tsx`) is cadence settings only; there is no check-in screen and no separate veto screen. No *second* confirm affordance may ever be added — rows, notifications and widgets report and navigate only. The protected property is that a tap alone can never say "still alive": an unlocked phone in the wrong hands must not be able to suppress delivery forever. It is the fingerprint that provides that, not the route.
 - Subscription lapse: vault stays readable and executor delivery keeps working; only adding assets is blocked. There is **no grace period** — a `renewsAt` in the past blocks the next add and nothing else.
 - **Plans: free, or one annual plan.** Free starts at 500 MB · 5 assets · 1 executor · no photos; the paid plan lifts all four. Limits resolve in three layers — `users.limitsOverride`, then the `plans` row, then `PLAN_DEFAULTS` in `convex/model/plans.ts`, which is what a deployment with no rows runs on. **No client may restate a limit**, in a component or in a string: they reach the app through `plans.current` and are interpolated. `DEFAULT_QUOTA_BYTES` on ٩.٤ was the first version of that mistake and a paywall sentence reading "٥٠٠ م.ب" would be the second, now that a tier can move without a deploy.
 - **The paywall appears at the limit, never before.** Sign-up, identity verification and the recovery sheet are free, so nothing is sold before the vault has been proved. Paywall copy says what the plan unlocks, never what the owner risks losing — the same reason the lapse banner leads with what still works.

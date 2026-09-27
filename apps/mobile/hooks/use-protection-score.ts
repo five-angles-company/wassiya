@@ -92,7 +92,7 @@ export function useProtectionScore(
         id: "checkin",
         label: labels.checkin,
         done: checkin !== null,
-        href: "/protection/checkin",
+        href: "/home",
       },
     ]
   }, [me, keyring, executors, checkin, labels])

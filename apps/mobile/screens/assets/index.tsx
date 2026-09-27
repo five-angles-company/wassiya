@@ -231,7 +231,7 @@ export function AssetsScreen() {
                     key={row.id}
                     icon={ASSET_TYPE_ICON[row.type]}
                     title={row.title}
-                    detail={row.handedOver ? t.rowHandedOver! : t.rowPrivate!}
+                    detail={row.handedOver ? undefined : t.rowPrivate!}
                     isPrivate={!row.handedOver}
                     onPress={() =>
                       router.push({

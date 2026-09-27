@@ -1,8 +1,6 @@
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { Redirect, Stack, usePathname } from "expo-router"
-import { ActivityIndicator, View } from "react-native"
 
-import { useStrings } from "@/i18n/use-strings"
+import { LoadingScreen } from "@/components/loading-screen"
 import { useSetupEvidence } from "@/hooks/use-setup-evidence"
 import { routeForStep } from "@/lib/setup-routes"
 import type { SetupStep } from "@/lib/setup-flow"
@@ -14,11 +12,12 @@ import type { SetupStep } from "@/lib/setup-flow"
  * than one screen and those screens hand off between themselves faster than
  * the evidence changes:
  *
- *  - `explainer` owns `/setup/kyc` so that 2.1c — the verified card — survives
- *    the moment identity flips to verified. Without it the layout would bounce
- *    the user straight past a screen they are meant to read.
- *  - `recoveryKit` owns `/setup/biometrics` so 2.3b can be read after the key
- *    exists, and `explainer` owns it so 2.3 can be reached before it does.
+ *  - `explainer` owns `/setup/kyc` so that the verified card on the waiting
+ *    screen survives the moment identity flips to verified. Without it the
+ *    layout would bounce the user straight past a screen they are meant to read.
+ *  - `recoveryKit` owns `/setup/biometrics` so the key screen can hand off to
+ *    the kit after the key exists, and `explainer` owns it so it can be reached
+ *    before it does.
  *  - `done` owns `/setup/complete` so 2.6 is not immediately redirected to the
  *    tabs by the very milestone it is reporting.
  */
@@ -26,7 +25,7 @@ const OWNED_PATHS: Record<SetupStep, readonly string[]> = {
   welcome: [],
   kyc: ["/setup/kyc"],
   kycPending: ["/setup/kyc"],
-  explainer: ["/setup/kyc", "/setup/explainer", "/setup/biometrics"],
+  explainer: ["/setup/kyc", "/setup/biometrics"],
   recoveryKit: [
     "/setup/biometrics",
     "/setup/recovery-kit",
@@ -49,20 +48,10 @@ const OWNED_PATHS: Record<SetupStep, readonly string[]> = {
  * `lib/setup-flow` is the single authority, and it is re-read on every render.
  */
 export default function SetupLayout() {
-  const { t } = useStrings("common")
   const { loading, step } = useSetupEvidence()
   const pathname = usePathname()
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center gap-3 bg-background">
-        <ActivityIndicator />
-        <Text variant="meta" className="text-muted-foreground">
-          {t.loading}
-        </Text>
-      </View>
-    )
-  }
+  if (loading) return <LoadingScreen />
 
   const owned = OWNED_PATHS[step]
   if (!owned.some((path) => pathname.startsWith(path))) {

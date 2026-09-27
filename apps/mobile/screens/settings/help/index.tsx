@@ -39,7 +39,7 @@ export function HelpScreen() {
     <Screen>
       <ScreenHeader back title={t.title!} />
 
-      <View className="mb-header rounded-card bg-card overflow-hidden">
+      <View className="mb-6 rounded-card bg-card overflow-hidden">
         <SettingsRow
           icon={MessageCirclePlus}
           label={t.newConversation}
@@ -50,7 +50,7 @@ export function HelpScreen() {
       </View>
 
       {threads.results.length > 0 ? (
-        <View className="mb-header gap-2">
+        <View className="mb-6 gap-2">
           <Text variant="sectionLabel">{t.conversations}</Text>
           <View className="rounded-card bg-card overflow-hidden">
             {threads.results.map((thread, index) => (

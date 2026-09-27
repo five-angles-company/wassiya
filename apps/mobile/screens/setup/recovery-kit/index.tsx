@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { Text } from "@workspace/ui-native/components/ui/text"
 import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
 import * as Print from "expo-print"
 import { Redirect, router } from "expo-router"
@@ -10,6 +10,7 @@ import {
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
 import { useCallback, useMemo, useState } from "react"
+import { View } from "react-native"
 
 import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
@@ -194,15 +195,20 @@ export function RecoveryKitScreen() {
     <Screen
       inset="flow"
       footer={
-        <KitActions
-          printLabel={t.print!}
-          savePdfLabel={t.savePdf!}
-          shareLabel={t.share!}
-          disabled={busy}
-          onPrint={() => void run("print")}
-          onSavePdf={() => void run("save")}
-          onShare={() => void run("share")}
-        />
+        <View className="gap-3">
+          {notice !== null ? (
+            <Text variant="meta" className="text-terracotta-800">
+              {notice}
+            </Text>
+          ) : null}
+          <KitActions
+            printLabel={t.print!}
+            saveLabel={t.saveOrShare!}
+            disabled={busy}
+            onPrint={() => void run("print")}
+            onSave={() => void run("share")}
+          />
+        </View>
       }
     >
       <SetupStepMeter
@@ -212,14 +218,19 @@ export function RecoveryKitScreen() {
         className="mb-6"
       />
 
-      <ScreenHeader title={t.title!} description={t.body} />
+      {/* The first sheet follows the key being made on this phone — the one
+          moment the vault has a key and no way back if the phone is lost. */}
+      <ScreenHeader
+        eyebrow={state.material.paperVersion === 1 ? t.keyReady : undefined}
+        title={t.title!}
+        description={t.body}
+      />
 
       <RecoveryCodeDisplay
         groups={state.material.groups}
         perLine={3}
         ownerName={me?.identityVerifiedName ?? me?.name ?? ""}
         issuedAt={new Date()}
-        handlingNote={t.handling}
         locale={locale}
         qrSlot={
           <KitQr
@@ -230,9 +241,6 @@ export function RecoveryKitScreen() {
         }
       />
 
-      {notice !== null ? (
-        <AlertBanner className="mt-4" variant="notice" description={notice} />
-      ) : null}
     </Screen>
   )
 }

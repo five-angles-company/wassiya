@@ -21,9 +21,8 @@ import { useStrings } from "@/i18n/use-strings"
  *
  * الحماية was removed because it duplicated الرئيسية outright — both rendered
  * the same protection-score object, so "how protected am I?" was answered in two
- * places and owned by neither. Home's tile grid is that answer;
- * `/protection/checkin` is a pushed destination reached from the tab that owns
- * it.
+ * places and owned by neither. Home is that answer, and the life check-in —
+ * its confirmation and its settings sheet — lives there alone.
  *
  * الأوصياء owns **the people you name to receive**, and nothing else. Whether an
  * asset is handed over is decided on the asset itself.

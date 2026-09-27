@@ -11,17 +11,19 @@ import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
 import * as Print from "expo-print"
+import { Lock } from "lucide-react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import {
   usePreventScreenCapture,
   useScreenshotListener,
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
+import { View } from "react-native"
 
+import { CenteredNote } from "@/components/centered-note"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
@@ -158,7 +160,8 @@ export function ExecutorSheetScreen() {
           />
         }
       >
-        <ScreenHeader back title={title} description={t.locked} />
+        <ScreenHeader back title={title} />
+        <CenteredNote icon={Lock} body={t.locked!} />
       </Screen>
     )
   }
@@ -182,23 +185,28 @@ export function ExecutorSheetScreen() {
     <Screen
       inset="flow"
       footer={
-        unsaved ? (
-          <PrimaryCta
-            label={t.activate!}
-            onPress={() => void finish()}
-            busy={busy}
-          />
-        ) : (
-          <KitActions
-            printLabel={t.print!}
-            savePdfLabel={t.savePdf!}
-            shareLabel={t.share!}
-            disabled={busy}
-            onPrint={() => void run("print")}
-            onSavePdf={() => void run("save")}
-            onShare={() => void run("share")}
-          />
-        )
+        <View className="gap-3">
+          {notice !== null ? (
+            <Text variant="meta" className="text-terracotta-800">
+              {notice}
+            </Text>
+          ) : null}
+          {unsaved ? (
+            <PrimaryCta
+              label={t.activate!}
+              onPress={() => void finish()}
+              busy={busy}
+            />
+          ) : (
+            <KitActions
+              printLabel={t.print!}
+              saveLabel={t.saveOrShare!}
+              disabled={busy}
+              onPrint={() => void run("print")}
+              onSave={() => void run("share")}
+            />
+          )}
+        </View>
       }
     >
       <ScreenHeader
@@ -208,11 +216,9 @@ export function ExecutorSheetScreen() {
       />
 
       {sheetFor?.sheetVersion != null ? (
-        <AlertBanner
-          className="mb-4"
-          variant="info"
-          description={t.reprintNotice!}
-        />
+        <Text variant="meta" className="mb-4 text-terracotta-800">
+          {t.reprintNotice}
+        </Text>
       ) : null}
 
       <RecoveryCodeDisplay
@@ -220,7 +226,6 @@ export function ExecutorSheetScreen() {
         perLine={3}
         ownerName={executor.name}
         issuedAt={minted.at}
-        handlingNote={t.handling}
         locale={locale}
         labels={{
           documentTitle: t.documentTitle,
@@ -230,10 +235,6 @@ export function ExecutorSheetScreen() {
           owner: t.executor,
         }}
       />
-
-      {notice !== null ? (
-        <AlertBanner className="mt-4" variant="notice" description={notice} />
-      ) : null}
     </Screen>
   )
 }

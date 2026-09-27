@@ -20,7 +20,8 @@ export type VaultRowProps = {
   /** The decrypted asset name. */
   title: string;
   /** The handover line — "يُسلَّم للوصي" or "خاص". */
-  detail: string;
+  /** A second line — only where it says something the list does not. */
+  detail?: string;
   /** Marks the row private with a lock. */
   isPrivate?: boolean;
   onPress?: () => void;
@@ -49,9 +50,11 @@ export function VaultRow({ icon, title, detail, isPrivate = false, onPress, clas
         <Text variant="rowTitle" numberOfLines={1}>
           {title}
         </Text>
-        <Text variant="metaSm" numberOfLines={1}>
-          {detail}
-        </Text>
+        {detail !== undefined ? (
+          <Text variant="metaSm" numberOfLines={1}>
+            {detail}
+          </Text>
+        ) : null}
       </View>
 
       {isPrivate ? (

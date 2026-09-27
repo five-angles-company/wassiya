@@ -41,18 +41,18 @@ export const EXECUTORS = {
   clearFilters: { ar: "أظهر كل الأوصياء", en: "Show all executors" },
   emptyTitle: { ar: "من سيستلم ما تتركه؟", en: "Who will receive what you leave?" },
   emptyLead: {
-    ar: "الوصي يستلم كل ما تسلّمه بعد رحيلك، وينفّذ وصيّتك. اختر شخصاً تثق به.",
-    en: "Your executor receives everything you hand over after you are gone, and carries out your will. Choose someone you trust.",
+    ar: "يستلم ما تسلّمه بعد وفاتك وينفّذ وصيّتك. اختر من تثق به.",
+    en: "They receive what you hand over after your death and carry out your will. Choose someone you trust.",
   },
   howItWorks: {
-    ar: "كل وصيّ يستلم كل ما اخترت تسليمه، وحده. لا نخبره بشيء قبل الإفراج — أعطه ورقته بنفسك، أو احفظها مع وصيّتك.",
-    en: "Each executor receives everything you chose to hand over, on their own. We tell them nothing before release — give them their sheet yourself, or keep it with your will.",
+    ar: "كل وصيّ يستلم كل ما تسلّمه. لا نخبره بشيء قبل وفاتك.",
+    en: "Each executor receives everything you hand over. We tell them nothing before your death.",
   },
   // Wassiya holds no key. This is the price of that, stated where the owner
   // decides how many executors and sheets to keep.
   lossNotice: {
-    ar: "إن ضاعت كل أوراق الأوصياء ووثيقة استردادك، لا يستطيع أحد فتح ما تركته — ولا نحن.",
-    en: "If every executor sheet and your recovery sheet are lost, nobody can open what you left — not even us.",
+    ar: "إن ضاعت كل الأوراق ووثيقة استردادك، لا يفتح أحد ما تركته — ولا نحن.",
+    en: "If every sheet and your recovery sheet are lost, nobody can open what you left — not even us.",
   },
 } satisfies LabelSet<string>
 
@@ -69,8 +69,8 @@ export const EXECUTOR_NEW = {
   },
   step2: { ar: "اطبع ورقته", en: "Print their sheet" },
   step2Body: {
-    ar: "تفتح ما سلّمته بعد رحيلك — ولا شيء قبل ذلك.",
-    en: "It opens what you hand over after you are gone — and nothing before.",
+    ar: "تفتح ما سلّمته بعد وفاتك فقط.",
+    en: "It opens what you hand over, only after your death.",
   },
   step3: {
     ar: "أعطه إياها، أو احفظها مع وصيّتك",
@@ -88,8 +88,8 @@ export const EXECUTOR_NEW = {
   // Validated hard: this is the channel the release chain uses, and a wrong
   // digit is discovered when nobody can ask the owner to fix it.
   phoneInvalid: {
-    ar: "رقم غير صالح لهذه الدولة. راجعه — هذا هو الرقم الذي سنتواصل به بعد التحقق من الوفاة.",
-    en: "Not a valid number for that country. Check it — this is how we reach them once a death is verified.",
+    ar: "رقم غير صالح لهذه الدولة — به نتواصل معه بعد الوفاة.",
+    en: "Not valid for this country — it is how we reach them after a death.",
   },
   phoneDuplicate: {
     ar: "لديك وصيّ بهذا الرقم بالفعل.",
@@ -99,27 +99,22 @@ export const EXECUTOR_NEW = {
   emailLabel: { ar: "البريد الإلكتروني (اختياري)", en: "Email (optional)" },
   emailPlaceholder: { ar: "sara@example.com", en: "sara@example.com" },
   emailHint: {
-    ar: "نراسله عليه أيضاً عند التسليم. قناتان أضمن من واحدة — الأرقام تُعاد تدويرها.",
-    en: "We write here too at delivery. Two channels beat one — numbers get recycled.",
+    ar: "نراسله عليه أيضاً عند التسليم.",
+    en: "We write here too at delivery.",
   },
   emailInvalid: { ar: "بريد غير صالح.", en: "That is not an email address." },
 
   idNumberLabel: { ar: "رقم الهوية الوطنية أو الإقامة", en: "National ID or residency number" },
   idNumberPlaceholder: { ar: "1023456789", en: "1023456789" },
   idNumberHint: {
-    ar: "مطلوب: نطابقه بهوية الوصي الموثّقة قبل أن يُفتح له شيء. لا نحفظ الرقم نفسه.",
-    en: "Required: we match it to the executor's verified ID before anything opens. We never store the number itself.",
+    ar: "نطابقه بهويته قبل أن يُفتح له شيء. لا نحفظ الرقم نفسه.",
+    en: "We match it to their ID before anything opens. We never store the number.",
   },
   idNumberRegistered: {
     ar: "مسجّل — اكتب رقماً جديداً لاستبداله",
     en: "Registered — type a new number to replace it",
   },
   idNumberInvalid: { ar: "الرقم قصير جداً.", en: "That number is too short." },
-
-  silentNotice: {
-    ar: "لن نخبر وصيّك بشيء قبل الإفراج — لا إشعار ولا دعوة. أخبره بنفسك، وأعطه ورقته أو احفظها مع وصيّتك.",
-    en: "We tell your executor nothing before release — no notice, no invitation. Tell them yourself, and give them their sheet or keep it with your will.",
-  },
 
   submit: { ar: "أضف الوصي", en: "Add executor" },
   submitBlocked: {
@@ -180,8 +175,8 @@ export const EXECUTOR_EDIT = {
 export const EXECUTOR_SHEET = {
   title: { ar: "ورقة {name}", en: "{name}'s sheet" },
   body: {
-    ar: "أعطها لـ{name} أو احفظها مع وصيّتك. بعد رحيلك يفتح بها ما سلّمته — ولا تفتح شيئاً ما دمت حيّاً.",
-    en: "Give it to {name} or keep it with your will. After you are gone it opens what you handed over — and nothing while you are alive.",
+    ar: "أعطها لـ{name} أو احفظها مع وصيّتك. لا تفتح شيئاً ما دمت حيّاً.",
+    en: "Give it to {name} or keep it with your will. It opens nothing while you are alive.",
   },
   reprintNotice: {
     ar: "هذه ورقة جديدة. بمجرد أن تطبعها تتوقف الورقة السابقة عن العمل.",
@@ -199,9 +194,9 @@ export const EXECUTOR_SHEET = {
   documentTitle: { ar: "ورقة الوصي", en: "ورقة الوصي" },
   documentSubtitle: { ar: "WASSIYA EXECUTOR SHEET", en: "WASSIYA EXECUTOR SHEET" },
   codeLabel: { ar: "رمز الوصي", en: "Executor code" },
-  owner: { ar: "صاحب الوصيّة", en: "Owner" },
+  owner: { ar: "صاحب الخزنة", en: "Owner" },
   executor: { ar: "الوصي", en: "Executor" },
-  account: { ar: "حساب صاحب الوصيّة", en: "Owner's Wassiya account" },
+  account: { ar: "حساب صاحب الخزنة", en: "Owner's Wassiya account" },
   issued: { ar: "تاريخ الإصدار", en: "Issued" },
   version: { ar: "الإصدار", en: "Version" },
   shownOnce: {
@@ -209,12 +204,12 @@ export const EXECUTOR_SHEET = {
     en: "Shown once. We cannot show it again — and we keep no copy.",
   },
   handling: {
-    ar: "من يحمل هذه الورقة ويثبت هويته يستلم ما سُلّم بعد الوفاة. احفظها كما تحفظ الوصيّة، ولا تُصوَّر.",
-    en: "Whoever holds this sheet and proves their identity receives what was handed over after the death. Keep it as you keep the will, and do not photograph it.",
+    ar: "من يحملها ويثبت هويته يستلم ما سلّمته بعد وفاتك. لا تصوّرها.",
+    en: "Whoever holds it and proves who they are receives what you hand over after your death. Do not photograph it.",
   },
   howTitle: { ar: "متى تُستخدم، وكيف", en: "When it is used, and how" },
   howWhen: {
-    ar: "بعد وفاة صاحب الوصيّة فقط، ولا تفتح شيئاً قبل ذلك. وصيّة لا تملك أي مفتاح: هذه الورقة، أو وثيقة استرداد صاحبها، هي الطريق الوحيد.",
+    ar: "بعد وفاة صاحب الخزنة فقط، ولا تفتح شيئاً قبل ذلك. وصيّة لا تملك أي مفتاح: هذه الورقة، أو وثيقة استرداد صاحبها، هي الطريق الوحيد.",
     en: "Only after the owner's death, and it opens nothing before. Wassiya holds no key: this sheet, or the owner's recovery sheet, is the only way.",
   },
   howStep1: {
@@ -240,8 +235,7 @@ export const EXECUTOR_SHEET = {
   },
 
   print: { ar: "طباعة", en: "Print" },
-  savePdf: { ar: "حفظ PDF", en: "Save PDF" },
-  share: { ar: "مشاركة للطابعة", en: "Send to printer" },
+  saveOrShare: { ar: "حفظ أو مشاركة PDF", en: "Save or share the PDF" },
   preparing: { ar: "جارٍ تجهيز الورقة…", en: "Preparing the sheet…" },
   cancelled: {
     ar: "لم تُطبع الورقة. ما زالت على الشاشة — حاول مجدداً.",
@@ -258,38 +252,35 @@ export const EXECUTOR_SHEET = {
   // Printed but not stored: the paper opens nothing. Said plainly, with the
   // one action that fixes it, while the code is still in memory.
   activateFailed: {
-    ar: "طُبعت الورقة لكن لم نتمكن من تفعيلها، فهي لا تعمل بعد. لا تغادر هذه الشاشة — فعّلها الآن.",
-    en: "The sheet printed but could not be activated, so it does not work yet. Do not leave this screen — activate it now.",
+    ar: "طُبعت الورقة لكنها لم تُفعَّل بعد. لا تغادر — فعّلها الآن.",
+    en: "The sheet printed but is not active yet. Don't leave — activate it now.",
   },
   activate: { ar: "فعّل الورقة", en: "Activate the sheet" },
 } satisfies LabelSet<string>
 
 /** The asset screen's handover choice — يُسلَّم / خاص. */
 export const HANDOVER = {
-  label: { ar: "بعد رحيلك", en: "After you are gone" },
-  question: { ar: "بعد رحيلك، ماذا يحدث له؟", en: "After you are gone, what happens to it?" },
+  label: { ar: "بعد وفاتك", en: "After your death" },
+  question: { ar: "بعد وفاتك، ماذا يحدث له؟", en: "After your death, what happens to it?" },
   hint: {
     ar: "تستطيع تغيير هذا لاحقاً من صفحته.",
     en: "You can change this later from its page.",
   },
   noExecutorCreate: {
-    ar: "لم تسمِّ وصياً بعد — يصل إليه حين تضيفه.",
-    en: "You have not named an executor yet — it reaches them once you do.",
+    ar: "لم تسمِّ وصيّاً بعد — يصله حين تضيفه.",
+    en: "No executor yet — it reaches them once you add one.",
   },
   handedOver: { ar: "يُسلَّم للوصي", en: "Handed over" },
   private: { ar: "خاص", en: "Private" },
-  handedOverBody: {
-    ar: "يستلمه أوصياؤك كاملاً مع كل ما سلّمته.",
-    en: "Your executors receive it whole, with everything else you hand over.",
-  },
   noExecutor: {
-    ar: "لم تسمِّ وصياً بعد — لن يصل إلى أحد حتى تضيف وصياً.",
-    en: "You have not named an executor — it reaches nobody until you add one.",
+    ar: "لم تسمِّ وصيّاً بعد — لن يصل إلى أحد.",
+    en: "No executor yet — it reaches nobody.",
   },
   addExecutor: { ar: "أضف وصياً", en: "Add an executor" },
+  handedOverBody: { ar: "يستلمه أوصياؤك بعد وفاتك.", en: "Your executors receive it after your death." },
   privateBody: {
-    ar: "لا يفتحه أحد بعدك — يُحذف مع خزنتك.",
-    en: "Nobody opens it after you — it is deleted with your vault.",
+    ar: "لا يفتحه أحد بعدك.",
+    en: "Nobody opens it after you.",
   },
   changeFailed: {
     ar: "تعذّر التغيير. لم يتغيّر شيء.",

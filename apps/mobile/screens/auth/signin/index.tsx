@@ -9,7 +9,6 @@ import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
-import { NewDeviceCard } from "@/screens/auth/signin/components/new-device-card"
 import { useOnboarding } from "@/stores/onboarding"
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -67,14 +66,21 @@ export function SignInScreen() {
       inset="flow"
       footer={
         <View className="gap-4">
-          <PrimaryCta label={t.cta!} onPress={() => void submit()} disabled={!ready} busy={busy} />
+          <PrimaryCta
+            label={t.cta!}
+            onPress={() => void submit()}
+            disabled={!ready}
+            busy={busy}
+          />
           <Pressable
             accessibilityRole="button"
             className="flex-row justify-center gap-1"
             onPress={() => router.replace("/auth/signup")}
           >
             <Text className="text-section">{t.noAccount}</Text>
-            <Text className="text-section text-terracotta-700">{t.createOne}</Text>
+            <Text className="text-section text-terracotta-700">
+              {t.createOne}
+            </Text>
           </Pressable>
         </View>
       }
@@ -94,7 +100,7 @@ export function SignInScreen() {
         containerClassName="mb-6"
       />
 
-      <NewDeviceCard title={t.newDeviceTitle} body={t.newDeviceBody} />
+      <Text variant="metaSm">{t.newDeviceBody}</Text>
     </Screen>
   )
 }

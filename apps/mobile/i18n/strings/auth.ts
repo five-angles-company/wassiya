@@ -30,8 +30,8 @@ export const WELCOME = {
     en: "Everything that matters, in one vault",
   },
   vaultBody: {
-    ar: "محافظ رقمية، حسابات بنكية، مستندات، صور وحسابات — محفوظة ومنظّمة في مكان واحد تتحكّم به وحدك.",
-    en: "Crypto wallets, bank accounts, documents, photos and online accounts — kept in one place only you control.",
+    ar: "محافظ، حسابات بنكية، مستندات وصور — في مكان واحد تتحكّم به وحدك.",
+    en: "Wallets, bank accounts, documents and photos — in one place only you control.",
   },
 
   zeroKnowledgeTitle: {
@@ -39,8 +39,8 @@ export const WELCOME = {
     en: "Not even we can read your data",
   },
   zeroKnowledgeBody: {
-    ar: "التشفير يحدث على جهازك قبل أن يصل أي شيء إلى خدماتنا. المفتاح لا يغادر جهازك أبداً.",
-    en: "Encryption happens on your device before anything reaches our servers. The key never leaves your phone.",
+    ar: "يُشفَّر كل شيء على جهازك، ومفتاحك لا يغادره أبداً.",
+    en: "Everything is encrypted on your phone, and your key never leaves it.",
   },
 
   releaseTitle: {
@@ -48,7 +48,7 @@ export const WELCOME = {
     en: "Your executors receive only after death is verified",
   },
   releaseBody: {
-    ar: "لا نخبر الوصي بشيء قبل ذلك — ولا يرى محتوى خزنتك أبداً قبل الإفراج.",
+    ar: "لا نخبر الوصي بشيء قبل ذلك — ولا يرى محتوى خزنتك أبداً قبل وفاتك.",
     en: "We tell your executor nothing before then, and they see nothing inside your vault until release.",
   },
   gateIdentity: {
@@ -65,14 +65,6 @@ export const WELCOME = {
     en: "A veto window you stop with your fingerprint",
   },
 
-  nothingToMemoriseTitle: {
-    ar: "لا شيء عليك أن تحفظه",
-    en: "Nothing for you to memorise",
-  },
-  nothingToMemoriseBody: {
-    ar: "بصمتك تفتح الخزنة، وورقة استرداد واحدة تحفظها مع وصيّتك الموثّقة. لا كلمات مرور ولا عبارات سرّية.",
-    en: "Your fingerprint opens the vault, and one printed recovery sheet lives with your notarised will. No passwords, no seed phrases.",
-  },
 } satisfies LabelSet<string>
 
 export const SIGN_UP = {
@@ -94,22 +86,14 @@ export const SIGN_UP = {
     en: "Sets which ID documents are accepted, and your bank format later.",
   },
   nameNotice: {
-    ar: "اسمك يجب أن يطابق هويتك الرسمية — عليه يعتمد التحقق من الوفاة لاحقاً.",
-    en: "Your name must match your official ID — the later death-verification match depends on it.",
+    ar: "كما في هويتك — بها تُطابَق شهادة الوفاة لاحقاً.",
+    en: "As on your ID — a death certificate is matched against it.",
   },
   legal: {
     ar: "بالمتابعة أنت توافق على الشروط وسياسة الخصوصية.",
     en: "By continuing you accept the Terms and Privacy Policy.",
   },
   cta: { ar: "أرسل الرمز", en: "Send code" },
-  alreadyRegistered: {
-    ar: "هذا البريد مسجّل بالفعل. سجّل الدخول بدلاً من ذلك.",
-    en: "That email is already registered. Sign in instead.",
-  },
-  invalidEmail: {
-    ar: "أدخل بريداً إلكترونياً صحيحاً.",
-    en: "Enter a valid email address.",
-  },
 } satisfies LabelSet<string>
 
 export const OTP = {
@@ -150,10 +134,9 @@ export const SIGN_IN = {
   },
   emailLabel: { ar: "البريد الإلكتروني", en: "Email address" },
   cta: { ar: "أرسل الرمز", en: "Send code" },
-  newDeviceTitle: { ar: "جهاز جديد؟", en: "New device?" },
   newDeviceBody: {
-    ar: "الرمز يثبت هويتك، لكن فتح الخزنة على جهاز جديد يحتاج وثيقة الاسترداد المطبوعة.",
-    en: "The code proves your identity, but unlocking the vault on a new device needs your printed recovery sheet.",
+    ar: "على جهاز جديد تحتاج وثيقة الاسترداد لفتح خزنتك.",
+    en: "On a new phone you need your recovery sheet to open your vault.",
   },
   noAccount: { ar: "ليس لديك حساب؟", en: "No account yet?" },
   createOne: { ar: "أنشئ واحداً", en: "Create one" },

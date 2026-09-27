@@ -22,7 +22,6 @@ import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
-import { ConfirmSheet } from "@workspace/ui-native/components/wassiya/confirm-sheet"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { StorageMeter } from "@workspace/ui-native/components/wassiya/storage-meter"
 import { Surface } from "@workspace/ui-native/components/wassiya/surface"
@@ -55,7 +54,6 @@ const BYTES_PER_GB = 1_000_000_000
 
 export function PlanScreen() {
   const { t, locale } = useStrings("settings/plan")
-  const { t: common } = useStrings("common")
   const plan = useQuery(api.plans.current)
   const rows = useQuery(api.assets.list, {})
   const { t: assets } = useStrings("assets")
@@ -79,7 +77,10 @@ export function PlanScreen() {
   const segments = useMemo(() => {
     const byType = new Map<AssetType, number>()
     for (const row of rows ?? []) {
-      byType.set(row.type, (byType.get(row.type) ?? 0) + (row.meta.byteSize ?? 0))
+      byType.set(
+        row.type,
+        (byType.get(row.type) ?? 0) + (row.meta.byteSize ?? 0)
+      )
     }
     return ASSET_TYPES.filter((type) => (byType.get(type) ?? 0) > 0).map(
       (type) => ({
@@ -108,7 +109,6 @@ export function PlanScreen() {
   // formatter together, because the meter shares one formatter between its
   // header and its legend.
   const inMb = quota !== null && quota < BYTES_PER_GB
-  const [billing, setBilling] = useState(false)
 
   return (
     <Screen>
@@ -116,19 +116,24 @@ export function PlanScreen() {
 
       {lapsed ? (
         <AlertBanner
-          className="mb-header"
+          className="mb-6"
           variant="notice"
           title={t.lapsedTitle}
           description={t.lapsedBody}
         />
       ) : null}
 
-      <Surface gap="tight" className="mb-header">
+      <Surface gap="tight" className="mb-6">
         <Text variant="metaSm">{t.planLabel}</Text>
-        <Text variant="rowTitle">{plan?.plan === "annual" ? t.annualPlan : t.freePlan}</Text>
+        <Text variant="rowTitle">
+          {plan?.plan === "annual" ? t.annualPlan : t.freePlan}
+        </Text>
         {plan?.renewsAt != null ? (
           <Text variant="metaSm">
-            {t.renewsAt.replace("{date}", fmtDate(new Date(plan.renewsAt), locale))}
+            {t.renewsAt.replace(
+              "{date}",
+              fmtDate(new Date(plan.renewsAt), locale)
+            )}
           </Text>
         ) : null}
       </Surface>
@@ -136,7 +141,7 @@ export function PlanScreen() {
       <Text variant="sectionLabel" className="mb-2">
         {t.usageTitle}
       </Text>
-      <View className="rounded-card bg-card mb-header overflow-hidden">
+      <View className="mb-6 overflow-hidden rounded-card bg-card">
         <SettingsRow
           label={t.assetsLabel}
           value={countLine(t, locale, plan?.usage.assets, plan?.limits.assets)}
@@ -144,13 +149,15 @@ export function PlanScreen() {
         />
         <SettingsRow
           label={t.executorsLabel}
-          value={countLine(t, locale, plan?.usage.executors, plan?.limits.executors)}
+          value={countLine(
+            t,
+            locale,
+            plan?.usage.executors,
+            plan?.limits.executors
+          )}
         />
       </View>
 
-      <Text variant="sectionLabel" className="mb-2">
-        {t.storageTitle}
-      </Text>
       <StorageMeter
         quotaBytes={quota ?? 0}
         segments={segments}
@@ -164,13 +171,8 @@ export function PlanScreen() {
             : undefined
         }
       />
-      {segments.length === 0 ? (
-        <Text variant="metaSm" className="mt-2">
-          {t.emptyStorage}
-        </Text>
-      ) : null}
 
-      <View className="rounded-card bg-card mt-header overflow-hidden">
+      <View className="mt-6 overflow-hidden rounded-card bg-card">
         {plan?.plan === "free" ? (
           <SettingsRow
             icon={Sparkles}
@@ -180,23 +182,14 @@ export function PlanScreen() {
             onPress={() => paywall.open("assets")}
           />
         ) : null}
-        {/* Billing is not wired. A sheet that says so beats a row that looks
-            live and does nothing. */}
-        <SettingsRow icon={CreditCard} label={t.manage} onPress={() => setBilling(true)} />
+        <SettingsRow
+          icon={CreditCard}
+          label={t.manage}
+          value={t.soon}
+          chevron
+          onPress={() => router.push("/settings/help/new?topic=billing")}
+        />
       </View>
-
-      <ConfirmSheet
-        open={billing}
-        onClose={() => setBilling(false)}
-        title={t.manage}
-        body={[t.billingSoon]}
-        tone="primary"
-        confirmLabel={t.contactUs}
-        cancelLabel={common.cancel}
-        onConfirm={(dismiss) => {
-          void dismiss().then(() => router.push("/settings/help/new?topic=billing"))
-        }}
-      />
     </Screen>
   )
 }

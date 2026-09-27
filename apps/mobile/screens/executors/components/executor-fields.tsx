@@ -1,5 +1,4 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtCode } from "@workspace/ui-native/lib/format"
 import { View } from "react-native"
 
@@ -88,7 +87,6 @@ export function ExecutorFields({
         error={form.idInvalid ? t.idNumberInvalid : undefined}
       />
 
-      <AlertBanner variant="info" description={t.silentNotice!} />
 
       {error !== undefined ? (
         <Text variant="meta" className="text-terracotta-800">

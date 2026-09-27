@@ -2,7 +2,6 @@ import { useAction, useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as Linking from "expo-linking"
 import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
@@ -105,7 +104,7 @@ export function KycScreen() {
         />
       ) : null}
 
-      <View className="mb-5 gap-3">
+      <View className="gap-row">
         <NumberedRow
           index={1}
           locale={locale}
@@ -115,11 +114,6 @@ export function KycScreen() {
         <NumberedRow index={3} locale={locale} label={t.requirementTime} />
       </View>
 
-      <AlertBanner variant="security" description={t.blockingNotice} />
-
-      <Text variant="metaSm" className="mt-3">
-        {t.nothingEncryptedYet}
-      </Text>
     </Screen>
   )
 }

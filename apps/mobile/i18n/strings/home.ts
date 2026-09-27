@@ -20,29 +20,22 @@ export const HOME = {
     ar: "تأخّر التأكيد. بدأ التنبيه يتصاعد.",
     en: "Overdue. Escalation has started.",
   },
-  // "آخر مزامنة مشفّرة" — the word مشفّرة is doing real work: it says the sync
-  // moved ciphertext, not contents.
-  lastSync: { ar: "آخر مزامنة مشفّرة: {time}", en: "Last encrypted sync: {time}" },
-
-  // -- Tile labels and states ----------------------------------------------
-  // Short by design: colour carries the urgency, so the words only have to
-  // name the thing. A sentence here was the previous version.
-  itemAssets: { ar: "الأصول", en: "Assets" },
+  // -- Still to do, and the vault at a glance ---------------------------
+  todoTitle: { ar: "بقي عليك", en: "Still to do" },
+  todoIdentity: { ar: "أكمل التحقق من هويتك", en: "Finish verifying your identity" },
+  todoSheet: { ar: "اطبع وثيقة الاسترداد", en: "Print your recovery sheet" },
+  todoExecutors: { ar: "سمِّ وصيّاً", en: "Name an executor" },
+  todoDelivery: { ar: "اطبع ورقة لكل وصيّ", en: "Print a sheet for every executor" },
+  yearlyRow: { ar: "راجع أوصياءك — مرّت سنة", en: "Review your executors — it's been a year" },
+  overviewTitle: { ar: "خزنتك", en: "Your vault" },
   allReady: { ar: "كل شيء جاهز", en: "Everything is ready" },
-  missing: { ar: "ينقصك: {what}", en: "Missing: {what}" },
-  stateOn: { ar: "مفعّل", en: "On" },
-  stateOff: { ar: "غير مفعّل", en: "Not set" },
-  stateVerified: { ar: "موثّقة", en: "Verified" },
-  stateUnverified: { ar: "غير موثّقة", en: "Not verified" },
-  statePrinted: { ar: "مطبوعة", en: "Printed" },
-  stateNotPrinted: { ar: "غير مطبوعة", en: "Not printed" },
-  stateAllHandedOver: { ar: "لا شيء", en: "None" },
+  itemAssets: { ar: "الأصول", en: "Assets" },
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
   itemSheet: { ar: "الوثيقة", en: "Sheet" },
   itemExecutors: { ar: "الأوصياء", en: "Executors" },
-  itemPrivate: { ar: "الخاص", en: "Private" },
+  itemPrivate: { ar: "خاصة", en: "Private" },
   itemDelivery: { ar: "التسليم", en: "Delivery" },
 
   // The yearly check. Numbers get recycled and paper gets lost; the owner is
@@ -52,14 +45,12 @@ export const HOME = {
     en: "Are your executors still set?",
   },
   contactsBody: {
-    ar: "مرّت سنة. تأكّد أن أرقامهم ما زالت لهم، وأن كل واحد ما زال يحتفظ بورقته.",
-    en: "It has been a year. Check their numbers are still theirs, and that each still has their sheet.",
+    ar: "تأكّد أن أرقامهم ما زالت لهم، وأن كل واحد يحتفظ بورقته.",
+    en: "Check their numbers are still theirs, and that each still has their sheet.",
   },
-  contactsReview: { ar: "راجع الأوصياء", en: "Review executors" },
+  contactsLater: { ar: "لاحقاً", en: "Later" },
   contactsConfirm: { ar: "كل شيء صحيح", en: "All correct" },
-  stateDeliveryReady: { ar: "جاهز", en: "Ready" },
-  stateDeliveryStale: { ar: "ورقة ناقصة", en: "A sheet is missing" },
-  itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
+  itemCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
 } satisfies LabelSet<string>
 
 /** ٣.٣ — notifications. */
@@ -85,7 +76,6 @@ export const NOTIFICATIONS = {
     en: "If this wasn't you, stop it now.",
   },
   wasntMe: { ar: "لم أكن أنا", en: "Wasn't me" },
-  wasMe: { ar: "كنت أنا", en: "That was me" },
 
   checkinDue: { ar: "وقت التحقق من الحياة", en: "Time to check in" },
   checkinDueBody: {
@@ -94,9 +84,9 @@ export const NOTIFICATIONS = {
   },
   openCheckin: { ar: "افتح التأكيد", en: "Open check-in" },
 
-  claimSubmitted: { ar: "طلب وراثة على حسابك", en: "An inheritance claim on your account" },
+  claimSubmitted: { ar: "بلاغ وفاة على حسابك", en: "A death report on your account" },
   claimBlocked: {
-    ar: "حُجبت محاولة طلب وراثة",
+    ar: "حُجب بلاغ وفاة",
     en: "An inheritance claim attempt was blocked",
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },

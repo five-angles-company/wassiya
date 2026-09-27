@@ -4,7 +4,6 @@ import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { OtpInput } from "@workspace/ui-native/components/wassiya/otp-input"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { Surface } from "@workspace/ui-native/components/wassiya/surface"
 import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import { router } from "expo-router"
 import { useEffect, useRef, useState } from "react"
@@ -102,8 +101,7 @@ export function OtpScreen() {
           : []
         // Sign-in has no field list; its status *is* the reason
         // (`needs_second_factor`, `needs_new_password`).
-        const detail =
-          outstanding.length > 0 ? outstanding.join(" · ") : status
+        const detail = outstanding.length > 0 ? outstanding.join(" · ") : status
         console.warn(
           `[wassiya] Clerk sign-${isNewAccount ? "up" : "in"} stalled at ` +
             `"${status}" — outstanding: ${detail}. Check the required ` +
@@ -259,10 +257,6 @@ export function OtpScreen() {
           ) : null}
         </View>
       ) : null}
-
-      <Surface tone="sand" as="row" row className="mt-5">
-        <Text variant="meta">{t.notice}</Text>
-      </Surface>
 
       <View nativeID="clerk-captcha" />
     </Screen>

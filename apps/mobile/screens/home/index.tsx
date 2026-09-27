@@ -1,56 +1,66 @@
 /**
- * الرئيسية — a check-in bar, then tiles, each a number or a state and each one
- * tap from the thing it describes.
+ * الرئيسية — the check-in, what is still to do, and the vault at a glance.
  *
- * Colour is the message: terracotta means "this needs you", olive means done,
- * sand is just a count. The gaps are findable by sweeping the grid before
- * reading a word, which is what lets the labels stay this short. One line above
- * the grid names the gap, so the screen answers "what's missing?" in three
- * words rather than making anyone decode five tiles.
+ * "Still to do" lists only what is missing, from `useProtectionScore` — the
+ * same list setup ends on — and disappears when nothing is. The check-in is not
+ * in it: its card is right above.
  *
  * **There is no `useVault` in this file and nothing waits on a fingerprint to
- * draw.** Category counts come from encrypted metadata — count and type are
- * plaintext, titles and payloads are not — so this screen renders before any
- * decryption, which is what lets Home be the screen you land on rather than a
- * wall in front of one.
+ * draw.** Counts come from plaintext metadata, so Home renders before any
+ * decryption.
  *
  * ⚠️ **The check-in confirms here, behind a fingerprint, and nowhere else.**
  * `useConfirmAlive` runs `LocalAuthentication` with `disableDeviceFallback` and
  * only then records, so a tap alone can never say "still alive" — an unlocked
  * phone in the wrong hands must not be able to suppress delivery forever.
  */
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { CheckInHero } from "@workspace/ui-native/components/wassiya/check-in-hero"
-import { InitialDisc } from "@workspace/ui-native/components/wassiya/initial-disc"
-import { StatTile } from "@workspace/ui-native/components/wassiya/stat-tile"
+import { ConfirmSheet } from "@workspace/ui-native/components/wassiya/confirm-sheet"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
-import { router } from "expo-router"
+import { router, type Href } from "expo-router"
 import {
   BadgeCheck,
+  Bell,
   FileText,
   Lock,
-  ShieldCheck,
+  RefreshCw,
   Users,
   Wallet,
+  type LucideIcon,
 } from "lucide-react-native"
 import { View } from "react-native"
 
+import { IconButton } from "@/components/icon-button"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
+import { Section } from "@/components/section"
 import { useCheckInState } from "@/hooks/use-checkin-state"
 import { useConfirmAlive } from "@/hooks/use-confirm-alive"
-import { useProtectionScore } from "@/hooks/use-protection-score"
+import { useProtectionScore, type ProtectionId } from "@/hooks/use-protection-score"
 import { useStrings } from "@/i18n/use-strings"
 import { CheckInSettingsSheet } from "@/screens/home/components/checkin-settings-sheet"
+
+/** What each missing item asks for, and where it is done. */
+type TodoLabel = "todoIdentity" | "todoSheet" | "todoExecutors" | "todoDelivery"
+
+const TODO: Partial<Record<ProtectionId, { icon: LucideIcon; label: TodoLabel; href: Href }>> = {
+  identity: { icon: BadgeCheck, label: "todoIdentity", href: "/setup/kyc" },
+  sheet: { icon: FileText, label: "todoSheet", href: "/setup/recovery-kit" },
+  executors: { icon: Users, label: "todoExecutors", href: "/executors/new" },
+  delivery: { icon: FileText, label: "todoDelivery", href: "/executors" },
+}
 
 export function HomeScreen() {
   const { t, locale } = useStrings("home")
   const { t: claimCopy } = useStrings("protection/claim")
+  const { t: notifications } = useStrings("notifications")
   const me = useQuery(api.users.me)
   const rows = useQuery(api.assets.list, {})
   const executors = useQuery(api.executors.list)
@@ -58,9 +68,10 @@ export function HomeScreen() {
 
   const yearly = useQuery(api.executors.yearlyCheck)
   const confirmYearly = useMutation(api.executors.confirmYearlyCheck)
+  const [yearlyOpen, setYearlyOpen] = useState(false)
 
   const checkin = useCheckInState()
-  // The gate. The bar renders the button; this runs the fingerprint.
+  // The gate. The card renders the button; this runs the fingerprint.
   const alive = useConfirmAlive()
 
   const checkInSheet = useRef<TrueSheet>(null)
@@ -80,24 +91,33 @@ export function HomeScreen() {
   const privateCount = rows?.filter((row) => !row.handedOver).length ?? 0
   const executorCount = executors?.length ?? 0
 
-  const has = (id: string) =>
-    score.items.find((item) => item.id === id)?.done === true
-
-  // The line above the grid. The check-in bar owns its own gap, so it is
-  // skipped here rather than named twice on one screen.
-  const gap = score.items.find((item) => !item.done && item.id !== "checkin")
+  const executorsMissing = score.items.some((item) => item.id === "executors" && !item.done)
+  const todo = score.items.flatMap((item) => {
+    const entry = TODO[item.id]
+    // "A sheet for every executor" means nothing before there is one.
+    if (item.done || entry === undefined) return []
+    if (item.id === "delivery" && executorsMissing) return []
+    return [{ id: item.id, ...entry }]
+  })
+  const yearlyDue = yearly?.due === true
 
   return (
     <Screen>
       <ScreenHeader
         eyebrow={greeting(t)}
         title={firstName(me?.name)}
-        trailing={<InitialDisc name={me?.name ?? ""} />}
+        trailing={
+          <IconButton
+            icon={Bell}
+            label={notifications.title!}
+            onPress={() => router.push("/notifications")}
+          />
+        }
       />
-      <View className="gap-header">
+      <View className="gap-6">
         {/* Above everything: a veto window is measured in days and closes whether
-          or not anyone opened the app. Nothing outranks it, and the heart right
-          below is what stops it — there is no second "I'm alive" button. */}
+            or not anyone opened the app. The card right below is what stops it —
+            there is no second "I'm alive" button. */}
         {openClaim !== null ? (
           <AlertBanner
             variant="security"
@@ -114,124 +134,108 @@ export function HomeScreen() {
               .filter((line) => line !== null)
               .join("\n\n")}
           />
-        ) : alive.claimsStopped > 0 ? (
-          <AlertBanner variant="success" description={claimCopy.stopped} />
         ) : null}
 
-        {/* Yearly, and only once a year: an owner who is asked the same thing
-          every week stops reading the question. */}
-        {yearly?.due === true ? (
-          <AlertBanner
-            variant="info"
-            title={t.contactsTitle}
-            description={t.contactsBody}
-            actions={[
-              {
-                label: t.contactsReview!,
-                onPress: () => router.push("/executors"),
-              },
-              {
-                label: t.contactsConfirm!,
-                onPress: () => void confirmYearly({}),
-              },
-            ]}
+        <View className="gap-2">
+          <CheckInHero
+            // An open report asks the question whatever the check-in says — even
+            // with the check-in off, an owner must be able to say they are alive.
+            state={openClaim !== null ? "overdue" : checkin.state}
+            detail={openClaim !== null ? undefined : checkin.detail}
+            locale={locale}
+            failed={alive.failed}
+            onConfirm={alive.confirm}
+            onEnable={openCheckInSettings}
+            onOpenSettings={openCheckInSettings}
           />
+          {openClaim === null && alive.claimsStopped > 0 ? (
+            <Text variant="meta" className="text-olive-700">
+              {claimCopy.stopped}
+            </Text>
+          ) : null}
+        </View>
+
+        {todo.length > 0 || yearlyDue ? (
+          <Section label={t.todoTitle}>
+            <View className="rounded-card bg-card overflow-hidden">
+              {todo.map((item, index) => (
+                <SettingsRow
+                  key={item.id}
+                  icon={item.icon}
+                  label={t[item.label]!}
+                  chevron
+                  divider={index < todo.length - 1 || yearlyDue}
+                  onPress={() => router.push(item.href)}
+                />
+              ))}
+              {yearlyDue ? (
+                <SettingsRow
+                  icon={RefreshCw}
+                  label={t.yearlyRow!}
+                  chevron
+                  onPress={() => setYearlyOpen(true)}
+                />
+              ) : null}
+            </View>
+          </Section>
         ) : null}
 
-        {/* `onEnable` and `onOpenSettings` open the same sheet. They are one
-          decision — how often to be asked — and having "off" push a screen
-          while "settings" opened a sheet would make one choice two objects. */}
-        <CheckInHero
-          // An open report asks the question whatever the check-in says — even
-          // with the check-in off, an owner must be able to say they are alive.
-          state={openClaim !== null ? "overdue" : checkin.state}
-          detail={openClaim !== null ? undefined : checkin.detail}
-          locale={locale}
-          failed={alive.failed}
-          onConfirm={alive.confirm}
-          onEnable={openCheckInSettings}
-          onOpenSettings={openCheckInSettings}
-        />
-
-        <CheckInSettingsSheet
-          ref={checkInSheet}
-          onSaved={() => void checkInSheet.current?.dismiss()}
-        />
-
-        <View className="gap-3">
-          <Text
-            variant="sectionLabel"
-            className={gap !== undefined ? "text-terracotta-700" : ""}
-          >
-            {gap === undefined
-              ? t.allReady
-              : t.missing.replace("{what}", gap.label)}
-          </Text>
-
-          <View className="gap-row flex-row flex-wrap">
-            <StatTile
+        <Section
+          label={todo.length === 0 && !yearlyDue ? t.allReady : t.overviewTitle}
+          tone={todo.length === 0 && !yearlyDue ? "done" : "default"}
+        >
+          <View className="rounded-card bg-card overflow-hidden">
+            <SettingsRow
               icon={Wallet}
-              label={t.itemAssets}
+              label={t.itemAssets!}
               value={fmtNum(total, locale)}
-              emphasis="count"
-              tone={total === 0 ? "terracotta" : "sand"}
+              chevron
+              divider
               onPress={() => router.push("/assets")}
             />
-            <StatTile
+            <SettingsRow
               icon={Users}
-              label={t.itemExecutors}
+              label={t.itemExecutors!}
               value={fmtNum(executorCount, locale)}
-              emphasis="count"
-              tone={executorCount === 0 ? "terracotta" : "sand"}
+              chevron
+              divider={privateCount > 0}
               onPress={() => router.push("/executors")}
             />
             {/* Private is the owner's choice, so it is a count, never a warning. */}
-            <StatTile
-              icon={Lock}
-              label={t.itemPrivate}
-              value={
-                privateCount === 0
-                  ? t.stateAllHandedOver
-                  : fmtNum(privateCount, locale)
-              }
-              emphasis={privateCount === 0 ? undefined : "count"}
-              tone="sand"
-              onPress={() =>
-                router.push({
-                  pathname: "/assets",
-                  params: { filter: "private" },
-                })
-              }
-            />
-            <StatTile
-              icon={ShieldCheck}
-              label={t.itemDelivery}
-              value={
-                has("delivery") ? t.stateDeliveryReady : t.stateDeliveryStale
-              }
-              tone={has("delivery") ? "olive" : "terracotta"}
-              onPress={() => router.push("/executors")}
-            />
-            <StatTile
-              icon={FileText}
-              label={t.itemSheet}
-              value={has("sheet") ? t.statePrinted : t.stateNotPrinted}
-              tone={has("sheet") ? "olive" : "terracotta"}
-              onPress={() => router.push("/setup/recovery-kit")}
-            />
-            {/* Sixth so the grid closes as 2×3. An odd count leaves the last
-              tile stretched across the full width, which reads as a different
-              kind of thing rather than the last of a set. */}
-            <StatTile
-              icon={BadgeCheck}
-              label={t.itemIdentity}
-              value={has("identity") ? t.stateVerified : t.stateUnverified}
-              tone={has("identity") ? "olive" : "terracotta"}
-              onPress={() => router.push("/setup/kyc")}
-            />
+            {privateCount > 0 ? (
+              <SettingsRow
+                icon={Lock}
+                label={t.itemPrivate!}
+                value={fmtNum(privateCount, locale)}
+                chevron
+                onPress={() =>
+                  router.push({ pathname: "/assets", params: { filter: "private" } })
+                }
+              />
+            ) : null}
           </View>
-        </View>
+        </Section>
       </View>
+
+      <CheckInSettingsSheet
+        ref={checkInSheet}
+        onSaved={() => void checkInSheet.current?.dismiss()}
+      />
+
+      {/* Yearly, and only once a year: an owner asked the same thing every
+          week stops reading the question. */}
+      <ConfirmSheet
+        open={yearlyOpen}
+        onClose={() => setYearlyOpen(false)}
+        title={t.contactsTitle!}
+        body={[t.contactsBody!]}
+        tone="primary"
+        confirmLabel={t.contactsConfirm!}
+        cancelLabel={t.contactsLater!}
+        onConfirm={(dismiss) => {
+          void confirmYearly({}).then(dismiss)
+        }}
+      />
     </Screen>
   )
 }

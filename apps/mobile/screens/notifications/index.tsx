@@ -179,7 +179,7 @@ function actionsFor(
     return [
       {
         label: t.openCheckin!,
-        onPress: () => router.push("/protection/checkin"),
+        onPress: () => router.push("/home"),
       },
     ]
   }

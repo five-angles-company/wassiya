@@ -136,7 +136,7 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 
 The screen-level pieces that sit on top of these — `Screen`, `ScreenHeader`,
 `LoadingScreen`, `BackButton`, `IconButton`, `AddFab`, `Field`,
-`SecretField`, `EmptyTab`, `LoadMore`, `NoResults`, `NumberedRow` — live in
+`SecretField`, `EmptyTab`, `CenteredNote`, `Section`, `LoadMore`, `NoResults`, `NumberedRow` — live in
 `apps/mobile/components/` because they know the router or the app's strings.
 The rules for putting them together are in the root `AGENTS.md`
 ("Design rules (mobile)").
@@ -148,18 +148,17 @@ The rules for putting them together are in the root `AGENTS.md`
 | `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | the type picker, the paywall, and every other sheet |
 | `screen-top` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing | step flows and the asset page — drawn exactly like the app's `BackButton` |
 | `surface` | `as` (row/card/summary), `tone`, `gap`, `padded`, `clip`, `row` | card (surface fill, **no border**) · olive · terracotta · sand | any filled block that is not a list row |
-| `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · static (a read-only readout) · `valueTone` default / action / done / attention | every grouped list: settings, devices, plan usage, profile identity |
+| `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · static (a read-only readout) · `valueTone` default / action / done / attention | every grouped list: settings, Home, devices, plan usage, profile identity; the trigger for a `sheet-select` |
 | `audit-row` | `icon`, `event`, `meta`, `tone`, `divider` | not pressable, by design | the audit log and notification history, inside a card |
 | `empty-state` | `icon`, `title`, `subtitle`, `action` | a card in the list's own place | an empty list under a header — audit, devices, notifications |
 | `alert-banner` | `variant`, `title`, `description`, `icon`, `actions[{label,onPress}]` | `security` · `notice` · `info` · `success`; actions are **text links**, never buttons | notices on setup, settings, Home, notifications |
-| `chip-row` | `options[{value,label}]`, `value`, `onChange`, `label` | selected (solid terracotta) · unselected (surface pill) | **the only chip** — kinds, cadences, handed over or private |
+| `chip-row` | `options[{value,label}]`, `value`, `onChange`, `label`, `fill` | selected (solid terracotta) · unselected (surface pill) | **the only chip** — kinds, cadences, handed over or private |
 | `field-link` | `label`, `value`, `placeholder`, `hint`, `chevron`, `onPress` | `down` opens a sheet · `forward` leaves for a screen | the boxed-field look for anything that does not take typing |
-| `sheet-select` | `label`, `value`, `options`, `onChange`, `hint`, `trigger`, `note` | boxed field by default, or any `trigger` | country, language |
-| `vault-row` | `icon`, `title`, `detail`, `isPrivate`, `onPress` | handed over · private (a quiet lock) | ٤.١ the vault list |
+| `sheet-select` | `label`, `value`, `options`, `onChange`, `hint`, `trigger`, `note` | boxed field by default, or any `trigger`; applies and closes on tap | country, language, auto-lock — every one-choice setting |
+| `vault-row` | `icon`, `title`, `detail?`, `isPrivate`, `onPress` | handed over (one line) · private (a second line and a quiet lock) | ٤.١ the vault list |
 | `executor-card` | `name`, `detail`, `sheetSummary`, `onPress` | sheet printed · "no sheet" warning | ٥.١ executors |
-| `stat-tile` | `icon`, `label`, `value`, `emphasis`, `tone`, `onPress` | tone tints disc and value together | ٣.١ Home's 2-up grid |
 | `asset-type-grid` / `asset-type-tile` | `options[]` | rows of two; a lone last tile spans its row with the same layout | the add sheet and the empty vault |
-| `key-card` | `icon`, `title`, `description`, `pending` | live · pending | 2.2 the key explainer |
+| `key-card` | `icon`, `title`, `description`, `pending` | live · pending | the keys-and-fingerprint setup screen |
 | `check-in-hero` | `state`, `detail`, `onConfirm`, `onEnable`, `onOpenSettings`, `failed` | per check-in state; its pill is **the only** place a check-in is confirmed | ٣.١ Home |
 | `protection-score` / `protection-score-list` | `earned`, `total` / `items[]` | done · needed · later | 2.6 setup complete |
 | `status-pill` | `status`, `children` | confirmed · action · waiting | devices (a revoked device) |

@@ -43,14 +43,14 @@ type Key =
 const LABELS: LabelSet<Key> = {
   // Named for what it protects, not for the mechanism. "Dead man's switch" is
   // an accurate phrase and a terrible thing to read on your own phone.
-  offTitle: { ar: 'نبض الحياة غير مفعّل', en: 'Life check-in is off' },
+  offTitle: { ar: 'تأكيد الحياة غير مفعّل', en: 'Life check-in is off' },
   offBody: { ar: 'اختر كل كم شهر نطمئن عليك.', en: 'Choose how often we check on you.' },
   offCta: { ar: 'فعّله الآن', en: 'Turn it on' },
   askTitle: { ar: 'هل أنت بخير؟', en: 'Are you well?' },
   askBody: { ar: 'تأكيد واحد ببصمتك، ويعود العدّ من جديد.', en: 'One touch, and the clock resets.' },
   cta: { ar: 'أنا بخير', en: "I'm well" },
   confirming: { ar: 'جارٍ التأكيد…', en: 'Confirming…' },
-  confirmedTitle: { ar: 'نبضك مسجَّل', en: "You're checked in" },
+  confirmedTitle: { ar: 'تأكيدك مسجَّل', en: "You're checked in" },
   settings: { ar: 'إعدادات التأكيد', en: 'Check-in settings' },
   failed: {
     ar: 'لم يتم التحقق من بصمتك. لم يُسجَّل شيء — حاول مرة أخرى.',

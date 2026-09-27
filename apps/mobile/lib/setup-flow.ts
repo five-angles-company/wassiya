@@ -13,7 +13,7 @@
  * unverified                                           kyc              the blocking gate, untouched
  * pending                                              kycPending       Didit has something in review
  * rejected                                             kyc              retry, or support at 3 failures
- * verified · no keyring · no MK                        explainer        nothing generated yet
+ * verified · no keyring · no MK                        explainer        nothing generated yet (/setup/biometrics)
  * verified · no keyring · MK                           recoveryKit      MK exists, wrapper never saved
  * verified · keyring · no MK                           recovery         new device, or key invalidated
  * verified · keyring · MK · old wrapper                recoveryKit      re-wrap while MK is still here
@@ -72,14 +72,13 @@ export type SetupStep =
   | "recovery"
   | "done"
 
-/** The four metered steps of section ٢, in their numbered order. */
-export const SETUP_STEP_COUNT = 4
+/** The metered steps of section ٢, in their numbered order. */
+export const SETUP_STEP_COUNT = 3
 
 export const SETUP_STEP_INDEX = {
   kyc: 1,
-  explainer: 2,
-  biometrics: 3,
-  recoveryKit: 4,
+  biometrics: 2,
+  recoveryKit: 3,
 } as const
 
 /** Failed Didit attempts before the app stops offering a retry. Mirrors

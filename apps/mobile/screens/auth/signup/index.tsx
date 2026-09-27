@@ -1,9 +1,7 @@
 import { useSignUp } from "@clerk/expo"
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
-import { Lock } from "lucide-react-native"
 import { useState } from "react"
 import { View } from "react-native"
 
@@ -97,7 +95,12 @@ export function SignUpScreen() {
       footer={
         <View className="gap-3">
           <Text variant="metaSm">{t.legal}</Text>
-          <PrimaryCta label={t.cta!} onPress={() => void submit()} disabled={!ready} busy={busy} />
+          <PrimaryCta
+            label={t.cta!}
+            onPress={() => void submit()}
+            disabled={!ready}
+            busy={busy}
+          />
         </View>
       }
     >
@@ -111,6 +114,7 @@ export function SignUpScreen() {
           onChangeText={setFullName}
           autoCapitalize="words"
           autoComplete="name"
+          hint={t.nameNotice}
           editable={!busy}
         />
 
@@ -137,13 +141,6 @@ export function SignUpScreen() {
           locale={locale}
         />
       </View>
-
-      <AlertBanner
-        className="mt-5"
-        variant="success"
-        icon={Lock}
-        description={t.nameNotice}
-      />
 
       {/* Clerk's bot protection is on by default and needs this mount point
           on any screen that can create a sign-up. */}

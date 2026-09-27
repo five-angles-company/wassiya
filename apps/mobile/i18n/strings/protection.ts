@@ -11,15 +11,6 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 /** ٦.١ — the Protection Centre. */
 export const PROTECTION = {
   title: { ar: "الحماية", en: "Protection" },
-  scoreLabel: { ar: "قوة حمايتك", en: "Your protection" },
-  scoreComplete: {
-    ar: "خزنتك محميّة بالكامل",
-    en: "Your vault is fully protected",
-  },
-  scoreIncomplete: {
-    ar: "أكمل الخطوات التالية لتكتمل حمايتك",
-    en: "Finish these steps to complete your protection",
-  },
 
   // Each row is a real gate, and each links to the screen that closes it.
   itemIdentity: { ar: "التحقق من الهوية", en: "Identity verified" },
@@ -35,17 +26,7 @@ export const PROTECTION = {
 
 /** ٦.٤ — the life check-in. */
 export const CHECKIN = {
-  // Says where the button went, so this screen isn't a dead end for anyone
-  // who came here looking for it.
-  confirmOnHome: {
-    ar: "تأكيد الحياة يتم من الشاشة الرئيسية، ببصمتك.",
-    en: "You confirm you're well from the home screen, with your fingerprint.",
-  },
   title: { ar: "تأكيد الحياة", en: "Life check-in" },
-  intro: {
-    ar: "نسألك بين حين وآخر إن كنت بخير، ونذكّرك إن تأخّرت. التأخّر وحده لا يُسلّم شيئاً: التسليم يحتاج بلاغ وفاة موثّقاً، وتأكيدك ببصمتك يوقف أي بلاغ.",
-    en: "We ask now and then whether you're well, and remind you if you're late. Being late hands nothing over by itself: delivery needs a verified death report, and confirming with your fingerprint stops any report.",
-  },
 
   // Missed check-ins release nothing, and the sheet that sets them says so
   // before anything else.
@@ -73,29 +54,9 @@ export const CHECKIN = {
   save: { ar: "احفظ", en: "Save" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
 
-  // The single confirm. Biometric-gated, and the only place in the entire
-  // product where life may be confirmed.
-  promptTitle: { ar: "هل أنت بخير؟", en: "Are you well?" },
-  confirm: { ar: "أنا بخير", en: "I'm well" },
   confirmPrompt: {
     ar: "أثبت هويتك لتأكيد أنك بخير",
     en: "Confirm it's you to check in",
-  },
-  confirmed: { ar: "تم التأكيد. نراك بعد {n} شهراً.", en: "Confirmed. See you in {n} months." },
-  snooze: { ar: "ذكّرني بعد أسبوع", en: "Remind me in a week" },
-  lastConfirmed: { ar: "آخر تأكيد {date}", en: "Last confirmed {date}" },
-  nextDue: { ar: "التأكيد القادم {date}", en: "Next check-in {date}" },
-  overdue: {
-    ar: "تأخّر التأكيد. أكّد الآن لإيقاف التصعيد.",
-    en: "Your check-in is overdue. Confirm now to stop the escalation.",
-  },
-  biometricFailed: {
-    ar: "لم يتم التحقق. التأكيد يحتاج بصمتك دائماً — ولن نقبله بأي طريقة أخرى.",
-    en: "Not verified. Checking in always needs your biometrics — and we accept it no other way.",
-  },
-  notConfigured: {
-    ar: "لم تفعّل تأكيد الحياة بعد. فعّله لنطمئن عليك بانتظام — وستستطيع دائماً إيقاف أي بلاغ وفاة ببصمتك.",
-    en: "Life check-in is off. Turn it on so we check on you regularly — you can always stop a death report with your fingerprint.",
   },
   enable: { ar: "فعّل تأكيد الحياة", en: "Turn on life check-in" },
 } satisfies LabelSet<string>

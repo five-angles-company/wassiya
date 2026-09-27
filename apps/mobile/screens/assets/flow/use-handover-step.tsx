@@ -18,7 +18,6 @@ type Choice = "handedOver" | "private"
  */
 export function useHandoverStep(): { step: FlowStep; handedOver: boolean } {
   const { t } = useStrings("assets/handover")
-  const { t: chrome } = useStrings("assets/new")
   const executors = useQuery(api.executors.list)
   const [choice, setChoice] = useState<Choice>("handedOver")
 
@@ -56,9 +55,6 @@ export function useHandoverStep(): { step: FlowStep; handedOver: boolean } {
               {t.noExecutorCreate}
             </Text>
           ) : null}
-          <Text variant="footnote" className="mt-auto">
-            {chrome.encryptNote}
-          </Text>
         </View>
       ),
     },

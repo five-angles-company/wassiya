@@ -1,9 +1,11 @@
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
+import { Text } from "@workspace/ui-native/components/ui/text"
+import { KeyCard } from "@workspace/ui-native/components/wassiya/key-card"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as LocalAuthentication from "expo-local-authentication"
 import { router } from "expo-router"
+import { Fingerprint, Printer, Users } from "lucide-react-native"
 
 import { useCallback, useEffect, useState } from "react"
 import { Linking, Platform, View } from "react-native"
@@ -24,7 +26,7 @@ import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
 type Availability = "checking" | "ready" | "unenrolled"
 
 /**
- * 2.3 — generate the master key.
+ * 2.3 — the two keys, taught once, and the first one made.
  *
  * This is the moment the vault begins to exist on this device. Three things
  * about the ordering are load-bearing:
@@ -44,6 +46,7 @@ type Availability = "checking" | "ready" | "unenrolled"
  */
 export function BiometricsScreen() {
   const { t, locale } = useStrings("setup/biometrics")
+  const { t: keys } = useStrings("setup/explainer")
   const { t: common } = useStrings("common")
   const registerDevice = useMutation(api.devices.register)
 
@@ -73,7 +76,7 @@ export function BiometricsScreen() {
     void probe().then((result) => {
       if (!active) return
       if (result === "enrolled") {
-        router.replace("/setup/biometrics/done")
+        router.replace("/setup/recovery-kit")
         return
       }
       setAvailability(result)
@@ -122,7 +125,7 @@ export function BiometricsScreen() {
         // Inventory only. The key is already sealed and usable.
       }
 
-      router.replace("/setup/biometrics/done")
+      router.replace("/setup/recovery-kit")
     } catch {
       setError(t.failed)
     } finally {
@@ -148,9 +151,13 @@ export function BiometricsScreen() {
             />
           </View>
         ) : (
-          <View className="gap-4">
-            {error !== null ? <AlertBanner variant="security" description={error} /> : null}
-            <PrimaryCta label={t.cta!} onPress={() => void enrol()} busy={busy} />
+          <View className="gap-3">
+            {error !== null ? (
+              <Text variant="meta" className="text-terracotta-800">
+                {error}
+              </Text>
+            ) : null}
+            <PrimaryCta icon={Fingerprint} label={t.cta!} onPress={() => void enrol()} busy={busy} />
           </View>
         )
       }
@@ -165,7 +172,20 @@ export function BiometricsScreen() {
       {unenrolled ? (
         <ScreenHeader title={t.unenrolledTitle!} description={t.unenrolledBody} />
       ) : (
-        <ScreenHeader title={t.title!} description={t.body} />
+        <>
+          <ScreenHeader title={keys.title!} description={t.body} />
+          <View className="gap-row">
+            <KeyCard icon={Fingerprint} title={keys.deviceTitle} description={keys.deviceBody} />
+            <KeyCard icon={Printer} title={keys.paperTitle} description={keys.paperBody} />
+            {/* Dimmed: an executor sheet is not a key to the vault. */}
+            <KeyCard
+              icon={Users}
+              title={keys.executorsTitle}
+              description={keys.executorsBody}
+              pending
+            />
+          </View>
+        </>
       )}
     </Screen>
   )

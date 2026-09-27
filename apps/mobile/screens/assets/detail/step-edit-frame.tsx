@@ -8,12 +8,13 @@
  * is present. The reveal is audited once the phrase is on screen.
  */
 import { useCallback, useEffect, useState } from "react"
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import * as LocalAuthentication from "expo-local-authentication"
 import { router } from "expo-router"
+import { Fingerprint, Lock } from "lucide-react-native"
 
+import { CenteredNote } from "@/components/centered-note"
 import { Screen } from "@/components/screen"
 import { useStrings } from "@/i18n/use-strings"
 import type {
@@ -101,7 +102,10 @@ export function StepEditFrame({
         }
       >
         <ScreenTop backLabel={common.back} onBack={leave} className="mb-4" />
-        <Text variant="prose">{message}</Text>
+        <CenteredNote
+          icon={ready && guarded ? Fingerprint : Lock}
+          body={message!}
+        />
       </Screen>
     )
   }

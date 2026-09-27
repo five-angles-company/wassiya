@@ -4,50 +4,26 @@ import { View } from "react-native"
 
 export type KitActionsProps = {
   printLabel: string
-  savePdfLabel: string
-  shareLabel: string
+  saveLabel: string
   disabled: boolean
   onPrint: () => void
-  onSavePdf: () => void
-  onShare: () => void
+  onSave: () => void
 }
 
 /**
- * The three ways off 2.4 — print, save a PDF, hand it to another app.
+ * The two ways off a sheet screen: print it, or hand the PDF to the system
+ * sheet — where "save to Files" and "share" both live, so they are one button.
  *
- * All three count equally as the kit milestone. It is deliberate that
- * there is no confirmation step after this screen, so whichever intent
- * succeeds is what marks the sheet printed; insisting on a physical printer
- * would strand every user who saves to a file and prints it at work.
+ * Either counts as the milestone. There is no confirmation step after this
+ * screen, so whichever intent succeeds marks the sheet printed; insisting on a
+ * physical printer would strand every user who saves a file and prints it at
+ * work.
  */
-export function KitActions({
-  printLabel,
-  savePdfLabel,
-  shareLabel,
-  disabled,
-  onPrint,
-  onSavePdf,
-  onShare,
-}: KitActionsProps) {
+export function KitActions({ printLabel, saveLabel, disabled, onPrint, onSave }: KitActionsProps) {
   return (
     <View className="gap-2.5">
       <PrimaryCta icon={Printer} label={printLabel} onPress={onPrint} disabled={disabled} />
-      <View className="flex-row gap-2.5">
-        <PrimaryCta
-          tone="quiet"
-          className="flex-1"
-          label={savePdfLabel}
-          onPress={onSavePdf}
-          disabled={disabled}
-        />
-        <PrimaryCta
-          tone="quiet"
-          className="flex-1"
-          label={shareLabel}
-          onPress={onShare}
-          disabled={disabled}
-        />
-      </View>
+      <PrimaryCta tone="quiet" label={saveLabel} onPress={onSave} disabled={disabled} />
     </View>
   )
 }

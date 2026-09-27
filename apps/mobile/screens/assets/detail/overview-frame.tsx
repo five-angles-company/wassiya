@@ -16,15 +16,11 @@ import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { cn } from "@workspace/ui-native/lib/utils"
-import {
-  ChevronRight,
-  Lock,
-  MoreVertical,
-  type LucideIcon,
-} from "lucide-react-native"
+import { ChevronRight, Lock } from "lucide-react-native"
 import { router } from "expo-router"
 import { Pressable, View } from "react-native"
 
+import { CenteredNote } from "@/components/centered-note"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
@@ -38,7 +34,6 @@ import type { AssetSection } from "@/screens/assets/flow/types"
 export type AssetOverviewFrameProps = {
   assetId: Id<"assets">
   load: EditorLoad
-  icon: LucideIcon
   /** The type's name, under the title. */
   kindLine: string
   /** `null` when the payload could not be read. */
@@ -49,7 +44,6 @@ export type AssetOverviewFrameProps = {
 export function AssetOverviewFrame({
   assetId,
   load,
-  icon,
   kindLine,
   sections,
   handedOver,
@@ -67,11 +61,6 @@ export function AssetOverviewFrame({
       onBack={() =>
         router.canGoBack() ? router.back() : router.replace("/assets")
       }
-      action={{
-        icon: MoreVertical,
-        label: t.more!,
-        onPress: () => setConfirming(true),
-      }}
       className="mb-4"
     />
   )
@@ -90,7 +79,7 @@ export function AssetOverviewFrame({
         }
       >
         {top}
-        <Text variant="prose">{vault.lockedBody}</Text>
+        <CenteredNote icon={Lock} body={vault.lockedBody!} />
       </Screen>
     )
   }
@@ -101,20 +90,7 @@ export function AssetOverviewFrame({
     <Screen>
       {top}
 
-      <ScreenHeader
-        eyebrow={kindLine}
-        title={title}
-        trailing={
-          <View className="size-13 shrink-0 items-center justify-center rounded-full bg-card">
-            <Icon
-              as={icon}
-              size={23}
-              strokeWidth={2.75}
-              className="text-foreground"
-            />
-          </View>
-        }
-      />
+      <ScreenHeader eyebrow={kindLine} title={title} />
 
       {sections === null ? (
         <Text variant="meta" className="mb-6 text-terracotta-800">
@@ -163,9 +139,9 @@ export function AssetOverviewFrame({
         </View>
       )}
 
-      <HandoverCard assetId={assetId} className="mb-3" />
+      <HandoverCard assetId={assetId} className="mb-2" />
 
-      <Text variant="footnote" className="mb-auto">
+      <Text variant="footnote">
         {lastRevealed == null
           ? t.neverRevealed
           : t.lastRevealedLine!.replace(
@@ -177,7 +153,7 @@ export function AssetOverviewFrame({
       {/* Quiet — deleting is available, never suggested. */}
       <PrimaryCta
         tone="quiet"
-        className="mt-5"
+        className="mt-6"
         label={t.deleteLabel!}
         onPress={() => setConfirming(true)}
       />

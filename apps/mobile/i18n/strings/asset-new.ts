@@ -22,12 +22,6 @@ export const ASSET_NEW = {
   leaveConfirm: { ar: "اترك", en: "Leave" },
   stay: { ar: "ابقَ", en: "Stay" },
   notRecorded: { ar: "لم يُحدَّد بعد", en: "Not recorded yet" },
-  // The promise 4.3 prints under its secret field, and the reason every one of
-  // these screens can ask for what it asks for.
-  encryptNote: {
-    ar: "يُشفّر على جهازك قبل الحفظ. لا نرى ما كتبته، ولن يظهر في أي سجل أو نسخة احتياطية.",
-    en: "Encrypted on your device before saving. We never see it, and it appears in no log or backup.",
-  },
   saveFailed: {
     ar: "تعذّر الحفظ. لم يُضف شيء إلى خزنتك.",
     en: "Could not save. Nothing was added to your vault.",
@@ -40,8 +34,8 @@ export const ASSET_NEW = {
   // because the rule is that a lapsed card never costs anyone their
   // inheritance — only adding is paused.
   quotaExceeded: {
-    ar: "إضافة الأصول متوقّفة حتى تجديد الاشتراك. خزنتك وكل ما فيها يبقى كما هو، والتسليم لأوصيائك يعمل.",
-    en: "Adding assets is paused until your subscription renews. Your vault and everything in it is untouched, and delivery to your executors still works.",
+    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
+    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
   },
 } satisfies LabelSet<string>
 
@@ -51,7 +45,6 @@ export const NEW_CRYPTO = {
   nameLabel: { ar: "اسم المحفظة", en: "Wallet name" },
   namePlaceholder: { ar: "محفظة Ledger الرئيسية", en: "Main Ledger wallet" },
   networkLabel: { ar: "الشبكة", en: "Network" },
-  kindLabel: { ar: "النوع", en: "Type" },
   kindHardware: { ar: "جهاز", en: "Hardware" },
   kindSoftware: { ar: "برنامج", en: "Software" },
   kindExchange: { ar: "منصة", en: "Exchange" },
@@ -100,12 +93,6 @@ export const NEW_CRYPTO = {
     en: "Clipboard wiped after paste",
   },
 
-  // Checksum outcomes. "Valid" is deliberately specific about *when* it was
-  // checked — before saving — because that is the guarantee being made.
-  checksumValid: {
-    ar: "عبارة صحيحة · تحقّقنا من رقم التدقيق قبل الحفظ",
-    en: "Valid phrase · checksum verified before saving",
-  },
   checksumBad: {
     ar: "رقم التدقيق غير صحيح — راجع الكلمات وترتيبها",
     en: "Checksum does not match — check the words and their order",
@@ -162,12 +149,12 @@ export const NEW_CRYPTO = {
     en: "Two-factor (optional)",
   },
   exchangeTwoFactorPlaceholder: {
-    ar: "أين مفتاح 2FA، ورموز الاسترداد إن وُجدت",
+    ar: "أين مفتاح التحقق بخطوتين، ورموز الاحتياط إن وُجدت",
     en: "Where the 2FA key is, and any recovery codes",
   },
   exchangeNote: {
-    ar: "لا تملك المنصات عبارة سرّية — الحساب نفسه هو الحيازة، لذلك نحفظ ما يلزم لاستعادته.",
-    en: "An exchange has no recovery phrase — the account itself is the custody, so we keep what is needed to reclaim it.",
+    ar: "المنصّة بلا عبارة سرّية — نحفظ ما يلزم لاستعادة الحساب.",
+    en: "An exchange has no seed phrase — we keep what it takes to recover the account.",
   },
 } satisfies LabelSet<string>
 
@@ -178,10 +165,6 @@ export const NEW_BANK = {
   bankLabel: { ar: "البنك", en: "Bank" },
   bankPlaceholder: { ar: "اختر أو اكتب اسم البنك", en: "Pick or type the bank" },
   ibanLabel: { ar: "IBAN", en: "IBAN" },
-  ibanValid: {
-    ar: "آيبان صحيح ({n} خانة)",
-    en: "Valid IBAN ({n} characters)",
-  },
   // Split, so the count can carry the locale's numerals on its own.
   ibanChars: { ar: "خانة", en: "characters" },
   ibanOk: { ar: "صحيح", en: "valid" },
@@ -204,8 +187,8 @@ export const NEW_BANK = {
 
   qAccount: { ar: "ما الحساب؟", en: "Which account is it?" },
   hAccount: {
-    ar: "الدولة تحدّد شكل الآيبان والعملة، ونتحقّق من الرقم قبل الحفظ فلا يصل إلى وصيّك رقم خاطئ.",
-    en: "The country sets the IBAN format and currency, and we check the number before saving so your executor never gets a wrong one.",
+    ar: "نتحقق من الآيبان قبل الحفظ.",
+    en: "We check the IBAN before saving.",
   },
   qInstructions: { ar: "ماذا يفعل الوصي به؟", en: "What should your executor do with it?" },
   hInstructions: {
@@ -240,7 +223,6 @@ export const NEW_DOCUMENT = {
   },
   titleLabel: { ar: "العنوان", en: "Title" },
   titlePlaceholder: { ar: "صك ملكية — حطين", en: "Title deed — Hittin" },
-  typeLabel: { ar: "النوع", en: "Type" },
   typeDeed: { ar: "صك ملكية", en: "Title deed" },
   typeMarriage: { ar: "عقد زواج", en: "Marriage contract" },
   typeCertificate: { ar: "شهادة", en: "Certificate" },
@@ -256,7 +238,6 @@ export const NEW_DOCUMENT = {
   needsFile: { ar: "أرفق المستند للمتابعة", en: "Attach the document to continue" },
   sectionAbout: { ar: "المستند", en: "The document" },
   pages: { ar: "{n} صفحة", en: "{n} pages" },
-  pickFile: { ar: "اختر ملفاً", en: "Choose a file" },
   fileLabel: { ar: "الملف", en: "The file" },
   // Pages, because a deed is rarely one sheet and the order is baked into the
   // PDF at save — after which nobody can look inside it again.
@@ -264,7 +245,6 @@ export const NEW_DOCUMENT = {
   removePage: { ar: "أزل الصفحة", en: "Remove page" },
   movePageBack: { ar: "أخّر الصفحة", en: "Move page back" },
   movePageForward: { ar: "قدّم الصفحة", en: "Move page forward" },
-  replaceFile: { ar: "غيّر الملف", en: "Change file" },
   tooLarge: {
     ar: "الملف أكبر من {n} م.ب. اختر ملفاً أصغر.",
     en: "That file is larger than {n} MB. Pick a smaller one.",
@@ -273,27 +253,14 @@ export const NEW_DOCUMENT = {
 
 /** ٤.٦ — the system Photo Picker, so no gallery permission is requested. */
 export const NEW_PHOTOS = {
-  title: { ar: "اختر الصور والمقاطع", en: "Choose photos and videos" },
   albumLabel: { ar: "اسم الألبوم", en: "Album name" },
   albumPlaceholder: { ar: "صور العائلة", en: "Family photos" },
   choose: { ar: "اختر الصور والمقاطع", en: "Choose photos and videos" },
   chooseMore: { ar: "أضف المزيد", en: "Add more" },
   selected: { ar: "{n} مختارة", en: "{n} selected" },
   removePhoto: { ar: "أزل من الألبوم", en: "Remove from the album" },
-  retry: { ar: "أعد المحاولة", en: "Retry" },
-  uploadingNow: { ar: "جارٍ الرفع…", en: "Uploading…" },
-  // Which one, not how many: the rings already say how far along it got.
-  uploadFailedOne: {
-    ar: "تعذّر رفع أحد الملفات. المُعلَّم بالأحمر — أعد المحاولة.",
-    en: "One item did not upload. The marked one — try again.",
-  },
-  encryptNote: {
-    ar: "تُشفّر الصور والمقاطع ومصغّراتها معاً على جهازك قبل رفعها · {size}",
-    en: "Photos, videos and their thumbnails are encrypted together on your device before upload · {size}",
-  },
   preparing: { ar: "جارٍ التحضير…", en: "Preparing…" },
   uploading: { ar: "جارٍ رفع {done} من {total}", en: "Uploading {done} of {total}" },
-  none: { ar: "لم تختر شيئاً بعد", en: "Nothing chosen yet" },
 
   qAlbumPhotos: {
     ar: "سمِّ الألبوم واختر صوره ومقاطعه",
@@ -321,12 +288,12 @@ export const NEW_ACCOUNT = {
   usernameLabel: { ar: "اسم المستخدم", en: "Username" },
   usernamePlaceholder: { ar: "fatima@icloud.com", en: "fatima@icloud.com" },
   passwordLabel: { ar: "كلمة المرور", en: "Password" },
-  recoveryLabel: { ar: "رموز الاسترداد (اختياري)", en: "Recovery codes (optional)" },
+  recoveryLabel: { ar: "رموز الاحتياط (اختياري)", en: "Backup codes (optional)" },
   // Free text, not a code: where the second factor lives outlives any code it
   // would generate, and an executor locked out by 2FA is locked out for good.
   twoFactorLabel: { ar: "التحقق بخطوتين (اختياري)", en: "Two-factor (optional)" },
   twoFactorPlaceholder: {
-    ar: "مثال: تطبيق Authy على الآيباد، ورموز الاحتياط في الخزنة",
+    ar: "مثال: تطبيق Authy على الآيباد، ورموز الاحتياط في الخزنة الحديدية",
     en: "e.g. Authy on the iPad, backup codes in the safe",
   },
   recoveryPlaceholder: {
@@ -344,16 +311,16 @@ export const NEW_ACCOUNT = {
   },
   qExtra: { ar: "هل يطلب الحساب رمزاً ثانياً؟", en: "Does the account ask for a second code?" },
   hExtra: {
-    ar: "إن كان كذلك، فأين يجده وصيّك؟ ورموز الاسترداد إن وُجدت.",
+    ar: "إن كان كذلك، فأين يجده وصيّك؟ ورموز الاحتياط إن وُجدت.",
     en: "If so, where will your executor find it? And any recovery codes.",
   },
   needsService: { ar: "أضف اسم الخدمة للمتابعة", en: "Add the service to continue" },
   needsLogin: { ar: "أكمل بيانات الدخول للمتابعة", en: "Complete the login to continue" },
   sectionLogin: { ar: "الحساب", en: "The account" },
-  sectionExtra: { ar: "الحماية الإضافية", en: "Extra protection" },
+  sectionExtra: { ar: "التحقق بخطوتين", en: "Two-step verification" },
   sectionDisposition: { ar: "ما يفعله الوصي", en: "What your executor does" },
   loginSummary: { ar: "{username} · كلمة المرور محفوظة", en: "{username} · password saved" },
-  recoverySummary: { ar: "رموز الاسترداد: {n}", en: "Recovery codes: {n}" },
+  recoverySummary: { ar: "رموز الاحتياط: {n}", en: "Backup codes: {n}" },
   twoFactorSummary: { ar: "مكان الرمز الثاني محفوظ", en: "Second factor noted" },
   extraNone: { ar: "لا شيء", en: "None" },
 
@@ -386,7 +353,7 @@ export const NEW_ACCOUNT = {
     en: "Turn it into a memorial account",
   },
   dispositionNote: {
-    ar: "سيرى الوصي هذه التعليمات مكتوبة بخطك عند الإفراج.",
+    ar: "سيرى الوصي هذه التعليمات مكتوبة بخطك عند التسليم.",
     en: "Your executor will see this instruction in your own words at release.",
   },
 } satisfies LabelSet<string>
@@ -434,7 +401,6 @@ export const NEW_NOTE = {
     en: "I wish my mother's things divided among the daughters by agreement, not arithmetic.",
   },
   words: { ar: "{n} كلمة", en: "{n} words" },
-  readOnRelease: { ar: "تُقرأ عند الإفراج", en: "Read at release" },
 
   // Written or spoken. The tabs name the act, not the file format — "صوت"
   // alone would read as a setting rather than as the other way to write this.
@@ -458,8 +424,8 @@ export const NEW_NOTE = {
     en: "The recording is encrypted in your vault and is not opened here. Record again to replace it.",
   },
   micDenied: {
-    ar: "لم يُسمح لوصيّة باستخدام الميكروفون. فعّل الإذن من إعدادات جهازك، أو اكتب ملاحظتك بدلاً من ذلك.",
-    en: "Wassiya was not allowed to use the microphone. Enable it in your device settings, or write the note instead.",
+    ar: "لا إذن للميكروفون. فعّله من الإعدادات، أو اكتب ملاحظتك.",
+    en: "No microphone permission. Turn it on in settings, or write your note.",
   },
   micFailed: {
     ar: "تعذّر التسجيل. حاول مرة أخرى.",
@@ -479,10 +445,6 @@ export const NEW_NOTE = {
   draftAgo: {
     ar: "محفوظة على جهازك قبل {n} دقيقة",
     en: "Kept on your device {n} min ago",
-  },
-  draftNote: {
-    ar: "المسودة على هذا الجهاز فقط، وتُشفَّر عند الحفظ في الخزنة.",
-    en: "The draft stays on this device, and is encrypted when you save it to your vault.",
   },
 } satisfies LabelSet<string>
 

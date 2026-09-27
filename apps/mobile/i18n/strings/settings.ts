@@ -34,8 +34,8 @@ export const EMAIL_CHANGE = {
   // and the old address stops working. The second is the one people do not
   // expect, so it is stated and not implied.
   notice: {
-    ar: "بهذا البريد تدخل إلى خزنتك. بعد التأكيد لن تتمكن من الدخول بالبريد القديم.",
-    en: "This is the email you sign in with. Once confirmed, the old address will no longer get you in.",
+    ar: "بهذا البريد تدخل خزنتك، ويتوقف القديم بعد التأكيد.",
+    en: "You sign in with this email; the old one stops working once confirmed.",
   },
   invalid: { ar: "أدخل بريداً صحيحاً.", en: "Enter a valid email." },
   same: { ar: "هذا بريدك الحالي.", en: "That is already your email." },
@@ -63,14 +63,6 @@ export const EMAIL_CHANGE = {
 export const PROFILE = {
   title: { ar: "الملف الشخصي", en: "Profile" },
   nameLabel: { ar: "الاسم الكامل", en: "Full name" },
-  // The same advice ٢.٢ gives at signup. The app never sends this name
-  // anywhere — Didit reads the name off the document itself — but the advice is
-  // still true, and the one screen that lets you change it must not be the one
-  // screen that stops saying so.
-  nameNotice: {
-    ar: "اسمك يجب أن يطابق هويتك الرسمية — عليه يعتمد التحقق من الوفاة لاحقاً.",
-    en: "Your name must match your official ID — the later death-verification match depends on it.",
-  },
   nameRequired: { ar: "الاسم مطلوب.", en: "A name is required." },
 
   countryLabel: { ar: "الدولة", en: "Country" },
@@ -83,8 +75,8 @@ export const PROFILE = {
    * against a number that was fine yesterday.
    */
   countryNotice: {
-    ar: "تُستخدم لتنسيق أرقام أوصيائك وحساباتك البنكية. تغييرها قد يُظهر أرقاماً محفوظة كغير صالحة.",
-    en: "Used to format your executors' numbers and bank accounts. Changing it can make stored numbers read as invalid.",
+    ar: "تحدّد صيغة أرقام الأوصياء والحسابات البنكية.",
+    en: "Sets the format of executor and bank numbers.",
   },
   countryExecutorsWarning: {
     ar: "{n} من أرقام أوصيائك محفوظة بترميز دولة أخرى.",
@@ -126,23 +118,21 @@ export const SETTINGS = {
   // to mint a new one, which retires the old.
   rowRecoverySheet: { ar: "وثيقة الاسترداد", en: "Recovery document" },
   sheetNeverPrinted: { ar: "لم تُطبع بعد", en: "Not printed yet" },
-  sheetVersion: { ar: "نسخة {v}", en: "Version {v}" },
+  sheetVersion: { ar: "الإصدار {v}", en: "Version {v}" },
   sheetUsed: { ar: "استُخدمت — أعد الطباعة", en: "Used — reprint it" },
 
   sheetTitle: { ar: "وثيقة الاسترداد", en: "Your recovery document" },
   sheetCannotShow: {
-    ar: "لا يمكننا عرض رمز وثيقتك الحالية — لا نحتفظ بنسخة منه، وهذا هو سبب أمان خزنتك. الرمز موجود على الورقة التي طبعتها، وهناك فقط.",
-    en: "We cannot show you the code on your current document. We keep no copy of it — that is precisely why your vault is safe. It exists on the sheet you printed, and nowhere else.",
+    ar: "لا نحتفظ بنسخة من الرمز، فلا يمكن عرضه — هو على وثيقتك المطبوعة فقط.",
+    en: "We keep no copy of the code, so it cannot be shown — it is only on your printed sheet.",
   },
-  sheetReissueTitle: { ar: "طباعة وثيقة جديدة", en: "Print a new document" },
   sheetReissueBody: {
-    ar: "تُنشئ رمزاً جديداً بالكامل. تتوقف الورقة القديمة عن العمل فور حفظ الجديدة — أتلفها بعد الطباعة.",
-    en: "This creates an entirely new code. The old sheet stops working the moment the new one is saved — destroy it once you have printed the replacement.",
+    ar: "الوثيقة الجديدة تُبطل القديمة فور حفظها — أتلف القديمة.",
+    en: "A new sheet cancels the old one the moment it is saved — destroy the old one.",
   },
   sheetReissueAction: { ar: "اطبع وثيقة جديدة", en: "Print a new document" },
 
   rowAudit: { ar: "سجل النشاط", en: "Activity log" },
-  rowGuardian: { ar: "الوصي", en: "Guardian" },
   rowPlan: { ar: "الخطة والتخزين", en: "Plan and storage" },
   rowLegal: { ar: "الشروط والخصوصية", en: "Terms and privacy" },
 
@@ -150,8 +140,8 @@ export const SETTINGS = {
   signOutTitle: { ar: "تسجيل الخروج؟", en: "Sign out?" },
   // The one thing a user must understand before signing out: the key stays.
   signOutBody: {
-    ar: "يبقى مفتاح الخزنة على هذا الجهاز خلف بصمتك. ستحتاج تسجيل الدخول مرة أخرى للوصول إلى خزنتك.",
-    en: "Your vault key stays on this device behind your biometrics. You'll need to sign in again to reach your vault.",
+    ar: "يبقى مفتاحك على هذا الجهاز خلف بصمتك. ستحتاج تسجيل الدخول مجدداً.",
+    en: "Your key stays on this device behind your biometrics. You'll need to sign in again.",
   },
   cancel: { ar: "إلغاء", en: "Cancel" },
 
@@ -167,40 +157,26 @@ export const SETTINGS = {
 /** ٩.٢ — auto-lock. */
 export const AUTO_LOCK = {
   title: { ar: "القفل التلقائي", en: "Auto-lock" },
-  intro: {
-    ar: "متى تُقفل خزنتك وتحتاج بصمتك مرة أخرى.",
-    en: "When your vault locks and needs your biometrics again.",
-  },
   whileOpen: { ar: "ما دام التطبيق مفتوحاً", en: "While the app is open" },
-  // Shown only under "while open". The trade belongs on the screen, not in a
-  // comment: this setting is the one that decides whether a found phone opens
-  // the vault, and an owner who was never told cannot have chosen it.
-  whileOpenNote: {
-    ar: "تبقى الخزنة مفتوحة عند التنقّل بين التطبيقات، ولا تُقفل إلا بإغلاق التطبيق تماماً. مَن يمسك هاتفك وهو مفتوح يستطيع فتح وصية وقراءة خزنتك — وتبقى عبارة الاسترداد وحدها خلف بصمتك.",
-    en: "The vault stays open while you switch apps, and closes only when the app is fully closed. Anyone holding your unlocked phone can reopen Wassiya and read it — only a seed phrase still needs your fingerprint.",
-  },
-  // Shown only under a duration: the honest description of what it measures.
-  capNote: {
-    ar: "تُحسب المدة من لحظة الفتح، لا من آخر لمسة. وتُقفل الخزنة فوراً عند خروج التطبيق من الشاشة.",
-    en: "Measured from when you unlocked, not from your last tap. The vault also locks the moment the app leaves the screen.",
+  // Under the choices, read while choosing. The trade belongs on the screen:
+  // this setting decides whether a found phone opens the vault, and an owner
+  // who was never told cannot have chosen it.
+  note: {
+    ar: "مع «ما دام التطبيق مفتوحاً» يقرأ خزنتك من يمسك هاتفك مفتوحاً. المُدد تُحسب من لحظة الفتح.",
+    en: "With “while the app is open”, anyone holding your unlocked phone can read your vault. Durations count from unlocking.",
   },
   minute1: { ar: "دقيقة واحدة", en: "1 minute" },
   minute5: { ar: "٥ دقائق", en: "5 minutes" },
   minute15: { ar: "١٥ دقيقة", en: "15 minutes" },
   minute60: { ar: "ساعة", en: "1 hour" },
-  perDevice: {
-    ar: "هذا الإعداد لهذا الجهاز وحده.",
-    en: "This setting applies to this device only.",
-  },
-  done: { ar: "تم", en: "Done" },
 } satisfies LabelSet<string>
 
 /** ٩.٣ — the audit log. */
 export const AUDIT = {
   title: { ar: "سجل النشاط", en: "Activity log" },
   intro: {
-    ar: "كل ما جرى في خزنتك. السجل للإضافة فقط — لا يمكن تعديله ولا حذفه، ولا حتى من قِبلنا.",
-    en: "Everything that happened in your vault. The log is append-only — it cannot be edited or deleted, not even by us.",
+    ar: "لا يُعدَّل ولا يُحذف، ولا حتى من قِبلنا.",
+    en: "It cannot be edited or deleted, not even by us.",
   },
   empty: { ar: "لا نشاط بعد", en: "No activity yet" },
   loadMore: { ar: "عرض المزيد", en: "Show more" },
@@ -222,8 +198,8 @@ export const AUDIT = {
   executorSheetPrinted: { ar: "طُبعت ورقة وصيّ", en: "Executor sheet printed" },
   executorsChecked: { ar: "أُكّدت بيانات الأوصياء", en: "Executors confirmed" },
   checkinConfirmed: { ar: "أُكّدت الحياة", en: "Life confirmed" },
-  claimSubmitted: { ar: "قُدّم طلب وراثة", en: "Inheritance claim filed" },
-  claimVetoed: { ar: "أُوقف طلب وراثة", en: "Inheritance claim stopped" },
+  claimSubmitted: { ar: "قُدّم بلاغ وفاة", en: "Death report filed" },
+  claimVetoed: { ar: "أُوقف بلاغ وفاة", en: "Death report stopped" },
   deviceRegistered: { ar: "سُجّل جهاز", en: "Device registered" },
   deviceRevoked: { ar: "أُلغي جهاز", en: "Device removed" },
   profileSaved: { ar: "حُدّث الملف الشخصي", en: "Profile updated" },
@@ -236,13 +212,13 @@ export const AUDIT = {
   // carry, and it was rendering as "Vault activity".
   claimCertificate: { ar: "أُرفقت شهادة وفاة", en: "Death certificate attached" },
   claimNameMatch: { ar: "طوبق الاسم القانوني", en: "Legal name checked" },
-  claimReleased: { ar: "أُفرج عن الخزنة للأوصياء", en: "Vault released to the executors" },
+  claimReleased: { ar: "سُلّمت الخزنة للأوصياء", en: "Vault handed over to the executors" },
   deliveryOpened: { ar: "فتح وصيّ ما سُلّم", en: "An executor opened the handover" },
 
   // Dead-man's-switch bookkeeping.
-  checkinConfigured: { ar: "ضُبط نبض الحياة", en: "Life check-in set up" },
-  checkinSnoozed: { ar: "أُجّل نبض الحياة", en: "Life check-in postponed" },
-  checkinEscalated: { ar: "تصاعد تنبيه الحياة", en: "Life check-in escalated" },
+  checkinConfigured: { ar: "ضُبط تأكيد الحياة", en: "Life check-in set up" },
+  checkinSnoozed: { ar: "أُجّل تأكيد الحياة", en: "Life check-in postponed" },
+  checkinEscalated: { ar: "تأخّر تأكيد الحياة", en: "Life check-in overdue" },
 
   identityStarted: { ar: "بدأ التحقق من الهوية", en: "Identity check started" },
   identityResult: { ar: "وصلت نتيجة التحقق", en: "Identity check result" },
@@ -269,37 +245,24 @@ export const PLAN = {
   unlimited: { ar: "بلا حد", en: "Unlimited" },
   upgrade: { ar: "وسّع خطتك", en: "See the annual plan" },
 
-  storageTitle: { ar: "التخزين", en: "Storage" },
   /** The meter formats in GB by default; a 500 MB allowance needs its own. */
   unitMb: { ar: "م.ب", en: "MB" },
-  usedLabel: { ar: "مستخدم", en: "Used" },
-  freeLabel: { ar: "متاح", en: "Free" },
-  emptyStorage: { ar: "لم ترفع شيئاً بعد", en: "Nothing uploaded yet" },
 
   // The lapse rule, stated as what still works. AGENTS.md: a lapsed card must
   // never cost anyone their inheritance — only adding is paused.
   lapsedTitle: { ar: "انتهى اشتراكك", en: "Your subscription lapsed" },
   lapsedBody: {
-    ar: "خزنتك تبقى مقروءة، والتسليم لأوصيائك يعمل كما هو. المتوقّف هو إضافة أصول جديدة فقط.",
-    en: "Your vault stays readable and delivery to your executors still works. Only adding new assets is paused.",
+    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
+    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
   },
   manage: { ar: "إدارة الاشتراك", en: "Manage subscription" },
-  // Billing is not wired; saying so beats a button that does nothing.
-  billingSoon: {
-    ar: "إدارة الفوترة تصل قريباً. تواصل معنا في هذه الأثناء.",
-    en: "Billing management is coming. Contact us in the meantime.",
-  },
-  contactUs: { ar: "راسلنا", en: "Contact us" },
+  // Billing is not wired: the row says so and opens a message to us.
+  soon: { ar: "قريباً — راسلنا", en: "Soon — message us" },
 } satisfies LabelSet<string>
 
 /** The devices list. */
 export const DEVICES = {
   title: { ar: "الأجهزة", en: "Devices" },
-  intro: {
-    ar: "الأجهزة التي فُتحت منها خزنتك.",
-    en: "The devices your vault has been opened from.",
-  },
-  thisDevice: { ar: "هذا الجهاز", en: "This device" },
   lastUnlock: { ar: "آخر فتح {date}", en: "Last opened {date}" },
   neverUnlocked: { ar: "لم يُفتح بعد", en: "Never opened" },
   revoked: { ar: "مُلغى", en: "Removed" },
@@ -307,8 +270,8 @@ export const DEVICES = {
   revokeTitle: { ar: "إلغاء هذا الجهاز؟", en: "Remove this device?" },
   // The honest limit. Revoking does not reach into a lost phone.
   revokeBody: {
-    ar: "سيختفي من قائمتك ويُسجَّل ذلك. لا يمحو هذا مفتاح الخزنة من الجهاز نفسه — إن فقدته فعلاً، أعد إصدار وثيقة الاسترداد.",
-    en: "It leaves your list and the change is logged. This does not erase the vault key from the device itself — if it is genuinely lost, reissue your recovery sheet.",
+    ar: "يُزال من القائمة فقط، ولا يمحو المفتاح من الجهاز. إن فقدته، اطبع وثيقة استرداد جديدة.",
+    en: "It only leaves the list; the key stays on the device. If it is lost, print a new recovery sheet.",
   },
   revokeConfirm: { ar: "ألغِ", en: "Remove" },
   cancel: { ar: "إلغاء", en: "Cancel" },

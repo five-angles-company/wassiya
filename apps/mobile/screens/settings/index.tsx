@@ -11,8 +11,7 @@
  * The note under the control says so, rather than letting someone pick English
  * and wonder why the layout did not flip.
  */
-import { useRef, useState } from "react"
-import type { TrueSheet } from "@lodev09/react-native-true-sheet"
+import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
@@ -39,10 +38,10 @@ import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import {
-  AutoLockSheet,
-  autoLockLabel,
-} from "@/screens/settings/components/auto-lock-sheet"
-import { usePreferences } from "@/stores/preferences"
+  AUTO_LOCK_CHOICES,
+  LOCK_WHILE_OPEN,
+  usePreferences,
+} from "@/stores/preferences"
 
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
@@ -66,9 +65,9 @@ export function SettingsScreen() {
   const saveProfile = useMutation(api.users.saveProfile)
   const { signOut } = useClerk()
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
+  const setAutoLockMinutes = usePreferences((s) => s.setAutoLockMinutes)
   const supportUnread = useQuery(api.support.threads.unreadCount)
 
-  const lockSheet = useRef<TrueSheet>(null)
   const [signingOut, setSigningOut] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
@@ -94,12 +93,6 @@ export function SettingsScreen() {
           divider
           onPress={() => router.push("/settings/profile")}
         />
-        {/* A row like every other row here, opening the same sheet the country
-            picker uses. It was a card of chips nested inside the Group's own
-            card — two surfaces of the same colour, and the only setting on this
-            screen you changed in place rather than by opening something. The
-            caveat about direction moved into the sheet, where you read it while
-            choosing instead of after. */}
         <SheetSelect
           label={t.rowLanguage}
           value={locale}
@@ -126,13 +119,27 @@ export function SettingsScreen() {
       </Group>
 
       <Group label={t.groupSecurity}>
-        <SettingsRow
-          icon={Fingerprint}
+        {/* A single choice, applied on tap like the language. The note under the
+            options carries the "while open" trade, read while choosing. */}
+        <SheetSelect
           label={t.rowAutoLock}
-          value={autoLockLabel(autoLockMinutes, autoLock)}
-          chevron
-          divider
-          onPress={() => void lockSheet.current?.present()}
+          value={String(autoLockMinutes)}
+          options={AUTO_LOCK_CHOICES.map((choice) => ({
+            value: String(choice),
+            label: autoLockLabel(choice, autoLock),
+          }))}
+          onChange={(value) => setAutoLockMinutes(Number(value))}
+          note={autoLock.note}
+          trigger={(open, selected) => (
+            <SettingsRow
+              icon={Fingerprint}
+              label={t.rowAutoLock}
+              value={selected?.label}
+              chevron
+              divider
+              onPress={open}
+            />
+          )}
         />
         <SettingsRow
           icon={Smartphone}
@@ -201,8 +208,6 @@ export function SettingsScreen() {
         />
       </Group>
 
-      <AutoLockSheet ref={lockSheet} />
-
       <ConfirmSheet
         open={signingOut}
         onClose={() => setSigningOut(false)}
@@ -225,9 +230,18 @@ function Group({
   children: React.ReactNode
 }) {
   return (
-    <View className="mb-header gap-2">
+    <View className="mb-6 gap-2">
       {label !== undefined ? <Text variant="sectionLabel">{label}</Text> : null}
       <View className="overflow-hidden rounded-card bg-card">{children}</View>
     </View>
   )
+}
+
+/** A lock window, in the words the sheet offers. */
+function autoLockLabel(minutes: number, t: Record<string, string>): string {
+  if (minutes === LOCK_WHILE_OPEN) return t.whileOpen!
+  if (minutes === 1) return t.minute1!
+  if (minutes === 15) return t.minute15!
+  if (minutes === 60) return t.minute60!
+  return t.minute5!
 }

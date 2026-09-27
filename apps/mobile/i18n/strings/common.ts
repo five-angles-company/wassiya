@@ -10,14 +10,8 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 export const COMMON = {
   back: { ar: "رجوع", en: "Back" },
   cancel: { ar: "إلغاء", en: "Cancel" },
-  continue: { ar: "متابعة", en: "Continue" },
-  retry: { ar: "حاول مرة أخرى", en: "Try again" },
   stepSeparator: { ar: "من", en: "of" },
   loading: { ar: "لحظة…", en: "One moment…" },
-  genericError: {
-    ar: "حدث خطأ غير متوقع. حاول مرة أخرى.",
-    en: "Something went wrong. Please try again.",
-  },
   // The OS biometric sheet's own message, so it says why the vault is asking
   // rather than leaving the system default to. Distinct from `setup.prompt`,
   // which is the one-time key *creation* prompt in section ٢.
@@ -37,9 +31,4 @@ export const TABS = {
   assets: { ar: "الخزنة", en: "Vault" },
   executors: { ar: "الأوصياء", en: "Executors" },
   settings: { ar: "حسابي", en: "Account" },
-  placeholderTitle: { ar: "قريباً", en: "Coming next" },
-  placeholderBody: {
-    ar: "هذه الشاشة تُبنى في المرحلة التالية. خزنتك جاهزة وآمنة في هذه الأثناء.",
-    en: "This screen arrives in the next stage. Your vault is set up and safe in the meantime.",
-  },
 } satisfies LabelSet<string>

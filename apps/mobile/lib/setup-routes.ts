@@ -15,7 +15,7 @@ import type { SetupStep } from "@/lib/setup-flow"
 export const SETUP_ROUTE: Record<Exclude<SetupStep, "welcome">, Href> = {
   kyc: "/setup/kyc",
   kycPending: "/setup/kyc/pending",
-  explainer: "/setup/explainer",
+  explainer: "/setup/biometrics",
   recoveryKit: "/setup/recovery-kit",
   recovery: "/recovery",
   done: "/home",

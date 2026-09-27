@@ -8,7 +8,7 @@ import { fmtNum } from "@workspace/ui-native/lib/format"
 import { useLocalSearchParams } from "expo-router"
 
 import { useStrings } from "@/i18n/use-strings"
-import { ASSET_TYPE_ICON, type AssetType } from "@/lib/asset-types"
+import { type AssetType } from "@/lib/asset-types"
 import { AssetOverviewFrame } from "@/screens/assets/detail/overview-frame"
 import { sectionsFor, type TypeLabels } from "@/screens/assets/detail/sections-for"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
@@ -44,7 +44,6 @@ export function AssetDetailScreen() {
     <AssetOverviewFrame
       assetId={assetId}
       load={load}
-      icon={ASSET_TYPE_ICON[type]}
       kindLine={types[`${type}Name`]!}
       sections={sections}
       handedOver={asset?.handedOver ?? false}

@@ -31,14 +31,10 @@ export const SUPPORT_NEW = {
   topic: { ar: "عن ماذا؟", en: "About what?" },
   message: { ar: "رسالتك", en: "Your message" },
   placeholder: {
-    ar: "اكتب ما تحتاجه، دون أي رموز أو كلمات مرور.",
+    ar: "اكتب ما تحتاجه، دون رموز أو كلمات مرور.",
     en: "Tell us what you need — no codes or passwords.",
   },
   send: { ar: "إرسال", en: "Send" },
-  attachLater: {
-    ar: "يمكنك إرفاق صور أو ملفات PDF بعد بدء المحادثة.",
-    en: "You can attach images or PDFs once the conversation has started.",
-  },
 } satisfies LabelSet<string>
 
 /** ٩.٦c — one conversation. */
@@ -48,8 +44,6 @@ export const SUPPORT_THREAD = {
   placeholder: { ar: "اكتب ردّك…", en: "Write your reply…" },
   send: { ar: "إرسال", en: "Send" },
   attach: { ar: "إرفاق", en: "Attach" },
-  attachPhoto: { ar: "صورة", en: "Photo" },
-  attachFile: { ar: "ملف PDF", en: "PDF file" },
   loadOlder: { ar: "رسائل أقدم", en: "Older messages" },
   closed: {
     ar: "أُغلقت هذه المحادثة. إن كتبت فيها تُفتح من جديد.",
@@ -72,12 +66,12 @@ export const SUPPORT_COMMON = {
   topicDelivery: { ar: "تسليم", en: "A delivery" },
   topicOther: { ar: "شيء آخر", en: "Something else" },
   guardrail: {
-    ar: "هذه المحادثة ليست مشفّرة كالخزنة، والمرفقات كذلك. لن نطلب منك أبداً وثيقة الاسترداد أو رموزها.",
-    en: "This conversation and its files are not encrypted like the vault. We will never ask for your recovery sheet or its code.",
+    ar: "المحادثة ومرفقاتها غير مشفّرة. لن نطلب منك رمز الاسترداد أبداً.",
+    en: "This chat and its files are not encrypted. We will never ask for your recovery code.",
   },
   recoveryWarning: {
-    ar: "يبدو أن رسالتك تحتوي رمز وثيقة استرداد. احذفه — لا أحد في وصيّة يحتاجه، ومن يحمله يستطيع فتح خزنتك.",
-    en: "Your message looks like it contains a recovery sheet code. Remove it — nobody at Wassiya needs it, and whoever holds it can open your vault.",
+    ar: "يبدو أن رسالتك تحوي رمز استرداد. احذفه — من يحمله يفتح خزنتك.",
+    en: "Your message seems to contain a recovery code. Delete it — whoever holds it can open your vault.",
   },
   refusedAttachment: {
     ar: "الملف غير مقبول: صور أو PDF حتى ١٠ م.ب، خمسة كحدّ أقصى.",

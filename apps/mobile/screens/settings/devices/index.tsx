@@ -48,12 +48,12 @@ export function DevicesScreen() {
 
   return (
     <Screen>
-      <ScreenHeader back title={t.title!} description={t.intro} />
+      <ScreenHeader back title={t.title!} />
 
       {devices !== undefined && devices.length === 0 ? (
         <EmptyState icon={Smartphone} title={t.empty!} />
       ) : (
-        <View className="rounded-card bg-card overflow-hidden">
+        <View className="overflow-hidden rounded-card bg-card">
           {(devices ?? []).map((device, index) => (
             <SettingsRow
               key={device.id}
@@ -72,9 +72,14 @@ export function DevicesScreen() {
                   <StatusPill status="waiting">{t.revoked}</StatusPill>
                 ) : undefined
               }
+              value={device.revoked ? undefined : t.revokeConfirm}
+              valueTone="action"
+              chevron={false}
               quiet={device.revoked}
               divider={index < (devices?.length ?? 0) - 1}
-              onPress={device.revoked ? undefined : () => setRevoking(device.id)}
+              onPress={
+                device.revoked ? undefined : () => setRevoking(device.id)
+              }
             />
           ))}
         </View>

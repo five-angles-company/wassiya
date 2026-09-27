@@ -47,6 +47,7 @@ export function RecoverySheetScreen() {
 
   return (
     <Screen
+      inset="footer"
       footer={
         <PrimaryCta
           label={t.sheetReissueAction!}
@@ -83,10 +84,9 @@ export function RecoverySheetScreen() {
         {t.sheetCannotShow}
       </Text>
 
-      <Text variant="sectionLabel" className="mt-6 mb-2">
-        {t.sheetReissueTitle}
+      <Text variant="proseSm" className="mt-3">
+        {t.sheetReissueBody}
       </Text>
-      <Text variant="proseSm">{t.sheetReissueBody}</Text>
     </Screen>
   )
 }
