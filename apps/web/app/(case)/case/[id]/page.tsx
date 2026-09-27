@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
 
 import { HelpLink } from "@/components/help-link"
-import { ReportCase } from "@/features/claims/components/report-case"
+import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
+import { ReportCase } from "@/features/claims/components/report-case"
+import { CLAIMS } from "@/features/claims/strings/claims"
 
 /**
  * ⚠️ **Never indexed.** The claim id *is* the capability — 32 random characters,
@@ -10,8 +12,11 @@ import { getLocale } from "@/lib/i18n/server"
  * strangers' bereavements into a search index. `publicStatus` is deliberately
  * readable without an account; that only stays safe while the URL stays private.
  */
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: t(CLAIMS, await getLocale()).detailEyebrow,
+    robots: { index: false, follow: false },
+  }
 }
 
 /**

@@ -32,7 +32,6 @@ export const ACCOUNT = {
   identityRejected: { ar: "لم يكتمل", en: "Didn't go through" },
   identityVerifiedName: { ar: "الاسم في الوثيقة", en: "Name on the document" },
   identityVerifiedAt: { ar: "التاريخ", en: "Date" },
-  identityAttempts: { ar: "بقيت {n} محاولات", en: "{n} attempts left" },
   identityWhy: {
     ar: "يتحقق الوصي من هويته قبل أن يفتح ما سُلِّم إليه. الإبلاغ عن وفاة لا يحتاج هذا التحقق.",
     en: "An executor confirms who they are before opening what was handed over to them. Reporting a death doesn't need this check.",

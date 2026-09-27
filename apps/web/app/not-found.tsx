@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { CompassIcon } from "lucide-react"
 
 import { ButtonLink } from "@/components/button"
@@ -6,6 +7,10 @@ import { PageColumn } from "@/components/page-column"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { COMMON } from "@/lib/i18n/strings/common"
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(COMMON, await getLocale()).routeMissingTitle }
+}
 
 export default async function NotFound() {
   const labels = t(COMMON, await getLocale())

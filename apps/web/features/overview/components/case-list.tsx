@@ -8,7 +8,7 @@ import { DocTitle } from "@/components/doc/title"
 import { useLocale } from "@/components/locale-provider"
 import { shortRef } from "@/lib/claim-ref"
 import { claimStatusLine } from "@/lib/claim-status-line"
-import { fmtDate } from "@/lib/format"
+import { fmtDate, isolate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { HOME } from "@/features/overview/strings/home"
@@ -16,6 +16,7 @@ import { HOME } from "@/features/overview/strings/home"
 type ReportRow = {
   id: string
   subjectName: string | null
+  subjectEmail: string | null
   status: string
   submittedAt: number
 }
@@ -82,15 +83,24 @@ export function CaseList({
 
           {cases.map((row) => {
             const state = claimStatusLine(row.status, locale)
+            const meta = [
+              `${common.filedOn} ${fmtDate(new Date(row.submittedAt), locale)}`,
+              isolate(shortRef(row.id)),
+              ...(row.subjectName === null && row.subjectEmail !== null ? [isolate(row.subjectEmail)] : []),
+            ]
             return (
               <RowLink
                 key={row.id}
                 href={`/case/${row.id}`}
                 icon={HeartHandshakeIcon}
-                title={labels.caseTitle.replace("{name}", row.subjectName ?? labels.caseUnknownVault)}
+                title={
+                  row.subjectName === null
+                    ? labels.caseTitleNeutral
+                    : labels.caseTitle.replace("{name}", row.subjectName)
+                }
                 status={state.text}
                 tone={state.tone}
-                meta={`${common.filedOn} ${fmtDate(new Date(row.submittedAt), locale)} · ${shortRef(row.id)}`}
+                meta={meta.join(" · ")}
               />
             )
           })}

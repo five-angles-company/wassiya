@@ -5,11 +5,12 @@ import { CalendarClockIcon, LockKeyholeOpenIcon, PackageOpenIcon } from "lucide-
 import { Paper } from "@/components/doc/paper"
 import { DocTitle } from "@/components/doc/title"
 import { useLocale } from "@/components/locale-provider"
-import { fmtDate, fmtNumber } from "@/lib/format"
+import { fmtDate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { plural } from "@/lib/i18n/plural"
 import { AssetRow } from "@/features/handover/components/asset-row"
 import type { OpenedHandover as Opened } from "@/features/handover/lib/open-handover"
-import { HANDOVER } from "@/features/handover/strings/handover"
+import { HANDOVER, ITEM_COUNT } from "@/features/handover/strings/handover"
 
 /** Everything the owner handed over, already opened in this tab. */
 export function OpenedHandover({ handover }: { handover: Opened }) {
@@ -19,7 +20,7 @@ export function OpenedHandover({ handover }: { handover: Opened }) {
   return (
     <div className="flex flex-col gap-6">
       <DocTitle
-        eyebrow={labels.itemCount.replace("{n}", fmtNumber(handover.items.length, locale))}
+        eyebrow={plural(ITEM_COUNT, handover.items.length, locale)}
         eyebrowIcon={PackageOpenIcon}
         title={labels.openTitle}
         lead={labels.openBody}

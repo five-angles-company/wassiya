@@ -1,4 +1,5 @@
 import type { Dictionary } from "@/lib/i18n/locale"
+import type { PluralSet } from "@/lib/i18n/plural"
 
 /**
  * The executor's handover: the sheet code in front of it, and what is behind it.
@@ -23,6 +24,7 @@ export const HANDOVER = {
   askTitle: { ar: "أدخل الرمز من ورقة الوصي", en: "Enter the code from your executor sheet" },
   askTitleRecoveryOnly: { ar: "أدخل الرمز من ورقة الاسترداد", en: "Enter the code from the recovery sheet" },
   codeLabel: { ar: "الرمز كما هو مطبوع", en: "The code, as printed" },
+  codeProgress: { ar: "{typed} من {total}", en: "{typed} of {total}" },
   codeHint: {
     ar: "يبدأ رمز ورقة الوصي بـ WSE. وإن كانت معك ورقة استرداد صاحب الخزنة بدلاً منها، فرمزها يبدأ بـ WSY ويفتحه أيضاً. لا تهمّ المسافات ولا الشرطات.",
     en: "The executor sheet's code starts with WSE. If you have the owner's recovery sheet instead, its code starts with WSY and opens it too. Spaces and hyphens don't matter.",
@@ -112,5 +114,15 @@ export const HANDOVER = {
     ar: "يبقى مفتوحاً في هذه الصفحة فقط. إن أغلقتها، تحتاج الرمز مرة أخرى.",
     en: "It stays open on this page only. If you close it, you'll need the code again.",
   },
-  itemCount: { ar: "{n} عنصراً", en: "{n} items" },
 } as const satisfies Dictionary
+
+export const ITEM_COUNT: PluralSet = {
+  ar: {
+    one: "عنصر واحد",
+    two: "عنصران",
+    few: "{n} عناصر",
+    many: "{n} عنصراً",
+    other: "{n} عنصر",
+  },
+  en: { one: "1 item", other: "{n} items" },
+}

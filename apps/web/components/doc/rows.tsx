@@ -40,7 +40,7 @@ export function RowLink({
     <Link href={href} className="group hover:bg-foreground/[0.03] flex items-center gap-4 px-5 py-4 transition-colors md:px-6">
       {icon !== undefined && <IconDisc icon={icon} tone={tone} size="sm" />}
       <div className="min-w-0 flex-1">
-        <p className="font-heading text-[17px] leading-tight font-bold">{title}</p>
+        <p className="font-heading text-[17px] leading-tight font-bold [overflow-wrap:anywhere]">{title}</p>
         <p
           className={cn(
             "mt-1.5 text-[14px] font-semibold",
@@ -51,7 +51,7 @@ export function RowLink({
         >
           {status}
         </p>
-        {meta !== undefined && <p className="text-muted-foreground mt-1 text-[12.5px]">{meta}</p>}
+        {meta !== undefined && <p className="text-muted-foreground mt-1 text-[12.5px] [overflow-wrap:anywhere]">{meta}</p>}
       </div>
       <ChevronLeftIcon aria-hidden className="nudge text-muted-foreground size-5 shrink-0 ltr:rotate-180" strokeWidth={2.4} />
     </Link>

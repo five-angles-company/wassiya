@@ -349,6 +349,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@clerk/localizations':
+        specifier: 4.15.5
+        version: 4.15.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@clerk/nextjs':
         specifier: ^7.8.0
         version: 7.8.0(next@16.2.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -376,9 +379,6 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
-      zustand:
-        specifier: ^5.0.14
-        version: 5.0.14(@types/react@19.2.15)(immer@11.1.18)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -1204,6 +1204,10 @@ packages:
         optional: true
       react-dom:
         optional: true
+
+  '@clerk/localizations@4.15.5':
+    resolution: {integrity: sha512-UjiHWR6i5WCSFnMf6GnAdoestJga9PSD0vPz5C/sTrSobZ8nRHT1HCk1yPG2sMVrCwWQbafe6kbh4Ee5QF3b3A==}
+    engines: {node: '>=20.9.0'}
 
   '@clerk/nextjs@7.8.0':
     resolution: {integrity: sha512-GvIEQEiVSAouUUUqQNjqDvHmr9zDZyGNNjEn19sGtyyxqwsP0g6u2I40rsdrxyHHchaAgxzkefRc1e2OejHwfA==}
@@ -10960,6 +10964,13 @@ snapshots:
       - use-sync-external-store
       - utf-8-validate
       - zod
+
+  '@clerk/localizations@4.15.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@clerk/shared': 4.29.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+    transitivePeerDependencies:
+      - react
+      - react-dom
 
   '@clerk/nextjs@7.8.0(next@16.2.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)':
     dependencies:

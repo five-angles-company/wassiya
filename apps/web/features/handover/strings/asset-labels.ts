@@ -16,6 +16,7 @@ export const ASSET_LABELS = {
 
   download: { ar: "نزّل", en: "Download" },
   downloading: { ar: "جارٍ التنزيل…", en: "Downloading…" },
+  downloadingPercent: { ar: "جارٍ التنزيل… {p}٪", en: "Downloading… {p}%" },
   downloadFailed: { ar: "لم يكتمل التنزيل. حاول مرة أخرى.", en: "The download didn't finish. Please try again." },
   downloadNumbered: { ar: "نزّل {n}", en: "Download {n}" },
 

@@ -49,7 +49,8 @@ export function PreviewGallery() {
             { deliveryId: "d2", status: "awaiting_executor", subjectName: null, expiresAt: NOW + 360 * DAY },
           ]}
           cases={[
-            { id: "k57abcdefghijk", subjectName: locale === "ar" ? "عبدالله" : "Abdullah", status: "awaiting_veto", submittedAt: NOW - 12 * DAY },
+            { id: "k57abcdefghijk", subjectName: locale === "ar" ? "عبدالله" : "Abdullah", subjectEmail: "abdullah@example.com", status: "awaiting_veto", submittedAt: NOW - 12 * DAY },
+            { id: "k58abcdefghijk", subjectName: null, subjectEmail: "abdulrahman.alqahtani@example.com", status: "submitted", submittedAt: NOW - 2 * DAY },
           ]}
         />
       </section>

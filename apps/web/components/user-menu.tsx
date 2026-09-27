@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useClerk, useUser } from "@clerk/nextjs"
 import {
@@ -61,7 +62,7 @@ export function UserMenu() {
         className="focus-visible:ring-ring ms-1 grid size-10 shrink-0 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
       >
         {user.hasImage ? (
-          <img src={user.imageUrl} alt="" width={40} height={40} className="size-10 rounded-full object-cover" />
+          <Image src={user.imageUrl} alt="" width={40} height={40} unoptimized className="size-10 rounded-full object-cover" />
         ) : (
           <span
             aria-hidden

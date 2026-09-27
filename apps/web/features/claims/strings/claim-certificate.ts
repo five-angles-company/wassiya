@@ -44,5 +44,4 @@ export const CLAIM_CERTIFICATE = {
     ar: "لم يُرسل ولم يُحفظ شيء. حاول مرة أخرى.",
     en: "It wasn't sent and nothing was saved. Please try again.",
   },
-  megabytes: { ar: "م.ب", en: "MB" },
 } as const satisfies Dictionary

@@ -1,17 +1,20 @@
 "use client"
 
+import Link from "next/link"
 import { api } from "@workspace/backend/api"
-import type { Id } from "@workspace/backend/dataModel"
+import type { Doc, Id } from "@workspace/backend/dataModel"
 import { usePaginatedQuery, useMutation } from "convex/react"
 import {
   BadgeCheckIcon,
   BellIcon,
   BellOffIcon,
+  ChevronLeftIcon,
   FileTextIcon,
   HeartPulseIcon,
   HourglassIcon,
   InboxIcon,
   KeyRoundIcon,
+  MessagesSquareIcon,
   ShieldOffIcon,
   UsersIcon,
   type LucideIcon,
@@ -30,7 +33,11 @@ import { NOTIFICATIONS } from "@/features/notifications/strings/notifications"
 
 const PAGE = 25
 
-/** Read only when clicked, never on scroll: "new" has to mean the reader hasn't acted on it. */
+/**
+ * Read only when acted on, never on scroll: "new" has to mean the reader hasn't
+ * opened it. A row that is about a report or a conversation opens it, and
+ * opening marks it read.
+ */
 export function NotificationsList() {
   const locale = useLocale()
   const labels = t(NOTIFICATIONS, locale)
@@ -51,13 +58,28 @@ export function NotificationsList() {
           {results.map((row) => {
             const copy = COPY[row.kind] ?? kindPrefixCopy(row.kind)
             const unread = row.readAt === undefined
+            const href = copy === null ? null : destinationOf(row, copy)
+            const read = () => {
+              if (unread) void markRead({ notificationId: row._id as Id<"notifications"> })
+            }
+            const title = copy === null ? labels.unknownKind : labels[copy.title]
             return (
-              <article key={row._id} className="flex flex-wrap items-start gap-4 px-5 py-5 md:px-6">
+              <article
+                key={row._id}
+                className="relative flex flex-wrap items-start gap-4 px-5 py-5 transition-colors has-[a:hover]:bg-foreground/[0.03] md:px-6"
+              >
                 <IconDisc icon={copy?.icon ?? BellIcon} tone={unread ? "attention" : "quiet"} size="sm" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="font-heading text-[16.5px] font-extrabold">
-                      {copy === null ? labels.unknownKind : labels[copy.title]}
+                      {href === null ? (
+                        title
+                      ) : (
+                        // Stretched over the whole row, so the row is one target.
+                        <Link href={href} onClick={read} className="after:absolute after:inset-0">
+                          {title}
+                        </Link>
+                      )}
                     </h2>
                     {/* A word, not a badge. */}
                     {unread && <span className="text-tone-attention text-[13px] font-bold">{labels.unread}</span>}
@@ -73,14 +95,18 @@ export function NotificationsList() {
                   </p>
                   <p className="text-muted-foreground mt-2 text-[13px]">{fmtDate(new Date(row._creationTime), locale)}</p>
                 </div>
-                {unread && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void markRead({ notificationId: row._id as Id<"notifications"> })}
-                  >
-                    {labels.markRead}
-                  </Button>
+                {href !== null ? (
+                  <ChevronLeftIcon
+                    aria-hidden
+                    className="text-muted-foreground mt-2 size-5 shrink-0 ltr:rotate-180"
+                    strokeWidth={2.4}
+                  />
+                ) : (
+                  unread && (
+                    <Button size="sm" variant="outline" onClick={read}>
+                      {labels.markRead}
+                    </Button>
+                  )
                 )}
               </article>
             )
@@ -97,22 +123,54 @@ export function NotificationsList() {
   )
 }
 
-type Copy = { title: keyof typeof NOTIFICATIONS; body: keyof typeof NOTIFICATIONS; icon: LucideIcon }
+/**
+ * Where a row leads. Owner kinds lead nowhere on the web: the vault, the
+ * check-in and the veto live on the phone, and the row says so.
+ */
+type Destination = "case" | "thread" | null
+
+type Copy = {
+  title: keyof typeof NOTIFICATIONS
+  body: keyof typeof NOTIFICATIONS
+  icon: LucideIcon
+  opens: Destination
+}
+
+function destinationOf(row: Doc<"notifications">, copy: Copy): string | null {
+  if (copy.opens === "case" && row.claimId !== undefined) return `/case/${row.claimId}`
+  const threadId = row.payload.threadId
+  if (copy.opens === "thread" && typeof threadId === "string") return `/help/chat/${threadId}`
+  return null
+}
 
 const COPY: Record<string, Copy> = {
-  "claim.submitted": { title: "claimSubmitted", body: "claimSubmittedBody", icon: HeartPulseIcon },
-  "claim.blocked_by_lockout": { title: "claimBlocked", body: "claimBlockedBody", icon: ShieldOffIcon },
-  "claim.veto_window_open": { title: "claimVetoOpen", body: "claimVetoOpenBody", icon: HourglassIcon },
-  "claim.vetoed": { title: "claimVetoed", body: "claimVetoedBody", icon: ShieldOffIcon },
-  "claim.released": { title: "claimReleased", body: "claimReleasedBody", icon: UsersIcon },
-  "claim.filed": { title: "claimFiled", body: "claimFiledBody", icon: InboxIcon },
-  "claim.certificate_received": { title: "claimCertificate", body: "claimCertificateBody", icon: FileTextIcon },
-  "claim.identity_verified": { title: "claimIdentity", body: "claimIdentityBody", icon: BadgeCheckIcon },
-  "claim.in_review": { title: "claimInReview", body: "claimInReviewBody", icon: HourglassIcon },
-  "claim.review_failed": { title: "claimReviewFailed", body: "claimReviewFailedBody", icon: ShieldOffIcon },
-  "recovery.attempted": { title: "recovery", body: "recoveryBody", icon: KeyRoundIcon },
+  "claim.filed": { title: "claimFiled", body: "claimFiledBody", icon: InboxIcon, opens: "case" },
+  "claim.certificate_received": {
+    title: "claimCertificate",
+    body: "claimCertificateBody",
+    icon: FileTextIcon,
+    opens: "case",
+  },
+  "claim.identity_verified": { title: "claimIdentity", body: "claimIdentityBody", icon: BadgeCheckIcon, opens: "case" },
+  "claim.in_review": { title: "claimInReview", body: "claimInReviewBody", icon: HourglassIcon, opens: "case" },
+  "claim.review_failed": {
+    title: "claimReviewFailed",
+    body: "claimReviewFailedBody",
+    icon: ShieldOffIcon,
+    opens: "case",
+  },
+  "claim.vetoed": { title: "claimVetoed", body: "claimVetoedBody", icon: ShieldOffIcon, opens: "case" },
+  "claim.released": { title: "claimReleased", body: "claimReleasedBody", icon: UsersIcon, opens: "case" },
+  "claim.closed": { title: "claimClosed", body: "claimClosedBody", icon: ShieldOffIcon, opens: "case" },
+  "support.reply": { title: "supportReply", body: "supportReplyBody", icon: MessagesSquareIcon, opens: "thread" },
+  "claim.submitted": { title: "claimSubmitted", body: "claimSubmittedBody", icon: HeartPulseIcon, opens: null },
+  "claim.blocked_by_lockout": { title: "claimBlocked", body: "claimBlockedBody", icon: ShieldOffIcon, opens: null },
+  "claim.veto_window_open": { title: "claimVetoOpen", body: "claimVetoOpenBody", icon: HourglassIcon, opens: null },
+  "recovery.attempted": { title: "recovery", body: "recoveryBody", icon: KeyRoundIcon, opens: null },
 }
 
 function kindPrefixCopy(kind: string): Copy | null {
-  return kind.startsWith("checkin.") ? { title: "checkin", body: "checkinBody", icon: HeartPulseIcon } : null
+  return kind.startsWith("checkin.")
+    ? { title: "checkin", body: "checkinBody", icon: HeartPulseIcon, opens: null }
+    : null
 }

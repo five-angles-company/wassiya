@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { LifeBuoyIcon } from "lucide-react"
 
 import { DocTitle } from "@/components/doc/title"
@@ -5,6 +6,10 @@ import { HelpCenter } from "@/features/support/components/help-center"
 import { SUPPORT } from "@/features/support/strings/support"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(SUPPORT, await getLocale()).helpTitle }
+}
 
 export default async function HelpPage() {
   const labels = t(SUPPORT, await getLocale())

@@ -9,8 +9,9 @@ import { Button, ButtonLink } from "@/components/button"
 import { CopyButton } from "@/components/copy-button"
 import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
-import { fmtNumber } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { plural } from "@/lib/i18n/plural"
+import { ATTEMPTS_LEFT } from "@/lib/i18n/strings/counts"
 import { CLAIM_IDENTITY } from "@/features/claims/strings/claim-identity"
 
 /**
@@ -109,7 +110,7 @@ export function IdentityPanel({
           <p className="text-muted-foreground text-[13px]">{labels.popupNote}</p>
           {state === "rejected" && status !== null && status !== undefined && (
             <p className="text-tone-attention text-[14.5px] leading-[1.7] font-semibold">
-              {labels.rejected.replace("{n}", fmtNumber(status.attemptsRemaining, locale))}
+              {labels.rejected.replace("{left}", plural(ATTEMPTS_LEFT, status.attemptsRemaining, locale))}
             </p>
           )}
         </div>

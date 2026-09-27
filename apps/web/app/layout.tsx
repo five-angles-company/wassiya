@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next"
 import { cookies } from "next/headers"
 import { Cairo, Geist_Mono, IBM_Plex_Sans_Arabic } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
@@ -8,8 +9,31 @@ import { ConvexClientProvider } from "@/components/convex-client-provider"
 import { LocaleProvider } from "@/components/locale-provider"
 import { SiteShell } from "@/components/site-shell"
 import { clerkLocalization } from "@/lib/clerk-localization"
-import { dirFor, LOCALE_COOKIE, resolveLocale } from "@/lib/i18n/locale"
+import { dirFor, LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
+import { getLocale } from "@/lib/i18n/server"
+import { NAV } from "@/lib/i18n/strings/nav"
 import { getTheme } from "@/lib/theme-server"
+
+/**
+ * ⚠️ **Nothing here is indexed.** Case and delivery URLs are capabilities, and
+ * the public pages are reached from the landing site, which is the one meant to
+ * be found. Tab titles never carry a name: they land in history and synced
+ * tabs on shared family computers.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const nav = t(NAV, await getLocale())
+  return {
+    title: { template: `%s · ${nav.appName}`, default: nav.appName },
+    description: nav.description,
+    applicationName: nav.appName,
+    robots: { index: false, follow: false },
+    formatDetection: { telephone: false, email: false, address: false },
+  }
+}
+
+export async function generateViewport(): Promise<Viewport> {
+  return { themeColor: (await getTheme()) === "dark" ? "#201e1d" : "#f5ead8" }
+}
 
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
@@ -62,7 +86,8 @@ export default async function RootLayout({
     >
       <body>
         {/* ClerkProvider must wrap ConvexClientProvider — Convex reads Clerk's
-            context to get its access token.
+            context to get its access token. `dynamic` is what puts the CSP
+            nonce on Clerk's script tags (`lib/csp.ts`).
 
             Clerk's colours are the palette's CSS variables, so the theme
             switch repaints it without a reload. `elevation: "flush"` drops
@@ -71,6 +96,7 @@ export default async function RootLayout({
             classes do not beat — nothing in this product's chrome is another
             company's. */}
         <ClerkProvider
+          dynamic
           localization={clerkLocalization(locale)}
           appearance={{
             options: { elevation: "flush" },

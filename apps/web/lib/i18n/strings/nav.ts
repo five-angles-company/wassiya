@@ -3,6 +3,10 @@ import type { Dictionary } from "@/lib/i18n/locale"
 /** The shell: header, footer and the account menu. */
 export const NAV = {
   appName: { ar: "وصيّة", en: "Wassiya" },
+  description: {
+    ar: "للإبلاغ عن وفاة شخص استخدم وصيّة، ولأوصيائه ليستلموا ما سُلِّم إليهم.",
+    en: "Report the death of someone who used Wassiya, or receive what they handed over to you as their executor.",
+  },
   skipToContent: { ar: "تخطَّ إلى المحتوى", en: "Skip to content" },
 
   home: { ar: "الرئيسية", en: "Home" },

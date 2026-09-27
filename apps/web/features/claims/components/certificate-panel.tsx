@@ -9,12 +9,32 @@ import { FileCheckIcon, ShieldCheckIcon, UploadIcon } from "lucide-react"
 import { Button } from "@/components/button"
 import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
-import { t } from "@/lib/i18n/locale"
 import { Field } from "@/components/field"
+import { fmtBytes } from "@/lib/format"
+import { t } from "@/lib/i18n/locale"
 import { CLAIM_CERTIFICATE } from "@/features/claims/strings/claim-certificate"
 
 const MAX_BYTES = 20 * 1024 * 1024
 const ACCEPTED = ["application/pdf", "image/jpeg", "image/png", "image/heic"]
+
+/**
+ * The file's type, from its name when the browser reports none — Windows has
+ * no registered type for an iPhone's HEIC photo, so the picker hands it over
+ * with an empty `type`.
+ */
+const BY_EXTENSION: Record<string, string> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  heic: "image/heic",
+}
+
+function certificateType(file: File): string | null {
+  if (ACCEPTED.includes(file.type)) return file.type
+  if (file.type !== "") return null
+  return BY_EXTENSION[file.name.split(".").pop()?.toLowerCase() ?? ""] ?? null
+}
 
 /**
  * ٧.٣ — the death certificate. Drag-and-drop because the certificate usually
@@ -57,7 +77,8 @@ export function CertificatePanel({
       setError(labels.tooLarge)
       return
     }
-    if (!ACCEPTED.includes(picked.type)) {
+    const type = certificateType(picked)
+    if (type === null) {
       setError(labels.wrongType)
       return
     }
@@ -68,9 +89,10 @@ export function CertificatePanel({
       // none of the mobile app's file-staging dance is needed here.
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": picked.type },
+        headers: { "Content-Type": type },
         body: picked,
       })
+      if (!response.ok) throw new Error(`Upload failed (${response.status})`)
       const body = (await response.json()) as { storageId?: string }
       if (typeof body.storageId !== "string") throw new Error("no storageId")
       setStorageId(body.storageId)
@@ -131,10 +153,12 @@ export function CertificatePanel({
           <input
             ref={inputRef}
             type="file"
-            accept={ACCEPTED.join(",")}
+            accept={[...ACCEPTED, ...Object.keys(BY_EXTENSION).map((ext) => `.${ext}`)].join(",")}
             hidden
             onChange={(event) => {
               const picked = event.target.files?.[0]
+              // Cleared so choosing the same file again, after a failure, fires again.
+              event.target.value = ""
               if (picked) void upload(picked)
             }}
           />
@@ -145,7 +169,7 @@ export function CertificatePanel({
           <div className="min-w-0 flex-1">
             <p className="truncate text-[15px] font-semibold">{file.name}</p>
             <p className="text-tone-settled text-[13px] font-semibold">
-              {(file.size / 1024 / 1024).toFixed(1)} {labels.megabytes} · {labels.uploaded}
+              {fmtBytes(file.size, locale)} · {labels.uploaded}
             </p>
           </div>
           <Button
@@ -182,7 +206,11 @@ export function CertificatePanel({
         <p className="text-muted-foreground text-[13px]">{labels.submitNote}</p>
       </div>
 
-      {error !== null && <p className="text-tone-attention text-[14.5px] font-semibold">{error}</p>}
+      {error !== null && (
+        <p role="alert" className="text-tone-attention text-[14.5px] font-semibold">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

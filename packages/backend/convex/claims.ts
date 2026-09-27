@@ -10,7 +10,7 @@
 // they are alive. The reporter is never asked to verify: they receive nothing
 // by reporting. What each executor receives is a `deliveries` row, with its own
 // identity gate. Release also closes the owner's vault (`users.vaultClosedAt`).
-import { v } from "convex/values"
+import { ConvexError, v } from "convex/values"
 
 import { internal } from "./_generated/api"
 import type { Doc, Id } from "./_generated/dataModel"
@@ -19,6 +19,7 @@ import {
   mutation,
   query,
   type MutationCtx,
+  type QueryCtx,
 } from "./_generated/server"
 import { writeAudit, writeStaffAudit } from "./audit"
 import { createDeliveriesForClaim } from "./deliveries"
@@ -166,7 +167,7 @@ export const submit = mutation({
     // Claiming against yourself is not an information leak to refuse loudly:
     // you already know whether you have a vault.
     if (subject !== null && subject._id === claimant._id) {
-      throw new Error("You cannot file a report against your own vault.")
+      throw new ConvexError({ code: "claim", reason: "own_vault" })
     }
 
     // Keyed on the person and the address, not on the typed contact string. The
@@ -286,12 +287,34 @@ export const mineSummary = query({
 })
 
 /**
+ * The deceased's name, only once staff review has matched the certificate to a
+ * vault.
+ *
+ * ⚠️ Before review a matched claim and a miss must read the same (see
+ * `submit`), and a name is the plainest way to tell them apart: returning it
+ * earlier makes every filing an instant "does this address have a vault, and
+ * whose is it". `awaiting_veto` and `released` are the only states a claim
+ * reaches through a staff match. Every claimant- and id-holder-facing read
+ * goes through here; the console reads names through its own gated queries.
+ */
+async function reviewedSubjectName(
+  ctx: QueryCtx,
+  claim: Doc<"claims">
+): Promise<string | null> {
+  if (claim.status !== "awaiting_veto" && claim.status !== "released") {
+    return null
+  }
+  if (claim.subjectUserId === undefined) return null
+  const subject = await ctx.db.get("users", claim.subjectUserId)
+  return subject?.identityVerifiedName ?? subject?.name ?? null
+}
+
+/**
  * What the claimant sees about their own claims. Never anyone else's.
  *
- * `subjectName` is joined per row because without it a case list can only say
- * "C-4482", and a delivery list beside it — which has always carried names —
- * would read half-named. It is no new disclosure: `publicStatus` already hands
- * the same field to anyone holding the id, with no account at all.
+ * `subjectEmail` is the address the claimant typed — their own submission —
+ * so a list can name each report before review without saying whether it
+ * matched. `subjectName` follows `reviewedSubjectName`.
  *
  * Bounded at 20 with the join inside that bound, so this is at most 20 extra
  * document reads. Use `mineSummary` on any path that only needs a count.
@@ -308,22 +331,17 @@ export const mine = query({
       .order("desc")
       .take(20)
     return await Promise.all(
-      rows.map(async (row) => {
-        const subject =
-          row.subjectUserId === undefined
-            ? null
-            : await ctx.db.get("users", row.subjectUserId)
-        return {
-          id: row._id,
-          subjectName: subject?.name ?? null,
-          status: row.status,
-          vetoDeadline: row.vetoDeadline ?? null,
-          lockedUntil: row.lockedUntil ?? null,
-          certificateReceived: row.certificateStorageId !== undefined,
-          submittedAt: row._creationTime,
-          updatedAt: row.updatedAt ?? row._creationTime,
-        }
-      })
+      rows.map(async (row) => ({
+        id: row._id,
+        subjectName: await reviewedSubjectName(ctx, row),
+        subjectEmail: row.subjectEmail ?? null,
+        status: row.status,
+        vetoDeadline: row.vetoDeadline ?? null,
+        lockedUntil: row.lockedUntil ?? null,
+        certificateReceived: row.certificateStorageId !== undefined,
+        submittedAt: row._creationTime,
+        updatedAt: row.updatedAt ?? row._creationTime,
+      }))
     )
   },
 })
@@ -357,13 +375,10 @@ export const forClaimant = query({
     const claim = await ctx.db.get("claims", id)
     if (claim === null || claim.claimantUserId !== claimant._id) return null
 
-    const subject =
-      claim.subjectUserId === undefined
-        ? null
-        : await ctx.db.get("users", claim.subjectUserId)
     return {
       id: claim._id,
-      subjectName: subject?.name ?? null,
+      subjectName: await reviewedSubjectName(ctx, claim),
+      subjectEmail: claim.subjectEmail ?? null,
       status: claim.status,
       certificateReceived: claim.certificateStorageId !== undefined,
       certificateName: claim.certificateName ?? null,
@@ -940,7 +955,9 @@ async function assertUnderRateLimit(
     (claim) => now - claim._creationTime < CLAIM_RATE_WINDOW_MS
   )
   if (inWindow.length >= CLAIM_RATE_LIMIT) {
-    throw new Error("Too many claims filed recently. Try again tomorrow.")
+    // A `ConvexError`, not an `Error`: production redacts a plain message to
+    // "Server Error", and a reader told only "try again" retries into the wall.
+    throw new ConvexError({ code: "claim", reason: "rate_limited" })
   }
 }
 
@@ -1019,17 +1036,9 @@ export const publicStatus = query({
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) return null
 
-    // Whose vault this is. The claimant knows who died — they filed against
-    // this person's email — so naming them here reveals nothing they did not
-    // bring, and it is what stops the page reading as a generic receipt.
-    const subject =
-      claim.subjectUserId === undefined
-        ? null
-        : await ctx.db.get("users", claim.subjectUserId)
-
     return {
       id: claim._id,
-      subjectName: subject?.name ?? null,
+      subjectName: await reviewedSubjectName(ctx, claim),
       status: claim.status,
       submittedAt: claim._creationTime,
       vetoDeadline: claim.vetoDeadline ?? null,

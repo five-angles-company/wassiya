@@ -217,3 +217,46 @@ describe("a released vault is closed", () => {
     expect(left.keyring).toBeNull()
   })
 })
+
+describe("a report names nobody before review", () => {
+  test("a matched filing reads the same as a miss until staff match it", async () => {
+    const t = convexTest(schema, modules)
+    await addUser(t, "owner")
+    await addUser(t, "reporter")
+    const reporter = t.withIdentity({ subject: "reporter" })
+
+    const matched = await reporter.mutation(api.claims.submit, {
+      subjectEmail: "owner@example.com",
+      claimantName: "Reporter",
+      claimantContact: "0500000000",
+    })
+    const missed = await reporter.mutation(api.claims.submit, {
+      subjectEmail: "nobody@example.com",
+      claimantName: "Reporter",
+      claimantContact: "0500000000",
+    })
+
+    for (const { claimId } of [matched, missed]) {
+      expect((await t.query(api.claims.publicStatus, { claimId }))?.subjectName).toBeNull()
+      expect((await reporter.query(api.claims.forClaimant, { claimId }))?.subjectName).toBeNull()
+    }
+    const rows = await reporter.query(api.claims.mine, {})
+    expect(rows.map((row) => row.subjectName)).toEqual([null, null])
+
+    await t.run((ctx) =>
+      ctx.db.patch("claims", matched.claimId, { status: "awaiting_veto", nameMatch: true })
+    )
+    expect((await t.query(api.claims.publicStatus, { claimId: matched.claimId }))?.subjectName).toBe("owner")
+  })
+
+  test("a refused filing says why, in a form production does not redact", async () => {
+    const t = convexTest(schema, modules)
+    await addUser(t, "owner")
+    const own = t.withIdentity({ subject: "owner" }).mutation(api.claims.submit, {
+      subjectEmail: "owner@example.com",
+      claimantName: "Owner",
+      claimantContact: "0500000000",
+    })
+    await expect(own).rejects.toMatchObject({ data: { code: "claim", reason: "own_vault" } })
+  })
+})

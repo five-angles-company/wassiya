@@ -12,6 +12,8 @@ export type FieldProps = {
   /** `ltr` for machine strings — an email, a phone, a reference. */
   dir?: "rtl" | "ltr"
   placeholder?: string
+  autoComplete?: string
+  onBlur?: () => void
 }
 
 /**
@@ -39,6 +41,8 @@ export function Field({
   type = "text",
   dir = "rtl",
   placeholder,
+  autoComplete,
+  onBlur,
 }: FieldProps) {
   const message = error ?? hint
 
@@ -53,10 +57,13 @@ export function Field({
         placeholder={placeholder}
         invalid={error !== undefined}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
+        {...(autoComplete === undefined ? {} : { autoComplete })}
       />
 
       {message !== undefined && (
         <span
+          role={error === undefined ? undefined : "alert"}
           className={`text-[13px] leading-[1.6] ${
             error === undefined ? "text-muted-foreground" : "text-tone-attention"
           }`}

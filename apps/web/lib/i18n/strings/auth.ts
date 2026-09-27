@@ -1,21 +1,11 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The doorway's words.
+ * The doorway's words, laid over Clerk's `arSA` bundle (`clerk-localization.ts`).
  *
- * ## ⚠️ Why these exist rather than `@clerk/localizations`
- *
- * Clerk ships an `arSA` bundle and it is a community contribution — a few
- * hundred strings of varying voice, almost none of which this product renders.
- * What it does render is the handful below, and those are the ones a bereaved
- * reader meets first. "Welcome back! Please sign in to continue" is a SaaS
- * greeting; it is the wrong sentence to show someone who arrived from an email
- * about a death.
- *
- * So these are written here, in the same shape and the same file layout as every
- * other string in the app, and passed to Clerk as a partial localization. A key
- * we do not list falls back to Clerk's English, which is the honest failure: a
- * sub-step nobody translated reads as untranslated rather than as blank.
+ * "Welcome back! Please sign in to continue" is a SaaS greeting; it is the
+ * wrong sentence to show someone who arrived from an email about a death. These
+ * are the strings a bereaved reader meets first, in this product's voice.
  *
  * ⚠️ **Keep this list short on purpose.** It is a map of another library's
  * internals; every key added is one that can be renamed by an upgrade and fail
@@ -52,6 +42,10 @@ export const AUTH = {
 
   /** Between the provider button and the email field. */
   divider: { ar: "أو", en: "or" },
+
+  // Two of `arSA`'s strings on the sign-in path are misspelt; these replace them.
+  passwordTitle: { ar: "أدخل كلمة المرور", en: "Enter your password" },
+  useAnotherMethod: { ar: "اختر طريقة أخرى", en: "Use another method" },
 
   /**
    * Clerk interpolates the provider name into this one, so the braces are part

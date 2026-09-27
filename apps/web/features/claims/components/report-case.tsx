@@ -54,7 +54,9 @@ export function ReportCase({ claimId }: { claimId: string }) {
   if (claim === null) return <RecordNotFound id={claimId} backHref="/" backLabel={labels.backToList} />
 
   const isMine = own !== undefined && own !== null
-  const name = claim.subjectName ?? labels.unknownVault
+  // The address the claimant typed, shown back to them only — so a typo can be
+  // caught without the page saying whether it matched anything.
+  const typedEmail = isMine && claim.subjectName === null ? own.subjectEmail : null
 
   const view = caseView(
     {
@@ -76,13 +78,23 @@ export function ReportCase({ claimId }: { claimId: string }) {
   return (
     <article className="flex flex-col gap-6">
       <DocTitle
-        eyebrow={labels.detailEyebrow}
-        title={labels.detailTitle.replace("{name}", name)}
+        eyebrow={claim.subjectName === null ? undefined : labels.detailEyebrow}
+        title={
+          claim.subjectName === null
+            ? labels.detailTitleNeutral
+            : labels.detailTitle.replace("{name}", claim.subjectName)
+        }
         meta={
           <>
             <span className="ltr-isolate font-mono">{shortRef(claim.id)}</span>
             {" · "}
             {common.filedOn} {fmtDate(new Date(claim.submittedAt), locale)}
+            {typedEmail !== null && (
+              <>
+                {" · "}
+                <span className="ltr-isolate break-all">{typedEmail}</span>
+              </>
+            )}
           </>
         }
       />

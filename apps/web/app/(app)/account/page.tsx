@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeftIcon, BellIcon } from "lucide-react"
 
@@ -7,6 +8,10 @@ import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { AccountPanel } from "@/features/account/components/account-panel"
 import { ACCOUNT } from "@/features/account/strings/account"
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: t(ACCOUNT, await getLocale()).title }
+}
 
 export default async function AccountPage() {
   const labels = t(ACCOUNT, await getLocale())

@@ -54,6 +54,16 @@ export function ExecutorHandover({ deliveryId }: { deliveryId: Id<"deliveries"> 
   }, [state])
   useEffect(() => () => wipeHandover(held.current), [])
 
+  // Closing or reloading the tab loses the keys, and the sheet has to be typed
+  // again; the browser's own "leave this page?" is the only warning that fires.
+  const isOpen = state.status === "open"
+  useEffect(() => {
+    if (!isOpen) return
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [isOpen])
+
   const load = useCallback(
     () =>
       openHandover({ deliveryId })

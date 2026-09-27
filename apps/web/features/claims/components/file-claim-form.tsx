@@ -3,7 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@workspace/backend/api"
-import { useConvexAuth, useMutation } from "convex/react"
+import { useConvexAuth, useMutation, useQuery } from "convex/react"
+import { ConvexError } from "convex/values"
 import {
   AtSignIcon,
   ClipboardListIcon,
@@ -23,6 +24,9 @@ import { t, type Resolved } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
 import { CLAIMS } from "@/features/claims/strings/claims"
 
+/** Shape only — the server matches the address; this catches a missing `@` or domain. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 /**
  * The report form, below what to prepare. The checklist renders signed out
  * too: the one sentence that stops people stalling — you can't finish without
@@ -35,14 +39,21 @@ export function FileClaimForm() {
   const router = useRouter()
   const submit = useMutation(api.claims.submit)
 
+  const { isAuthenticated, isLoading } = useConvexAuth()
+  const me = useQuery(api.users.me, isAuthenticated ? {} : "skip")
+
   const [subjectEmail, setSubjectEmail] = useState("")
-  const [name, setName] = useState("")
+  const [emailTouched, setEmailTouched] = useState(false)
+  // `null` until edited, so the account's name fills the field without an
+  // effect racing the reader's typing.
+  const [typedName, setTypedName] = useState<string | null>(null)
   const [contact, setContact] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { isAuthenticated, isLoading } = useConvexAuth()
 
-  const ready = subjectEmail.trim().length > 0 && name.trim().length > 0 && contact.trim().length > 0
+  const name = typedName ?? me?.name ?? ""
+  const emailValid = EMAIL.test(subjectEmail.trim())
+  const ready = emailValid && name.trim().length > 0 && contact.trim().length > 0
 
   async function file() {
     setBusy(true)
@@ -54,8 +65,8 @@ export function FileClaimForm() {
         claimantContact: contact.trim(),
       })
       router.push(`/case/${claimId}`)
-    } catch {
-      setError(labels.fileFailed)
+    } catch (cause) {
+      setError(refusalText(cause, labels))
       setBusy(false)
     }
     // No `finally`: on success the route is already changing, and clearing
@@ -81,13 +92,16 @@ export function FileClaimForm() {
             <Field
               label={labels.subjectLabel}
               hint={labels.subjectHint}
+              error={emailTouched && subjectEmail.trim().length > 0 && !emailValid ? labels.subjectInvalid : undefined}
               value={subjectEmail}
               onChange={setSubjectEmail}
+              onBlur={() => setEmailTouched(true)}
               type="email"
               dir="ltr"
+              autoComplete="off"
               placeholder={labels.subjectPlaceholder}
             />
-            <Field label={labels.nameLabel} value={name} onChange={setName} />
+            <Field label={labels.nameLabel} value={name} onChange={setTypedName} autoComplete="name" />
             <Field
               label={labels.contactLabel}
               hint={labels.contactHint}
@@ -95,6 +109,7 @@ export function FileClaimForm() {
               onChange={setContact}
               type="tel"
               dir="ltr"
+              autoComplete="tel"
               placeholder={labels.contactPlaceholder}
             />
           </div>
@@ -103,13 +118,27 @@ export function FileClaimForm() {
             <Button size="lg" className="w-full sm:w-auto" onClick={() => void file()} disabled={busy || !ready}>
               {busy ? labels.filing : labels.fileClaim}
             </Button>
-            {error !== null && <p className="text-tone-attention mt-4 text-[14.5px] leading-[1.7]">{error}</p>}
+            {error !== null && (
+              <p role="alert" className="text-tone-attention mt-4 text-[14.5px] leading-[1.7]">
+                {error}
+              </p>
+            )}
             <p className="text-muted-foreground mt-4 max-w-[62ch] text-[13px] leading-[1.75]">{labels.disclaimer}</p>
           </div>
         </Ask>
       )}
     </div>
   )
+}
+
+/** `claims.submit`'s typed refusals, in words; anything else is a failure worth retrying. */
+function refusalText(cause: unknown, labels: Resolved<typeof CLAIMS>): string {
+  if (cause instanceof ConvexError) {
+    const data = cause.data as { code?: string; reason?: string }
+    if (data.code === "claim" && data.reason === "rate_limited") return labels.fileRateLimited
+    if (data.code === "claim" && data.reason === "own_vault") return labels.fileOwnVault
+  }
+  return labels.fileFailed
 }
 
 function Checklist({ labels }: { labels: Resolved<typeof CLAIMS> }) {

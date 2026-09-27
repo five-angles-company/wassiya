@@ -8,9 +8,11 @@ import { cn } from "@workspace/ui/lib/utils"
 import { DocSection } from "@/components/doc/section"
 import { useLocale } from "@/components/locale-provider"
 import { Placeholder } from "@/components/placeholder"
-import { fmtDate, fmtNumber } from "@/lib/format"
+import { fmtDate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
+import { plural } from "@/lib/i18n/plural"
 import { COMMON } from "@/lib/i18n/strings/common"
+import { ATTEMPTS_LEFT } from "@/lib/i18n/strings/counts"
 import { ACCOUNT } from "@/features/account/strings/account"
 
 const STATUS_LABEL = {
@@ -65,7 +67,7 @@ export function AccountPanel() {
         </dl>
         {identity != null && !verified && (
           <p className="text-muted-foreground text-[14px]">
-            {labels.identityAttempts.replace("{n}", fmtNumber(identity.attemptsRemaining, locale))}
+            {plural(ATTEMPTS_LEFT, identity.attemptsRemaining, locale)}
           </p>
         )}
       </DocSection>

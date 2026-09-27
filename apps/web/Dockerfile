@@ -12,11 +12,11 @@
 # Runtime secrets (CLERK_SECRET_KEY)
 # are passed at `docker run` time, NOT baked into the image.
 
-# --- base: pnpm + turbo on Node 20 -----------------------------------------
+# --- base: pnpm + turbo on Node 24 (LTS) ------------------------------------
 # Install pnpm directly instead of `corepack enable`: the corepack bundled in
-# node:20-alpine often fails the pinned-pnpm download with "Cannot find matching
-# keyid" (stale signing keys). A direct global install sidesteps that.
-FROM node:20-alpine AS base
+# node alpine images often fails the pinned-pnpm download with "Cannot find
+# matching keyid" (stale signing keys). A direct global install sidesteps that.
+FROM node:24-alpine AS base
 RUN apk add --no-cache libc6-compat
 RUN npm i -g pnpm@10.33.4 turbo@2
 WORKDIR /app
@@ -41,7 +41,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN turbo build --filter=web
 
 # --- runner: minimal standalone server -------------------------------------
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -61,4 +61,7 @@ COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/publ
 
 USER nextjs
 EXPOSE 3001
+# Busybox wget is in the alpine base; curl is not.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3001/api/health >/dev/null || exit 1
 CMD ["node", "apps/web/server.js"]

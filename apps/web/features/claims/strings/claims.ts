@@ -41,7 +41,6 @@ export const CLAIMS = {
     ar: "يمكنك متابعة أين وصل هذا البلاغ، لكن خطواته يقوم بها من قدّمه فقط.",
     en: "You can follow where this report stands, but only the person who filed it can take its next steps.",
   },
-  unknownVault: { ar: "صاحب خزنة", en: "a vault owner" },
 
   // ---- the form -------------------------------------------------------------
   newTitle: { ar: "بلاغ وفاة", en: "Report a death" },
@@ -78,6 +77,10 @@ export const CLAIMS = {
     ar: "كما هو على ورقة الاسترداد إن وجدتها",
     en: "As printed on their recovery sheet, if you have it",
   },
+  subjectInvalid: {
+    ar: "هذا لا يبدو بريداً إلكترونياً كاملاً — تأكّد من @ ومن النطاق بعدها.",
+    en: "That doesn't look like a complete email address — check the @ and the part after it.",
+  },
   nameLabel: { ar: "اسمك الكامل", en: "Your full name" },
   subjectPlaceholder: { ar: "name@example.com", en: "name@example.com" },
   contactPlaceholder: { ar: "05x xxx xxxx", en: "05x xxx xxxx" },
@@ -91,6 +94,14 @@ export const CLAIMS = {
   fileFailed: {
     ar: "لم يُرسل البلاغ ولم يُحفظ شيء. حاول مرة أخرى.",
     en: "The report wasn't sent and nothing was saved. Please try again.",
+  },
+  fileRateLimited: {
+    ar: "قدّمت عدة بلاغات اليوم، فلم يُرسل هذا. يمكنك المحاولة غداً، أو مراسلتنا إن كان الأمر عاجلاً.",
+    en: "You've filed several reports today, so this one wasn't sent. You can try again tomorrow, or write to us if it's urgent.",
+  },
+  fileOwnVault: {
+    ar: "هذا بريد حسابك أنت. أدخل البريد الذي استخدمه المتوفّى في وصيّة.",
+    en: "That's your own account's email. Enter the email the person who died used with Wassiya.",
   },
   // `submit` answers the same whether or not the email matched a vault — it
   // must not reveal which emails have one — so nothing after it may promise
@@ -108,5 +119,8 @@ export const CLAIMS = {
   // ---- the case page ----------------------------------------------------------
   detailEyebrow: { ar: "بلاغ وفاة", en: "Death report" },
   detailTitle: { ar: "بلاغ عن {name}", en: "Report about {name}" },
+  // Before review a report names nobody: a name, or its absence, would say
+  // whether the email matched a vault (`claims.reviewedSubjectName`).
+  detailTitleNeutral: { ar: "بلاغ وفاة", en: "Death report" },
   backToList: { ar: "كل البلاغات", en: "All reports" },
 } as const satisfies Dictionary

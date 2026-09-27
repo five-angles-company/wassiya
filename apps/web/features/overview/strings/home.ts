@@ -18,7 +18,7 @@ export const HOME = {
   },
   listTitle: { ar: "ما لديك", en: "What you have" },
   caseTitle: { ar: "بلاغ عن {name}", en: "Report about {name}" },
-  caseUnknownVault: { ar: "صاحب خزنة", en: "a vault owner" },
+  caseTitleNeutral: { ar: "بلاغ وفاة", en: "Death report" },
 
   chooseBody: {
     ar: "حسابك جاهز. ابدأ بما جئت من أجله:",

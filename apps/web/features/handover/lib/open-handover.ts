@@ -74,12 +74,59 @@ export type OpenedHandover = {
 /** Keys that describe the secret or its files rather than carry it, and the note's title. */
 const HIDDEN_FIELDS = new Set(["format", "durationMs", "title", "items"])
 
+/** The encoded body after `WSE1`/`WSY1` — fixed by the printed format in `@workspace/crypto/papercode`. */
+const CODE_BODY_CHARS = 56
+const GROUP = 4
+
+/**
+ * What the reader typed, in the form the decoders accept. A phone set to Arabic
+ * types ٢ for 2, and a code copied out of a message app arrives with its
+ * hyphens turned into dashes; neither is a mistake worth failing on. Anything
+ * else is left for the checksum to catch.
+ */
+export function normaliseTypedCode(code: string): string {
+  return code
+    .replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) & 0xf))
+    .replace(/[\s\-‐-―−_.·•]/g, "")
+    .toUpperCase()
+}
+
+/**
+ * How much of the code is typed, once it is recognisably a sheet code — so a
+ * reader copying off paper can see a skipped group before they press Open.
+ */
+export function typedCodeProgress(code: string): { typed: number; total: number } | null {
+  const normalised = normaliseTypedCode(code)
+  if (paperCodeKind(normalised) === null) return null
+  // Prefix (3) and a one-digit version; a longer version only shows once the
+  // whole body is there.
+  const typed = Math.max(0, normalised.length - 4)
+  return { typed: Math.min(typed, CODE_BODY_CHARS), total: CODE_BODY_CHARS }
+}
+
+/**
+ * The code regrouped the way the sheet prints it (`WSE1-ABCD-…`), so it can be
+ * checked against the paper group by group. Left alone if it is not a sheet
+ * code yet.
+ */
+export function formatTypedCode(code: string): string {
+  const normalised = normaliseTypedCode(code)
+  if (paperCodeKind(normalised) === null) return code
+  const headLength = Math.max(4, normalised.length - CODE_BODY_CHARS)
+  const groups = [normalised.slice(0, headLength)]
+  for (let i = headLength; i < normalised.length; i += GROUP) {
+    groups.push(normalised.slice(i, i + GROUP))
+  }
+  return groups.join("-")
+}
+
 /**
  * The executor's own sheet first; the owner's recovery sheet as the fallback.
  * The prefix only says which kind the reader *meant* — the checksum and then
  * the AEAD decide whether it is one.
  */
-export function unlockHandover(response: HandoverResponse, code: string): UnlockResult {
+export function unlockHandover(response: HandoverResponse, typed: string): UnlockResult {
+  const code = normaliseTypedCode(typed)
   const kind = paperCodeKind(code)
   if (kind === null) return failed("unreadable")
 
@@ -220,24 +267,70 @@ function filesOf(files: HandoverResponse["items"][number]["files"], types: (stri
   return files.flatMap((file, i) => (file.url === null ? [] : [{ url: file.url, mimeType: types[i] }]))
 }
 
+/** How far a download has got, as a fraction; `null` when the size is unknown. */
+export type OnProgress = (fraction: number | null) => void
+
 /**
  * Fetch one file and decrypt it as it streams in — each file is framed on its
- * own. The plaintext goes chunk by chunk into a `Blob`, so a long video is
- * never held as one buffer, let alone as ciphertext and plaintext at once.
+ * own — handing each plaintext chunk to `write` as it is authenticated.
  */
-export async function fetchAndDecrypt(url: string, dek: Uint8Array, type: string): Promise<Blob> {
+async function streamDecrypted(
+  url: string,
+  dek: Uint8Array,
+  write: (chunk: Uint8Array) => unknown,
+  onProgress: OnProgress
+): Promise<void> {
   const response = await fetch(url)
   if (!response.ok || response.body === null) throw new Error(`File fetch failed: ${response.status}`)
+  const length = Number(response.headers.get("Content-Length"))
+  const total = Number.isFinite(length) && length > 0 ? length : null
   const decryptor = createAssetDecryptor(dek)
-  const parts: Uint8Array[] = []
   const reader = response.body.getReader()
+  let received = 0
   for (;;) {
     const { done, value } = await reader.read()
     if (done) break
-    parts.push(...decryptor.push(value))
+    received += value.byteLength
+    onProgress(total === null ? null : Math.min(received / total, 1))
+    for (const part of decryptor.push(value)) await write(part)
   }
-  parts.push(decryptor.finish())
+  await write(decryptor.finish())
+}
+
+/**
+ * The whole file as a `Blob`, built chunk by chunk, so it is never held as
+ * ciphertext and plaintext at once.
+ */
+export async function fetchAndDecrypt(
+  url: string,
+  dek: Uint8Array,
+  type: string,
+  onProgress: OnProgress
+): Promise<Blob> {
+  const parts: Uint8Array[] = []
+  await streamDecrypted(url, dek, (part) => parts.push(part), onProgress)
   return new Blob(parts as Uint8Array<ArrayBuffer>[], { type })
+}
+
+/**
+ * Straight into a file the reader picked, where the browser allows it: a long
+ * video goes to disk as it decrypts instead of filling the tab's memory. A
+ * failure part-way discards the file rather than leaving half of it behind.
+ */
+export async function decryptToFile(
+  url: string,
+  dek: Uint8Array,
+  handle: FileSystemFileHandle,
+  onProgress: OnProgress
+): Promise<void> {
+  const writable = await handle.createWritable()
+  try {
+    await streamDecrypted(url, dek, (part) => writable.write(part as Uint8Array<ArrayBuffer>), onProgress)
+    await writable.close()
+  } catch (cause) {
+    await writable.abort().catch(() => undefined)
+    throw cause
+  }
 }
 
 /** Zero every key the handover holds. Called when it leaves the screen. */

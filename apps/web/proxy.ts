@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { clerkMiddleware } from "@clerk/nextjs/server"
 
+import { CONTENT_SECURITY_POLICY } from "@/lib/csp"
 import { LOCALE_COOKIE, LOCALE_MAX_AGE } from "@/lib/i18n/locale"
 import { THEME_COOKIE, THEME_MAX_AGE } from "@/lib/theme"
 
@@ -25,6 +26,8 @@ import { THEME_COOKIE, THEME_MAX_AGE } from "@/lib/theme"
 //   - **The current path is forwarded as `x-pathname`**, because the language
 //     switch is a form POST that must redirect the reader back, and a Server
 //     Component cannot read its own URL.
+//   - **Clerk sets the Content-Security-Policy** and its nonce, on the response
+//     and on the request Next.js renders from (`lib/csp.ts`).
 export default clerkMiddleware((_auth, request: NextRequest) => {
   const lang = request.nextUrl.searchParams.get("lang")
   if (request.method === "GET" && (lang === "ar" || lang === "en")) {
@@ -59,7 +62,7 @@ export default clerkMiddleware((_auth, request: NextRequest) => {
   const headers = new Headers(request.headers)
   headers.set("x-pathname", request.nextUrl.pathname + request.nextUrl.search)
   return NextResponse.next({ request: { headers } })
-})
+}, { contentSecurityPolicy: CONTENT_SECURITY_POLICY })
 
 export const config = {
   matcher: [

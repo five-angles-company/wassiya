@@ -1,9 +1,15 @@
 import type { Metadata } from "next"
 
+import { t } from "@/lib/i18n/locale"
+import { getLocale } from "@/lib/i18n/server"
 import { Conversation } from "@/features/support/components/conversation"
+import { SUPPORT } from "@/features/support/strings/support"
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: t(SUPPORT, await getLocale()).chatTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 /** Access is decided by the backend: the caller's session or guest token. */

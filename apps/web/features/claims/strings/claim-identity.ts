@@ -54,8 +54,8 @@ export const CLAIM_IDENTITY = {
   },
   resume: { ar: "افتح نافذة التحقق", en: "Reopen the check" },
   rejected: {
-    ar: "لم يكتمل التحقق. يمكنك المحاولة مرة أخرى — بقيت {n} محاولات.",
-    en: "The check didn't go through. You can try again — {n} attempts left.",
+    ar: "لم يكتمل التحقق. يمكنك المحاولة مرة أخرى — {left}.",
+    en: "The check didn't go through. You can try again — {left}.",
   },
   exhausted: {
     ar: "انتهت كل المحاولات. راسلنا وسنراجع الأمر بأنفسنا.",

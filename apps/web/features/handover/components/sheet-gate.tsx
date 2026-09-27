@@ -9,10 +9,15 @@ import { Ask } from "@/components/doc/ask"
 import { DocTitle } from "@/components/doc/title"
 import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
-import { fmtDate } from "@/lib/format"
+import { fmtDate, fmtNumber } from "@/lib/format"
 import { t, type Resolved } from "@/lib/i18n/locale"
 import { COMMON } from "@/lib/i18n/strings/common"
-import type { SheetsOnRecord, UnlockFailure } from "@/features/handover/lib/open-handover"
+import {
+  formatTypedCode,
+  typedCodeProgress,
+  type SheetsOnRecord,
+  type UnlockFailure,
+} from "@/features/handover/lib/open-handover"
 import { HANDOVER } from "@/features/handover/strings/handover"
 
 /** The help article for an executor with no sheet — its slug is seeded in `convex/support/help.ts`. */
@@ -53,6 +58,7 @@ export function SheetGate({
       : labels.codeHintExecutorOnly
     : labels.codeHintRecoveryOnly
   const canSubmit = code.trim().length > 0
+  const progress = typedCodeProgress(code)
 
   function submit(event?: FormEvent) {
     event?.preventDefault()
@@ -84,9 +90,20 @@ export function SheetGate({
         >
           <form onSubmit={submit} autoComplete="off" className="flex flex-col gap-5">
             <div className="flex flex-col gap-2">
-              <label htmlFor={fieldId} className="text-[14px] font-semibold">
-                {labels.codeLabel}
-              </label>
+              <div className="flex items-baseline justify-between gap-4">
+                <label htmlFor={fieldId} className="text-[14px] font-semibold">
+                  {labels.codeLabel}
+                </label>
+                {progress !== null && (
+                  <span
+                    className={`text-[13px] tabular-nums ${progress.typed === progress.total ? "text-tone-settled font-semibold" : "text-muted-foreground"}`}
+                  >
+                    {labels.codeProgress
+                      .replace("{typed}", fmtNumber(progress.typed, locale))
+                      .replace("{total}", fmtNumber(progress.total, locale))}
+                  </span>
+                )}
+              </div>
               <textarea
                 id={fieldId}
                 value={code}
@@ -94,6 +111,7 @@ export function SheetGate({
                   setCode(event.target.value)
                   setFailure(null)
                 }}
+                onBlur={() => setCode(formatTypedCode(code))}
                 onKeyDown={submitOnEnter}
                 rows={3}
                 dir="ltr"

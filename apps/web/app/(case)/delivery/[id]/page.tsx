@@ -5,13 +5,18 @@ import type { Metadata } from "next"
 
 import { AuthGate } from "@/components/auth-gate"
 import { HelpLink } from "@/components/help-link"
+import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { safePath } from "@/lib/safe-path"
 import { IdentityPanel } from "@/features/claims/components/identity-panel"
 import { ExecutorDelivery } from "@/features/handover/components/executor-delivery"
+import { DELIVERY } from "@/features/handover/strings/delivery"
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: t(DELIVERY, await getLocale()).pageTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 /**

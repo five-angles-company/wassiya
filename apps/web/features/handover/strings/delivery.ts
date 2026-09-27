@@ -6,6 +6,8 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * and whether anything is needed from them.
  */
 export const DELIVERY = {
+  pageTitle: { ar: "ما سُلِّم إليك", en: "Handed over to you" },
+
   // ⚠️ Names nobody: whoever holds the link may not be the executor.
   receiveEyebrow: { ar: "رسالة من وصيّة", en: "A message from Wassiya" },
   receiveTitleUnknown: { ar: "سمّاك شخص وصيّاً", en: "Someone named you as their executor" },

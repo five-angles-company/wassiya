@@ -55,6 +55,15 @@ export const NOTIFICATIONS = {
     ar: "نتواصل الآن مباشرة مع كل وصيّ سمّاه صاحب الخزنة.",
     en: "We're now contacting each executor the vault's owner named, directly.",
   },
+  claimClosed: { ar: "انتهى بلاغك", en: "Your report has ended" },
+  claimClosedBody: {
+    ar: "لم نجد خزنة بالبريد الذي أدخلته. راجعه، ويمكنك تقديم بلاغ جديد.",
+    en: "We found no vault with the email you entered. Check it — you can file a new report.",
+  },
+
+  // Anyone who wrote to us. The reply itself is never in the notification.
+  supportReply: { ar: "ردّ فريق الدعم على رسالتك", en: "Support replied to your message" },
+  supportReplyBody: { ar: "افتح المحادثة لتقرأ الرد.", en: "Open the conversation to read it." },
 
   // An owner's own, read here only because the feed is shared.
   claimSubmitted: { ar: "أُبلغ عن وفاتك", en: "Someone reported your death" },
@@ -72,7 +81,7 @@ export const NOTIFICATIONS = {
     ar: "إن كنت تقرأ هذا فأنت بخير — أوقف البلاغ من التطبيق على جوّالك.",
     en: "If you're reading this, you're alive — stop the report from the app on your phone.",
   },
-  checkin: { ar: "تذكير بتأكيد أنك بخير", en: "A reminder to check in" },
+  checkin: { ar: "تذكير بتأكيد الحياة", en: "A reminder to check in" },
   checkinBody: {
     ar: "التأكيد يتم من التطبيق على جوّالك ببصمتك — لا يمكن من المتصفّح.",
     en: "You check in from the phone app with your fingerprint — it can't be done in a browser.",

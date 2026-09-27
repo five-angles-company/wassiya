@@ -8,8 +8,11 @@ import { SUPPORT } from "@/features/support/strings/support"
 import { t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: t(SUPPORT, await getLocale()).chatTitle,
+    robots: { index: false, follow: false },
+  }
 }
 
 export default async function SupportChatPage() {
