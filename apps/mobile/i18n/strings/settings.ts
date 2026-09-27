@@ -113,9 +113,7 @@ export const SETTINGS = {
 
   groupAccount: { ar: "الحساب", en: "Account" },
   groupSecurity: { ar: "الأمان", en: "Security" },
-  groupPlan: { ar: "الاشتراك", en: "Subscription" },
-  groupLegal: { ar: "قانوني", en: "Legal" },
-  groupHelp: { ar: "المساعدة", en: "Help" },
+  groupGeneral: { ar: "عام", en: "General" },
   rowHelp: { ar: "المساعدة والدعم", en: "Help & support" },
   helpNewReply: { ar: "ردّ جديد", en: "New reply" },
 
@@ -194,6 +192,7 @@ export const AUTO_LOCK = {
     ar: "هذا الإعداد لهذا الجهاز وحده.",
     en: "This setting applies to this device only.",
   },
+  done: { ar: "تم", en: "Done" },
 } satisfies LabelSet<string>
 
 /** ٩.٣ — the audit log. */

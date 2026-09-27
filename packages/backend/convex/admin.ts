@@ -31,6 +31,7 @@ import {
   isStaffAccount,
   requirePermission,
 } from "./model/access"
+import { ASSET_TYPES, type AssetType } from "./model/assetTypes"
 import { planOf, storageUsed } from "./model/plans"
 import { JOB_EVERY_HOURS, JOB_NAMES } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
@@ -482,16 +483,6 @@ export const risk = query({
 /** How many asset rows the storage breakdown reads. Bytes-bound, so the lowest. */
 const STORAGE_SCAN_CAP = 2000
 
-/** Every value `assets.type` can hold. */
-const ASSET_TYPES = [
-  "crypto",
-  "bank",
-  "document",
-  "photos",
-  "digital",
-  "note",
-] as const
-
 type TypeUsage = { count: number; bytes: number }
 
 /**
@@ -552,14 +543,9 @@ export const storage = query({
     // `dekWrappedByMk` whether or not this query wants them.
     const assets = await ctx.db.query("assets").take(STORAGE_SCAN_CAP + 1)
     const assetsCapped = assets.length > STORAGE_SCAN_CAP
-    const byType: Record<(typeof ASSET_TYPES)[number], TypeUsage> = {
-      crypto: { count: 0, bytes: 0 },
-      bank: { count: 0, bytes: 0 },
-      document: { count: 0, bytes: 0 },
-      photos: { count: 0, bytes: 0 },
-      digital: { count: 0, bytes: 0 },
-      note: { count: 0, bytes: 0 },
-    }
+    const byType = Object.fromEntries(
+      ASSET_TYPES.map((type) => [type, { count: 0, bytes: 0 }])
+    ) as Record<AssetType, TypeUsage>
     let privateAssets = 0
     for (const asset of assets.slice(0, STORAGE_SCAN_CAP)) {
       byType[asset.type].count += 1

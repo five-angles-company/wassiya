@@ -8,7 +8,9 @@ import {
   FileTextIcon,
   ImagesIcon,
   MonitorSmartphoneIcon,
+  ShieldCheckIcon,
   StickyNoteIcon,
+  TrendingUpIcon,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@workspace/ui/lib/utils"
@@ -32,6 +34,8 @@ const ICON: Record<string, LucideIcon> = {
   photos: ImagesIcon,
   digital: MonitorSmartphoneIcon,
   note: StickyNoteIcon,
+  investment: TrendingUpIcon,
+  insurance: ShieldCheckIcon,
 }
 
 type Labels = Resolved<typeof ASSET_LABELS>
@@ -43,6 +47,8 @@ const TYPE_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   photos: "typePhotos",
   digital: "typeDigital",
   note: "typeNote",
+  investment: "typeInvestment",
+  insurance: "typeInsurance",
 }
 
 const FIELD_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
@@ -66,9 +72,18 @@ const FIELD_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   recoveryCodes: "fieldRecoveryCodes",
   disposition: "fieldDisposition",
   body: "fieldBody",
+  provider: "fieldProvider",
+  accountNumber: "fieldAccountNumber",
+  company: "fieldCompany",
+  policyNumber: "fieldPolicyNumber",
+  beneficiary: "fieldBeneficiary",
 }
 
-/** The stored value is a key; the executor reads the word the owner chose. */
+/**
+ * The stored value is a key; the executor reads the word the owner chose. One
+ * map serves every field in `ENUM_FIELDS`, so a value must mean the same thing
+ * in every field that can hold it.
+ */
 const VALUE_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   hardware: "valueHardware",
   software: "valueSoftware",
@@ -85,6 +100,11 @@ const VALUE_LABEL: Record<string, keyof typeof ASSET_LABELS> = {
   handOver: "valueHandOver",
   delete: "valueDelete",
   memorialise: "valueMemorialise",
+  stocks: "valueStocks",
+  fund: "valueFund",
+  life: "valueLife",
+  health: "valueHealth",
+  property: "valueProperty",
 }
 
 const ENUM_FIELDS = new Set(["kind", "accountType", "disposition"])
@@ -99,6 +119,8 @@ const EXACT_FIELDS = new Set([
   "username",
   "recoveryCodes",
   "account",
+  "accountNumber",
+  "policyNumber",
 ])
 
 /**
@@ -122,18 +144,13 @@ export function AssetRow({ item }: { item: OpenedItem }) {
   const dek = item.dek
 
   async function download(index: number) {
-    const fileUrl = item.fileUrls[index]
-    if (dek === undefined || fileUrl === undefined) return
+    const file = item.files[index]
+    if (dek === undefined || file === undefined) return
     setBusy(index)
     setError(null)
     let url: string | null = null
     try {
-      const plaintext = await fetchAndDecrypt(fileUrl, dek)
-      // `slice()` because the view can be a window onto a larger buffer, and
-      // `Blob` would otherwise carry the whole thing.
-      const blob = new Blob([plaintext.slice()], {
-        type: item.mimeType ?? "application/octet-stream",
-      })
+      const blob = await fetchAndDecrypt(file.url, dek, file.mimeType ?? item.mimeType ?? "application/octet-stream")
       url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
@@ -191,21 +208,21 @@ export function AssetRow({ item }: { item: OpenedItem }) {
                   EXACT_FIELDS.has(field.key) && "font-mono text-[14px]"
                 )}
               >
-                {fieldValue(field, labels)}
+                <FieldValue field={field} labels={labels} />
               </dd>
             </div>
           ))}
         </dl>
       )}
 
-      {dek !== undefined && item.fileUrls.length > 0 && (
+      {dek !== undefined && item.files.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {item.fileUrls.map((_, index) => (
+          {item.files.map((_, index) => (
             <Button key={index} size="sm" variant="outline" onClick={() => void download(index)} disabled={busy !== null}>
               <DownloadIcon className="size-4" strokeWidth={2.4} aria-hidden />
               {busy === index
                 ? labels.downloading
-                : item.fileUrls.length === 1
+                : item.files.length === 1
                   ? labels.download
                   : labels.downloadNumbered.replace("{n}", fmtNumber(index + 1, locale))}
             </Button>
@@ -223,7 +240,7 @@ function fieldLabel(key: string, labels: Labels): string {
   return labelKey === undefined ? key : labels[labelKey]
 }
 
-function fieldValue(field: SecretField, labels: Labels): string {
+function FieldValue({ field, labels }: { field: SecretField; labels: Labels }) {
   if (!ENUM_FIELDS.has(field.key)) return field.value
   const valueKey = VALUE_LABEL[field.value]
   return valueKey === undefined ? field.value : labels[valueKey]
@@ -238,8 +255,9 @@ function fieldValue(field: SecretField, labels: Labels): string {
 function filenameFor(item: OpenedItem, typeName: string, index: number): string {
   const base = (item.title ?? typeName).replace(/[\\/:*?"<>|]/g, "").trim()
   const name = base.length > 0 ? base : item.assetId
-  const numbered = item.fileUrls.length > 1 ? `${name} ${index + 1}` : name
-  return `${numbered}${EXTENSION[item.mimeType ?? ""] ?? ""}`
+  const numbered = item.files.length > 1 ? `${name} ${index + 1}` : name
+  const mimeType = item.files[index]?.mimeType ?? item.mimeType ?? ""
+  return `${numbered}${EXTENSION[mimeType] ?? ""}`
 }
 
 const EXTENSION: Record<string, string> = {
@@ -253,6 +271,12 @@ const EXTENSION: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
   "image/heic": ".heic",
+  "image/heif": ".heif",
+  "image/webp": ".webp",
+  "video/mp4": ".mp4",
+  "video/quicktime": ".mov",
+  "video/3gpp": ".3gp",
+  "video/webm": ".webm",
   "text/plain": ".txt",
   "application/zip": ".zip",
 }

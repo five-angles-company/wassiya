@@ -41,7 +41,9 @@ export function useExecutorSheet(
 } {
   const obtainReleaseKey = useReleaseKey()
   const saveSheet = useMutation(api.executors.saveSheet)
-  const [state, setState] = useState<ExecutorSheetState>({ status: "preparing" })
+  const [state, setState] = useState<ExecutorSheetState>({
+    status: "preparing",
+  })
   const wrapped = useRef<ArrayBuffer | null>(null)
   // Minting twice would show one code and store another.
   const started = useRef(false)
@@ -64,7 +66,10 @@ export function useExecutorSheet(
             })
           )
           const code = encodeExecutorCode(sheetSecret, version)
-          setState({ status: "ready", material: { groups: code.split("-"), version } })
+          setState({
+            status: "ready",
+            material: { groups: code.split("-"), version },
+          })
         } finally {
           sheetSecret.fill(0)
           releaseKey.fill(0)
@@ -76,7 +81,11 @@ export function useExecutorSheet(
   }, [executor, obtainReleaseKey, unlocked])
 
   const activate = useCallback(async () => {
-    if (state.status !== "ready" || executor === null || wrapped.current === null) {
+    if (
+      state.status !== "ready" ||
+      executor === null ||
+      wrapped.current === null
+    ) {
       return false
     }
     try {

@@ -2,15 +2,14 @@ import { useState } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { FieldLink } from "@workspace/ui-native/components/wassiya/field-link"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { Pressable } from "react-native"
+import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { ExecutorFields } from "@/screens/executors/components/executor-fields"
 import { DeleteExecutorSheet } from "@/screens/executors/edit/components/delete-executor-sheet"
@@ -33,7 +32,6 @@ export type ExecutorEditFormProps = {
 export function ExecutorEditForm({ executor, isOnly }: ExecutorEditFormProps) {
   const { t, locale } = useStrings("executors/edit")
   const { t: fields } = useStrings("executors/new")
-  const { t: common } = useStrings("common")
 
   const update = useMutation(api.executors.update)
   const form = useExecutorForm(
@@ -83,48 +81,50 @@ export function ExecutorEditForm({ executor, isOnly }: ExecutorEditFormProps) {
           .replace("{v}", fmtNum(executor.sheetVersion, locale))
 
   return (
-    <Screen keyboard contentClassName="gap-header">
-      <BackButton label={common.back} />
-      <Text variant="screenTitle">{t.title}</Text>
+    <Screen
+      keyboard
+      inset="footer"
+      footer={
+        form.dirty ? (
+          <PrimaryCta
+            label={t.save!}
+            onPress={() => void save()}
+            disabled={!form.canSubmit}
+            busy={saving}
+          />
+        ) : undefined
+      }
+    >
+      <ScreenHeader back="/executors" title={t.title!} />
 
-      <ExecutorFields
-        form={form}
-        t={fields}
-        error={failed ? t.failed : undefined}
-        hasIdNumber
-      />
-
-      <FieldLink
-        label={t.sheetRow!}
-        value={sheetLine}
-        placeholder={t.sheetNone}
-        chevron="forward"
-        onPress={() =>
-          router.push({
-            pathname: "/executors/[id]/sheet",
-            params: { id: executor.id },
-          })
-        }
-      />
-
-      {/* Save appears only once something changed. */}
-      {form.dirty ? (
-        <PrimaryCta
-          label={t.save!}
-          onPress={() => void save()}
-          disabled={!form.canSubmit}
-          busy={saving}
+      <View className="gap-header">
+        <ExecutorFields
+          form={form}
+          t={fields}
+          error={failed ? t.failed : undefined}
+          hasIdNumber
         />
-      ) : null}
 
-      {/* Quiet and surface-toned — deleting is available, never suggested. */}
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => setConfirming(true)}
-        className="bg-card mb-auto h-[50px] items-center justify-center rounded-full active:opacity-80"
-      >
-        <Text className="text-[15.5px] opacity-55">{t.deleteExecutor}</Text>
-      </Pressable>
+        <FieldLink
+          label={t.sheetRow!}
+          value={sheetLine}
+          placeholder={t.sheetNone}
+          chevron="forward"
+          onPress={() =>
+            router.push({
+              pathname: "/executors/[id]/sheet",
+              params: { id: executor.id },
+            })
+          }
+        />
+
+        {/* Quiet — deleting is available, never suggested. */}
+        <PrimaryCta
+          tone="quiet"
+          label={t.deleteExecutor!}
+          onPress={() => setConfirming(true)}
+        />
+      </View>
 
       <DeleteExecutorSheet
         executorId={executor.id}

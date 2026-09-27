@@ -8,33 +8,32 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { useLocalSearchParams } from "expo-router"
 
-import { BackButton } from "@/components/back-button"
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { ExecutorEditForm } from "@/screens/executors/edit/components/executor-edit-form"
 
 export function ExecutorEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useStrings("executors/edit")
-  const { t: common } = useStrings("common")
 
   const executors = useQuery(api.executors.list)
   const executor = executors?.find((row) => row.id === (id as Id<"executors">))
 
+  if (executors === undefined) return <LoadingScreen back="/executors" />
+
+  // Loaded without this id: deleted from another device.
   if (executor === undefined) {
     return (
-      <Screen contentClassName="gap-header">
-        <BackButton label={common.back} />
-        <Text variant="screenTitle">{t.title}</Text>
-        {/* Loaded without this id: deleted from another device. */}
-        {executors !== undefined ? (
-          <Text variant="prose" className="text-muted-foreground">
-            {t.notFound}
-          </Text>
-        ) : null}
+      <Screen>
+        <ScreenHeader
+          back="/executors"
+          title={t.title!}
+          description={t.notFound}
+        />
       </Screen>
     )
   }

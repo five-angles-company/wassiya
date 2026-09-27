@@ -1,6 +1,4 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
-import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { Printer } from "lucide-react-native"
 import { View } from "react-native"
 
@@ -32,32 +30,23 @@ export function KitActions({
   onShare,
 }: KitActionsProps) {
   return (
-    <View className="gap-2.25">
-      <Button disabled={disabled} onPress={onPrint}>
-        {/* Matches the label beside it — both are content on terracotta,
-            which is set in `background`. */}
-        <Icon as={Printer} className="text-background size-5" />
-        <Text>{printLabel}</Text>
-      </Button>
+    <View className="gap-2.5">
+      <PrimaryCta icon={Printer} label={printLabel} onPress={onPrint} disabled={disabled} />
       <View className="flex-row gap-2.5">
-        <Button
-          variant="outline"
-          size="sm"
+        <PrimaryCta
+          tone="quiet"
           className="flex-1"
-          disabled={disabled}
+          label={savePdfLabel}
           onPress={onSavePdf}
-        >
-          <Text>{savePdfLabel}</Text>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1"
           disabled={disabled}
+        />
+        <PrimaryCta
+          tone="quiet"
+          className="flex-1"
+          label={shareLabel}
           onPress={onShare}
-        >
-          <Text>{shareLabel}</Text>
-        </Button>
+          disabled={disabled}
+        />
       </View>
     </View>
   )

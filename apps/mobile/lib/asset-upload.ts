@@ -1,5 +1,5 @@
 /**
- * Getting already-encrypted bytes to Convex file storage, via a file rather
+ * Getting encrypted bytes to and from Convex file storage, via a file rather
  * than `fetch(url, { body })`.
  *
  * React Native's `Blob` cannot be constructed from a typed array — a
@@ -10,59 +10,95 @@
  * file avoids the conversion entirely — and keeps tens-of-megabyte albums off
  * the JS heap.
  *
- * **Ciphertext only ever touches the disk.** The temp file holds the output of
- * `encryptAsset`, lives in the cache directory, and is deleted in a `finally`.
+ * **Ciphertext only ever touches the disk.** The staged file holds encrypted
+ * bytes only, lives in the cache directory, and is deleted in a `finally`.
+ *
+ * **A file is encrypted one chunk at a time** (`encryptFileAndUpload`): read a
+ * chunk from the plaintext file, encrypt it, append it to the staged file. The
+ * heap holds one chunk whatever the file's size — a long video read whole would
+ * not fit, and would take the app down mid-save.
  */
+import { createAssetHeader, encryptChunk } from "@workspace/crypto/asset"
 import { randomUUID } from "expo-crypto"
-import { File, Paths, UploadType } from "expo-file-system"
+import { File, FileMode, Paths, UploadType } from "expo-file-system"
 
 /** Progress for one blob, forwarded to a wizard's progress bar. */
 export type UploadProgress = { bytesSent: number; totalBytes: number }
 
 /**
- * Upload one already-encrypted payload and return its storage id.
+ * Encrypt a plaintext file on disk under `dek`, chunk by chunk, upload it and
+ * return its storage id. The output is the same `header ‖ chunk₀ ‖ chunk₁ ‖ …`
+ * format `encryptAsset` builds, so every reader opens it unchanged.
  *
  * @param uploadUrl a fresh URL from `assets.generateUploadUrl` — Convex issues
  *   these one per file, so callers must not reuse one across blobs.
  */
-export async function uploadCiphertext(
-  ciphertext: Uint8Array,
+export async function encryptFileAndUpload(
+  uri: string,
+  dek: Uint8Array,
   uploadUrl: string,
   onProgress?: (progress: UploadProgress) => void
 ): Promise<string> {
-  // A fresh name per call: two photos uploading concurrently would otherwise
-  // write over each other's staging file.
-  const staged = new File(Paths.cache, `wsy-upload-${randomUUID()}.bin`)
-  staged.create({ overwrite: true })
-  staged.write(ciphertext)
-
+  const source = new File(uri)
+  const total = source.size ?? 0
+  const header = createAssetHeader(total)
+  const staged = stagingFile()
   try {
-    const result = await staged.upload(uploadUrl, {
-      httpMethod: "POST",
-      uploadType: UploadType.BINARY_CONTENT,
-      // Convex stores whatever it is told; the bytes are opaque either way, and
-      // claiming a real mime type here would describe the plaintext, not what
-      // was actually stored.
-      headers: { "Content-Type": "application/octet-stream" },
-      onProgress: onProgress
-        ? ({ bytesSent, totalBytes }) => onProgress({ bytesSent, totalBytes })
-        : undefined,
-    })
-
-    if (result.status < 200 || result.status >= 300) {
-      throw new Error(`Upload failed with status ${result.status}`)
+    const input = source.open(FileMode.ReadOnly)
+    const output = staged.open(FileMode.WriteOnly)
+    try {
+      output.writeBytes(header.bytes)
+      for (let index = 0; index < header.chunkCount; index++) {
+        const length = Math.min(header.chunkSize, total - index * header.chunkSize)
+        const plaintext = input.readBytes(length)
+        output.writeBytes(encryptChunk(dek, header, index, plaintext))
+        plaintext.fill(0)
+      }
+    } finally {
+      input.close()
+      output.close()
     }
-    const parsed: unknown = JSON.parse(result.body)
-    const storageId = (parsed as { storageId?: unknown }).storageId
-    if (typeof storageId !== "string") {
-      throw new Error("Upload response did not contain a storageId")
-    }
-    return storageId
+    return await uploadStaged(staged, uploadUrl, onProgress)
   } finally {
     // `exists` first: a failure before `create` completed would make this throw
     // and mask the real error.
     if (staged.exists) staged.delete()
   }
+}
+
+/** A fresh name per call, so two uploads in flight never share a file. */
+function stagingFile(): File {
+  const staged = new File(Paths.cache, `wsy-upload-${randomUUID()}.bin`)
+  staged.create({ overwrite: true })
+  return staged
+}
+
+async function uploadStaged(
+  staged: File,
+  uploadUrl: string,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<string> {
+  const result = await staged.upload(uploadUrl, {
+    httpMethod: "POST",
+    uploadType: UploadType.BINARY_CONTENT,
+    // Convex stores whatever it is told; the bytes are opaque either way, and
+    // claiming a real mime type here would describe the plaintext, not what
+    // was actually stored.
+    headers: { "Content-Type": "application/octet-stream" },
+    onProgress: onProgress
+      ? ({ bytesSent, totalBytes }) => onProgress({ bytesSent, totalBytes })
+      : undefined,
+  })
+
+  if (result.status < 200 || result.status >= 300) {
+    throw new Error(`Upload failed with status ${result.status}`)
+  }
+  const parsed: unknown = JSON.parse(result.body)
+  const storageId = (parsed as { storageId?: unknown }).storageId
+  if (typeof storageId !== "string") {
+    throw new Error("Upload response did not contain a storageId")
+  }
+  return storageId
 }
 
 /**
@@ -74,9 +110,13 @@ export function discardLocalFile(uri: string): void {
   if (file.exists) file.delete()
 }
 
-/** Read a picked file's bytes so they can be encrypted before upload. */
-export async function readFileBytes(uri: string): Promise<Uint8Array> {
-  return await new File(uri).bytes()
+/**
+ * Delete the image picker's copy of a chosen file — a plaintext duplicate that
+ * can run to gigabytes for a video. Only a file inside this app's cache is
+ * touched: anything else is the owner's own, however its uri reached us.
+ */
+export function discardCachedCopy(uri: string): void {
+  if (uri.startsWith(Paths.cache.uri)) discardLocalFile(uri)
 }
 
 /** Size in bytes of a picked file, or 0 when the platform will not say. */
@@ -87,7 +127,7 @@ export function fileSize(uri: string): number {
 /**
  * Fetch one encrypted blob back and hand over its bytes.
  *
- * The mirror of {@link uploadCiphertext}, and it goes through a file for the
+ * The mirror of {@link encryptFileAndUpload}, and it goes through a file for the
  * same reason: React Native's `fetch` has no dependable typed-array response
  * path, while expo-file-system streams the body straight to disk. Only
  * ciphertext ever lands there — decryption happens in memory after this

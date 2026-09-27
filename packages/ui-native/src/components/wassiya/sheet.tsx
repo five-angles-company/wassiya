@@ -1,21 +1,16 @@
 import { TrueSheet, type SheetDetent } from '@lodev09/react-native-true-sheet';
 import { Text } from '@workspace/ui-native/components/ui/text';
+import { NATIVE_COLOR } from '@workspace/ui-native/lib/native-colors';
 import { cn } from '@workspace/ui-native/lib/utils';
 import type * as React from 'react';
 import { View } from 'react-native';
 
 /**
- * Mirrors `--color-background` and `--radius-sheet` in the app's `global.css`.
- *
- * Literals, not utilities, because these are **native** props: the sheet's
- * surface and its corners are drawn by UIKit / Android's BottomSheet before any
- * React view exists, so there is nothing for Uniwind to style. Everything
- * *inside* the sheet is a normal RN tree and uses `className` as usual.
- *
- * They are the one place in this package that repeats a token value, so they
- * live at the top where a token change is one edit away.
+ * Mirrors `--radius-sheet` in the app's `global.css`. A literal because the
+ * sheet's surface and corners are drawn natively (UIKit / Android's
+ * BottomSheet) before any React view exists, so there is nothing for Uniwind to
+ * style. Everything *inside* the sheet uses `className` as usual.
  */
-const SHEET_BACKGROUND = '#f5ead8';
 const SHEET_CORNER_RADIUS = 34;
 
 export type SheetProps = {
@@ -102,7 +97,7 @@ export function Sheet({
       detents={detents}
       maxContentHeight={maxContentHeight}
       scrollable={scrollable}
-      backgroundColor={SHEET_BACKGROUND}
+      backgroundColor={NATIVE_COLOR.background}
       cornerRadius={SHEET_CORNER_RADIUS}
       onDidPresent={onPresent ? () => onPresent() : undefined}
       onDidDismiss={onDismiss ? () => onDismiss() : undefined}

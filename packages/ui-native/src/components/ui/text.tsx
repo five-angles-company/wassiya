@@ -29,7 +29,7 @@ const textVariants = cva(
         // -- Wassiya scale ---------------------------------------------------
         /** Hero numerals and one-word statements. */
         display: 'font-heading-black text-display',
-        /** Tab-root screen title ("أصولك"). */
+        /** Every screen's title, tab roots included — one size app-wide. */
         screenTitle: 'font-heading-extrabold text-screen',
         /** Sub-page / pushed-route title. */
         pageTitle: 'font-heading-extrabold text-page',

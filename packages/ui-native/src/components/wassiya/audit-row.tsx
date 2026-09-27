@@ -25,13 +25,13 @@ export type AuditRowProps = {
  * immutable record, and a row that looks tappable implies it can be opened,
  * edited, or dismissed. Everything the entry says is already on the row.
  *
- * Every secret reveal writes one of these, which is what makes the 10-second
- * peek in `GuardedSecretField` accountable rather than merely brief.
+ * Every secret reveal writes one of these, which is what makes a reveal
+ * accountable rather than merely brief.
  */
 export function AuditRow({ icon, event, meta, tone = 'sand', divider, className }: AuditRowProps) {
   return (
     <View className={className}>
-      <View className="flex-row items-start gap-3 px-1 py-3">
+      <View className="flex-row items-start gap-3 px-4 py-3.5">
         <View
           className={cn(
             'size-8.5 shrink-0 items-center justify-center rounded-full',
@@ -40,11 +40,11 @@ export function AuditRow({ icon, event, meta, tone = 'sand', divider, className 
           <Icon as={icon} className={cn('size-4', TONE_DISC_FG[tone])} />
         </View>
         <View className="flex-1 gap-0.5">
-          <Text variant="meta">{event}</Text>
+          <Text variant="rowTitle">{event}</Text>
           {meta ? <Text variant="metaSm">{meta}</Text> : null}
         </View>
       </View>
-      {divider ? <View className="bg-border h-px" /> : null}
+      {divider ? <View className="bg-border mx-4 h-px" /> : null}
     </View>
   );
 }

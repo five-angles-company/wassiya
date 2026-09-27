@@ -12,6 +12,9 @@
  * plaintext, so callers must delete it once the ciphertext exists.
  */
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
+import { getThumbnailAsync } from "expo-video-thumbnails"
+
+import { discardLocalFile } from "@/lib/asset-upload"
 
 /** Long edge in points. Large enough for a retina grid cell, small enough that
  *  twenty of them are a rounding error next to one original. */
@@ -36,4 +39,23 @@ export async function makeThumbnail(imageUri: string): Promise<Thumbnail> {
     compress: THUMB_QUALITY,
   })
   return { uri: saved.uri }
+}
+
+/**
+ * A frame from about a second in — the very first is often black — shrunk the
+ * same way. The full-size frame the extractor writes is plaintext too, and is
+ * deleted as soon as the small one exists.
+ */
+export async function makeVideoThumbnail(videoUri: string, durationMs?: number): Promise<Thumbnail> {
+  const time = durationMs === undefined ? 1000 : Math.min(1000, Math.floor(durationMs / 2))
+  // Some encoders report a duration their last frame falls short of; the
+  // opening frame always exists.
+  const frame = await getThumbnailAsync(videoUri, { time }).catch(() =>
+    getThumbnailAsync(videoUri, { time: 0 })
+  )
+  try {
+    return await makeThumbnail(frame.uri)
+  } finally {
+    discardLocalFile(frame.uri)
+  }
 }

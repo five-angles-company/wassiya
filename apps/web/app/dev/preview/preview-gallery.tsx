@@ -97,11 +97,37 @@ export function PreviewGallery() {
                   { key: "network", value: "Bitcoin" },
                   { key: "phrase", value: "abandon ability able about above absent absorb abstract absurd abuse access accident" },
                 ],
-                fileUrls: [],
+                files: [],
               }}
             />
             <AssetRow
-              item={{ assetId: "a2", type: "document", title: locale === "ar" ? "صك المنزل" : "House deed", byteSize: 820_000, fields: [{ key: "kind", value: "deed" }], fileUrls: ["#"], dek: new Uint8Array(32) }}
+              item={{ assetId: "a2", type: "document", title: locale === "ar" ? "صك المنزل" : "House deed", byteSize: 820_000, fields: [{ key: "kind", value: "deed" }], files: [{ url: "#" }], dek: new Uint8Array(32) }}
+            />
+            <AssetRow
+              item={{
+                assetId: "a4",
+                type: "investment",
+                title: locale === "ar" ? "الراجحي المالية" : "Al Rajhi Capital",
+                fields: [
+                  { key: "kind", value: "stocks" },
+                  { key: "accountNumber", value: "4400123456" },
+                  { key: "instructions", value: locale === "ar" ? "راجع مدير المحفظة قبل أي بيع." : "Ask the portfolio manager before selling anything." },
+                ],
+                files: [],
+              }}
+            />
+            <AssetRow
+              item={{
+                assetId: "a5",
+                type: "insurance",
+                title: locale === "ar" ? "التعاونية" : "Tawuniya",
+                fields: [
+                  { key: "kind", value: "life" },
+                  { key: "policyNumber", value: "POL-2024-00123" },
+                  { key: "beneficiary", value: locale === "ar" ? "زوجتي نورة" : "My wife, Noura" },
+                ],
+                files: [],
+              }}
             />
             <AssetRow
               item={{
@@ -109,10 +135,10 @@ export function PreviewGallery() {
                 type: "note",
                 title: locale === "ar" ? "إلى أولادي" : "To my children",
                 fields: [{ key: "body", value: locale === "ar" ? "اعتنوا ببعضكم." : "Look after each other." }],
-                fileUrls: [],
+                files: [],
               }}
             />
-            <AssetRow item={{ assetId: "k97fz0a8nq3", type: "photos", title: null, fields: [], fileUrls: [] }} />
+            <AssetRow item={{ assetId: "k97fz0a8nq3", type: "photos", title: null, fields: [], files: [] }} />
           </ul>
         </Paper>
       </section>

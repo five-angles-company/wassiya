@@ -127,8 +127,8 @@ export const HOME = {
   },
   vaultDocsLabel: { ar: "المستندات والصور", en: "Documents and photos" },
   vaultDocsValue: {
-    ar: "الصكوك والعقود والصور العزيزة.",
-    en: "Deeds, contracts and precious photos.",
+    ar: "الصكوك والعقود، والصور والمقاطع العزيزة.",
+    en: "Deeds, contracts, and precious photos and videos.",
   },
   vaultAccountsLabel: { ar: "الحسابات الإلكترونية", en: "Online accounts" },
   vaultAccountsValue: {
@@ -218,13 +218,13 @@ export const HOME = {
   planAnnualTagline: { ar: "لكل ما يهمّك", en: "For everything that matters" },
   planFreeFallback: { ar: "مساحة لتبدأ خزنتك.", en: "Room to start your vault." },
   planAnnualFallback: {
-    ar: "مساحة أكبر، وأوصياء أكثر، والصور والملفات الكبيرة.",
-    en: "More room, more executors, plus photos and large files.",
+    ar: "مساحة أكبر، وأوصياء أكثر، والصور والفيديو والملفات الكبيرة.",
+    en: "More room, more executors, plus photos, videos and large files.",
   },
   planStorage: { ar: "المساحة", en: "Storage" },
   planAssets: { ar: "العناصر", en: "Items" },
   planExecutors: { ar: "الأوصياء", en: "Executors" },
-  planPhotos: { ar: "الصور", en: "Photos" },
+  planPhotos: { ar: "الصور والفيديو", en: "Photos & videos" },
   planFileSize: { ar: "أكبر ملف", en: "Largest file" },
   planUnlimited: { ar: "بلا حدود", en: "Unlimited" },
   planIncluded: { ar: "متاحة", en: "Included" },

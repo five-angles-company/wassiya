@@ -1,5 +1,5 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
 
 import { useRef, useState } from "react"
@@ -75,9 +75,7 @@ export function WelcomeScreen() {
             hitSlop={8}
             onPress={() => leave("/auth/signup")}
           >
-            <Text className="text-section px-1 py-2 text-muted-foreground">
-              {t.skip}
-            </Text>
+            <Text className="text-section text-muted-foreground px-1 py-2">{t.skip}</Text>
           </Pressable>
         )}
       </View>
@@ -109,10 +107,7 @@ export function WelcomeScreen() {
             (gate) => (
               <View key={gate} className="flex-row gap-2.25">
                 <Text className="font-body-bold text-olive-700">·</Text>
-                <Text
-                  variant="meta"
-                  className="text-section flex-1 text-muted-foreground"
-                >
+                <Text variant="proseSm" className="flex-1">
                   {gate}
                 </Text>
               </View>
@@ -126,7 +121,7 @@ export function WelcomeScreen() {
         />
       </ScrollView>
 
-      <View className="px-gutter gap-2.25">
+      <View className="px-gutter gap-2.5">
         <SlideDots
           className="mb-5"
           count={SLIDE_COUNT}
@@ -137,21 +132,11 @@ export function WelcomeScreen() {
 
         {isLast ? (
           <>
-            <Button onPress={() => leave("/auth/signup")}>
-              <Text>{t.getStarted}</Text>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onPress={() => leave("/auth/signin")}
-            >
-              <Text>{t.signIn}</Text>
-            </Button>
+            <PrimaryCta label={t.getStarted!} onPress={() => leave("/auth/signup")} />
+            <PrimaryCta tone="quiet" label={t.signIn!} onPress={() => leave("/auth/signin")} />
           </>
         ) : (
-          <Button onPress={() => goTo(index + 1)}>
-            <Text>{t.next}</Text>
-          </Button>
+          <PrimaryCta label={t.next!} onPress={() => goTo(index + 1)} />
         )}
       </View>
     </Screen>

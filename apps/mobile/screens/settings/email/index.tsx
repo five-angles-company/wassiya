@@ -24,11 +24,11 @@ import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banne
 import { OtpInput } from "@workspace/ui-native/components/wassiya/otp-input"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 const CODE_LENGTH = 6
@@ -45,7 +45,6 @@ type EmailAddressResource = Awaited<
 
 export function EmailChangeScreen() {
   const { t, locale } = useStrings("settings/email")
-  const { t: common } = useStrings("common")
   const { user } = useUser()
 
   const current = user?.primaryEmailAddress?.emailAddress ?? ""
@@ -138,15 +137,29 @@ export function EmailChangeScreen() {
   }
 
   return (
-    <Screen keyboard contentClassName="gap-header">
-      <BackButton label={common.back} />
-      <Text variant="screenTitle">
-        {pending === null ? t.title : t.codeTitle}
-      </Text>
+    <Screen
+      keyboard
+      inset="footer"
+      footer={
+        pending === null ? (
+          <PrimaryCta
+            label={busy ? t.sending! : t.sendCode!}
+            onPress={() => void send()}
+            disabled={!valid || same}
+            busy={busy}
+          />
+        ) : (
+          // Cancelling is what removes the half-made address from the account,
+          // so it is a real action here rather than just "go back".
+          <PrimaryCta tone="quiet" label={t.cancel!} onPress={() => void cancel()} disabled={busy} />
+        )
+      }
+    >
+      <ScreenHeader back title={pending === null ? t.title! : t.codeTitle!} />
 
       {pending === null ? (
         <View className="gap-4">
-          <Text variant="metaSm" className="text-muted-foreground">
+          <Text variant="metaSm">
             {t.currentLabel} · {current}
           </Text>
 
@@ -171,19 +184,10 @@ export function EmailChangeScreen() {
                   : (error ?? undefined)
             }
           />
-
-          <PrimaryCta
-            label={busy ? t.sending! : t.sendCode!}
-            onPress={() => void send()}
-            disabled={!valid || same}
-            busy={busy}
-          />
         </View>
       ) : (
         <View className="gap-4">
-          <Text variant="prose" className="text-muted-foreground">
-            {t.codeSubtitle!.replace("{email}", email.trim())}
-          </Text>
+          <Text variant="prose">{t.codeSubtitle!.replace("{email}", email.trim())}</Text>
 
           <OtpInput
             value={code}
@@ -210,17 +214,6 @@ export function EmailChangeScreen() {
               {error}
             </Text>
           ) : null}
-
-          {/* Cancelling is what removes the half-made address from the account,
-              so it is a real action here rather than just "go back". */}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => void cancel()}
-            disabled={busy}
-            className="bg-card mb-auto h-[50px] items-center justify-center rounded-full active:opacity-80"
-          >
-            <Text className="text-[15.5px] opacity-55">{t.cancel}</Text>
-          </Pressable>
         </View>
       )}
     </Screen>

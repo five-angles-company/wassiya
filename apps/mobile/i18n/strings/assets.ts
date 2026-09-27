@@ -50,25 +50,16 @@ export const ASSETS = {
   filterCrypto: { ar: "عملات رقمية", en: "Crypto" },
   filterBank: { ar: "بنوك", en: "Banks" },
   filterDocument: { ar: "مستندات", en: "Docs" },
-  filterPhotos: { ar: "صور", en: "Photos" },
+  filterPhotos: { ar: "صور وفيديو", en: "Photos & videos" },
   filterDigital: { ar: "حسابات رقمية", en: "Accounts" },
   filterNote: { ar: "ملاحظات", en: "Notes" },
+  filterInvestment: { ar: "استثمارات", en: "Investments" },
+  filterInsurance: { ar: "تأمين", en: "Insurance" },
 
   add: { ar: "أضف أصلاً", en: "Add an asset" },
 
-  emptyTitle: {
-    ar: "خزنتك فارغة — وهذا طبيعي",
-    en: "Your vault is empty — that's normal",
-  },
-  emptyBody: {
-    ar: "ابدأ بأصل واحد يهمّك. أكثر ما يبدأ به الناس: عقد ملكية أو محفظة رقمية.",
-    en: "Start with one thing that matters. Most people begin with a title deed or a crypto wallet.",
-  },
+  emptyTitle: { ar: "ماذا تريد أن تحفظ أولاً؟", en: "What will you keep first?" },
   emptyAction: { ar: "أضف أول أصل", en: "Add your first asset" },
-  emptyBrowse: {
-    ar: "أو استعرض الأنواع المتاحة",
-    en: "Or browse the available types",
-  },
 
   // Searching with no match. A different sentence from an empty vault: one is
   // a normal first day, the other means the thing you looked for isn't here.
@@ -110,8 +101,6 @@ export const ASSETS = {
   },
 
   // ── Empty (v2) ──────────────────────────────────────────────────────────
-  emptySubtitle: { ar: "جاهزة وفارغة", en: "Ready and empty" },
-  emptyStart: { ar: "ابدأ بواحد من هذه", en: "Start with one of these" },
   emptyTrust: {
     ar: "يُشفَّر كل شيء على جهازك قبل أن يُحفظ — لا نستطيع نحن قراءته.",
     en: "Everything is encrypted on your phone before it is saved — we cannot read it.",
@@ -157,7 +146,7 @@ export const ADD_ASSET = {
     ar: "صك، عقد، شهادة",
     en: "A deed, a contract, a certificate",
   },
-  photosName: { ar: "صور", en: "Photos" },
+  photosName: { ar: "صور وفيديو", en: "Photos & videos" },
   photosExamples: { ar: "ألبوم مشفّر", en: "An encrypted album" },
   digitalName: { ar: "حساب رقمي", en: "Digital account" },
   digitalExamples: { ar: "بريد، متجر، بث", en: "Email, store, streaming" },
@@ -166,6 +155,10 @@ export const ADD_ASSET = {
     ar: "تعليمات، مكان أشياء، وصية شخصية",
     en: "Instructions, where things are, a letter",
   },
+  investmentName: { ar: "استثمارات وأسهم", en: "Investments" },
+  investmentExamples: { ar: "محفظة أسهم أو صندوق", en: "A portfolio or a fund" },
+  insuranceName: { ar: "تأمين", en: "Insurance" },
+  insuranceExamples: { ar: "حياة، صحي، ممتلكات", en: "Life, health, property" },
   close: { ar: "إغلاق", en: "Close" },
 
   title: { ar: "ما الذي تريد حفظه؟", en: "What do you want to keep safe?" },
@@ -180,7 +173,7 @@ export const ADD_ASSET = {
   bankHint: { ar: "آيبان وتعليمات", en: "IBAN and instructions" },
   document: { ar: "مستند", en: "Document" },
   documentHint: { ar: "عقود وشهادات", en: "Contracts and certificates" },
-  photos: { ar: "صور", en: "Photos" },
+  photos: { ar: "صور وفيديو", en: "Photos & videos" },
   photosHint: { ar: "ألبومات مشفّرة", en: "Encrypted albums" },
   digital: { ar: "حساب رقمي", en: "Digital account" },
   digitalHint: { ar: "بريد، نطاقات، اشتراكات", en: "Email, domains, subscriptions" },
@@ -296,7 +289,7 @@ export const ASSET_DETAIL = {
   // A replacement is staged until Save, and the row says so rather than
   // pretending the swap already happened.
   pendingReplace: { ar: "بانتظار الحفظ", en: "not saved yet" },
-  removePhoto: { ar: "أزل الصورة", en: "Remove photo" },
+  removePhoto: { ar: "أزل من الألبوم", en: "Remove from the album" },
   // ٤.٣ does not collect these yet; the asset screen does, because an executor who
   // finds the device and knows its PIN never has to type twelve words.
   fieldDevicePassword: { ar: "كلمة مرور الجهاز", en: "Device password" },

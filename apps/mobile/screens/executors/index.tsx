@@ -8,20 +8,27 @@
 import { useState } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { ExecutorCard } from "@workspace/ui-native/components/wassiya/executor-card"
-import { fmtDate, fmtNum, fmtPhoneMasked } from "@workspace/ui-native/lib/format"
+import {
+  fmtDate,
+  fmtNum,
+  fmtPhoneMasked,
+} from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { Plus, Search } from "lucide-react-native"
-import { Pressable, View } from "react-native"
+import { Search, Users } from "lucide-react-native"
+import { View } from "react-native"
 
+import { AddFab } from "@/components/add-fab"
+import { EmptyTab } from "@/components/empty-tab"
 import { FilterChips, type FilterChip } from "@/components/filter-chips"
+import { IconButton } from "@/components/icon-button"
+import { NoResults } from "@/components/no-results"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SearchField } from "@/components/search-field"
 import { fmtCount, type CountForms } from "@/i18n/plural"
 import { useStrings } from "@/i18n/use-strings"
-import { ExecutorsEmpty } from "@/screens/executors/components/executors-empty"
 
 type ExecutorFilter = "noSheet"
 
@@ -40,35 +47,64 @@ export function ExecutorsScreen() {
     many: t.countMany,
   }
 
-  if (executors !== undefined && executors.length === 0) {
+  const all = executors ?? []
+  const count = all.length
+  const empty = executors !== undefined && count === 0
+  const add = () => router.push("/executors/new")
+
+  // One header for both states, so adding the first executor changes the
+  // list under it and nothing above.
+  const header = (
+    <ScreenHeader
+      eyebrow={
+        executors === undefined
+          ? undefined
+          : fmtCount(count, fmtNum(count, locale), forms, locale)
+      }
+      title={t.title!}
+      description={empty ? undefined : t.howItWorks}
+      trailing={
+        empty ? undefined : (
+          <IconButton
+            icon={Search}
+            label={t.searchPlaceholder!}
+            onPress={() => setSearching((was) => !was)}
+          />
+        )
+      }
+    />
+  )
+
+  if (empty) {
     return (
-      <Screen contentClassName="gap-header">
-        <ExecutorsEmpty
-          title={t.title}
-          subtitle={t.emptySubtitle!}
-          lead={t.emptyLead!}
-          steps={[
-            { label: t.emptyStep1!, body: t.emptyStep1Body! },
-            { label: t.emptyStep2!, body: t.emptyStep2Body! },
-            { label: t.emptyStep3!, body: t.emptyStep3Body! },
-          ]}
-          addLabel={t.add!}
-          onAdd={() => router.push("/executors/new")}
-          locale={locale}
+      <Screen>
+        {header}
+        <EmptyTab
+          icon={Users}
+          title={t.emptyTitle!}
+          body={t.emptyLead!}
+          actionLabel={t.add!}
+          onAction={add}
+          footnote={t.lossNotice}
         />
       </Screen>
     )
   }
 
-  const all = executors ?? []
-  const count = all.length
   // Counted from the whole list, so a chip's number does not change as you
   // narrow — the same rule the vault follows.
   const noSheet = all.filter((row) => row.sheetPrintedAt === null).length
   const chips: FilterChip<ExecutorFilter>[] = [
     { key: null, label: t.filterAll!, count },
     ...(noSheet > 0
-      ? [{ key: "noSheet" as const, label: t.filterNoSheet!, count: noSheet, urgent: true }]
+      ? [
+          {
+            key: "noSheet" as const,
+            label: t.filterNoSheet!,
+            count: noSheet,
+            urgent: true,
+          },
+        ]
       : []),
   ]
 
@@ -79,106 +115,64 @@ export function ExecutorsScreen() {
   })
 
   return (
-    <Screen
-      contentClassName="gap-header"
-      float={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t.add}
-          onPress={() => router.push("/executors/new")}
-          className="bg-primary active:bg-terracotta-600 size-14 items-center justify-center rounded-full shadow-md"
-        >
-          <Icon as={Plus} size={26} strokeWidth={2.75} className="text-background" />
-        </Pressable>
-      }
-    >
-      <View className="flex-row items-center gap-3">
-        <View className="min-w-0 flex-1">
-          {executors !== undefined ? (
-            <Text variant="metaSm">
-              {fmtCount(count, fmtNum(count, locale), forms, locale)}
-            </Text>
-          ) : null}
-          <Text variant="pageTitle">{t.title}</Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t.searchPlaceholder}
-          onPress={() => setSearching((was) => !was)}
-          className="size-10 shrink-0 items-center justify-center rounded-full bg-card active:bg-sand-300"
-        >
-          <Icon as={Search} size={18} strokeWidth={2.75} className="text-foreground" />
-        </Pressable>
-      </View>
+    <Screen float={<AddFab label={t.add!} onPress={add} />}>
+      {header}
+      <View className="gap-header grow">
+        {searching ? (
+          <SearchField
+            value={search}
+            onChangeText={setSearch}
+            placeholder={t.searchPlaceholder!}
+            clearLabel={t.clearFilters!}
+          />
+        ) : null}
 
-      <Text variant="prose" className="text-muted-foreground">
-        {t.howItWorks}
-      </Text>
+        {count > 1 || noSheet > 0 ? (
+          <FilterChips chips={chips} selected={filter} onSelect={setFilter} />
+        ) : null}
 
-      {searching ? (
-        <SearchField
-          value={search}
-          onChangeText={setSearch}
-          placeholder={t.searchPlaceholder!}
-          clearLabel={t.clearFilters!}
-        />
-      ) : null}
-
-      {count > 1 || noSheet > 0 ? (
-        <FilterChips chips={chips} selected={filter} onSelect={setFilter} />
-      ) : null}
-
-      {rows.length === 0 ? (
-        <View className="gap-2 pt-2">
-          <Text variant="rowTitle">{t.noResultsTitle}</Text>
-          <Text variant="prose" className="text-muted-foreground">
-            {t.noResultsBody}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
+        {rows.length === 0 ? (
+          <NoResults
+            title={t.noResultsTitle!}
+            body={t.noResultsBody!}
+            clearLabel={t.clearFilters!}
+            onClear={() => {
               setFilter(null)
               setSearch("")
             }}
-            hitSlop={8}
-            className="mt-1 self-start"
-          >
-            <Text variant="action" className="text-terracotta-800 font-body-bold">
-              {t.clearFilters}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      <View className="gap-row">
-        {rows.map((row) => (
-          <ExecutorCard
-            key={row.id}
-            name={row.name}
-            detail={fmtPhoneMasked(row.phone)}
-            locale={locale}
-            labels={{ noSheet: t.noSheet }}
-            sheetSummary={
-              row.sheetPrintedAt === null
-                ? undefined
-                : t.sheetPrinted!.replace(
-                    "{date}",
-                    fmtDate(new Date(row.sheetPrintedAt), locale)
-                  )
-            }
-            onPress={() =>
-              router.push({
-                pathname: "/executors/[id]/edit",
-                params: { id: row.id },
-              })
-            }
           />
-        ))}
-      </View>
+        ) : null}
 
-      <Text variant="metaSm" className="mb-auto text-muted-foreground">
-        {t.lossNotice}
-      </Text>
+        <View className="gap-row">
+          {rows.map((row) => (
+            <ExecutorCard
+              key={row.id}
+              name={row.name}
+              detail={fmtPhoneMasked(row.phone)}
+              locale={locale}
+              labels={{ noSheet: t.noSheet }}
+              sheetSummary={
+                row.sheetPrintedAt === null
+                  ? undefined
+                  : t.sheetPrinted!.replace(
+                      "{date}",
+                      fmtDate(new Date(row.sheetPrintedAt), locale)
+                    )
+              }
+              onPress={() =>
+                router.push({
+                  pathname: "/executors/[id]/edit",
+                  params: { id: row.id },
+                })
+              }
+            />
+          ))}
+        </View>
+
+        <Text variant="metaSm" className="mb-auto">
+          {t.lossNotice}
+        </Text>
+      </View>
     </Screen>
   )
 }

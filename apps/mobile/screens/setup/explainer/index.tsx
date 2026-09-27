@@ -1,5 +1,4 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
-import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { KeyCard } from "@workspace/ui-native/components/wassiya/key-card"
 import { router } from "expo-router"
 import { Fingerprint, Printer, Users } from "lucide-react-native"
@@ -7,6 +6,7 @@ import { Fingerprint, Printer, Users } from "lucide-react-native"
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -27,20 +27,18 @@ export function ExplainerScreen() {
   const { t: common } = useStrings("common")
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={<PrimaryCta label={t.cta!} onPress={() => router.replace("/setup/biometrics")} />}
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.explainer}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      <Text variant="screenTitle" className="mb-2.5 text-[28px]">
-        {t.title}
-      </Text>
-      <Text className="mb-5 text-[14.5px] leading-[1.7] text-muted-foreground">
-        {t.body}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.body} />
 
       <View className="gap-row">
         <KeyCard
@@ -62,15 +60,6 @@ export function ExplainerScreen() {
           pending
         />
       </View>
-
-      <View className="grow" />
-
-      <Button
-        className="mt-5"
-        onPress={() => router.replace("/setup/biometrics")}
-      >
-        <Text>{t.cta}</Text>
-      </Button>
     </Screen>
   )
 }

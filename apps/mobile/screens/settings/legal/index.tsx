@@ -14,8 +14,8 @@ import Constants from "expo-constants"
 import { FileText, Lock, ShieldCheck } from "lucide-react-native"
 import { Linking, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 const SITE = "https://wassiya.app"
@@ -27,14 +27,10 @@ function legalUrl(locale: "ar" | "en", page: string): string {
 
 export function LegalScreen() {
   const { t, locale } = useStrings("settings/legal")
-  const { t: common } = useStrings("common")
 
   return (
     <Screen>
-      <BackButton label={common.back} />
-      <Text variant="screenTitle" className="mb-header mt-4">
-        {t.title}
-      </Text>
+      <ScreenHeader back title={t.title!} />
 
       <View className="rounded-card bg-card overflow-hidden">
         <SettingsRow
@@ -59,14 +55,11 @@ export function LegalScreen() {
         />
       </View>
 
-      <Text
-        variant="metaSm"
-        className="text-muted-foreground mt-header leading-[1.75]"
-      >
+      <Text variant="footnote" className="mt-header">
         {t.notLegal}
       </Text>
-      <Text variant="metaSm" className="text-muted-foreground mt-3">
-        {t.version.replace("{v}", Constants.expoConfig?.version ?? "—")}
+      <Text variant="metaSm" className="mt-3">
+        {t.version!.replace("{v}", Constants.expoConfig?.version ?? "—")}
       </Text>
     </Screen>
   )

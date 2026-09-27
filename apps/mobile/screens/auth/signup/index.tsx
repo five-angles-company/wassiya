@@ -1,16 +1,16 @@
 import { useSignUp } from "@clerk/expo"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
 import { Lock } from "lucide-react-native"
 import { useState } from "react"
 import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { CountryPicker } from "@/components/country-picker"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { DEFAULT_COUNTRY } from "@/lib/countries"
 import { splitFullName, useOnboarding } from "@/stores/onboarding"
@@ -34,7 +34,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  */
 export function SignUpScreen() {
   const { t, locale } = useStrings("auth/signup")
-  const { t: common } = useStrings("common")
   const { signUp, errors, fetchStatus } = useSignUp()
   const { setDraft } = useOnboarding()
 
@@ -92,19 +91,17 @@ export function SignUpScreen() {
   }
 
   return (
-    <Screen keyboard inset="flow">
-      <BackButton
-        label={common.back}
-        fallbackHref="/welcome"
-        className="mb-header"
-      />
-
-      <Text variant="screenTitle" className="mb-2 text-[30px]">
-        {t.title}
-      </Text>
-      <Text className="mb-5.5 text-[14.5px] text-muted-foreground">
-        {t.subtitle}
-      </Text>
+    <Screen
+      keyboard
+      inset="flow"
+      footer={
+        <View className="gap-3">
+          <Text variant="metaSm">{t.legal}</Text>
+          <PrimaryCta label={t.cta!} onPress={() => void submit()} disabled={!ready} busy={busy} />
+        </View>
+      }
+    >
+      <ScreenHeader back="/welcome" title={t.title!} description={t.subtitle} />
 
       <View className="gap-4">
         <Field
@@ -147,16 +144,6 @@ export function SignUpScreen() {
         icon={Lock}
         description={t.nameNotice}
       />
-
-      <View className="grow" />
-
-      <Text variant="metaSm" className="mt-5 mb-3 text-muted-foreground">
-        {t.legal}
-      </Text>
-
-      <Button disabled={!ready} onPress={() => void submit()}>
-        <Text>{t.cta}</Text>
-      </Button>
 
       {/* Clerk's bot protection is on by default and needs this mount point
           on any screen that can create a sign-up. */}

@@ -32,17 +32,11 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
+import { assetTypeValidator } from "./model/assetTypes"
 import { assertCanAddAsset, assertEditWithinLimits } from "./model/entitlements"
 import { storageUsed } from "./model/plans"
 
-const assetType = v.union(
-  v.literal("crypto"),
-  v.literal("bank"),
-  v.literal("document"),
-  v.literal("photos"),
-  v.literal("digital"),
-  v.literal("note")
-)
+const assetType = assetTypeValidator
 
 const assetMeta = v.object({
   itemCount: v.optional(v.number()),

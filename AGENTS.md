@@ -111,17 +111,53 @@ component that implements it.
 Implementation state — every primitive, its props, its states — is in
 `packages/ui-native/README.md`.
 
-### The vault's grammar (sections ٤.١–٤.٩)
+### The screen grammar (every screen)
 
-Read this before touching a vault screen:
+Read this before touching any mobile screen. Every screen is built from the same
+pieces in `apps/mobile/components/`; a screen that hand-builds one of them is
+the inconsistency this list exists to prevent.
 
-> Fields are label-over-value rows separated by hairlines — no boxed inputs, no
-> cards, except around a secret or the recipient set. One accent per screen.
-> Titles 28px Cairo 800, labels 12px/50%, values 16px/600, prose 14.5–15.5px.
-> Chips are pills on `--color-surface`; the selected one is solid terracotta.
-> Primary CTA 56px; a disabled CTA is surface-toned, never a faded primary.
-> Status is carried by faces and one line of olive or terracotta text — no
-> badges, no bars, no scores.
+- **`ScreenHeader` is the top of every screen that is not a step flow**: the
+  back control, a small line above the title, the title (`screenTitle`, 28px —
+  tab roots included), one line under it, one round `IconButton` at the far
+  end. A screen never sizes or spaces its own title, and a screen's states
+  (empty, loading, full) share one header.
+- **The primary action is `PrimaryCta`, 56px, at the bottom** — in `Screen`'s
+  `footer`, always on a screen with an input. `tone="quiet"` is the calm
+  alternative, `tone="danger"` is what cannot be undone. A disabled primary is
+  surface-toned, never a faded primary. The shadcn `Button` is not used in
+  screens; a list tab adds with the round `AddFab`.
+- **Every confirmation is a `ConfirmSheet`** — delete, sign out, revoke, leave
+  a filled form. Never `Alert.alert`.
+- **Cards are borderless** (`rounded-card bg-card`, or `Surface`). A list is
+  rows inside one card with inset dividers (`SettingsRow`, `AuditRow`); a list
+  of things is cards spaced `gap-row` (`VaultRow`, `ExecutorCard`).
+- **States have one component each**: `LoadingScreen` (keeps its back
+  control — never a dead end), `EmptyTab` for a list tab with nothing in it
+  (icon, question, one sentence, the add button, centred under the header),
+  `EmptyState` for an empty list inside a screen, `NoResults` when a filter
+  empties a list, `LoadMore` (a text link).
+- **Chips are `ChipRow` only**: pills on `--color-surface`, the selected one
+  solid terracotta. Banner actions are text links.
+- **Text uses the `Text` variants.** `prose`, `proseSm`, `footnote`, `meta`,
+  `metaSm` are already muted; never dim with `opacity-*`. Error text is
+  `terracotta-800`.
+- **The back chevron is `ChevronLeft` with `flip`** — it points right in
+  Arabic. `BackButton` and `ScreenTop` must stay drawn identically.
+
+### The vault's flows (sections ٤.١–٤.٩)
+
+> **Adding an asset is a step flow** (`screens/assets/flow/step-flow.tsx`): one
+> question per screen, 28px Cairo 800, a continuous progress bar, and one
+> button that names what is missing. **A step never holds a lone field**: related
+> fields share one (name + photos, service + login), so no screen is one input
+> above empty space. Fields are boxed (`components/field.tsx`,
+> `components/secret-field.tsx`); a choice between kinds is large cards
+> (`choice-cards.tsx`). The last step is always the handover choice
+> (يُسلَّم / خاص), and back walks the steps. **An asset's page is its sections as
+> cards**, each opening the one step that edits it; the seed phrase step asks
+> for a fingerprint. Answers live in component state only — nothing is written
+> to the device before saving (the note's text draft is the one exception).
 
 ### Tokens
 
@@ -132,7 +168,7 @@ The "Organic" palette is the token authority and both apps share it:
 
 Two traps worth stating:
 
-- **Button text is `--color-bg` (#f5ead8), not `primary-foreground` (#fff2eb).**
+- **Button text is `--color-bg` (#f5ead8), not `primary-foreground` (#fff6f0).**
 - **The heading face is Cairo 800/900.** Any token declaring Caprasimo is wrong
   — it has no Arabic glyphs.
 

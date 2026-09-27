@@ -11,19 +11,38 @@
  * The note under the control says so, rather than letting someone pick English
  * and wonder why the layout did not flip.
  */
+import { useRef, useState } from "react"
+import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { ConfirmSheet } from "@workspace/ui-native/components/wassiya/confirm-sheet"
 import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { SheetSelect } from "@workspace/ui-native/components/wassiya/sheet-select"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { FileKey, FileText, Fingerprint, Languages, LifeBuoy, LogOut, ScrollText, Smartphone, UserRound, Wallet } from "lucide-react-native"
-import { Alert, View } from "react-native"
+import {
+  FileKey,
+  FileText,
+  Fingerprint,
+  Languages,
+  LifeBuoy,
+  LogOut,
+  ScrollText,
+  Smartphone,
+  UserRound,
+  Wallet,
+} from "lucide-react-native"
+import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
-import { LOCK_WHILE_OPEN, usePreferences } from "@/stores/preferences"
+import {
+  AutoLockSheet,
+  autoLockLabel,
+} from "@/screens/settings/components/auto-lock-sheet"
+import { usePreferences } from "@/stores/preferences"
 
 export function SettingsScreen() {
   const { t, locale } = useStrings("settings")
@@ -49,32 +68,22 @@ export function SettingsScreen() {
   const autoLockMinutes = usePreferences((s) => s.autoLockMinutes)
   const supportUnread = useQuery(api.support.threads.unreadCount)
 
-  function confirmSignOut() {
-    Alert.alert(t.signOutTitle, t.signOutBody, [
-      { text: t.cancel, style: "cancel" },
-      {
-        text: t.signOut,
-        style: "destructive",
-        onPress: () => {
-          void (async () => {
-            await signOut()
-            router.replace("/")
-          })()
-        },
-      },
-    ])
+  const lockSheet = useRef<TrueSheet>(null)
+  const [signingOut, setSigningOut] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+
+  async function leave(dismiss: () => Promise<void>) {
+    setLeaving(true)
+    await dismiss()
+    await signOut()
+    router.replace("/")
   }
 
   return (
     <Screen>
-      {/* The tab-root header: a quiet line over a 19px name, as on ٣.١, ٤.١
-          and ٥.١. The email is the one fact this screen can state that no
-          other screen does — and "which account am I signed into?" is the
-          question the tab exists to answer. */}
-      <View className="mb-header min-w-0">
-        {me?.email ? <Text variant="metaSm">{me.email}</Text> : null}
-        <Text variant="pageTitle">{t.title}</Text>
-      </View>
+      {/* The email answers the question this tab exists for: which account am
+          I signed into? */}
+      <ScreenHeader eyebrow={me?.email ?? undefined} title={t.title!} />
 
       <Group label={t.groupAccount}>
         <SettingsRow
@@ -120,10 +129,10 @@ export function SettingsScreen() {
         <SettingsRow
           icon={Fingerprint}
           label={t.rowAutoLock}
-          value={minutesLabel(autoLockMinutes, autoLock)}
+          value={autoLockLabel(autoLockMinutes, autoLock)}
           chevron
           divider
-          onPress={() => router.push("/settings/lock")}
+          onPress={() => void lockSheet.current?.present()}
         />
         <SettingsRow
           icon={Smartphone}
@@ -152,7 +161,7 @@ export function SettingsScreen() {
         />
       </Group>
 
-      <Group label={t.groupPlan}>
+      <Group label={t.groupGeneral}>
         <SettingsRow
           icon={Wallet}
           label={t.rowPlan}
@@ -164,22 +173,18 @@ export function SettingsScreen() {
                 : planNames.freePlan
           }
           chevron
+          divider
           onPress={() => router.push("/settings/plan")}
         />
-      </Group>
-
-      <Group label={t.groupHelp}>
         <SettingsRow
           icon={LifeBuoy}
           label={t.rowHelp}
           value={supportUnread ? t.helpNewReply : undefined}
           valueTone="action"
           chevron
+          divider
           onPress={() => router.push("/settings/help")}
         />
-      </Group>
-
-      <Group label={t.groupLegal}>
         <SettingsRow
           icon={FileText}
           label={t.rowLegal}
@@ -188,11 +193,25 @@ export function SettingsScreen() {
         />
       </Group>
 
-      <SettingsRow
-        className="mt-6"
-        icon={LogOut}
-        label={t.signOut}
-        onPress={confirmSignOut}
+      <Group>
+        <SettingsRow
+          icon={LogOut}
+          label={t.signOut}
+          onPress={() => setSigningOut(true)}
+        />
+      </Group>
+
+      <AutoLockSheet ref={lockSheet} />
+
+      <ConfirmSheet
+        open={signingOut}
+        onClose={() => setSigningOut(false)}
+        title={t.signOutTitle!}
+        body={[t.signOutBody!]}
+        confirmLabel={t.signOut!}
+        cancelLabel={t.cancel!}
+        onConfirm={(dismiss) => void leave(dismiss)}
+        busy={leaving}
       />
     </Screen>
   )
@@ -202,22 +221,13 @@ function Group({
   label,
   children,
 }: {
-  label: string
+  label?: string
   children: React.ReactNode
 }) {
   return (
     <View className="mb-header gap-2">
-      <Text variant="sectionLabel">{label}</Text>
-      <View className="rounded-card bg-card overflow-hidden">{children}</View>
+      {label !== undefined ? <Text variant="sectionLabel">{label}</Text> : null}
+      <View className="overflow-hidden rounded-card bg-card">{children}</View>
     </View>
   )
-}
-
-/** The current window, in the same words ٩.٢ offers. */
-function minutesLabel(minutes: number, t: Record<string, string>): string {
-  if (minutes === LOCK_WHILE_OPEN) return t.whileOpen!
-  if (minutes === 1) return t.minute1!
-  if (minutes === 15) return t.minute15!
-  if (minutes === 60) return t.minute60!
-  return t.minute5!
 }

@@ -62,30 +62,6 @@ export const HOME = {
   itemCheckin: { ar: "التحقق من الحياة", en: "Life check-in" },
 } satisfies LabelSet<string>
 
-/** ٣.٢ — the vault lock. */
-export const LOCK = {
-  title: { ar: "خزنتك مقفلة", en: "Your vault is locked" },
-  body: { ar: "المس مستشعر البصمة للمتابعة", en: "Touch the sensor to continue" },
-  autoLocked: {
-    ar: "قُفلت تلقائياً بعد {n} دقائق",
-    en: "Locked automatically after {n} minutes",
-  },
-  unlock: { ar: "فتح بالبصمة", en: "Unlock" },
-  unlocking: { ar: "جارٍ الفتح…", en: "Unlocking…" },
-  useRecovery: { ar: "استخدم وثيقة الاسترداد", en: "Use your recovery sheet" },
-  prompt: { ar: "افتح خزنتك", en: "Unlock your vault" },
-  denied: {
-    ar: "لم يتم التحقق. حاول مرة أخرى، أو استخدم وثيقة الاسترداد.",
-    en: "Not verified. Try again, or use your recovery sheet.",
-  },
-  // Biometrics changed on the device — the key is gone, and only the recovery
-  // ceremony helps. Named separately because retrying can never fix it.
-  keyLost: {
-    ar: "تغيّرت بصمات هذا الجهاز، ولم يعد بإمكانه فتح مفتاحك. استخدم وثيقة الاسترداد.",
-    en: "This device's biometrics changed and it can no longer open your key. Use your recovery sheet.",
-  },
-} satisfies LabelSet<string>
-
 /** ٣.٣ — notifications. */
 export const NOTIFICATIONS = {
   title: { ar: "الإشعارات", en: "Notifications" },
@@ -94,6 +70,7 @@ export const NOTIFICATIONS = {
   // Two bands, never one flat feed.
   needsAttention: { ar: "يحتاج انتباهك", en: "Needs your attention" },
   history: { ar: "هذا الأسبوع", en: "This week" },
+  loadMore: { ar: "أظهر المزيد", en: "Show more" },
 
   empty: { ar: "لا إشعارات", en: "Nothing here" },
   emptyBody: {

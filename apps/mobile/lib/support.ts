@@ -3,7 +3,7 @@
  *
  * ⚠️ These uploads are **plaintext**, unlike every other upload in this app:
  * support staff have to be able to read a screenshot. The composer says so, and
- * nothing from the vault may ever be routed through here — `uploadCiphertext`
+ * nothing from the vault may ever be routed through here — `encryptFileAndUpload`
  * is the vault's path and this is deliberately a different function.
  */
 import { ConvexError } from "convex/values"

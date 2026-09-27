@@ -1,6 +1,4 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
-import { MeterBar } from "@workspace/ui-native/components/wassiya/meter-bar"
-import { fmtNum } from "@workspace/ui-native/lib/format"
 import { cn } from "@workspace/ui-native/lib/utils"
 import type { Href } from "expo-router"
 import type * as React from "react"
@@ -10,88 +8,79 @@ import { BackButton } from "@/components/back-button"
 import { useStrings } from "@/i18n/use-strings"
 
 /**
- * The top of every screen: back affordance, title, optional supporting line.
+ * The top of every screen that is not a step flow: the back control, then the
+ * title with an optional line above and below it.
  *
- * Two levels, because there are two kinds of screen. A tab root is the top of a
- * section and gets `--text-screen` (26px); a pushed route is a detail within one
- * and gets `--text-page` (19px). Levelled titles are most of what makes a stack
- * feel navigable rather than flat — before this, `screenTitle` was being
- * inline-overridden to eight different sizes across 43 call sites, three of
- * which exist nowhere in the type scale.
+ * One title size everywhere (`screenTitle`), tab roots included. A screen that
+ * sizes or spaces its own title is the inconsistency this exists to end.
  *
- * **`back="none"` is a statement of intent, not an omission.** Ten pushed routes
- * render no back affordance and `headerShown: false` is global, so there is no
- * navigation-bar fallback — they are genuinely one-directional. Nearly all are
- * the setup flow, where you cannot un-verify an identity or un-generate a key,
- * so offering "back" would promise something the security model cannot honour.
+ * **No `back` is a statement of intent.** `headerShown: false` is global, so a
+ * screen without one is genuinely one-directional — the setup flow, where you
+ * cannot un-verify an identity or un-generate a key.
  */
 export type ScreenHeaderProps = {
   title: string
-  /** Tab root (26px) or pushed route (19px). */
-  level?: "root" | "page"
   /**
-   * `"none"` for a step that genuinely cannot be reversed. Otherwise the
-   * fallback href for when there's no history to pop — the splash resumes
-   * users *into* deep routes, so a plain `router.back()` would dead-end.
+   * Shows the back control. An href is where it goes when there is no history
+   * to pop — the splash resumes users *into* deep routes.
    */
-  back?: "none" | Href
-  /** Trailing slot — a count, an edit action, a status pill. */
-  trailing?: React.ReactNode
+  back?: true | Href
+  /** Replaces the default pop, for a screen that must intercept leaving. */
+  onBack?: () => void
+  /** A small line above the title — the account's email on a tab root. */
+  eyebrow?: string
   /**
-   * One line under the title. A plain string renders as muted prose; pass a
-   * node when the line needs its own tone — a vault with unrouted assets says
-   * so in terracotta, and that is the screen's most useful sentence.
+   * Under the title. A string renders as muted prose; pass a node when the
+   * line needs its own tone.
    */
   description?: React.ReactNode
-  /** Renders the progress meter for a multi-step flow. */
-  step?: { index: number; total: number }
+  /** Beside the title, at the far end — a round icon button. */
+  trailing?: React.ReactNode
   className?: string
 }
 
 export function ScreenHeader({
   title,
-  level = "page",
-  back = "none",
-  trailing,
+  back,
+  onBack,
+  eyebrow,
   description,
-  step,
+  trailing,
   className,
 }: ScreenHeaderProps) {
-  const { t, locale } = useStrings("common")
+  const { t } = useStrings("common")
 
   return (
-    <View className={cn("mb-header", className)}>
-      {back !== "none" ? (
-        <BackButton label={t.back} fallbackHref={back} className="mb-4" />
+    <View className={cn("mb-6", className)}>
+      {back !== undefined ? (
+        <BackButton
+          label={t.back}
+          fallbackHref={back === true ? undefined : back}
+          onPress={onBack}
+          className="mb-4"
+        />
       ) : null}
 
       <View className="flex-row items-center gap-3">
-        <Text
-          variant={level === "root" ? "screenTitle" : "pageTitle"}
-          className="min-w-0 flex-1"
-        >
-          {title}
-        </Text>
+        <View className="min-w-0 flex-1">
+          {eyebrow !== undefined ? (
+            <Text variant="metaSm" className="mb-1" numberOfLines={1}>
+              {eyebrow}
+            </Text>
+          ) : null}
+          <Text variant="screenTitle">{title}</Text>
+        </View>
         {trailing}
       </View>
 
       {description !== undefined ? (
         typeof description === "string" ? (
-          <Text variant="prose" className="mt-2">
+          <Text variant="proseSm" className="mt-2">
             {description}
           </Text>
         ) : (
           <View className="mt-2">{description}</View>
         )
-      ) : null}
-
-      {step !== undefined ? (
-        <View className="mt-4 flex-row items-center gap-3">
-          <MeterBar className="flex-1" value={step.index / step.total} />
-          <Text variant="metaSm">
-            {`${fmtNum(step.index, locale)} ${t.stepSeparator} ${fmtNum(step.total, locale)}`}
-          </Text>
-        </View>
       ) : null}
     </View>
   )

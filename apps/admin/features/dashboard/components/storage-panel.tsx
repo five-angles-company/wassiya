@@ -15,6 +15,7 @@ import {
 } from "@workspace/ui/components/chart"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { useQuery } from "convex/react"
+import type { FunctionReturnType } from "convex/server"
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts"
 
 import { useLocale } from "@/components/locale-provider"
@@ -23,34 +24,33 @@ import { barValueLabel } from "@/features/dashboard/components/bar-value-label"
 import { STORAGE } from "@/features/dashboard/strings/storage"
 import { fmtBytes, fmtNumber, fmtTally } from "@/lib/format"
 
-const TYPE_KEYS = [
-  "crypto",
-  "bank",
-  "document",
-  "photos",
-  "digital",
-  "note",
-] as const
+type AssetType = keyof FunctionReturnType<typeof api.admin.storage>["byType"]
 
-const TYPE_LABEL: Record<
-  (typeof TYPE_KEYS)[number],
-  { ar: string; en: string }
-> = {
+// Keyed by the backend's own type list, so a type added there fails the build
+// here instead of vanishing from the chart.
+const TYPE_LABEL: Record<AssetType, { ar: string; en: string }> = {
   crypto: { ar: "عملات رقمية", en: "Crypto" },
   bank: { ar: "حسابات بنكية", en: "Bank" },
   document: { ar: "مستندات", en: "Documents" },
-  photos: { ar: "صور", en: "Photos" },
+  photos: { ar: "صور وفيديو", en: "Photos & videos" },
   digital: { ar: "حسابات رقمية", en: "Digital" },
   note: { ar: "ملاحظات", en: "Notes" },
+  investment: { ar: "استثمارات وأسهم", en: "Investments" },
+  insurance: { ar: "تأمين", en: "Insurance" },
 }
+
+const TYPE_KEYS = Object.keys(TYPE_LABEL) as AssetType[]
+
+const BAR_ROW_PX = 28
+const MIN_CHART_PX = 224
 
 /**
  * Storage by asset type, ranked, with the one caveat that has to stay on screen.
  *
  * **Magnitude, not identity**: one hue, bars ordered largest first, each
- * directly labelled. Six categories would need six distinguishable colours, and
- * this palette provably cannot supply two — terracotta against olive measures
- * ΔE 5.2 under deuteranopia.
+ * directly labelled. One colour per category would need eight distinguishable
+ * colours, and this palette provably cannot supply two — terracotta against
+ * olive measures ΔE 5.2 under deuteranopia.
  *
  * The billing line survived the cull because deleting it would be dishonest:
  * nothing in this deployment writes a plan or a renewal date, so an empty
@@ -99,7 +99,10 @@ export function StoragePanel() {
         ) : (
           <ChartContainer
             config={config}
-            className="h-56 w-full [&_svg]:[direction:ltr]"
+            className="w-full [&_svg]:[direction:ltr]"
+            style={{
+              height: Math.max(MIN_CHART_PX, chartData.length * BAR_ROW_PX),
+            }}
           >
             <BarChart
               accessibilityLayer

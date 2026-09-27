@@ -14,8 +14,8 @@ export type SettingsRowProps = {
   icon?: LucideIcon;
   /** Trailing text — a price, a current value, a count. */
   value?: string;
-  /** Tint the trailing value as an action ("ترقية… ٢٩ ر.س"). */
-  valueTone?: 'default' | 'action';
+  /** `action` for a trailing call to act; `done` / `attention` for a status. */
+  valueTone?: 'default' | 'action' | 'done' | 'attention';
   /** Trailing control (a Switch) in place of the value + chevron. */
   accessory?: React.ReactNode;
   /** Recede the row — used for "إلغاء الاشتراك". */
@@ -27,6 +27,13 @@ export type SettingsRowProps = {
   onPress?: () => void;
   className?: string;
 };
+
+const VALUE_TONE = {
+  default: 'text-muted-foreground',
+  action: 'text-terracotta-700 font-body-semibold',
+  done: 'text-olive-700 font-body-semibold',
+  attention: 'text-terracotta-800 font-body-semibold',
+} as const;
 
 /**
  * A row in a settings list. Recurs throughout section ٩ — billing, plan,
@@ -64,7 +71,7 @@ export function SettingsRow({
           onPress && 'active:opacity-70',
           quiet && 'opacity-80'
         )}>
-        {icon ? <Icon as={icon} className="size-4.5 shrink-0 opacity-70" /> : null}
+        {icon ? <Icon as={icon} className="text-muted-foreground size-4.5 shrink-0" /> : null}
 
         <View className="min-w-0 flex-1 gap-0.5">
           <Text variant="rowTitle" numberOfLines={1}>
@@ -78,17 +85,11 @@ export function SettingsRow({
         </View>
 
         {value ? (
-          <Text
-            className={cn(
-              'text-meta shrink-0',
-              valueTone === 'action' ? 'text-terracotta-700 font-body-semibold' : 'opacity-70'
-            )}>
-            {value}
-          </Text>
+          <Text className={cn('text-meta shrink-0', VALUE_TONE[valueTone])}>{value}</Text>
         ) : null}
 
         {accessory ?? (chevron && onPress ? (
-          <Icon as={ChevronRight} flip className="size-4 shrink-0 opacity-40" />
+          <Icon as={ChevronRight} flip className="text-muted-foreground size-4 shrink-0" />
         ) : null)}
       </Row>
       {/* Inset to the row's own padding rather than bleeding to the card's

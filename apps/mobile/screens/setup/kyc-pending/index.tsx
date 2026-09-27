@@ -1,13 +1,15 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { Redirect, router } from "expo-router"
-import { ActivityIndicator, View } from "react-native"
+import { View } from "react-native"
 
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { identityRetriesExhausted, SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -39,13 +41,7 @@ export function KycPendingScreen() {
   const { t: common } = useStrings("common")
   const status = useQuery(api.identity.status)
 
-  if (status === undefined) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </View>
-    )
-  }
+  if (status === undefined) return <LoadingScreen />
 
   if (status === null) return <Redirect href="/" />
   if (status.status === "verified")
@@ -54,35 +50,38 @@ export function KycPendingScreen() {
   const rejected = status.status === "rejected"
   const exhausted = identityRetriesExhausted(status.attempts)
 
+  const footer = !rejected ? undefined : exhausted ? (
+    <PrimaryCta
+      label={t.contactSupport!}
+      onPress={() => router.push("/settings/help/new?topic=kyc")}
+    />
+  ) : (
+    <PrimaryCta label={t.tryAgain!} onPress={() => router.replace("/setup/kyc")} />
+  )
+
   return (
-    <Screen inset="flow">
+    <Screen inset="flow" footer={footer}>
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      {rejected ? (
-        <RejectedBody
-          exhausted={exhausted}
-          attemptsRemaining={status.attemptsRemaining}
-          locale={locale}
-          t={t}
-        />
+      {rejected && exhausted ? (
+        <ScreenHeader title={t.supportTitle!} description={t.supportBody} />
+      ) : rejected ? (
+        <>
+          <ScreenHeader title={t.rejectedTitle!} />
+          <AlertBanner variant="security" description={t.rejectedBody} />
+          <Text variant="meta" className="mt-3">
+            {`${t.attemptsLeft}: ${fmtNum(status.attemptsRemaining, locale)}`}
+          </Text>
+        </>
       ) : (
         <>
-          <Text
-            variant="screenTitle"
-            className="mb-2.5 text-center text-[27px]"
-          >
-            {t.title}
-          </Text>
-          <Text className="mb-6 text-center text-[14.5px] leading-[1.7] text-muted-foreground">
-            {t.body}
-          </Text>
-
-          <Text variant="metaSm" className="mb-2.5 text-muted-foreground">
+          <ScreenHeader title={t.title!} description={t.body} />
+          <Text variant="metaSm" className="mb-2.5">
             {t.checksHeading}
           </Text>
           <View className="gap-row">
@@ -92,52 +91,6 @@ export function KycPendingScreen() {
           </View>
         </>
       )}
-
-      <View className="grow" />
     </Screen>
-  )
-}
-
-type RejectedBodyProps = {
-  exhausted: boolean
-  attemptsRemaining: number
-  locale: "ar" | "en"
-  t: Record<string, string>
-}
-
-function RejectedBody({
-  exhausted,
-  attemptsRemaining,
-  locale,
-  t,
-}: RejectedBodyProps) {
-  if (exhausted) {
-    return (
-      <View className="gap-5">
-        <Text variant="screenTitle">{t.supportTitle}</Text>
-        <Text className="text-[14.5px] leading-[1.7] text-muted-foreground">
-          {t.supportBody}
-        </Text>
-        <Button
-          variant="outline"
-          onPress={() => router.push("/settings/help/new?topic=kyc")}
-        >
-          <Text>{t.contactSupport}</Text>
-        </Button>
-      </View>
-    )
-  }
-
-  return (
-    <View className="gap-5">
-      <Text variant="screenTitle">{t.rejectedTitle}</Text>
-      <AlertBanner variant="security" description={t.rejectedBody} />
-      <Text variant="meta" className="text-muted-foreground">
-        {`${t.attemptsLeft}: ${fmtNum(attemptsRemaining, locale)}`}
-      </Text>
-      <Button onPress={() => router.replace("/setup/kyc")}>
-        <Text>{t.tryAgain}</Text>
-      </Button>
-    </View>
   )
 }

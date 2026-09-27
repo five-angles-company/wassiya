@@ -1,5 +1,5 @@
 import type { api } from "@workspace/backend/api"
-import { decryptAsset } from "@workspace/crypto/asset"
+import { createAssetDecryptor } from "@workspace/crypto/asset"
 import { openLabel } from "@workspace/crypto/label"
 import { decodeExecutorCode, decodePaperCode, paperCodeKind } from "@workspace/crypto/papercode"
 import { recoverMk } from "@workspace/crypto/recovery"
@@ -50,6 +50,9 @@ export type UnlockResult =
 /** One secret field, as the owner's app wrote it. */
 export type SecretField = { key: string; value: string }
 
+/** One downloadable file; `mimeType` is its own when the owner's app recorded one. */
+export type OpenedFile = { url: string; mimeType?: string }
+
 export type OpenedItem = {
   assetId: string
   type: string
@@ -59,7 +62,7 @@ export type OpenedItem = {
   byteSize?: number
   mimeType?: string
   fields: SecretField[]
-  fileUrls: string[]
+  files: OpenedFile[]
   dek?: Uint8Array
 }
 
@@ -68,8 +71,8 @@ export type OpenedHandover = {
   items: OpenedItem[]
 }
 
-/** Keys that describe the secret rather than carry it, and the note's title. */
-const HIDDEN_FIELDS = new Set(["format", "durationMs", "title"])
+/** Keys that describe the secret or its files rather than carry it, and the note's title. */
+const HIDDEN_FIELDS = new Set(["format", "durationMs", "title", "items"])
 
 /**
  * The executor's own sheet first; the owner's recovery sheet as the fallback.
@@ -149,7 +152,6 @@ function openItems(response: HandoverResponse, releaseKey: Uint8Array): OpenedHa
       type: item.type,
       byteSize: item.meta.byteSize,
       mimeType: item.meta.mimeType,
-      fileUrls: item.files.flatMap((file) => (file.url === null ? [] : [file.url])),
     }
     let dek: Uint8Array | undefined
     try {
@@ -158,11 +160,18 @@ function openItems(response: HandoverResponse, releaseKey: Uint8Array): OpenedHa
         assetId: item.assetId,
       })
       const label = openLabel(new Uint8Array(item.labelSealed), dek)
-      const fields = item.secretSealed === null ? [] : fieldsOf(openSecret(new Uint8Array(item.secretSealed), dek))
-      return { ...base, title: label.title, subtitle: label.subtitle, fields, dek }
+      const secret = item.secretSealed === null ? null : openSecret(new Uint8Array(item.secretSealed), dek)
+      return {
+        ...base,
+        title: label.title,
+        subtitle: label.subtitle,
+        fields: secret === null ? [] : fieldsOf(secret),
+        files: filesOf(item.files, secret === null ? [] : fileTypesOf(secret)),
+        dek,
+      }
     } catch {
       dek?.fill(0)
-      return { ...base, title: null, fields: [] }
+      return { ...base, title: null, fields: [], files: filesOf(item.files, []) }
     }
   })
   // Items the executor can name come first; one that did not open is not the
@@ -192,11 +201,43 @@ function fieldsOf(secret: string): SecretField[] {
   return fields
 }
 
-/** Fetch one file's ciphertext and decrypt it — each file is framed on its own. */
-export async function fetchAndDecrypt(url: string, dek: Uint8Array): Promise<Uint8Array> {
+/**
+ * An album records each file's type in its secret, in file order; the other
+ * types record none. Positional, so it pairs with the files before any is
+ * dropped for a missing url.
+ */
+function fileTypesOf(secret: string): (string | undefined)[] {
+  const parsed: unknown = JSON.parse(secret)
+  const items = typeof parsed === "object" && parsed !== null ? (parsed as { items?: unknown }).items : undefined
+  if (!Array.isArray(items)) return []
+  return items.map((entry: unknown) => {
+    const mimeType = typeof entry === "object" && entry !== null ? (entry as { mimeType?: unknown }).mimeType : undefined
+    return typeof mimeType === "string" ? mimeType : undefined
+  })
+}
+
+function filesOf(files: HandoverResponse["items"][number]["files"], types: (string | undefined)[]): OpenedFile[] {
+  return files.flatMap((file, i) => (file.url === null ? [] : [{ url: file.url, mimeType: types[i] }]))
+}
+
+/**
+ * Fetch one file and decrypt it as it streams in — each file is framed on its
+ * own. The plaintext goes chunk by chunk into a `Blob`, so a long video is
+ * never held as one buffer, let alone as ciphertext and plaintext at once.
+ */
+export async function fetchAndDecrypt(url: string, dek: Uint8Array, type: string): Promise<Blob> {
   const response = await fetch(url)
-  if (!response.ok) throw new Error(`File fetch failed: ${response.status}`)
-  return decryptAsset(new Uint8Array(await response.arrayBuffer()), dek)
+  if (!response.ok || response.body === null) throw new Error(`File fetch failed: ${response.status}`)
+  const decryptor = createAssetDecryptor(dek)
+  const parts: Uint8Array[] = []
+  const reader = response.body.getReader()
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    parts.push(...decryptor.push(value))
+  }
+  parts.push(decryptor.finish())
+  return new Blob(parts as Uint8Array<ArrayBuffer>[], { type })
 }
 
 /** Zero every key the handover holds. Called when it leaves the screen. */

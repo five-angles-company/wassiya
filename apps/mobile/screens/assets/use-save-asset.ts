@@ -13,21 +13,21 @@
  *
  * Blobs upload before the row is written: a crash between them leaves orphaned
  * ciphertext nobody can open, where the reverse order would leave a row naming
- * blobs that do not exist. A new asset is created private and handed over
- * straight after (`setHandover` needs its id). If that second write fails the
- * asset stays private — the safe side, and visible on its row as خاص.
+ * blobs that do not exist. A new asset is created private and, when the owner
+ * chose يُسلَّم, handed over straight after (`setHandover` needs its id). If that
+ * second write fails the asset stays private — the safe side, and visible on
+ * its row as خاص.
  */
 import { useCallback } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { encryptAsset } from "@workspace/crypto/asset"
 import { generateDek } from "@workspace/crypto/keys"
 import { sealLabel, type AssetLabel } from "@workspace/crypto/label"
 import { sealSecret } from "@workspace/crypto/secret"
 import { unwrap, wrap } from "@workspace/crypto/wrap"
 
-import { uploadCiphertext, type UploadProgress } from "@/lib/asset-upload"
+import { encryptFileAndUpload, type UploadProgress } from "@/lib/asset-upload"
 import type { AssetType } from "@/lib/asset-types"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 import { useSetHandover, VaultLockedError } from "@/lib/release-key"
@@ -42,14 +42,13 @@ export type StoredFile = {
 }
 
 /**
- * A file to encrypt and upload. `read` is a thunk, not bytes: an album of
- * twenty full-resolution photos handed over as bytes would all be resident
- * before the first upload, which is where a mid-range handset runs out of
- * memory. Reading inside the loop keeps one plaintext buffer alive at a time.
+ * A file to encrypt and upload, named by its place on disk and never handed
+ * over as bytes: it is encrypted one chunk at a time straight from the file,
+ * so a long video or a twenty-photo album never sits on the heap whole.
  */
 export type NewFile = {
-  read: () => Promise<Uint8Array>
-  readThumbnail?: () => Promise<Uint8Array>
+  uri: string
+  thumbnailUri?: string
   /** Bytes on the wire, for the meta counters. */
   byteSize?: number
 }
@@ -78,6 +77,8 @@ export type SaveAssetInput = {
   meta?: AssetMeta
   /** Reported per entry of `files`, for the new ones. */
   onProgress?: (fileIndex: number, progress: UploadProgress) => void
+  /** A new asset only: false keeps it private. Defaults to handed over. */
+  handOver?: boolean
 }
 
 export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">> {
@@ -101,14 +102,11 @@ export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">>
           : unwrap(new Uint8Array(input.existing.dekWrappedByMk), mk)
 
       const encryptAndUpload = async (
-        read: () => Promise<Uint8Array>,
+        uri: string,
         onProgress?: (progress: UploadProgress) => void
       ): Promise<Id<"_storage">> => {
-        const plaintext = await read()
-        const ciphertext = encryptAsset(plaintext, dek)
-        plaintext.fill(0)
         const url = await generateUploadUrl({})
-        return (await uploadCiphertext(ciphertext, url, onProgress)) as Id<"_storage">
+        return (await encryptFileAndUpload(uri, dek, url, onProgress)) as Id<"_storage">
       }
 
       try {
@@ -129,13 +127,13 @@ export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">>
               })
               continue
             }
-            const storageId = await encryptAndUpload(file.read, (progress) =>
+            const storageId = await encryptAndUpload(file.uri, (progress) =>
               input.onProgress?.(index, progress)
             )
             const thumbnailId =
-              file.readThumbnail === undefined
+              file.thumbnailUri === undefined
                 ? undefined
-                : await encryptAndUpload(file.readThumbnail)
+                : await encryptAndUpload(file.thumbnailUri)
             files.push({ storageId, thumbnailId })
           }
         }
@@ -159,10 +157,12 @@ export function useSaveAsset(): (input: SaveAssetInput) => Promise<Id<"assets">>
           dekWrappedByMk,
           files: files ?? [],
         })
-        try {
-          await setHandover({ assetId, dekWrappedByMk }, true)
-        } catch {
-          // The asset exists and is private; its row says so.
+        if (input.handOver !== false) {
+          try {
+            await setHandover({ assetId, dekWrappedByMk }, true)
+          } catch {
+            // The asset exists and is private; its row says so.
+          }
         }
         return assetId
       } finally {

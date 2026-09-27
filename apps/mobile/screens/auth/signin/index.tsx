@@ -1,13 +1,13 @@
 import { useSignIn } from "@clerk/expo"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { router } from "expo-router"
 import { useState } from "react"
 import { Pressable, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { NewDeviceCard } from "@/screens/auth/signin/components/new-device-card"
 import { useOnboarding } from "@/stores/onboarding"
@@ -29,7 +29,6 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  */
 export function SignInScreen() {
   const { t } = useStrings("auth/signin")
-  const { t: common } = useStrings("common")
   const { signIn, errors, fetchStatus } = useSignIn()
   const { email: draftEmail, setDraft } = useOnboarding()
 
@@ -63,22 +62,27 @@ export function SignInScreen() {
   }
 
   return (
-    <Screen keyboard inset="flow">
-      <BackButton
-        label={common.back}
-        fallbackHref="/welcome"
-        className="mb-header"
-      />
-
-      <Text variant="screenTitle" className="mb-2 text-[30px]">
-        {t.title}
-      </Text>
-      <Text className="mb-6.5 text-[14.5px] text-muted-foreground">
-        {t.subtitle}
-      </Text>
+    <Screen
+      keyboard
+      inset="flow"
+      footer={
+        <View className="gap-4">
+          <PrimaryCta label={t.cta!} onPress={() => void submit()} disabled={!ready} busy={busy} />
+          <Pressable
+            accessibilityRole="button"
+            className="flex-row justify-center gap-1"
+            onPress={() => router.replace("/auth/signup")}
+          >
+            <Text className="text-section">{t.noAccount}</Text>
+            <Text className="text-section text-terracotta-700">{t.createOne}</Text>
+          </Pressable>
+        </View>
+      }
+    >
+      <ScreenHeader back="/welcome" title={t.title!} description={t.subtitle} />
 
       <Field
-        label={t.emailLabel}
+        label={t.emailLabel!}
         value={email}
         onChangeText={setEmail}
         error={fieldError ?? undefined}
@@ -87,30 +91,10 @@ export function SignInScreen() {
         keyboardType="email-address"
         editable={!busy}
         style={{ writingDirection: "ltr", textAlign: "left" }}
-        className="text-[17px]"
-        containerClassName="mb-4.5"
+        containerClassName="mb-6"
       />
 
-      <Button
-        className="mb-6.5"
-        disabled={!ready}
-        onPress={() => void submit()}
-      >
-        <Text>{t.cta}</Text>
-      </Button>
-
       <NewDeviceCard title={t.newDeviceTitle} body={t.newDeviceBody} />
-
-      <View className="grow" />
-
-      <Pressable
-        accessibilityRole="button"
-        className="mt-6 flex-row justify-center gap-1"
-        onPress={() => router.replace("/auth/signup")}
-      >
-        <Text className="text-section">{t.noAccount}</Text>
-        <Text className="text-section text-terracotta-700">{t.createOne}</Text>
-      </Pressable>
     </Screen>
   )
 }

@@ -1,7 +1,7 @@
 import { Stack } from "expo-router"
 
 /**
- * The six add-asset wizards (٤.٣–٤.٨).
+ * The add-asset step flows, one route per type.
  *
  * Outside `(tabs)` on purpose: a wizard is a task the user is *in*, and
  * leaving the tab bar visible would offer four ways to abandon a half-typed

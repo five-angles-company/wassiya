@@ -1,13 +1,7 @@
 /**
  * The digital-account payload, in both directions — read and write in one file,
- * because a format with its halves in different files drifts. The crypto wizard
- * is the proof: its phrase path writes `network` into a localised subtitle and
- * `kind` nowhere at all, which no decoder can undo.
- *
- * `screens/assets/new/account/index.tsx` is still the other writer. Until it
- * moves onto {@link toDigitalPayload}, **these two must agree** — the JSON keys
- * below and the label format are copied from it verbatim, and changing one
- * without the other means creating and editing produce different rows.
+ * because a format with its halves in different files drifts. Creating and
+ * editing both write through {@link toDigitalPayload}.
  *
  * The round trip is deliberately asymmetric: the form holds recovery codes as
  * one newline-delimited string because that is what a multi-line field edits,

@@ -1,13 +1,15 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import { Redirect, router } from "expo-router"
 
-import { ActivityIndicator, View } from "react-native"
+import { View } from "react-native"
 
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -29,13 +31,7 @@ export function KycVerifiedScreen() {
   const { t: common } = useStrings("common")
   const status = useQuery(api.identity.status)
 
-  if (status === undefined) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </View>
-    )
-  }
+  if (status === undefined) return <LoadingScreen />
 
   if (status === null || status.status !== "verified") {
     return <Redirect href="/" />
@@ -45,21 +41,19 @@ export function KycVerifiedScreen() {
     status.verifiedAt === null ? null : new Date(status.verifiedAt)
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={<PrimaryCta label={t.cta!} onPress={() => router.replace("/setup/explainer")} />}
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         complete
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      <Text variant="screenTitle" className="mb-2.5 text-center text-[30px]">
-        {t.title}
-      </Text>
-      <Text className="mb-6.5 text-center text-[14.5px] leading-[1.7] text-muted-foreground">
-        {t.body}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.body} />
 
       <View className="rounded-summary gap-3.5 bg-card p-5">
         <Row label={t.verifiedName} value={status.verifiedName ?? "—"} />
@@ -75,15 +69,6 @@ export function KycVerifiedScreen() {
           </>
         )}
       </View>
-
-      <View className="grow" />
-
-      <Button
-        className="mt-6"
-        onPress={() => router.replace("/setup/explainer")}
-      >
-        <Text>{t.cta}</Text>
-      </Button>
     </Screen>
   )
 }
@@ -120,9 +105,7 @@ function documentLabel(
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <View className="flex-row items-baseline justify-between gap-3">
-      <Text variant="metaSm" className="text-muted-foreground">
-        {label}
-      </Text>
+      <Text variant="metaSm">{label}</Text>
       <Text className="text-notice font-body-semibold shrink text-end">
         {value}
       </Text>

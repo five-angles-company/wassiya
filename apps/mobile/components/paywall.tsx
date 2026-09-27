@@ -147,33 +147,30 @@ function Paywall({
   ]
 
   return (
-    <Sheet ref={sheet} onDismiss={onClose} contentClassName="px-6 pb-[26px] pt-4">
-      <Text className="font-heading-extrabold text-foreground mb-3 text-[24px] leading-[1.3]">
-        {t[titleKey]}
-      </Text>
-      <Text className="mb-[22px] text-[15px] leading-[1.75] opacity-75">
+    <Sheet ref={sheet} title={t[titleKey]} onDismiss={onClose}>
+      <Text variant="prose" className="mb-6">
         {body}
       </Text>
 
-      <Text variant="sectionLabel" className="mb-1">
+      <Text variant="sectionLabel" className="mb-2">
         {t.unlocksTitle}
       </Text>
-      <View className="mb-6">
+      <View className="mb-6 overflow-hidden rounded-card bg-card">
         {unlocks.map((line, i) => (
           <View key={line}>
-            <View className="flex-row items-center gap-[13px] py-3">
-              <View className="bg-olive-200 size-[26px] shrink-0 items-center justify-center rounded-full">
+            <View className="flex-row items-center gap-3 px-4 py-3.5">
+              <View className="size-6.5 shrink-0 items-center justify-center rounded-full bg-olive-100">
                 <Icon
                   as={Check}
                   size={14}
-                  strokeWidth={3}
-                  className="text-olive-900"
+                  strokeWidth={2.75}
+                  className="text-olive-800"
                 />
               </View>
-              <Text className="flex-1 text-[14.5px]">{line}</Text>
+              <Text className="text-row flex-1">{line}</Text>
             </View>
             {i < unlocks.length - 1 ? (
-              <View className="bg-border ms-[39px] h-px" />
+              <View className="mx-4 h-px bg-border" />
             ) : null}
           </View>
         ))}
@@ -187,11 +184,9 @@ function Paywall({
           onPress={() => void billing.purchase()}
         />
       ) : (
-        <View className="bg-card rounded-card mb-2.5 gap-1.5 p-4">
+        <View className="mb-2.5 gap-1.5 rounded-card bg-card p-4">
           <Text variant="rowTitle">{t.soonTitle}</Text>
-          <Text variant="metaSm" className="text-muted-foreground">
-            {t.soonBody}
-          </Text>
+          <Text variant="metaSm">{t.soonBody}</Text>
           <Pressable
             accessibilityRole="link"
             onPress={() => {
@@ -205,15 +200,7 @@ function Paywall({
         </View>
       )}
 
-      <Pressable
-        accessibilityRole="button"
-        onPress={onClose}
-        className="bg-card h-[54px] items-center justify-center rounded-full active:opacity-80"
-      >
-        <Text className="font-heading-extrabold text-foreground text-[16px]">
-          {t.notNow}
-        </Text>
-      </Pressable>
+      <PrimaryCta tone="quiet" label={t.notNow} onPress={onClose} />
     </Sheet>
   )
 }

@@ -37,10 +37,13 @@ export const PAYWALL = {
     en: "Your current plan allows {free}. The annual plan lets you name more than one executor, so the handover never rests on a single sheet.",
   },
 
-  photosTitle: { ar: "الصور مع الخطة السنوية", en: "Photos come with the annual plan" },
+  photosTitle: {
+    ar: "الصور والفيديو مع الخطة السنوية",
+    en: "Photos and videos come with the annual plan",
+  },
   photosBody: {
-    ar: "خطتك الحالية تحفظ النصوص والمستندات. الصور والملفات الكبيرة تحتاج الخطة السنوية.",
-    en: "Your current plan holds text and documents. Photos and large files need the annual plan.",
+    ar: "خطتك الحالية تحفظ النصوص والمستندات. الصور والفيديو والملفات الكبيرة تحتاج الخطة السنوية.",
+    en: "Your current plan holds text and documents. Photos, videos and large files need the annual plan.",
   },
 
   fileSizeTitle: { ar: "هذا الملف أكبر من خطتك", en: "This file is larger than your plan" },
@@ -61,7 +64,7 @@ export const PAYWALL = {
   unlockAssetsCount: { ar: "{paid} أصل", en: "{paid} assets" },
   unlockExecutors: { ar: "أوصياء بلا حد", en: "Unlimited executors" },
   unlockExecutorsCount: { ar: "{paid} أوصياء", en: "{paid} executors" },
-  unlockPhotos: { ar: "الصور والملفات الكبيرة", en: "Photos and large files" },
+  unlockPhotos: { ar: "الصور والفيديو والملفات الكبيرة", en: "Photos, videos and large files" },
   unlockStorage: { ar: "{paid} مساحة مشفّرة", en: "{paid} of encrypted storage" },
 
   /** Counts, where a limit is a number of things rather than a size. */

@@ -1,26 +1,23 @@
 import { Icon } from '@workspace/ui-native/components/ui/icon';
 import { Text } from '@workspace/ui-native/components/ui/text';
+import { NATIVE_COLOR } from '@workspace/ui-native/lib/native-colors';
 import { cn } from '@workspace/ui-native/lib/utils';
 import type { LucideIcon } from 'lucide-react-native';
 import { ActivityIndicator, Pressable } from 'react-native';
 
 /**
- * The one action at the bottom of a vault screen. 56px, pill, Cairo 800.
+ * Every full-width action in the app: 56px, pill, Cairo 800 at 17px.
  *
- * ## A dead primary must not look like a broken one
+ * - `primary` — terracotta, the one action that moves the owner forward.
+ * - `quiet` — surface-filled, the calm alternative beside it ("أبقِه", "إلغاء").
+ * - `danger` — outlined in terracotta, for what cannot be undone. There is no
+ *   red: a solid button means *proceed calmly*, so the destructive choice is
+ *   the outlined one and keeping things is the filled one.
  *
- * Disabled is **surface-toned**, not faded terracotta. A greyed-out accent
- * reads as "this button is malfunctioning"; a surface-toned one reads as "this
- * is waiting for you". That is deliberate, and it is why the
- * disabled state also gets its own label.
- *
- * ## The disabled label says what is missing
- *
- * ٤.٧ ships no default disposition on purpose, so its button reads
- * "اختر واحداً للمتابعة" until one is picked — the control explains its own
- * refusal instead of leaving the owner to hunt for the empty field. Pass
- * `disabledLabel` wherever the blocker is nameable; without one it just shows
- * `label`.
+ * **A disabled primary is surface-toned, never faded terracotta.** A greyed
+ * accent reads as broken; a surface-toned one reads as waiting. Pass
+ * `disabledLabel` wherever the blocker can be named, so the button explains
+ * its own refusal ("اختر واحداً للمتابعة") instead of restating the action.
  */
 export type PrimaryCtaProps = {
   label: string;
@@ -30,23 +27,39 @@ export type PrimaryCtaProps = {
   icon?: LucideIcon;
   /** The glyph is drawn at 20px unless a caller overrides it. */
   iconSize?: number;
+  tone?: 'primary' | 'quiet' | 'danger';
   onPress: () => void;
   disabled?: boolean;
   busy?: boolean;
   className?: string;
 };
 
+const SURFACE = {
+  primary: 'bg-primary active:bg-terracotta-600',
+  quiet: 'bg-card active:opacity-80',
+  danger: 'border-primary border-[1.5px] active:opacity-70',
+} as const;
+
+const LABEL = {
+  primary: 'text-background',
+  quiet: 'text-foreground',
+  danger: 'text-terracotta-800',
+} as const;
+
 export function PrimaryCta({
   label,
   disabledLabel,
   icon,
   iconSize = 20,
+  tone = 'primary',
   onPress,
   disabled = false,
   busy = false,
   className,
 }: PrimaryCtaProps) {
   const off = disabled || busy;
+  const surface = off && tone === 'primary' ? 'bg-card' : SURFACE[tone];
+  const labelClass = off ? 'text-foreground opacity-40' : LABEL[tone];
   return (
     <Pressable
       accessibilityRole="button"
@@ -54,25 +67,16 @@ export function PrimaryCta({
       onPress={onPress}
       disabled={off}
       className={cn(
-        'h-14 flex-row items-center justify-center gap-[9px] rounded-full',
-        off ? 'bg-card' : 'bg-primary active:bg-terracotta-600',
+        'h-14 flex-row items-center justify-center gap-row rounded-full px-6',
+        surface,
         className
       )}>
       {busy ? (
-        <ActivityIndicator size="small" color="#82796a" />
+        <ActivityIndicator size="small" color={NATIVE_COLOR.mutedForeground} />
       ) : icon !== undefined ? (
-        <Icon
-          as={icon}
-          size={iconSize}
-          strokeWidth={2.75}
-          className={off ? 'text-foreground opacity-40' : 'text-background'}
-        />
+        <Icon as={icon} size={iconSize} strokeWidth={2.75} className={labelClass} />
       ) : null}
-      <Text
-        className={cn(
-          'font-heading-extrabold text-[17px]',
-          off ? 'text-foreground opacity-40' : 'text-background'
-        )}>
+      <Text numberOfLines={1} className={cn('font-heading-extrabold text-[17px]', labelClass)}>
         {disabled && disabledLabel !== undefined ? disabledLabel : label}
       </Text>
     </Pressable>

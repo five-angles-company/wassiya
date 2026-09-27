@@ -99,7 +99,7 @@ const buttonTextVariants = cva(
     variants: {
       variant: {
         /**
-         * `background` (#f5ead8), not `primary-foreground` (#fff2eb).
+         * `background` (#f5ead8), not `primary-foreground` (#fff6f0).
          *
          * Label-on-terracotta is the page ground,
          * and `primary-cta` has always drawn it that way — this variant was the

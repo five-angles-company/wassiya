@@ -39,28 +39,10 @@ export const EXECUTORS = {
     en: "Try another name, or clear the filter.",
   },
   clearFilters: { ar: "أظهر كل الأوصياء", en: "Show all executors" },
-  emptySubtitle: { ar: "لا أحد بعد", en: "Nobody yet" },
+  emptyTitle: { ar: "من سيستلم ما تتركه؟", en: "Who will receive what you leave?" },
   emptyLead: {
     ar: "الوصي يستلم كل ما تسلّمه بعد رحيلك، وينفّذ وصيّتك. اختر شخصاً تثق به.",
     en: "Your executor receives everything you hand over after you are gone, and carries out your will. Choose someone you trust.",
-  },
-  emptyStep1: { ar: "سمِّ شخصاً تثق به", en: "Name someone you trust" },
-  emptyStep1Body: {
-    ar: "باسمه ورقم جواله ورقم هويته.",
-    en: "With their name, mobile number and ID number.",
-  },
-  emptyStep2: { ar: "اطبع ورقته", en: "Print their sheet" },
-  emptyStep2Body: {
-    ar: "تفتح ما سلّمته بعد رحيلك — ولا شيء قبل ذلك.",
-    en: "It opens what you hand over after you are gone — and nothing before.",
-  },
-  emptyStep3: {
-    ar: "أعطه إياها، أو احفظها مع وصيّتك",
-    en: "Give it to them, or keep it with your will",
-  },
-  emptyStep3Body: {
-    ar: "لا نخبره بشيء قبل التحقق من الوفاة.",
-    en: "We tell them nothing until a death is verified.",
   },
   howItWorks: {
     ar: "كل وصيّ يستلم كل ما اخترت تسليمه، وحده. لا نخبره بشيء قبل الإفراج — أعطه ورقته بنفسك، أو احفظها مع وصيّتك.",
@@ -77,6 +59,27 @@ export const EXECUTORS = {
 /** ٥.٢ — adding one. The edit screen borrows these labels wholesale. */
 export const EXECUTOR_NEW = {
   title: { ar: "إضافة وصيّ", en: "Add an executor" },
+  // How it works, above the form: the two promises that must reach the owner
+  // before they name someone — the sheet opens nothing while they live, and
+  // Wassiya tells the executor nothing before release.
+  step1: { ar: "سمِّ شخصاً تثق به", en: "Name someone you trust" },
+  step1Body: {
+    ar: "باسمه ورقم جواله ورقم هويته.",
+    en: "With their name, mobile number and ID number.",
+  },
+  step2: { ar: "اطبع ورقته", en: "Print their sheet" },
+  step2Body: {
+    ar: "تفتح ما سلّمته بعد رحيلك — ولا شيء قبل ذلك.",
+    en: "It opens what you hand over after you are gone — and nothing before.",
+  },
+  step3: {
+    ar: "أعطه إياها، أو احفظها مع وصيّتك",
+    en: "Give it to them, or keep it with your will",
+  },
+  step3Body: {
+    ar: "لا نخبره بشيء قبل التحقق من الوفاة.",
+    en: "We tell them nothing until a death is verified.",
+  },
   nameLabel: { ar: "الاسم الكامل كما في الهوية", en: "Full name, as on their ID" },
   namePlaceholder: { ar: "سارة عبدالله المنصوري", en: "Sarah Abdullah Al-Mansouri" },
 
@@ -264,6 +267,15 @@ export const EXECUTOR_SHEET = {
 /** The asset screen's handover choice — يُسلَّم / خاص. */
 export const HANDOVER = {
   label: { ar: "بعد رحيلك", en: "After you are gone" },
+  question: { ar: "بعد رحيلك، ماذا يحدث له؟", en: "After you are gone, what happens to it?" },
+  hint: {
+    ar: "تستطيع تغيير هذا لاحقاً من صفحته.",
+    en: "You can change this later from its page.",
+  },
+  noExecutorCreate: {
+    ar: "لم تسمِّ وصياً بعد — يصل إليه حين تضيفه.",
+    en: "You have not named an executor yet — it reaches them once you do.",
+  },
   handedOver: { ar: "يُسلَّم للوصي", en: "Handed over" },
   private: { ar: "خاص", en: "Private" },
   handedOverBody: {

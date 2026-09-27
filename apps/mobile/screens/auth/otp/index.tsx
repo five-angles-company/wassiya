@@ -1,16 +1,17 @@
 import { useSignIn, useSignUp } from "@clerk/expo"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { OtpInput } from "@workspace/ui-native/components/wassiya/otp-input"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Surface } from "@workspace/ui-native/components/wassiya/surface"
 import { isolateLtr } from "@workspace/ui-native/lib/rtl"
 import { router } from "expo-router"
 import { useEffect, useRef, useState } from "react"
 import { Pressable, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { useOnboarding } from "@/stores/onboarding"
 
@@ -43,7 +44,6 @@ type Notice = { text: string; detail?: string }
  */
 export function OtpScreen() {
   const { t, locale } = useStrings("auth/otp")
-  const { t: common } = useStrings("common")
   const { signIn } = useSignIn()
   const { signUp } = useSignUp()
   const saveProfile = useMutation(api.users.saveProfile)
@@ -190,19 +190,23 @@ export function OtpScreen() {
   const canResend = cooldown === 0 && sends < MAX_SENDS && phase !== "verifying"
 
   return (
-    <Screen inset="flow">
-      <BackButton
-        label={common.back}
-        fallbackHref="/auth/signup"
-        className="mb-5.5"
+    <Screen
+      keyboard
+      inset="flow"
+      footer={
+        <PrimaryCta
+          label={t.verify!}
+          onPress={() => void verify(code)}
+          disabled={code.length !== CODE_LENGTH}
+          busy={phase === "verifying"}
+        />
+      }
+    >
+      <ScreenHeader
+        back="/auth/signup"
+        title={t.title!}
+        description={`${t.subtitlePrefix} ${isolateLtr(email)}`}
       />
-
-      <Text variant="screenTitle" className="mb-2 text-[30px]">
-        {t.title}
-      </Text>
-      <Text className="mb-6.5 text-[14.5px] text-muted-foreground">
-        {`${t.subtitlePrefix} ${isolateLtr(email)}`}
-      </Text>
 
       <OtpInput
         value={code}
@@ -227,7 +231,7 @@ export function OtpScreen() {
           hitSlop={8}
           onPress={() => void resend()}
         >
-          <Text variant="action" className="text-terracotta-700 py-1">
+          <Text variant="action" className="py-1">
             {t.resend}
           </Text>
         </Pressable>
@@ -236,7 +240,7 @@ export function OtpScreen() {
         // would otherwise explain its absence has already run out. Saying so
         // in the space it used to occupy is the difference between a limit and
         // a button that stopped working.
-        <Text variant="metaSm" className="text-muted-foreground py-1">
+        <Text variant="metaSm" className="py-1">
           {t.resendLimit}
         </Text>
       ) : null}
@@ -251,28 +255,14 @@ export function OtpScreen() {
               this state cannot be recovered from in-app — the line a user can
               quote to support is worth more than the polish it costs. */}
           {notice.detail !== undefined ? (
-            <Text variant="metaSm" className="text-muted-foreground">
-              {`${t.detailPrefix} ${isolateLtr(notice.detail)}`}
-            </Text>
+            <Text variant="metaSm">{`${t.detailPrefix} ${isolateLtr(notice.detail)}`}</Text>
           ) : null}
         </View>
       ) : null}
 
-      <View className="bg-sand-200 rounded-row mt-5 px-3.75 py-3.25">
-        <Text variant="meta" className="text-muted-foreground">
-          {t.notice}
-        </Text>
-      </View>
-
-      <View className="grow" />
-
-      <Button
-        className="mt-6"
-        disabled={code.length !== CODE_LENGTH || phase === "verifying"}
-        onPress={() => void verify(code)}
-      >
-        <Text>{t.verify}</Text>
-      </Button>
+      <Surface tone="sand" as="row" row className="mt-5">
+        <Text variant="meta">{t.notice}</Text>
+      </Surface>
 
       <View nativeID="clerk-captcha" />
     </Screen>

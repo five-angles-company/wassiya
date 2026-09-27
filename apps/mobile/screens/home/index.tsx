@@ -23,7 +23,6 @@ import { useRef } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { CheckInHero } from "@workspace/ui-native/components/wassiya/check-in-hero"
@@ -42,6 +41,7 @@ import {
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useCheckInState } from "@/hooks/use-checkin-state"
 import { useConfirmAlive } from "@/hooks/use-confirm-alive"
 import { useProtectionScore } from "@/hooks/use-protection-score"
@@ -87,156 +87,149 @@ export function HomeScreen() {
   // skipped here rather than named twice on one screen.
   const gap = score.items.find((item) => !item.done && item.id !== "checkin")
 
-  // `inset="page"`, not `"tab"`. This app's tab bar is laid out in normal flow
-  // rather than overlaying the screen, so `tab`'s 112px of clearance was never
-  // clearance — it was dead space at the end of every scroll. The vault ends
-  // the same distance above the bar.
   return (
-    <Screen inset="page" contentClassName="gap-header">
-      <View className="flex-row items-center gap-3">
-        <InitialDisc name={me?.name ?? ""} />
-        <View className="min-w-0 flex-1">
-          <Text variant="metaSm">{greeting(t)}</Text>
-          <Text variant="pageTitle">{firstName(me?.name)}</Text>
-        </View>
-      </View>
-
-      {/* Above everything: a veto window is measured in days and closes whether
+    <Screen>
+      <ScreenHeader
+        eyebrow={greeting(t)}
+        title={firstName(me?.name)}
+        trailing={<InitialDisc name={me?.name ?? ""} />}
+      />
+      <View className="gap-header">
+        {/* Above everything: a veto window is measured in days and closes whether
           or not anyone opened the app. Nothing outranks it, and the heart right
           below is what stops it — there is no second "I'm alive" button. */}
-      {openClaim !== null ? (
-        <AlertBanner
-          variant="security"
-          title={claimCopy.title}
-          description={[
-            claimCopy.intro.replace("{name}", openClaim.claimantName),
-            openClaim.vetoDeadline === null
-              ? null
-              : claimCopy.deadline.replace(
-                  "{date}",
-                  fmtDate(new Date(openClaim.vetoDeadline), locale)
-                ),
-          ]
-            .filter((line) => line !== null)
-            .join("\n\n")}
-        />
-      ) : alive.claimsStopped > 0 ? (
-        <AlertBanner variant="success" description={claimCopy.stopped} />
-      ) : null}
+        {openClaim !== null ? (
+          <AlertBanner
+            variant="security"
+            title={claimCopy.title}
+            description={[
+              claimCopy.intro.replace("{name}", openClaim.claimantName),
+              openClaim.vetoDeadline === null
+                ? null
+                : claimCopy.deadline.replace(
+                    "{date}",
+                    fmtDate(new Date(openClaim.vetoDeadline), locale)
+                  ),
+            ]
+              .filter((line) => line !== null)
+              .join("\n\n")}
+          />
+        ) : alive.claimsStopped > 0 ? (
+          <AlertBanner variant="success" description={claimCopy.stopped} />
+        ) : null}
 
-      {/* Yearly, and only once a year: an owner who is asked the same thing
+        {/* Yearly, and only once a year: an owner who is asked the same thing
           every week stops reading the question. */}
-      {yearly?.due === true ? (
-        <AlertBanner
-          variant="info"
-          title={t.contactsTitle}
-          description={t.contactsBody}
-          actions={
-            <>
-              <Button size="sm" onPress={() => router.push("/executors")}>
-                <Text>{t.contactsReview}</Text>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onPress={() => void confirmYearly({})}
-              >
-                <Text>{t.contactsConfirm}</Text>
-              </Button>
-            </>
-          }
-        />
-      ) : null}
+        {yearly?.due === true ? (
+          <AlertBanner
+            variant="info"
+            title={t.contactsTitle}
+            description={t.contactsBody}
+            actions={[
+              {
+                label: t.contactsReview!,
+                onPress: () => router.push("/executors"),
+              },
+              {
+                label: t.contactsConfirm!,
+                onPress: () => void confirmYearly({}),
+              },
+            ]}
+          />
+        ) : null}
 
-      {/* `onEnable` and `onOpenSettings` open the same sheet. They are one
+        {/* `onEnable` and `onOpenSettings` open the same sheet. They are one
           decision — how often to be asked — and having "off" push a screen
           while "settings" opened a sheet would make one choice two objects. */}
-      <CheckInHero
-        // An open report asks the question whatever the check-in says — even
-        // with the check-in off, an owner must be able to say they are alive.
-        state={openClaim !== null ? "overdue" : checkin.state}
-        detail={openClaim !== null ? undefined : checkin.detail}
-        locale={locale}
-        failed={alive.failed}
-        onConfirm={alive.confirm}
-        onEnable={openCheckInSettings}
-        onOpenSettings={openCheckInSettings}
-      />
+        <CheckInHero
+          // An open report asks the question whatever the check-in says — even
+          // with the check-in off, an owner must be able to say they are alive.
+          state={openClaim !== null ? "overdue" : checkin.state}
+          detail={openClaim !== null ? undefined : checkin.detail}
+          locale={locale}
+          failed={alive.failed}
+          onConfirm={alive.confirm}
+          onEnable={openCheckInSettings}
+          onOpenSettings={openCheckInSettings}
+        />
 
-      <CheckInSettingsSheet
-        ref={checkInSheet}
-        onSaved={() => void checkInSheet.current?.dismiss()}
-      />
+        <CheckInSettingsSheet
+          ref={checkInSheet}
+          onSaved={() => void checkInSheet.current?.dismiss()}
+        />
 
-      <View className="gap-3">
-        <Text
-          variant="sectionLabel"
-          className={gap !== undefined ? "text-terracotta-700" : ""}
-        >
-          {gap === undefined
-            ? t.allReady
-            : t.missing.replace("{what}", gap.label)}
-        </Text>
+        <View className="gap-3">
+          <Text
+            variant="sectionLabel"
+            className={gap !== undefined ? "text-terracotta-700" : ""}
+          >
+            {gap === undefined
+              ? t.allReady
+              : t.missing.replace("{what}", gap.label)}
+          </Text>
 
-        <View className="gap-row flex-row flex-wrap">
-          <StatTile
-            icon={Wallet}
-            label={t.itemAssets}
-            value={fmtNum(total, locale)}
-            emphasis="count"
-            tone={total === 0 ? "terracotta" : "sand"}
-            onPress={() => router.push("/assets")}
-          />
-          <StatTile
-            icon={Users}
-            label={t.itemExecutors}
-            value={fmtNum(executorCount, locale)}
-            emphasis="count"
-            tone={executorCount === 0 ? "terracotta" : "sand"}
-            onPress={() => router.push("/executors")}
-          />
-          {/* Private is the owner's choice, so it is a count, never a warning. */}
-          <StatTile
-            icon={Lock}
-            label={t.itemPrivate}
-            value={
-              privateCount === 0
-                ? t.stateAllHandedOver
-                : fmtNum(privateCount, locale)
-            }
-            emphasis={privateCount === 0 ? undefined : "count"}
-            tone="sand"
-            onPress={() =>
-              router.push({
-                pathname: "/assets",
-                params: { filter: "private" },
-              })
-            }
-          />
-          <StatTile
-            icon={ShieldCheck}
-            label={t.itemDelivery}
-            value={has("delivery") ? t.stateDeliveryReady : t.stateDeliveryStale}
-            tone={has("delivery") ? "olive" : "terracotta"}
-            onPress={() => router.push("/executors")}
-          />
-          <StatTile
-            icon={FileText}
-            label={t.itemSheet}
-            value={has("sheet") ? t.statePrinted : t.stateNotPrinted}
-            tone={has("sheet") ? "olive" : "terracotta"}
-            onPress={() => router.push("/setup/recovery-kit")}
-          />
-          {/* Sixth so the grid closes as 2×3. An odd count leaves the last
+          <View className="gap-row flex-row flex-wrap">
+            <StatTile
+              icon={Wallet}
+              label={t.itemAssets}
+              value={fmtNum(total, locale)}
+              emphasis="count"
+              tone={total === 0 ? "terracotta" : "sand"}
+              onPress={() => router.push("/assets")}
+            />
+            <StatTile
+              icon={Users}
+              label={t.itemExecutors}
+              value={fmtNum(executorCount, locale)}
+              emphasis="count"
+              tone={executorCount === 0 ? "terracotta" : "sand"}
+              onPress={() => router.push("/executors")}
+            />
+            {/* Private is the owner's choice, so it is a count, never a warning. */}
+            <StatTile
+              icon={Lock}
+              label={t.itemPrivate}
+              value={
+                privateCount === 0
+                  ? t.stateAllHandedOver
+                  : fmtNum(privateCount, locale)
+              }
+              emphasis={privateCount === 0 ? undefined : "count"}
+              tone="sand"
+              onPress={() =>
+                router.push({
+                  pathname: "/assets",
+                  params: { filter: "private" },
+                })
+              }
+            />
+            <StatTile
+              icon={ShieldCheck}
+              label={t.itemDelivery}
+              value={
+                has("delivery") ? t.stateDeliveryReady : t.stateDeliveryStale
+              }
+              tone={has("delivery") ? "olive" : "terracotta"}
+              onPress={() => router.push("/executors")}
+            />
+            <StatTile
+              icon={FileText}
+              label={t.itemSheet}
+              value={has("sheet") ? t.statePrinted : t.stateNotPrinted}
+              tone={has("sheet") ? "olive" : "terracotta"}
+              onPress={() => router.push("/setup/recovery-kit")}
+            />
+            {/* Sixth so the grid closes as 2×3. An odd count leaves the last
               tile stretched across the full width, which reads as a different
               kind of thing rather than the last of a set. */}
-          <StatTile
-            icon={BadgeCheck}
-            label={t.itemIdentity}
-            value={has("identity") ? t.stateVerified : t.stateUnverified}
-            tone={has("identity") ? "olive" : "terracotta"}
-            onPress={() => router.push("/setup/kyc")}
-          />
+            <StatTile
+              icon={BadgeCheck}
+              label={t.itemIdentity}
+              value={has("identity") ? t.stateVerified : t.stateUnverified}
+              tone={has("identity") ? "olive" : "terracotta"}
+              onPress={() => router.push("/setup/kyc")}
+            />
+          </View>
         </View>
       </View>
     </Screen>

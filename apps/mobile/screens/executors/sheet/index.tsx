@@ -21,10 +21,10 @@ import {
   useScreenshotListener,
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
-import { ActivityIndicator, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useVaultGate } from "@/hooks/use-vault-gate"
 import { useStrings } from "@/i18n/use-strings"
 import { buildRecoverySheetHtml } from "@/lib/recovery-sheet-html"
@@ -34,7 +34,6 @@ import { KitActions } from "@/screens/setup/recovery-kit/components/kit-actions"
 export function ExecutorSheetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t, locale } = useStrings("executors/sheet")
-  const { t: common } = useStrings("common")
   usePreventScreenCapture()
 
   const { unlocked, unlock, status } = useVaultGate()
@@ -150,50 +149,70 @@ export function ExecutorSheetScreen() {
 
   if (!unlocked) {
     return (
-      <Screen contentClassName="gap-header">
-        <BackButton label={common.back} />
-        <Text variant="screenTitle">{title}</Text>
-        <Text variant="prose" className="text-muted-foreground">
-          {t.locked}
+      <Screen
+        footer={
+          <PrimaryCta
+            label={t.unlock!}
+            onPress={unlock}
+            busy={status === "unlocking"}
+          />
+        }
+      >
+        <ScreenHeader back title={title} description={t.locked} />
+      </Screen>
+    )
+  }
+
+  if (state.status === "failed") {
+    return (
+      <Screen>
+        <ScreenHeader back title={title} />
+        <Text variant="meta" className="text-terracotta-800">
+          {t.failed}
         </Text>
-        <View className="grow" />
-        <PrimaryCta label={t.unlock!} onPress={unlock} busy={status === "unlocking"} />
       </Screen>
     )
   }
 
   if (state.status !== "ready" || executor === null) {
-    return (
-      <View className="flex-1 items-center justify-center gap-4 bg-background">
-        {state.status === "failed" ? (
-          <Text variant="meta" className="text-terracotta-800 px-8 text-center">
-            {t.failed}
-          </Text>
-        ) : (
-          <>
-            <ActivityIndicator />
-            <Text variant="meta" className="text-muted-foreground">
-              {t.preparing}
-            </Text>
-          </>
-        )}
-      </View>
-    )
+    return <LoadingScreen back label={t.preparing} />
   }
 
   return (
-    <Screen inset="flow">
-      <BackButton label={common.back} className="mb-header" />
-
-      <Text variant="screenTitle" className="mb-2 text-[27px]">
-        {title}
-      </Text>
-      <Text className="text-notice mb-4.5 leading-[1.65] text-muted-foreground">
-        {t.body!.replace("{name}", executor.name)}
-      </Text>
+    <Screen
+      inset="flow"
+      footer={
+        unsaved ? (
+          <PrimaryCta
+            label={t.activate!}
+            onPress={() => void finish()}
+            busy={busy}
+          />
+        ) : (
+          <KitActions
+            printLabel={t.print!}
+            savePdfLabel={t.savePdf!}
+            shareLabel={t.share!}
+            disabled={busy}
+            onPrint={() => void run("print")}
+            onSavePdf={() => void run("save")}
+            onShare={() => void run("share")}
+          />
+        )
+      }
+    >
+      <ScreenHeader
+        back
+        title={title}
+        description={t.body!.replace("{name}", executor.name)}
+      />
 
       {sheetFor?.sheetVersion != null ? (
-        <AlertBanner className="mb-4" variant="info" description={t.reprintNotice!} />
+        <AlertBanner
+          className="mb-4"
+          variant="info"
+          description={t.reprintNotice!}
+        />
       ) : null}
 
       <RecoveryCodeDisplay
@@ -215,24 +234,6 @@ export function ExecutorSheetScreen() {
       {notice !== null ? (
         <AlertBanner className="mt-4" variant="notice" description={notice} />
       ) : null}
-
-      <View className="grow" />
-
-      <View className="mt-5">
-        {unsaved ? (
-          <PrimaryCta label={t.activate!} onPress={() => void finish()} busy={busy} />
-        ) : (
-          <KitActions
-            printLabel={t.print!}
-            savePdfLabel={t.savePdf!}
-            shareLabel={t.share!}
-            disabled={busy}
-            onPrint={() => void run("print")}
-            onSavePdf={() => void run("save")}
-            onShare={() => void run("share")}
-          />
-        )}
-      </View>
     </Screen>
   )
 }

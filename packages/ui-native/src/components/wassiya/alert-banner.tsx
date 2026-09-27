@@ -3,8 +3,7 @@ import { Text } from '@workspace/ui-native/components/ui/text';
 import { TONE_SOFT_BG, type Tone } from '@workspace/ui-native/lib/tone';
 import { cn } from '@workspace/ui-native/lib/utils';
 import { Check, Info, TriangleAlert, type LucideIcon } from 'lucide-react-native';
-import type * as React from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 export type AlertBannerVariant =
   /** Terracotta + warning glyph — a security event the user must judge. */
@@ -50,10 +49,11 @@ export type AlertBannerProps = {
   /** Override the default glyph. */
   icon?: LucideIcon;
   /**
-   * Paired actions, e.g. "لم أكن أنا" / "كنت أنا". Render `Button`s with
-   * `size="xs"`; they sit inside the banner's tint.
+   * Paired actions, e.g. "لم أكن أنا" / "كنت أنا" — text actions in the
+   * banner's own colour, never buttons: a banner is a notice, and the screen's
+   * one large button lives elsewhere.
    */
-  actions?: React.ReactNode;
+  actions?: { label: string; onPress: () => void }[];
   className?: string;
 };
 
@@ -77,12 +77,25 @@ export function AlertBanner({
   const tone = VARIANT_TONE[variant];
   const fg = VARIANT_FG[variant];
   return (
-    <View className={cn('flex-row gap-3 rounded-row p-4', TONE_SOFT_BG[tone], className)}>
+    <View className={cn('rounded-card flex-row gap-3 p-4', TONE_SOFT_BG[tone], className)}>
       <Icon as={icon ?? VARIANT_ICON[variant]} className={cn('mt-0.5 size-5 shrink-0', fg)} />
       <View className="flex-1 gap-1.5">
         {title ? <Text className={cn('font-body-bold text-notice', fg)}>{title}</Text> : null}
         <Text className={cn('text-meta', fg)}>{description}</Text>
-        {actions ? <View className="mt-1.5 flex-row gap-2">{actions}</View> : null}
+        {actions !== undefined && actions.length > 0 ? (
+          <View className="mt-1.5 flex-row flex-wrap gap-x-5 gap-y-2">
+            {actions.map((action) => (
+              <Pressable
+                key={action.label}
+                accessibilityRole="button"
+                hitSlop={8}
+                onPress={action.onPress}
+                className="active:opacity-70">
+                <Text className={cn('font-body-bold text-meta underline', fg)}>{action.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
       </View>
     </View>
   );

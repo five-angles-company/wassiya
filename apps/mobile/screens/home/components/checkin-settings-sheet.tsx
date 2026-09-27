@@ -2,15 +2,21 @@ import { useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
+import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { Sheet } from "@workspace/ui-native/components/wassiya/sheet"
 import { fmtDate } from "@workspace/ui-native/lib/format"
+import { CalendarCheck } from "lucide-react-native"
 import type * as React from "react"
 import { View } from "react-native"
 
 import { useStrings } from "@/i18n/use-strings"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
+
+/** `MONTH_MS` / `DAY_MS` in convex/checkin.ts — the preview must land on the date the server will store. */
+const DAY_MS = 24 * 60 * 60 * 1000
+const MONTH_MS = 30 * DAY_MS
 
 /**
  * ٦.٤'s cadence, as a sheet over Home. A sheet rather than a route because
@@ -45,6 +51,8 @@ export function CheckInSettingsSheet({
   const [cadence, setCadence] = useState("6")
   const [grace, setGrace] = useState("30")
   const [saving, setSaving] = useState(false)
+  // Read once per mount: the preview moves by days, not by milliseconds.
+  const [now] = useState(() => Date.now())
 
   /**
    * Seeded from the query once it answers.
@@ -77,10 +85,17 @@ export function CheckInSettingsSheet({
     }
   }
 
+  const from = config?.lastConfirmedAt ?? now
+  const askOn = new Date(
+    from + Number(cadence) * MONTH_MS + Number(grace) * DAY_MS
+  )
+  const unchanged = config != null && stored === `${cadence}:${grace}`
+
   return (
-    <Sheet ref={ref} title={t.settingsTitle} contentClassName="pb-7">
-      <View className="gap-4">
-        <OptionChips
+    <Sheet ref={ref} title={t.title} description={t.settingsIntro}>
+      <View className="gap-5">
+        <ChipRow
+          fill
           label={t.cadenceLabel}
           options={[
             { value: "3", label: t.cadence3 },
@@ -90,7 +105,8 @@ export function CheckInSettingsSheet({
           value={cadence}
           onChange={setCadence}
         />
-        <OptionChips
+        <ChipRow
+          fill
           label={t.graceLabel}
           options={[
             { value: "14", label: t.grace14 },
@@ -101,27 +117,28 @@ export function CheckInSettingsSheet({
           onChange={setGrace}
         />
 
-        {/* Context, not controls: what the cadence currently means in dates.
-            Absent before the first setup, when there is nothing to date. */}
-        {config != null ? (
-          <View className="rounded-card bg-card gap-1 p-4">
-            <Text variant="metaSm">
-              {t.lastConfirmed!.replace(
-                "{date}",
-                fmtDate(new Date(config.lastConfirmedAt), locale)
-              )}
-            </Text>
-            <Text variant="metaSm">
-              {t.nextDue!.replace(
-                "{date}",
-                fmtDate(new Date(config.nextDueAt), locale)
-              )}
-            </Text>
+        {/* What the choices above mean in dates, as they change. */}
+        <View className="flex-row gap-3 rounded-card bg-card p-4">
+          <View className="size-9 shrink-0 items-center justify-center rounded-full bg-olive-100">
+            <Icon
+              as={CalendarCheck}
+              size={18}
+              strokeWidth={2.75}
+              className="text-olive-800"
+            />
           </View>
-        ) : null}
+          <View className="flex-1 gap-1">
+            <Text variant="rowTitle">
+              {t.nextAsk!.replace("{date}", fmtDate(askOn, locale))}
+            </Text>
+            <Text variant="metaSm">{t.reminders}</Text>
+          </View>
+        </View>
 
         <PrimaryCta
-          label={saving ? t.saving! : t.save!}
+          label={config == null ? t.enable! : saving ? t.saving! : t.save!}
+          disabledLabel={t.unchanged}
+          disabled={unchanged}
           onPress={() => void save()}
           busy={saving}
         />

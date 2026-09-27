@@ -17,7 +17,7 @@ import { View } from "react-native"
  * ## The icon on the pill is `background`, not `primary-foreground`
  *
  * #f5ead8, the page ground. That is the rule for anything drawn on
- * terracotta and it is *not* the same as `primary-foreground` (#fff2eb) — the
+ * terracotta and it is *not* the same as `primary-foreground` (#fff6f0) — the
  * two differ by enough to read as a slightly dirty white on a saturated fill.
  */
 export type TabBarIconProps = {

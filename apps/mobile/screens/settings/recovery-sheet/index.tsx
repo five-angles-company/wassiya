@@ -1,13 +1,13 @@
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
 import { useQuery } from "convex/react"
 import { router } from "expo-router"
-import { ActivityIndicator, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 /**
@@ -38,31 +38,26 @@ const CODE_GROUPS = 14
 
 export function RecoverySheetScreen() {
   const { t, locale } = useStrings("settings")
-  const { t: common } = useStrings("common")
   const keyring = useQuery(api.keyring.get)
   const me = useQuery(api.users.me)
 
-  if (keyring === undefined) {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </View>
-    )
-  }
+  if (keyring === undefined) return <LoadingScreen back />
 
   const used = keyring?.paperUsedAt != null
 
   return (
-    <Screen>
-      <BackButton label={common.back} />
-
-      <Text variant="screenTitle" className="mt-4">
-        {t.sheetTitle}
-      </Text>
+    <Screen
+      footer={
+        <PrimaryCta
+          label={t.sheetReissueAction!}
+          onPress={() => router.push("/setup/recovery-kit")}
+        />
+      }
+    >
+      <ScreenHeader back title={t.sheetTitle!} />
 
       {keyring === null ? null : (
         <RecoveryCodeDisplay
-          className="mt-header"
           preview
           groups={[
             `WSY${keyring.paperVersion}`,
@@ -75,30 +70,23 @@ export function RecoverySheetScreen() {
       )}
 
       {used ? (
-        <Text className="text-terracotta-800 mt-4 text-[14.5px] font-body-bold">
+        <Text variant="rowTitle" className="text-terracotta-800 mt-4">
           {t.sheetUsed}
         </Text>
       ) : keyring !== null && keyring.paperPrintedAt === null ? (
-        <Text className="text-terracotta-800 mt-4 text-[14.5px] font-body-bold">
+        <Text variant="rowTitle" className="text-terracotta-800 mt-4">
           {t.sheetNeverPrinted}
         </Text>
       ) : null}
 
-      <Text className="mt-header text-[14.5px] leading-[1.75] text-muted-foreground">
+      <Text variant="proseSm" className="mt-header">
         {t.sheetCannotShow}
       </Text>
 
-      <View className="grow" />
-
-      <Text variant="sectionLabel" className="mb-2">
+      <Text variant="sectionLabel" className="mt-6 mb-2">
         {t.sheetReissueTitle}
       </Text>
-      <Text className="mb-4 text-[14px] leading-[1.7] text-muted-foreground">
-        {t.sheetReissueBody}
-      </Text>
-      <Button onPress={() => router.push("/setup/recovery-kit")}>
-        <Text>{t.sheetReissueAction}</Text>
-      </Button>
+      <Text variant="proseSm">{t.sheetReissueBody}</Text>
     </Screen>
   )
 }

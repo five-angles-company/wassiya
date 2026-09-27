@@ -27,7 +27,7 @@ export function KeyCard({ icon, title, description, pending, className }: KeyCar
   return (
     <View
       className={cn(
-        'bg-card border border-border flex-row gap-3 rounded-row px-4 py-3.5',
+        'bg-card flex-row gap-3 rounded-card px-4 py-3.5',
         pending && 'opacity-60',
         className
       )}>

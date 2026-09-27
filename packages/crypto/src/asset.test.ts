@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { TAG_BYTES, randomBytes } from "./bytes"
 import { generateDek } from "./keys"
 import {
+  createAssetDecryptor,
   createAssetHeader,
   decryptAsset,
   decryptChunk,
@@ -151,5 +152,60 @@ describe("streaming primitives", () => {
     expect(() => encryptChunk(dek, header, 0, randomBytes(CHUNK - 1))).toThrow(
       /final chunk/
     )
+  })
+})
+
+describe("createAssetDecryptor", () => {
+  function streamed(blob: Uint8Array, dek: Uint8Array, pieceSize: number) {
+    const decryptor = createAssetDecryptor(dek)
+    const parts: Uint8Array[] = []
+    for (let start = 0; start < blob.length; start += pieceSize) {
+      parts.push(...decryptor.push(blob.subarray(start, start + pieceSize)))
+    }
+    parts.push(decryptor.finish())
+    return parts
+  }
+
+  it.each([0, 1, CHUNK, CHUNK + 1, CHUNK * 3, CHUNK * 3 + 7])(
+    "round-trips %i bytes whatever size the pieces arrive in",
+    (size) => {
+      const dek = generateDek()
+      const content = randomBytes(size)
+      const blob = encryptAsset(content, dek, CHUNK)
+      for (const pieceSize of [1, 7, CHUNK, CHUNK + TAG_BYTES, blob.length]) {
+        const joined = streamed(blob, dek, pieceSize).flatMap((part) => Array.from(part))
+        expect(joined).toEqual(Array.from(content))
+      }
+    }
+  )
+
+  it("hands plaintext back before the stream ends", () => {
+    const dek = generateDek()
+    const blob = encryptAsset(randomBytes(CHUNK * 3), dek, CHUNK)
+    const decryptor = createAssetDecryptor(dek)
+    expect(decryptor.push(blob.subarray(0, HEADER_BYTES + (CHUNK + TAG_BYTES) * 2))).toHaveLength(2)
+  })
+
+  it("fails a stream cut short at a chunk boundary", () => {
+    const dek = generateDek()
+    const blob = encryptAsset(randomBytes(CHUNK * 4), dek, CHUNK)
+    const decryptor = createAssetDecryptor(dek)
+    decryptor.push(blob.subarray(0, HEADER_BYTES + (CHUNK + TAG_BYTES) * 2))
+    expect(() => decryptor.finish()).toThrow()
+  })
+
+  it("fails trailing bytes after the last chunk", () => {
+    const dek = generateDek()
+    const blob = encryptAsset(randomBytes(CHUNK * 2), dek, CHUNK)
+    const decryptor = createAssetDecryptor(dek)
+    decryptor.push(blob)
+    decryptor.push(randomBytes(CHUNK + TAG_BYTES + 1))
+    expect(() => decryptor.finish()).toThrow()
+  })
+
+  it("rejects the wrong DEK", () => {
+    const blob = encryptAsset(randomBytes(CHUNK * 3), generateDek(), CHUNK)
+    const decryptor = createAssetDecryptor(generateDek())
+    expect(() => decryptor.push(blob)).toThrow()
   })
 })

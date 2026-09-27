@@ -24,11 +24,13 @@ import {
   NEW_CRYPTO,
   NEW_DOCUMENT,
   NEW_NOTE,
+  NEW_INVESTMENT,
+  NEW_INSURANCE,
   NEW_PHOTOS,
 } from "@/i18n/strings/asset-new"
 import { COMMON, TABS } from "@/i18n/strings/common"
 import { PAYWALL } from "@/i18n/strings/paywall"
-import { HOME, LOCK, NOTIFICATIONS } from "@/i18n/strings/home"
+import { HOME, NOTIFICATIONS } from "@/i18n/strings/home"
 import { RECOVERY } from "@/i18n/strings/recovery"
 import {
   HELP,
@@ -79,7 +81,6 @@ export const SCREEN_STRINGS = {
   "settings/help/thread": SUPPORT_THREAD,
   // Not a route: shared by the two support composers.
   support: SUPPORT_COMMON,
-  lock: LOCK,
   notifications: NOTIFICATIONS,
 
   splash: SPLASH,
@@ -107,6 +108,8 @@ export const SCREEN_STRINGS = {
   "assets/new/photos": NEW_PHOTOS,
   "assets/new/account": NEW_ACCOUNT,
   "assets/new/note": NEW_NOTE,
+  "assets/new/investment": NEW_INVESTMENT,
+  "assets/new/insurance": NEW_INSURANCE,
 
   executors: EXECUTORS,
   "executors/new": EXECUTOR_NEW,

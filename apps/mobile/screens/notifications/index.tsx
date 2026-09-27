@@ -16,7 +16,6 @@
 import { useMemo } from "react"
 import { usePaginatedQuery, useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { AuditRow } from "@workspace/ui-native/components/wassiya/audit-row"
@@ -26,7 +25,9 @@ import { router } from "expo-router"
 import { BellOff, KeyRound, Users } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
+import { LoadMore } from "@/components/load-more"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 /**
@@ -65,31 +66,30 @@ export function NotificationsScreen() {
 
   if (status !== "LoadingFirstPage" && results.length === 0) {
     return (
-      <View className="px-gutter flex-1 bg-background pt-6">
-        <Text variant="screenTitle" className="mb-header">
-          {t.title}
-        </Text>
-        <EmptyState icon={BellOff} title={t.empty} subtitle={t.emptyBody} />
-      </View>
+      <Screen>
+        <ScreenHeader back="/home" title={t.title!} />
+        <EmptyState icon={BellOff} title={t.empty!} subtitle={t.emptyBody} />
+      </Screen>
     )
   }
 
   return (
     <Screen>
-      <View className="mb-header flex-row items-center justify-between">
-        <Text variant="screenTitle">{t.title}</Text>
-        {history.some((row) => row.readAt === undefined) ? (
-          <Pressable
-            onPress={() => void markAllRead()}
-            accessibilityRole="button"
-            className="px-2 py-1"
-          >
-            <Text variant="metaSm" className="text-terracotta-700">
-              {t.markAllRead}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <ScreenHeader
+        back="/home"
+        title={t.title!}
+        trailing={
+          history.some((row) => row.readAt === undefined) ? (
+            <Pressable
+              onPress={() => void markAllRead()}
+              accessibilityRole="button"
+              hitSlop={8}
+            >
+              <Text variant="action">{t.markAllRead}</Text>
+            </Pressable>
+          ) : undefined
+        }
+      />
 
       {attention.length > 0 ? (
         <View className="mb-header gap-2">
@@ -107,31 +107,29 @@ export function NotificationsScreen() {
       ) : null}
 
       {history.length > 0 ? (
-        <View className="gap-1">
-          <Text variant="sectionLabel" className="mb-2">
-            {t.history}
-          </Text>
-          {history.map((row, index) => (
-            <AuditRow
-              key={row._id}
-              icon={iconFor(row.kind)}
-              event={titleFor(row.kind, row.payload, t)}
-              meta={fmtDate(new Date(row._creationTime), locale)}
-              tone={row.readAt === undefined ? "terracotta" : "sand"}
-              divider={index < history.length - 1}
-            />
-          ))}
+        <View className="gap-2">
+          <Text variant="sectionLabel">{t.history}</Text>
+          <View className="overflow-hidden rounded-card bg-card">
+            {history.map((row, index) => (
+              <AuditRow
+                key={row._id}
+                icon={iconFor(row.kind)}
+                event={titleFor(row.kind, row.payload, t)}
+                meta={fmtDate(new Date(row._creationTime), locale)}
+                tone={row.readAt === undefined ? "terracotta" : "sand"}
+                divider={index < history.length - 1}
+              />
+            ))}
+          </View>
         </View>
       ) : null}
 
       {status === "CanLoadMore" ? (
-        <Button
-          variant="outline"
-          className="mt-6"
+        <LoadMore
+          className="mt-2"
+          label={t.loadMore!}
           onPress={() => loadMore(30)}
-        >
-          <Text>{t.history}</Text>
-        </Button>
+        />
       ) : null}
     </Screen>
   )
@@ -173,24 +171,23 @@ function bodyFor(kind: string, t: Record<string, string>): string {
   return t.generic!
 }
 
-function actionsFor(kind: string, t: Record<string, string>): React.ReactNode {
+function actionsFor(
+  kind: string,
+  t: Record<string, string>
+): { label: string; onPress: () => void }[] | undefined {
   if (kind === "checkin.due") {
-    return (
-      <Button size="sm" onPress={() => router.push("/protection/checkin")}>
-        <Text>{t.openCheckin}</Text>
-      </Button>
-    )
+    return [
+      {
+        label: t.openCheckin!,
+        onPress: () => router.push("/protection/checkin"),
+      },
+    ]
   }
   if (kind === "recovery.attempted") {
-    // "Wasn't me" navigates rather than acting inline, and it now points at the
-    // sheet. The answer used to be "rotate the sheet and review your guardian";
-    // the guardian is no longer part of recovery, so reprinting is the whole of
-    // it — and it is the only thing that invalidates the sheet that was used.
-    return (
-      <Button size="sm" onPress={() => router.push("/setup/recovery-kit")}>
-        <Text>{t.wasntMe}</Text>
-      </Button>
-    )
+    // Reprinting is the only thing that invalidates the sheet that was used.
+    return [
+      { label: t.wasntMe!, onPress: () => router.push("/setup/recovery-kit") },
+    ]
   }
   return undefined
 }

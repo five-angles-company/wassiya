@@ -49,12 +49,10 @@ export function WelcomeSlide({
 }: WelcomeSlideProps) {
   return (
     <View style={{ width }} className="px-gutter justify-center">
-      <Text variant="screenTitle" className="mb-3 text-[29px] leading-tight">
+      <Text variant="screenTitle" className="mb-3">
         {title}
       </Text>
-      <Text className="text-[15.5px] leading-[1.7] text-muted-foreground">
-        {body}
-      </Text>
+      <Text variant="prose">{body}</Text>
 
       {children !== undefined ? (
         <View className="mt-3.5 gap-2">{children}</View>

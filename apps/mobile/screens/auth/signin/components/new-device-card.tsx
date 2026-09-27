@@ -18,16 +18,14 @@ export type NewDeviceCardProps = {
  */
 export function NewDeviceCard({ title, body }: NewDeviceCardProps) {
   return (
-    <View className="rounded-card gap-2.25 bg-card px-4.5 py-4">
+    <View className="rounded-card bg-card gap-2 p-4">
       <View className="flex-row items-center gap-2.25">
         <View className="bg-terracotta-200 size-8.5 items-center justify-center rounded-full">
           <Icon as={KeyRound} className="text-terracotta-800 size-4.25" />
         </View>
-        <Text className="font-heading-extrabold text-[16px]">{title}</Text>
+        <Text variant="title">{title}</Text>
       </View>
-      <Text variant="meta" className="text-muted-foreground">
-        {body}
-      </Text>
+      <Text variant="meta">{body}</Text>
     </View>
   )
 }

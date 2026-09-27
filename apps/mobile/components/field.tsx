@@ -1,14 +1,7 @@
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { NATIVE_COLOR } from "@workspace/ui-native/lib/native-colors"
 import { cn } from "@workspace/ui-native/lib/utils"
 import { TextInput, View, type TextInputProps } from "react-native"
-
-/**
- * `--color-muted-foreground` (#82796a). React Native takes the placeholder
- * colour as a *prop*; `placeholder:` variants are web-only and are skipped by
- * the class checker, so this token has to exist here as a literal. Keep in step
- * with apps/mobile/global.css.
- */
-const MUTED_FOREGROUND = "#82796a"
 
 export type FieldProps = TextInputProps & {
   label: string
@@ -46,13 +39,15 @@ export function Field({
       </Text>
       <TextInput
         className={cn(
-          "rounded-box h-12.5 w-full bg-card px-4 text-[16px] text-foreground",
+          "rounded-box w-full bg-card px-4 text-[16px] text-foreground",
+          props.multiline ? "min-h-32 py-3.5 leading-[1.6]" : "h-12.5",
           "border",
           error === undefined ? "border-border" : "border-terracotta-700",
           props.editable === false && "opacity-50",
           className
         )}
-        placeholderTextColor={MUTED_FOREGROUND}
+        placeholderTextColor={NATIVE_COLOR.mutedForeground}
+        textAlignVertical={props.multiline ? "top" : undefined}
         {...props}
       />
       {message !== undefined ? (

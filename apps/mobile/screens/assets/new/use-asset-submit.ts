@@ -32,6 +32,8 @@ export type AssetSubmitInput = {
   files?: NewFile[]
   meta?: AssetMeta
   onProgress?: (fileIndex: number, progress: UploadProgress) => void
+  /** False keeps the new asset private. */
+  handOver?: boolean
 }
 
 export type AssetSubmit = {
@@ -60,7 +62,15 @@ export function useAssetSubmit(): AssetSubmit {
   const inFlight = useRef(false)
 
   const submit = useCallback(
-    async ({ type, label, secret, files, meta, onProgress }: AssetSubmitInput) => {
+    async ({
+      type,
+      label,
+      secret,
+      files,
+      meta,
+      onProgress,
+      handOver,
+    }: AssetSubmitInput) => {
       // `null`, not `false`: the id is the return value, because the wizard
       // opens the new asset and cannot ask for it afterwards without a round
       // trip.
@@ -84,7 +94,15 @@ export function useAssetSubmit(): AssetSubmit {
           return null
         }
 
-        return await save({ type, label, secret, files, meta, onProgress })
+        return await save({
+          type,
+          label,
+          secret,
+          files,
+          meta,
+          onProgress,
+          handOver,
+        })
       } catch (cause) {
         // Three outcomes, three remedies. A plan limit and an auto-locked vault
         // are both normal events; collapsing them into "something went wrong"

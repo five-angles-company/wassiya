@@ -1,53 +1,43 @@
 import type { Id } from "@workspace/backend/dataModel"
+import { router } from "expo-router"
 
+import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
-import { AssetEditFrame } from "@/screens/assets/detail/edit-frame"
-import { DigitalFields } from "@/screens/assets/detail/forms/digital-fields"
 import {
+  EMPTY_DIGITAL,
   isDigitalValid,
   parseDigital,
   toDigitalPayload,
 } from "@/screens/assets/detail/forms/digital"
+import { StepEditFrame } from "@/screens/assets/detail/step-edit-frame"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
 import { useEditForm } from "@/screens/assets/detail/use-edit-form"
+import { useDigitalSteps } from "@/screens/assets/flow/digital-steps"
 
-/** ٤.٧ — a digital account, as the form that edits it. */
-export function DigitalEditScreen({ assetId }: { assetId: Id<"assets"> }) {
-  const { t } = useStrings("assets/detail")
-  const { t: account } = useStrings("assets/new/account")
-
+/** One step of a saved digital account. */
+export function DigitalStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; stepKey: string }) {
+  const { t } = useStrings("assets/new/account")
+  useSecureScreen("assets/edit/digital")
   const { load, save, saving, error, noteReveal } = useAssetEditor(assetId)
-  const { form, patch, dirty, commit, reset } = useEditForm(
-    load.status === "ready" ? load : null,
-    parseDigital
-  )
+  const { form, patch, dirty } = useEditForm(load.status === "ready" ? load : null, parseDigital)
+  const steps = useDigitalSteps(form ?? EMPTY_DIGITAL, patch, noteReveal)
 
   async function onSave() {
-    if (form === null) return
-    if (await save(toDigitalPayload(form, account))) commit()
+    if (form === null || !isDigitalValid(form)) return
+    if (await save(toDigitalPayload(form, t))) router.back()
   }
 
   return (
-    <AssetEditFrame
-      assetId={assetId}
+    <StepEditFrame
       load={load}
+      readable={form !== null}
+      step={steps.find((step) => step.key === stepKey)}
+      kicker={t.title!}
+      onSave={() => void onSave()}
       saving={saving}
       error={error}
       dirty={dirty}
-      canSave={form !== null && isDigitalValid(form) && !saving}
-      onSave={() => void onSave()}
-      onCancel={reset}
-      kindLine={account.title!}
-    >
-      {form === null ? null : (
-        <DigitalFields
-          value={form}
-          onChange={patch}
-          labels={t}
-          account={account}
-          onReveal={noteReveal}
-        />
-      )}
-    </AssetEditFrame>
+      onReveal={noteReveal}
+    />
   )
 }

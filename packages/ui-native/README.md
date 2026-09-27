@@ -75,8 +75,8 @@ which is a **native module**, not a JS one. Consequences:
 ## Consuming it
 
 ```ts
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { cn } from "@workspace/ui-native/lib/utils"
 ```
 
@@ -109,8 +109,8 @@ a Wassiya *rule*, not just a shape. Import them the same way as anything else �
 the `./components/*` wildcard already covers the subfolder:
 
 ```ts
-import { AssetRow } from "@workspace/ui-native/components/wassiya/asset-row"
-import { StatusPill } from "@workspace/ui-native/components/wassiya/status-pill"
+import { ConfirmSheet } from "@workspace/ui-native/components/wassiya/confirm-sheet"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 ```
 
 They are UI only. Nothing here calls Convex, Clerk, biometrics, or the
@@ -134,56 +134,42 @@ asset title, a formatted date — is a plain `string` prop, never a label.
 
 ### The components
 
+The screen-level pieces that sit on top of these — `Screen`, `ScreenHeader`,
+`LoadingScreen`, `BackButton`, `IconButton`, `AddFab`, `Field`,
+`SecretField`, `EmptyTab`, `LoadMore`, `NoResults`, `NumberedRow` — live in
+`apps/mobile/components/` because they know the router or the app's strings.
+The rules for putting them together are in the root `AGENTS.md`
+("Design rules (mobile)").
+
 | Component | Key props | States | Consumed by |
 | --- | --- | --- | --- |
-| `section-kicker` | `kicker`, `title`, `step`, `description` | — | every numbered stage header (`٢ · تهيئة الخزنة`) |
-| `otp-input` | `value`, `onChangeText`, `length` (4–8), `state`, `resendInSeconds`, `onComplete` | `empty` · `partial` · `verifying` (pulse) · `wrong` (shake) · `expired` · `lockedOut` | 1.4 OTP, and later any step-up challenge |
-| `otp-box` | internal to `otp-input` | mirrors the parent state | — |
-| `guarded-secret-field` | `title`, `wordCount`, `words`, `onRequestReveal`, `revealSeconds`, `onPaste`, `onScanQr`, `safetyChips`, `checksum` | masked · revealed (10s countdown) · paste · scan · checksum valid/invalid | 4.3 crypto wallet, 4.7 digital account, 4.9 asset detail |
-| `secret-word-pills` | `count`, `words`, `revealed` | masked · revealed | inside `guarded-secret-field` |
-| `safety-chips` | `items` | — | inside `guarded-secret-field` |
-| `secret-checksum-line` | `checksum`, `validMessage`, `invalidMessage` | `valid` · `invalid` · `unknown` (renders nothing) | inside `guarded-secret-field` |
-| `recovery-code-display` | `groups`, `perLine`, `ownerName`, `issuedAt`, `qrSlot`, `handlingNote` | shown-once band always present | 2.4 recovery kit |
-| `recovery-code-input` | `value: string[]`, `onChange`, `groupLength`, `invalidGroups`, `checksumFailed` | per-group error · checksum error · paste-spread | recovery on a new device, 3.2 "use my recovery sheet" |
-| `protection-score` | `earned`, `total`, `size` | complete (olive ring) · incomplete (sand ring) | 2.6 setup complete, 3.1 home, Protection Centre |
-| `protection-score-list` | `items[{label,done,priority,pillLabel}]` | per item: done · needed (amber) · later (neutral) | 2.6, Protection Centre |
-| `status-pill` | `status`; `children` overrides the built-in wording | `confirmed` (olive, `مفعّل`) · `action` (terracotta, `مطلوب`) · `waiting` (sand, `قيد المراجعة`) | everywhere a state is named |
-| `key-card` | `icon`, `title`, `description`, `pending` | live · pending | 2.2 the three-keys explainer |
-| `asset-row-skeleton` | `count` | loading | 4.1 while rows decrypt |
-| `asset-type-grid` / `asset-type-tile` | `options[]`; tile takes `icon`, `title`, `description`, `tone` | rows of two, equal height; tone defaults to sand and callers keep it | ٤.٢ category picker — 2×3 inside the add sheet, on `stat-tile` metrics |
-| `executor-card` | `name`, `detail`, `sheetSummary`, `tone`, `onPress` | sheet printed · the terracotta "no sheet" warning | ٥.١ الأوصياء. No status pill: every executor is silent, so it said one word on every row |
-| `timeline-steps` / `timeline-step` | `steps[{state,title,meta,daysRemaining}]` | `done` · `current` · `future`; countdown node | 7.4 claim waiting period, check-in escalation |
-| `checklist-card` | `title`, `items[{label,done}]` | counter derived from items; "last step" at 1 remaining | the persistent onboarding widget |
-| `alert-banner` | `variant`, `title`, `description`, `icon`, `actions` | `security` (terracotta + warning) · `notice` (terracotta + info) · `info` (sand) · `success` (olive); paired inline actions | 3.3 notifications, 5.3 default-rule notice, 9.4 lapse notice |
-| `document-sheet` | `title`, `subtitle`, `trailing`, `footer` | — | recovery sheet, will preview |
-| `empty-state` | `icon`/`illustration`, `title`, `subtitle`, `action`, `secondaryAction` | — | 4.1b and every other empty list |
-| `audit-row` | `icon`, `event`, `meta`, `tone`, `divider` | not pressable, by design | the audit log; every secret reveal writes one |
-| `check-in-prompt` | `state`, `cadence`, `lastConfirmedAt`, `snoozedUntil`, `onConfirm`, `onSnooze` | `due` · `overdue` · `confirmed` · `snoozed` · `biometricFailed` | **6.4** — full-screen, the route wraps it |
-| `check-in-row` | `state`, `detail`, `onPress` | `off` · `due`; navigates only, never confirms | 3.1 home status row |
-| `heart-badge` | `confirmed` | heart · check | inside `check-in-prompt` |
-| `storage-meter` | `quotaBytes`, `segments[{label,bytes,color?}]`, `formatSize`, `empty` | active · empty; segments are shares of the **quota** | **9.4** subscription |
-| `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · quiet · with accessory | all of section ٩ |
-| `field-row` | `label`, `hint`, `active`, `dimmed`, `trailing`, `divider`, `onPress` | resting · active (terracotta label + 2px rule) · dimmed (45%) | **the vault's core unit** — label over value on a hairline, ٤.٣–٤.٩ |
-| `field-value` | `prose`, `ltr`, `readOnly`, plus `TextInputProps` | plain · prose · read-only | the editable half of a `field-row`; a `TextInput` at rest, so editing has no mode |
-| `field-cell` | `label`, `value`, `dim`, `ltr` | plain · derived (55%) | three short values sharing one row — ١٥ type/currency/branch |
-| `secret-value` | `value`, `onChangeText`, `masked`, `mask` | masked (fixed dot pattern) · revealed (field) | every masked secret; never carries `visible-password` |
-| `reveal-pill` | `label`, `onPress`, `disabled`, `busy` | filled · surface-toned when another field is active | ٢ the seed phrase — the one reveal behind a fingerprint |
-| `choice-field` | `label`, `value`, `options[{value,label}]`, `onChange`, `placeholder` | chosen · unchosen (`placeholder`) | a one-of-N *value* inside a `field-row`; shares `sheet-select`'s sheet |
-| `chip-row` | `options[{value,label}]`, `value`, `onChange` | selected (solid terracotta) · unselected (surface pill) | ٤.٣ network/kind, ٤.٤ account type, ٤.٥ document kind |
-| `radio-row` | `title`, `detail`, `selected`, `onPress`, `divider` | selected · unselected; nothing pre-selected | ٤.٧ disposition — options that each need a sentence |
-| `chat-bubble` | `own`, `body`, `meta`, `attachments[{name,onPress}]` | own (solid terracotta, `--color-bg` text) · theirs (surface) | ٩.٦ support conversation |
-| `chat-composer` | `value`, `onChangeText`, `onSend`, `note`, `warning`, `error`, `files`, `onAttach`, `busy`, `disabled` | ready · blocked (surface-toned send) · busy · warning (terracotta line) | ٩.٦ support conversation — `note` is the standing "not encrypted, we never ask for your sheet" line |
-| `seed-grid` | `words`, `formatIndex` | — | ٤.٣ — the one enclosed thing on that screen; indices kept because an executor reads back in order |
-| `voice-recorder` | `state`, `durationMs`, `levels`, `playing`, `onRecord`, `onStop`, `onPlay`, `onPause`, `onRerecord`, `hint` | `idle` · `recording` (live meter + timer) · `recorded` (play/pause + envelope) | ٤.٨ — a note spoken instead of written. No scrubber: a take is reviewed before it is sealed, not consumed |
-| `stat-tile` | `icon`, `label`, `value`, `emphasis`, `tone`, `onPress` | `emphasis="count"` renders the value as `screenTitle`, else `rowTitle`; `tone` tints disc and value together | ٣.١ Home's 2-up grid (`grow basis-[47%]`) — `vault-row` and `asset-type-tile` reuse its `rounded-card bg-card px-4 py-3.5` surface and `size-9` disc |
-| `vault-row` | `icon`, `title`, `detail`, `isPrivate`, `onPress` | handed over · private (a quiet lock, never terracotta) | **٤.١** the vault list — a full-width `stat-tile`, no hairlines |
-| `avatar-stack` | `names`, `size`, `ring` | faces · dashed ring (nobody) | the locked vault's executor faces |
-| `primary-cta` | `label`, `disabledLabel`, `icon`, `iconSize`, `disabled`, `busy` | live · surface-toned when disabled, **never a faded primary** | every bottom action, 56px |
-| `screen-top` / `screen-top-action` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing text ("إلغاء") | the top of every vault screen |
-| `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; imperative `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | 4.2 type picker, and every other sheet |
-| `field-link` | `label`, `value`, `placeholder`, `hint`, `chevron`, `onPress` | `down` opens a sheet · `forward` leaves for a screen (RTL-mirrored) | the boxed-field look, for anything that does not take typing — `sheet-select` renders it too |
-| `sheet-select` | `label`, `value`, `options[{value,label}]`, `onChange`, `hint`, `placeholder`, `trigger`, `note` | selected · unselected; boxed field by default, or any `trigger` you hand it | 1.3 / 2.1 country field; ٩.١ language row. Scrolls only past 6 options — a scroller stops the sheet hugging |
-| `initial-disc`, `meter-bar` | shared internals | `meter-bar` takes a per-segment `color` override | used by the above |
+| `primary-cta` | `label`, `disabledLabel`, `icon`, `tone`, `disabled`, `busy` | `primary` (terracotta) · `quiet` (surface) · `danger` (terracotta outline); a disabled primary is **surface-toned, never faded** | every full-width action in the app, 56px |
+| `confirm-sheet` | `open`, `onClose`, `title`, `body[]`, `confirmLabel`, `cancelLabel`, `tone`, `onConfirm(dismiss)`, `busy`, `error` | danger (outlined confirm, filled keep) · primary | **every** confirmation — delete, sign out, revoke, leave a form. Never `Alert.alert` |
+| `sheet` | `title`, `description`, `detents`, `scrollable`, `maxContentHeight`, `onDismiss`; `present()` / `dismiss()` via `ref` | native sheet, drag-to-dismiss | the type picker, the paywall, and every other sheet |
+| `screen-top` | `backLabel`, `back` (`chevron`/`close`), `onBack`, `action`, `trailing` | back · dismiss · trailing | step flows and the asset page — drawn exactly like the app's `BackButton` |
+| `surface` | `as` (row/card/summary), `tone`, `gap`, `padded`, `clip`, `row` | card (surface fill, **no border**) · olive · terracotta · sand | any filled block that is not a list row |
+| `settings-row` | `label`, `detail`, `icon`, `value`, `valueTone`, `accessory`, `quiet`, `chevron`, `divider` | pressable · static (a read-only readout) · `valueTone` default / action / done / attention | every grouped list: settings, devices, plan usage, profile identity |
+| `audit-row` | `icon`, `event`, `meta`, `tone`, `divider` | not pressable, by design | the audit log and notification history, inside a card |
+| `empty-state` | `icon`, `title`, `subtitle`, `action` | a card in the list's own place | an empty list under a header — audit, devices, notifications |
+| `alert-banner` | `variant`, `title`, `description`, `icon`, `actions[{label,onPress}]` | `security` · `notice` · `info` · `success`; actions are **text links**, never buttons | notices on setup, settings, Home, notifications |
+| `chip-row` | `options[{value,label}]`, `value`, `onChange`, `label` | selected (solid terracotta) · unselected (surface pill) | **the only chip** — kinds, cadences, handed over or private |
+| `field-link` | `label`, `value`, `placeholder`, `hint`, `chevron`, `onPress` | `down` opens a sheet · `forward` leaves for a screen | the boxed-field look for anything that does not take typing |
+| `sheet-select` | `label`, `value`, `options`, `onChange`, `hint`, `trigger`, `note` | boxed field by default, or any `trigger` | country, language |
+| `vault-row` | `icon`, `title`, `detail`, `isPrivate`, `onPress` | handed over · private (a quiet lock) | ٤.١ the vault list |
+| `executor-card` | `name`, `detail`, `sheetSummary`, `onPress` | sheet printed · "no sheet" warning | ٥.١ executors |
+| `stat-tile` | `icon`, `label`, `value`, `emphasis`, `tone`, `onPress` | tone tints disc and value together | ٣.١ Home's 2-up grid |
+| `asset-type-grid` / `asset-type-tile` | `options[]` | rows of two; a lone last tile spans its row with the same layout | the add sheet and the empty vault |
+| `key-card` | `icon`, `title`, `description`, `pending` | live · pending | 2.2 the key explainer |
+| `check-in-hero` | `state`, `detail`, `onConfirm`, `onEnable`, `onOpenSettings`, `failed` | per check-in state; its pill is **the only** place a check-in is confirmed | ٣.١ Home |
+| `protection-score` / `protection-score-list` | `earned`, `total` / `items[]` | done · needed · later | 2.6 setup complete |
+| `status-pill` | `status`, `children` | confirmed · action · waiting | devices (a revoked device) |
+| `storage-meter` | `quotaBytes`, `segments[]`, `formatSize`, `empty` | segments are shares of the **quota** | ٩.٤ plan |
+| `otp-input` / `otp-box` | `value`, `length`, `state`, `resendInSeconds`, `onComplete` | empty · partial · verifying · wrong · expired · lockedOut | 1.4 OTP, the email change |
+| `recovery-code-display` / `document-sheet` | `groups`, `perLine`, `ownerName`, `issuedAt`, `qrSlot`, `preview` | shown-once band; `preview` masks the code | the recovery kit, executor sheets, the masked sheet in settings |
+| `seed-grid` | `words`, `formatIndex` | — | ٤.٣ the seed phrase |
+| `voice-recorder` | `state`, `durationMs`, `levels`, `playing`, callbacks | idle · recording · recorded | ٤.٨ spoken notes |
+| `chat-bubble` / `chat-composer` | see source | own · theirs; composer blocked · busy · warning | ٩.٦ support |
+| `avatar-stack`, `initial-disc`, `meter-bar`, `pulsing-heart` | shared internals | — | used by the above |
 
 ### Rules these components follow
 
@@ -239,9 +225,12 @@ names a family utility directly — `font-heading-extrabold`, `font-body-medium`
 `apps/mobile/src/hooks/use-app-fonts.ts`; that list and the `--font-*` tokens
 in `global.css` must stay in step.
 
-`Text` variants: `display`, `screenTitle`, `pageTitle`, `title`, `dialogTitle`,
-`sectionLabel`, `noticeTitle`, `rowTitle`, `meta`, `metaSm`, `action`, `kicker`
-— plus the upstream shadcn names (`h1`–`h4`, `p`, `lead`, `large`, `small`,
+`Text` variants: `display`, `screenTitle` (28px — **every** screen's title),
+`pageTitle`, `title`, `dialogTitle`, `sectionLabel`, `noticeTitle`,
+`rowTitle`, `prose`, `proseSm`, `footnote`, `meta`, `metaSm`, `action`,
+`kicker` — `prose`, `proseSm`, `footnote`, `meta` and `metaSm` are already
+muted, so never add `text-muted-foreground` to them, and never dim text with
+`opacity-*`. Plus the upstream shadcn names (`h1`–`h4`, `p`, `lead`, `large`, `small`,
 `muted`, `code`, `blockquote`), retuned to the same stack so existing markup
 keeps working.
 

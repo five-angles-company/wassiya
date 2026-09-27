@@ -1,13 +1,14 @@
 /**
- * The six kinds of thing a vault holds, and the glyph each one wears. The order
- * is the ٤.٢ picker's, and is also the ٤.١ filter-chip order.
+ * The kinds of thing a vault holds, and the glyph each one wears, in picker
+ * order. Mirrors `packages/backend/convex/model/assetTypes.ts`; a type missing
+ * from either side opens with no name.
  *
- * The design uses its own outline glyphs rather than naming lucide icons, so
- * these are the closest equivalents, collected here for one edit rather than
- * inlined per call site. Two depart from the drawn shape on purpose: `bank` is a
- * `Landmark` and `digital` an `AtSign`, because the drawn stand-ins would be
- * misread at 18px — a house next to "مصرف الراجحي" reads as property, not
- * banking.
+ * Only what the family would lose without knowing it existed: secrets, and
+ * money and papers nobody else can find. Property and vehicles are in public
+ * registries; where things are, and who to call, is a note.
+ *
+ * `bank` is a `Landmark` and `digital` an `AtSign` on purpose: the obvious
+ * stand-ins would be misread at 18px.
  */
 import {
   AtSign,
@@ -16,17 +17,20 @@ import {
   Image as ImageIcon,
   Landmark,
   Pencil,
+  ShieldCheck,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react-native"
 import type { Tone } from "@workspace/ui-native/lib/tone"
 
-/** Mirrors the `assetType` union in `convex/assets.ts`, in picker order. */
 export const ASSET_TYPES = [
   "crypto",
   "bank",
+  "investment",
+  "insurance",
+  "digital",
   "document",
   "photos",
-  "digital",
   "note",
 ] as const
 
@@ -34,54 +38,45 @@ export type AssetType = (typeof ASSET_TYPES)[number]
 
 export const ASSET_TYPE_ICON: Record<AssetType, LucideIcon> = {
   crypto: Bitcoin,
-  // The drawn glyph is a gabled building. `Landmark` is lucide's bank — the same
-  // pediment, with columns — where `House` would read as real estate.
   bank: Landmark,
-  // A plain page with a folded corner, not `FileText`: the drawn glyph has no
-  // rules on it, and a document here is as often a scan as it is text.
+  investment: TrendingUp,
+  insurance: ShieldCheck,
+  digital: AtSign,
   document: File,
   photos: ImageIcon,
-  digital: AtSign,
-  // A pencil, not a sticky note. A note in this vault is something written to
-  // be read after you are gone; a memo pad is the wrong object entirely.
+  // A pencil, not a sticky note: a note here is written to be read after you
+  // are gone.
   note: Pencil,
 }
 
 /**
- * Icon tint on the 4.2 tiles, grouping the six types by **what they hold** —
- * the rule: "secrets (terracotta), files (sage), instructions
- * (neutral)".
- *
- * It is a grouping, not a severity: `terracotta` here means "this one contains
- * a secret", not "this one needs attention". That is the opposite of what the
- * same colour means on a `StatusPill`, which is why the mapping is named and
- * lives beside the type list instead of being written inline per tile.
+ * Icon tint on the picker tiles, grouping types by **what they hold** —
+ * secrets terracotta, files olive, directions sand. A grouping, not a
+ * severity: terracotta here means "contains a secret", the opposite of what it
+ * means on a status line.
  */
 export const ASSET_TYPE_TONE: Record<AssetType, Tone> = {
-  // Seed phrases and passwords.
   crypto: "terracotta",
   digital: "terracotta",
-  // Encrypted blobs.
+  investment: "terracotta",
   document: "olive",
   photos: "olive",
-  // An IBAN and a wish are both directions to follow, not secrets to guard.
   bank: "sand",
+  insurance: "sand",
   note: "sand",
 }
 
 /**
- * Where each tile on ٤.٢ goes.
- *
- * `digital` maps to `/assets/new/account`, not `/assets/new/digital` — the
- * the route is named after what the user is describing (an account), while
- * the schema names the column after the kind of thing it is. Both stay as they
- * are; this table is where the two vocabularies meet, so neither has to bend.
+ * Where each tile goes. `digital` maps to `/assets/new/account` — the route is
+ * named after what the owner describes, the schema after what it is.
  */
 export const ASSET_TYPE_ROUTE = {
   crypto: "/assets/new/crypto",
   bank: "/assets/new/bank",
+  investment: "/assets/new/investment",
+  insurance: "/assets/new/insurance",
+  digital: "/assets/new/account",
   document: "/assets/new/document",
   photos: "/assets/new/photos",
-  digital: "/assets/new/account",
   note: "/assets/new/note",
 } as const satisfies Record<AssetType, string>

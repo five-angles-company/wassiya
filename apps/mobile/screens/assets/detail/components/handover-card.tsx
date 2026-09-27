@@ -9,7 +9,7 @@ import { Pressable, View } from "react-native"
 
 import { useStrings } from "@/i18n/use-strings"
 import { useSetHandover } from "@/lib/release-key"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
 
 /**
  * The one enclosed thing on the asset screen, because it is the one instruction
@@ -68,7 +68,7 @@ export function HandoverCard({
         className
       )}
     >
-      <OptionChips
+      <ChipRow
         label={t.label}
         options={[
           { value: "handedOver", label: t.handedOver! },

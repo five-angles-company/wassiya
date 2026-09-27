@@ -21,8 +21,8 @@ export type AssetTypeGridProps = {
  * ask only for what an executor will actually need.
  *
  * Laid out as explicit rows of two rather than `flex-wrap`, so tiles in a row
- * stretch to equal height. Wrapping would leave a short tile next to a tall
- * one whenever one description runs to two lines.
+ * stretch to equal height. A tile left alone on the last row takes the whole
+ * row, same layout, rather than leaving half of it empty.
  */
 export function AssetTypeGrid({ options, className }: AssetTypeGridProps) {
   const rows: AssetTypeOption[][] = [];
@@ -35,8 +35,6 @@ export function AssetTypeGrid({ options, className }: AssetTypeGridProps) {
           {row.map(({ id, ...tile }) => (
             <AssetTypeTile key={id} {...tile} />
           ))}
-          {/* Keep a lone last tile at half width instead of stretching it. */}
-          {row.length === 1 ? <View className="flex-1" /> : null}
         </View>
       ))}
     </View>

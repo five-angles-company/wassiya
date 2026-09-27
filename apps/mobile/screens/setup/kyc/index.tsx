@@ -1,7 +1,7 @@
 import { useAction, useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as Linking from "expo-linking"
 import { router } from "expo-router"
@@ -12,6 +12,7 @@ import { View } from "react-native"
 
 import { CountryPicker } from "@/components/country-picker"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { DEFAULT_COUNTRY, findCountry } from "@/lib/countries"
@@ -71,20 +72,27 @@ export function KycScreen() {
   }
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={
+        <View className="gap-3">
+          {error !== null ? (
+            <Text variant="meta" className="text-terracotta-800">
+              {error}
+            </Text>
+          ) : null}
+          <PrimaryCta label={busy ? t.opening! : t.cta!} onPress={() => void start()} busy={busy} />
+        </View>
+      }
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.kyc}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      <Text variant="screenTitle" className="mb-2.5 text-[30px]">
-        {t.title}
-      </Text>
-      <Text className="text-body mb-5.5 leading-[1.7] text-muted-foreground">
-        {t.body}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.body} />
 
       {needsCountry ? (
         <CountryPicker
@@ -109,33 +117,9 @@ export function KycScreen() {
 
       <AlertBanner variant="security" description={t.blockingNotice} />
 
-      <Text variant="metaSm" className="mt-3 text-muted-foreground">
+      <Text variant="metaSm" className="mt-3">
         {t.nothingEncryptedYet}
       </Text>
-
-      <View className="grow" />
-
-      {error !== null ? (
-        <Text variant="meta" className="text-terracotta-800 mt-4 mb-3">
-          {error}
-        </Text>
-      ) : null}
-
-      <Button className="mt-5" disabled={busy} onPress={() => void start()}>
-        <Text>{busy ? t.opening : t.cta}</Text>
-      </Button>
-
-      {/*
-        A guardian escape hatch used to sit here: someone who signed up only to
-        hold half a key has no keyring and no verification, which `setup-flow`
-        reads as "unfinished owner onboarding", so the splash stranded them on
-        this blocking gate with nowhere to go.
-
-        It is gone because the stranding is: a guardian has no reason to install
-        this app at all now. They are not in recovery, and their claim duties
-        live on the web. Anyone reaching this screen is an owner, and for an
-        owner the gate is meant to block.
-      */}
     </Screen>
   )
 }

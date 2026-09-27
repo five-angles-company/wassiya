@@ -1,57 +1,38 @@
 import type { Id } from "@workspace/backend/dataModel"
+import { router } from "expo-router"
 
 import { useStrings } from "@/i18n/use-strings"
 import { checkIban } from "@/lib/iban"
-import { AssetEditFrame } from "@/screens/assets/detail/edit-frame"
-import { BankFields } from "@/screens/assets/detail/forms/bank-fields"
 import { parseBank, toBankPayload } from "@/screens/assets/detail/forms/bank"
+import { StepEditFrame } from "@/screens/assets/detail/step-edit-frame"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
 import { useEditForm } from "@/screens/assets/detail/use-edit-form"
+import { EMPTY_BANK, useBankSteps } from "@/screens/assets/flow/bank-steps"
 
-/** ٤.٤ — a bank account, as the form that edits it. */
-export function BankEditScreen({ assetId }: { assetId: Id<"assets"> }) {
-  const { t, locale } = useStrings("assets/detail")
-  const { t: bank } = useStrings("assets/new/bank")
-
-  const { load, save, saving, error } = useAssetEditor(assetId)
-  const { form, patch, dirty, commit, reset } = useEditForm(
-    load.status === "ready" ? load : null,
-    parseBank
-  )
+/** One step of a saved bank account. */
+export function BankStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; stepKey: string }) {
+  const { t } = useStrings("assets/new/bank")
+  const { load, save, saving, error, noteReveal } = useAssetEditor(assetId)
+  const { form, patch, dirty } = useEditForm(load.status === "ready" ? load : null, parseBank)
+  const steps = useBankSteps(form ?? EMPTY_BANK, patch)
 
   async function onSave() {
-    if (form === null) return
-    if (await save(toBankPayload(form))) commit()
+    if (form === null || form.bank.trim().length === 0) return
+    if (checkIban(form.iban, form.country).status !== "valid") return
+    if (await save(toBankPayload(form))) router.back()
   }
 
-  // The wizard's own gate, so an edit cannot save what a create would refuse —
-  // and, more to the point, cannot overwrite a valid IBAN with an invalid one.
-  const valid =
-    form !== null &&
-    form.bank.trim().length > 0 &&
-    checkIban(form.iban, form.country).status === "valid"
-
   return (
-    <AssetEditFrame
-      assetId={assetId}
+    <StepEditFrame
       load={load}
+      readable={form !== null}
+      step={steps.find((step) => step.key === stepKey)}
+      kicker={t.title!}
+      onSave={() => void onSave()}
       saving={saving}
       error={error}
       dirty={dirty}
-      canSave={valid && dirty && !saving}
-      onSave={() => void onSave()}
-      onCancel={reset}
-      kindLine={bank.title!}
-    >
-      {form === null ? null : (
-        <BankFields
-          value={form}
-          onChange={patch}
-          labels={t}
-          bank={bank}
-          locale={locale}
-        />
-      )}
-    </AssetEditFrame>
+      onReveal={noteReveal}
+    />
   )
 }

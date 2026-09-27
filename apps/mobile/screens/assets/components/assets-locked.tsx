@@ -23,10 +23,6 @@ import { View } from "react-native"
  * a Wassiya password would promise an unlock the keystore cannot perform.
  */
 export type AssetsLockedProps = {
-  /** "خزنتك" — the same name the open list carries. */
-  title: string
-  /** "مغلقة" — plus the last-opened stamp when there is one. */
-  status: string
   /** The vault's size, in the locale's numerals. */
   count: string
   /** "أصلاً محفوظاً ومشفّراً على هذا الجهاز". */
@@ -46,8 +42,6 @@ export type AssetsLockedProps = {
 }
 
 export function AssetsLocked({
-  title,
-  status,
   count,
   countUnit,
   executorsLine,
@@ -60,33 +54,26 @@ export function AssetsLocked({
 }: AssetsLockedProps) {
   return (
     <>
-      {/* ٤.١'s header block, so the locked vault and the open one are the same
-          screen in two states rather than two screens. */}
-      <View className="min-w-0">
-        <Text variant="metaSm">{status}</Text>
-        <Text variant="pageTitle">{title}</Text>
-      </View>
-
       {/* `my-auto`, not `mb-auto`: this is the whole screen, so it sits in the
           middle of the frame rather than clinging to the header with the void
           moved underneath it. */}
-      <View className="bg-card rounded-summary my-auto items-center px-5 pb-5 pt-6">
-        <Text className="font-heading-black text-foreground text-[64px] leading-[0.9]">
+      <View className="rounded-summary my-auto items-center bg-card px-5 pt-6 pb-5">
+        <Text className="font-heading-black text-[64px] leading-[0.9] text-foreground">
           {count}
         </Text>
         {/* `w-full`: the card is `items-center`, which sizes a child to its own
             content — without a width this line ran past the padding and lost
             its last word rather than wrapping. */}
-        <Text className="mt-1.5 w-full text-center text-[15.5px] leading-[1.55] opacity-75">
+        <Text variant="prose" className="mt-1.5 w-full text-center">
           {countUnit}
         </Text>
 
-        <View className="bg-border my-5 h-px w-full" />
+        <View className="my-5 h-px w-full bg-border" />
 
         <View className="w-full gap-[11px]">
           {executorsLine !== undefined ? (
             <View className="flex-row items-center gap-3">
-              <Text className="flex-1 text-[13.5px] opacity-70">
+              <Text variant="proseSm" className="flex-1">
                 {executorsLine}
               </Text>
               {/* `ring="surface"`: the faces are cut out of the card now, not
@@ -97,14 +84,14 @@ export function AssetsLocked({
             </View>
           ) : null}
           <View className="flex-row items-center gap-3">
-            <Text className="flex-1 text-[13.5px] opacity-70">
+            <Text variant="proseSm" className="flex-1">
               {deliveryLine}
             </Text>
             <Icon
               as={Check}
               size={17}
               strokeWidth={2.75}
-              className="text-olive-700 shrink-0"
+              className="shrink-0 text-olive-700"
             />
           </View>
         </View>
@@ -120,7 +107,7 @@ export function AssetsLocked({
           className="mt-5 w-full"
         />
 
-        <Text className="mt-3 text-center text-[11.5px] leading-[1.6] opacity-50">
+        <Text variant="footnote" className="mt-3 text-center">
           {footnote}
         </Text>
       </View>

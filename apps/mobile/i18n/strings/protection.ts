@@ -47,18 +47,30 @@ export const CHECKIN = {
     en: "We ask now and then whether you're well, and remind you if you're late. Being late hands nothing over by itself: delivery needs a verified death report, and confirming with your fingerprint stops any report.",
   },
 
-  // The sheet titles itself with the words on the link that opened it —
-  // "إعدادات النبض" — not with the section name. `title` still names the route.
-  settingsTitle: { ar: "إعدادات النبض", en: "Pulse settings" },
-  cadenceLabel: { ar: "كل كم شهر نسألك؟", en: "How often should we ask?" },
-  cadence3: { ar: "٣ أشهر", en: "3 months" },
-  cadence6: { ar: "٦ أشهر", en: "6 months" },
-  cadence12: { ar: "١٢ شهراً", en: "12 months" },
-  graceLabel: { ar: "المهلة قبل التصعيد", en: "Grace before escalation" },
-  grace14: { ar: "١٤ يوماً", en: "14 days" },
-  grace30: { ar: "٣٠ يوماً", en: "30 days" },
-  grace60: { ar: "٦٠ يوماً", en: "60 days" },
-  save: { ar: "احفظ الإعداد", en: "Save settings" },
+  // Missed check-ins release nothing, and the sheet that sets them says so
+  // before anything else.
+  settingsIntro: {
+    ar: "نسألك أن تؤكّد ببصمتك أنك بخير. إن تأخّرت نذكّرك فقط — التأخّر لا يُسلّم شيئاً.",
+    en: "We ask you to confirm with your fingerprint that you're well. If you're late we only remind you — being late hands nothing over.",
+  },
+  cadenceLabel: { ar: "كم مرة نسألك؟", en: "How often should we ask?" },
+  cadence3: { ar: "كل ٣ أشهر", en: "Every 3 months" },
+  cadence6: { ar: "كل ٦ أشهر", en: "Every 6 months" },
+  cadence12: { ar: "كل سنة", en: "Every year" },
+  // `graceDays` is added to the interval before the first ask
+  // (`checkin.dueAfter`), so it is worded as extra time, not as a pause after.
+  graceLabel: { ar: "مهلة إضافية قبل أن نسألك", en: "Extra time before we ask" },
+  grace14: { ar: "أسبوعان", en: "2 weeks" },
+  grace30: { ar: "شهر", en: "1 month" },
+  grace60: { ar: "شهران", en: "2 months" },
+  nextAsk: { ar: "سنسألك يوم {date}", en: "We'll ask you on {date}" },
+  // Mirrors `ESCALATION_STEPS` in convex/checkin.ts after day 0.
+  reminders: {
+    ar: "إن لم تُجب، نذكّرك بعد أسبوع، ثم أسبوعين، ثم شهر.",
+    en: "If you don't answer, we remind you after a week, two weeks, then a month.",
+  },
+  unchanged: { ar: "غيّر إعداداً لتحفظه", en: "Change a setting to save" },
+  save: { ar: "احفظ", en: "Save" },
   saving: { ar: "جارٍ الحفظ…", en: "Saving…" },
 
   // The single confirm. Biometric-gated, and the only place in the entire

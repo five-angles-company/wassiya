@@ -1,6 +1,6 @@
 import { Icon } from '@workspace/ui-native/components/ui/icon';
 import { cn } from '@workspace/ui-native/lib/utils';
-import { ChevronRight, X, type LucideIcon } from 'lucide-react-native';
+import { ChevronLeft, X, type LucideIcon } from 'lucide-react-native';
 import type * as React from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -13,7 +13,7 @@ import { Pressable, View } from 'react-native';
  * while editing — without the owner having to look for either. Nothing moves;
  * only the thing in the slot changes.
  *
- * The chevron is authored as `ChevronRight` and flipped, so it points the way
+ * The chevron is authored as `ChevronLeft` and flipped, so it points the way
  * the reading direction came from: right in Arabic, left in English.
  */
 export type ScreenTopProps = {
@@ -50,7 +50,7 @@ export function ScreenTop({
         onPress={onBack}
         className="bg-card size-10 shrink-0 items-center justify-center rounded-full active:opacity-70">
         <Icon
-          as={chevron ? ChevronRight : X}
+          as={chevron ? ChevronLeft : X}
           flip={chevron}
           size={19}
           strokeWidth={2.75}

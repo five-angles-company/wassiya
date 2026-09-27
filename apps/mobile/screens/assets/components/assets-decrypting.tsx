@@ -1,4 +1,3 @@
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { View } from "react-native"
 
 import { GhostRow } from "@/components/ghost-row"
@@ -11,9 +10,6 @@ import { GhostRow } from "@/components/ghost-row"
  * shifts as real names land, and they fade down the page so the eye stays at
  * the top where the next one appears.
  *
- * The status sits in the subtitle slot the handover figure normally occupies, so
- * the header never changes height between this screen and the list.
- *
  * ## Why there is no "٢٨ من ٤٣" here
  *
  * A progress count was intended. This app cannot honestly produce one: the
@@ -23,38 +19,21 @@ import { GhostRow } from "@/components/ghost-row"
  * would be the one dishonest number on a screen whose entire job is to be
  * trustworthy. Progressive decryption would earn it back.
  */
-export type AssetsDecryptingProps = {
-  title: string
-  /** "تُفتح على جهازك" — olive, because this is progress, not a problem. */
-  subtitle: string
-}
-
-export function AssetsDecrypting({ title, subtitle }: AssetsDecryptingProps) {
+export function AssetsDecrypting() {
   return (
-    <>
-      <View className="mb-[26px] flex-row items-start gap-3">
-        <View className="flex-1">
-          <Text className="font-heading-extrabold text-foreground mb-[5px] text-[30px] leading-[1.2]">
-            {title}
-          </Text>
-          <Text className="text-olive-700 text-[13px]">{subtitle}</Text>
-        </View>
+    <View className="gap-row">
+      <View className="opacity-40">
+        <GhostRow title="58%" meta="26%" />
       </View>
-
-      <View className="gap-row mb-auto">
-        <View className="opacity-40">
-          <GhostRow title="58%" meta="26%" />
-        </View>
-        <View className="opacity-[0.32]">
-          <GhostRow title="44%" meta="20%" />
-        </View>
-        <View className="opacity-[0.22]">
-          <GhostRow title="52%" meta="24%" />
-        </View>
-        <View className="opacity-[0.14]">
-          <GhostRow title="38%" meta="18%" />
-        </View>
+      <View className="opacity-[0.32]">
+        <GhostRow title="44%" meta="20%" />
       </View>
-    </>
+      <View className="opacity-[0.22]">
+        <GhostRow title="52%" meta="24%" />
+      </View>
+      <View className="opacity-[0.14]">
+        <GhostRow title="38%" meta="18%" />
+      </View>
+    </View>
   )
 }

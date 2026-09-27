@@ -1,9 +1,6 @@
 /**
- * The bank-account payload, in both directions.
- *
- * `screens/assets/new/bank/index.tsx` is still the other writer; the JSON keys
- * and the label format below are copied from it verbatim and **must stay in
- * step** until it moves onto {@link toBankPayload}.
+ * The bank-account payload, in both directions — the one writer for creating
+ * and editing alike.
  *
  * The IBAN is held as typed and stored normalised: the field displays
  * `groupIban(...)` because that is how one is printed on a statement and checked

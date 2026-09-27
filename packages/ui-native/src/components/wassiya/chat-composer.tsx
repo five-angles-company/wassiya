@@ -91,7 +91,7 @@ export function ChatComposer({
           placeholder={placeholder}
           multiline
           textAlignVertical="top"
-          className="bg-card text-foreground placeholder:text-muted-foreground/60 min-h-14 max-h-40 flex-1 rounded-[18px] px-4 py-3.5 text-[15px] leading-[1.5]"
+          className="bg-card text-foreground min-h-14 max-h-40 flex-1 rounded-box border-border border px-4 py-3.5 text-[15px] leading-[1.5]"
         />
         <Pressable
           accessibilityRole="button"
@@ -116,12 +116,12 @@ export function ChatComposer({
       </View>
 
       {warning ? (
-        <Text className="text-terracotta-700 font-body-semibold text-[13px] leading-[1.6]">
+        <Text className="text-terracotta-800 font-body-semibold text-[13px] leading-[1.6]">
           {warning}
         </Text>
       ) : null}
       {error ? (
-        <Text className="text-terracotta-700 text-[13px] leading-[1.6]">{error}</Text>
+        <Text className="text-terracotta-800 text-[13px] leading-[1.6]">{error}</Text>
       ) : null}
       <Text variant="footnote">{note}</Text>
     </View>

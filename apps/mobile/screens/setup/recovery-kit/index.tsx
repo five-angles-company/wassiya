@@ -1,6 +1,5 @@
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
 import * as Print from "expo-print"
@@ -11,9 +10,10 @@ import {
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
 import { useCallback, useMemo, useState } from "react"
-import { ActivityIndicator, View } from "react-native"
 
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { buildRecoverySheetHtml } from "@/lib/recovery-sheet-html"
@@ -187,31 +187,32 @@ export function RecoveryKitScreen() {
   }
 
   if (state.status !== "ready" || me === undefined) {
-    return (
-      <View className="flex-1 items-center justify-center gap-4 bg-background">
-        <ActivityIndicator />
-        <Text variant="meta" className="text-muted-foreground">
-          {t.preparing}
-        </Text>
-      </View>
-    )
+    return <LoadingScreen label={t.preparing} />
   }
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={
+        <KitActions
+          printLabel={t.print!}
+          savePdfLabel={t.savePdf!}
+          shareLabel={t.share!}
+          disabled={busy}
+          onPrint={() => void run("print")}
+          onSavePdf={() => void run("save")}
+          onShare={() => void run("share")}
+        />
+      }
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.recoveryKit}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      <Text variant="screenTitle" className="mb-2 text-[27px]">
-        {t.title}
-      </Text>
-      <Text className="text-notice mb-4.5 leading-[1.65] text-muted-foreground">
-        {t.body}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.body} />
 
       <RecoveryCodeDisplay
         groups={state.material.groups}
@@ -232,20 +233,6 @@ export function RecoveryKitScreen() {
       {notice !== null ? (
         <AlertBanner className="mt-4" variant="notice" description={notice} />
       ) : null}
-
-      <View className="grow" />
-
-      <View className="mt-5">
-        <KitActions
-          printLabel={t.print}
-          savePdfLabel={t.savePdf}
-          shareLabel={t.share}
-          disabled={busy}
-          onPrint={() => void run("print")}
-          onSavePdf={() => void run("save")}
-          onShare={() => void run("share")}
-        />
-      </View>
     </Screen>
   )
 }

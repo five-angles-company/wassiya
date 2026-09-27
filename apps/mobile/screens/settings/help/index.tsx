@@ -16,14 +16,14 @@ import { router } from "expo-router"
 import { ChevronDown, MessageCirclePlus } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { LoadMore } from "@/components/load-more"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { TOPIC_KEY } from "@/lib/support"
 
 export function HelpScreen() {
   const { t, locale } = useStrings("settings/help")
-  const { t: common } = useStrings("common")
   const { t: support } = useStrings("support")
   const articles = useQuery(api.support.help.articles, {
     audiences: ["owner"],
@@ -37,10 +37,7 @@ export function HelpScreen() {
 
   return (
     <Screen>
-      <BackButton label={common.back} />
-      <Text variant="screenTitle" className="mb-header mt-4">
-        {t.title}
-      </Text>
+      <ScreenHeader back title={t.title!} />
 
       <View className="mb-header rounded-card bg-card overflow-hidden">
         <SettingsRow
@@ -74,9 +71,7 @@ export function HelpScreen() {
             ))}
           </View>
           {threads.status === "CanLoadMore" ? (
-            <Pressable onPress={() => threads.loadMore(10)} className="py-2">
-              <Text variant="action">{t.loadMore}</Text>
-            </Pressable>
+            <LoadMore label={t.loadMore!} onPress={() => threads.loadMore(10)} />
           ) : null}
         </View>
       ) : null}
@@ -111,29 +106,30 @@ function Article({
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ expanded: open }}
-      onPress={() => setOpen(!open)}
-      className={
-        divider ? "border-border gap-2 border-b px-4 py-3.5" : "gap-2 px-4 py-3.5"
-      }
-    >
-      <View className="flex-row items-center gap-3">
-        <Text variant="rowTitle" className="flex-1">
-          {title}
-        </Text>
-        <Icon
-          as={ChevronDown}
-          className={
-            open
-              ? "size-4 rotate-180 opacity-50"
-              : "size-4 opacity-50"
-          }
-        />
-      </View>
-      {open ? <Text variant="prose">{body}</Text> : null}
-    </Pressable>
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen(!open)}
+        className="gap-2 px-4 py-3.5 active:opacity-70"
+      >
+        <View className="flex-row items-center gap-3">
+          <Text variant="rowTitle" className="flex-1">
+            {title}
+          </Text>
+          <Icon
+            as={ChevronDown}
+            className={
+              open
+                ? "text-muted-foreground size-4 rotate-180"
+                : "text-muted-foreground size-4"
+            }
+          />
+        </View>
+        {open ? <Text variant="proseSm">{body}</Text> : null}
+      </Pressable>
+      {divider ? <View className="bg-border mx-4 h-px" /> : null}
+    </View>
   )
 }
 

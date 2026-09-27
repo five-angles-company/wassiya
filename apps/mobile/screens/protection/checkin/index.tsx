@@ -16,20 +16,20 @@
 import { useState } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Surface } from "@workspace/ui-native/components/wassiya/surface"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { fmtDate, fmtNum } from "@workspace/ui-native/lib/format"
 import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
-import { OptionChips } from "@/screens/assets/new/components/option-chips"
+import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
 
 export function CheckInScreen() {
   const { t, locale } = useStrings("protection/checkin")
-  const { t: common } = useStrings("common")
   const config = useQuery(api.checkin.get)
   const configure = useMutation(api.checkin.configure)
 
@@ -50,19 +50,24 @@ export function CheckInScreen() {
   }
 
   return (
-    <Screen>
-      <BackButton label={common.back} />
-      <Text variant="screenTitle" className="mt-4">
-        {t.title}
-      </Text>
-      <Text className="mt-3 text-[14.5px] leading-[1.7] text-muted-foreground">
-        {t.intro}
-      </Text>
+    <Screen
+      footer={
+        config === null ? (
+          <PrimaryCta
+            label={saving ? t.saving! : t.enable!}
+            onPress={() => void enable()}
+            busy={saving}
+          />
+        ) : undefined
+      }
+    >
+      <ScreenHeader back title={t.title!} description={t.intro} />
 
       {config === null ? (
-        <View className="mt-header gap-4">
+        <View className="gap-4">
           <AlertBanner variant="security" description={t.notConfigured} />
-          <OptionChips
+          <ChipRow
+            fill
             label={t.cadenceLabel}
             options={[
               { value: "3", label: t.cadence3 },
@@ -72,7 +77,8 @@ export function CheckInScreen() {
             value={cadence}
             onChange={setCadence}
           />
-          <OptionChips
+          <ChipRow
+            fill
             label={t.graceLabel}
             options={[
               { value: "14", label: t.grace14 },
@@ -82,12 +88,9 @@ export function CheckInScreen() {
             value={grace}
             onChange={setGrace}
           />
-          <Button onPress={() => void enable()} disabled={saving}>
-            <Text>{saving ? t.saving : t.enable}</Text>
-          </Button>
         </View>
       ) : config === undefined ? null : (
-        <View className="mt-header gap-3">
+        <View className="gap-3">
           {/*
             Status and settings only — **no confirm affordance lives here any
             more.** It moved to Home's hero, where the owner asked for it and
@@ -95,7 +98,7 @@ export function CheckInScreen() {
             there is still exactly one place in the product that can record a
             check-in, and it is still behind a fingerprint (`useConfirmAlive`).
           */}
-          <View className="rounded-card bg-card gap-1.5 p-4">
+          <Surface gap="tight">
             <Text variant="rowTitle">
               {cadenceLabel(config.cadenceMonths, t, locale)}
             </Text>
@@ -111,7 +114,7 @@ export function CheckInScreen() {
                 fmtDate(new Date(config.nextDueAt), locale)
               )}
             </Text>
-          </View>
+          </Surface>
 
           <Text variant="prose">{t.confirmOnHome}</Text>
         </View>

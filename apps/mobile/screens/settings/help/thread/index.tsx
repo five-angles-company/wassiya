@@ -16,10 +16,12 @@ import { ChatComposer } from "@workspace/ui-native/components/wassiya/chat-compo
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import * as DocumentPicker from "expo-document-picker"
 import { useLocalSearchParams } from "expo-router"
-import { Linking, Pressable, View } from "react-native"
+import { Linking, View } from "react-native"
 
 import { BackButton } from "@/components/back-button"
+import { LoadMore } from "@/components/load-more"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import {
   TOPIC_KEY,
@@ -132,22 +134,22 @@ export function SupportThreadScreen() {
         ) : undefined
       }
     >
-      <BackButton label={common.back} fallbackHref="/settings/help" />
-
       {thread === null ? (
-        <Text variant="prose" className="mt-header">
-          {t.notFound}
-        </Text>
+        <>
+          <BackButton label={common.back} fallbackHref="/settings/help" />
+          <Text variant="prose" className="mt-header">
+            {t.notFound}
+          </Text>
+        </>
       ) : (
         <>
-          <Text variant="screenTitle" className="mb-header mt-4">
-            {thread ? support[TOPIC_KEY[thread.topic]] : ""}
-          </Text>
+          <ScreenHeader
+            back="/settings/help"
+            title={thread ? support[TOPIC_KEY[thread.topic]]! : ""}
+          />
 
           {messages.status === "CanLoadMore" ? (
-            <Pressable onPress={() => messages.loadMore(50)} className="mb-4 py-2">
-              <Text variant="action">{t.loadOlder}</Text>
-            </Pressable>
+            <LoadMore className="mb-4" label={t.loadOlder!} onPress={() => messages.loadMore(50)} />
           ) : null}
           {thread?.filesPurged ? (
             <Text variant="footnote" className="mb-4">

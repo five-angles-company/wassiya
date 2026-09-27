@@ -4,79 +4,42 @@ import { cn } from '@workspace/ui-native/lib/utils';
 import type { LucideIcon } from 'lucide-react-native';
 import type * as React from 'react';
 import { View } from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 
 export type EmptyStateProps = {
-  /** Glyph for the sage disc. Ignored when `illustration` is given. */
-  icon?: LucideIcon;
-  /** Custom artwork in place of the icon blob. */
-  illustration?: React.ReactNode;
-  /** One honest sentence: "خزنتك فارغة — وهذا طبيعي". */
+  icon: LucideIcon;
+  /** One honest sentence: "لا نشاط بعد". */
   title: string;
-  /** What to do about it, and what most people do first. */
+  /** What to do about it, when there is something to do. */
   subtitle?: string;
-  /** The single primary CTA. */
+  /** At most one action. */
   action?: React.ReactNode;
-  /** One quiet secondary link under it. */
-  secondaryAction?: React.ReactNode;
   className?: string;
 };
 
 /**
- * The template for every empty list in the app — assets, heirs,
- * notifications.
+ * An empty list inside a screen that already has its header — the audit log,
+ * devices, notifications. A card in the list's own place, so the screen keeps
+ * its shape when there is nothing to show.
  *
- * Three rules: a **sage** disc (never terracotta — an
- * empty vault is a normal first day, not an error), exactly **one** honest
- * sentence, and exactly **one** primary CTA with at most one quiet secondary.
- * An empty state that offers three equal choices is a menu, not a nudge.
+ * Olive, never terracotta: an empty list is a normal first day, not an error.
+ * A whole screen that is empty on first run (the vault, the executors) has its
+ * own composed empty state instead.
  */
-export function EmptyState({
-  icon,
-  illustration,
-  title,
-  subtitle,
-  action,
-  secondaryAction,
-  className,
-}: EmptyStateProps) {
-  const reduced = useReducedMotion();
-
+export function EmptyState({ icon, title, subtitle, action, className }: EmptyStateProps) {
   return (
-    <View className={cn('items-center justify-center gap-5 px-gutter py-10', className)}>
-      {illustration ?? (
-        /*
-          A **solid** disc, not a pale wash.
-
-          This was a 160px `olive-100` circle — a few percent off the page —
-          carrying a dark glyph. At that size a near-background fill reads as
-          absence rather than illustration, which is the wrong note for a screen
-          whose whole job is to say "this is fine, here is what to do". A
-          smaller disc in solid sage with a cream glyph is warmer, more
-          confident, and speaks the same language as the check-in heart.
-        */
-        <Animated.View entering={reduced ? undefined : FadeInDown.duration(320)}>
-          <View className="bg-secondary size-28 items-center justify-center rounded-full shadow-md">
-            {icon ? (
-              <Icon as={icon} className="text-secondary-foreground size-12" />
-            ) : null}
-          </View>
-        </Animated.View>
-      )}
-
-      <View className="items-center gap-2">
-        <Text variant="dialogTitle" className="text-center">
-          {title}
-        </Text>
-        {subtitle ? (
-          <Text variant="p" className="text-muted-foreground max-w-72 text-center">
-            {subtitle}
-          </Text>
-        ) : null}
+    <View className={cn('rounded-card bg-card items-center gap-3 px-5 py-8', className)}>
+      <View className="bg-olive-100 size-12 items-center justify-center rounded-full">
+        <Icon as={icon} className="text-olive-800 size-5.5" />
       </View>
-
+      <Text variant="title" className="text-center">
+        {title}
+      </Text>
+      {subtitle ? (
+        <Text variant="proseSm" className="text-center">
+          {subtitle}
+        </Text>
+      ) : null}
       {action}
-      {secondaryAction}
     </View>
   );
 }

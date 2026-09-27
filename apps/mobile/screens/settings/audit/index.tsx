@@ -13,16 +13,15 @@
  */
 import { usePaginatedQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
-import { Text } from "@workspace/ui-native/components/ui/text"
 import { AuditRow } from "@workspace/ui-native/components/wassiya/audit-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate, fmtTime } from "@workspace/ui-native/lib/format"
 import { Eye, FileText, KeyRound, ScrollText, ShieldCheck, Users } from "lucide-react-native"
 import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
+import { LoadMore } from "@/components/load-more"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
 /** Events that are security-relevant get the terracotta tone, not olive. */
@@ -41,7 +40,6 @@ const SECURITY_EVENTS = new Set([
 
 export function AuditScreen() {
   const { t, locale } = useStrings("settings/audit")
-  const { t: common } = useStrings("common")
   const { results, status, loadMore } = usePaginatedQuery(
     api.audit.list,
     {},
@@ -50,18 +48,12 @@ export function AuditScreen() {
 
   return (
     <Screen>
-      <BackButton label={common.back} />
-      <Text variant="screenTitle" className="mt-4">
-        {t.title}
-      </Text>
-      <Text className="mt-3 text-[14.5px] leading-[1.75] text-muted-foreground">
-        {t.intro}
-      </Text>
+      <ScreenHeader back title={t.title!} description={t.intro} />
 
       {status !== "LoadingFirstPage" && results.length === 0 ? (
-        <EmptyState className="mt-10" icon={ScrollText} title={t.empty} />
+        <EmptyState icon={ScrollText} title={t.empty!} />
       ) : (
-        <View className="mt-header">
+        <View className="rounded-card bg-card overflow-hidden">
           {results.map((row, index) => (
             <AuditRow
               key={row._id}
@@ -76,9 +68,7 @@ export function AuditScreen() {
       )}
 
       {status === "CanLoadMore" ? (
-        <Button variant="outline" className="mt-6" onPress={() => loadMore(40)}>
-          <Text>{t.loadMore}</Text>
-        </Button>
+        <LoadMore className="mt-2" label={t.loadMore!} onPress={() => loadMore(40)} />
       ) : null}
     </Screen>
   )

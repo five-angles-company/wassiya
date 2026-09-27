@@ -25,6 +25,7 @@ import type * as identity from "../identity.js";
 import type * as jobs from "../jobs.js";
 import type * as keyring from "../keyring.js";
 import type * as model_access from "../model/access.js";
+import type * as model_assetTypes from "../model/assetTypes.js";
 import type * as model_claimFlow from "../model/claimFlow.js";
 import type * as model_didit from "../model/didit.js";
 import type * as model_emailCopy from "../model/emailCopy.js";
@@ -75,6 +76,7 @@ declare const fullApi: ApiFromModules<{
   jobs: typeof jobs;
   keyring: typeof keyring;
   "model/access": typeof model_access;
+  "model/assetTypes": typeof model_assetTypes;
   "model/claimFlow": typeof model_claimFlow;
   "model/didit": typeof model_didit;
   "model/emailCopy": typeof model_emailCopy;

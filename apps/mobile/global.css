@@ -47,19 +47,19 @@
   --font-mono-android: monospace;
 
   /* -- Type scale ---------------------------------------------------------
-     Named for the ROLE each size plays on the design board, not for a t-shirt
-     size, because the board's grammar is role-based: "26 tab-root title, 19
-     sub-page title, 13.5/700 section label, 14/700 notice title, 14.5/600 row
-     title, 11.5 meta, 12.5 inline action". Tailwind's own text-xs..text-4xl
-     steps are left untouched so upstream `ui/` components keep working. */
+     Named for the ROLE each size plays, not for a t-shirt size. `screen` is
+     the one title size of every screen, tab roots included — a screen that
+     sizes its own title by hand is what this scale exists to prevent.
+     Tailwind's own text-xs..text-4xl steps are left untouched so upstream
+     `ui/` components keep working. */
   --text-display: 40px;
   --text-display--line-height: 1.15;
   /* The full-screen ask — 6.4 "هل أنت بخير؟". Bigger than a page title
      because the screen has one question on it and nothing else. */
   --text-prompt: 31px;
   --text-prompt--line-height: 1.25;
-  --text-screen: 26px;
-  --text-screen--line-height: 1.2;
+  --text-screen: 28px;
+  --text-screen--line-height: 1.25;
   --text-h1: 24px;
   --text-h1--line-height: 1.25;
   --text-dialog: 20px;

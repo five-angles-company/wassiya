@@ -44,7 +44,7 @@ export type PulsingHeartProps = {
 
 const SKIN = {
   olive: { ring: 'bg-olive-300', disc: 'bg-secondary', icon: 'text-secondary-foreground' },
-  terracotta: { ring: 'bg-terracotta-300', disc: 'bg-primary', icon: 'text-primary-foreground' },
+  terracotta: { ring: 'bg-terracotta-300', disc: 'bg-primary', icon: 'text-background' },
 } as const;
 
 export function PulsingHeart({ tone = 'olive', className }: PulsingHeartProps) {

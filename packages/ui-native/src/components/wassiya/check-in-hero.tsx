@@ -2,6 +2,7 @@ import { Icon } from '@workspace/ui-native/components/ui/icon';
 import { Text } from '@workspace/ui-native/components/ui/text';
 import { PulsingHeart } from '@workspace/ui-native/components/wassiya/pulsing-heart';
 import { resolveLabels, type LabelledProps, type LabelSet } from '@workspace/ui-native/lib/labels';
+import { NATIVE_COLOR } from '@workspace/ui-native/lib/native-colors';
 import { cn } from '@workspace/ui-native/lib/utils';
 import { Check, Fingerprint } from 'lucide-react-native';
 import { useState } from 'react';
@@ -50,7 +51,7 @@ const LABELS: LabelSet<Key> = {
   cta: { ar: 'أنا بخير', en: "I'm well" },
   confirming: { ar: 'جارٍ التأكيد…', en: 'Confirming…' },
   confirmedTitle: { ar: 'نبضك مسجَّل', en: "You're checked in" },
-  settings: { ar: 'إعدادات النبض', en: 'Check-in settings' },
+  settings: { ar: 'إعدادات التأكيد', en: 'Check-in settings' },
   failed: {
     ar: 'لم يتم التحقق من بصمتك. لم يُسجَّل شيء — حاول مرة أخرى.',
     en: "Your fingerprint wasn't verified. Nothing was recorded — try again.",
@@ -115,9 +116,9 @@ export function CheckInHero({
         title: 'text-terracotta-800',
         body: 'text-terracotta-700',
         pill: 'bg-primary active:bg-terracotta-600',
-        onPill: 'text-primary-foreground',
+        onPill: 'text-background',
         badge: 'bg-primary',
-        onBadge: 'text-primary-foreground',
+        onBadge: 'text-background',
       };
 
   return (
@@ -161,7 +162,7 @@ export function CheckInHero({
         )}
       >
         {busy ? (
-          <ActivityIndicator size="small" color="#fff2eb" />
+          <ActivityIndicator size="small" color={NATIVE_COLOR.background} />
         ) : off ? null : (
           <Icon as={Fingerprint} size={20} strokeWidth={2.75} className={skin.onPill} />
         )}

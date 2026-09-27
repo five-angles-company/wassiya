@@ -1,6 +1,8 @@
 import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
+import { assetTypeValidator } from "./model/assetTypes"
+
 // Wassiya's data model. The rule that shapes every table here: the server may
 // hold ciphertext and non-sensitive metadata, never plaintext key material.
 // Anything typed `v.bytes()` below is output from `@workspace/crypto` and is
@@ -348,14 +350,7 @@ export default defineSchema({
 
   assets: defineTable({
     userId: v.id("users"),
-    type: v.union(
-      v.literal("crypto"),
-      v.literal("bank"),
-      v.literal("document"),
-      v.literal("photos"),
-      v.literal("digital"),
-      v.literal("note")
-    ),
+    type: assetTypeValidator,
     // The asset's name and its at-a-glance subtitle, sealed under the asset's
     // own DEK by `@workspace/crypto/label`. Opaque here, like every other
     // `v.bytes()` column.

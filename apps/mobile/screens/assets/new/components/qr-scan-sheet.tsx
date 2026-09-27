@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { TrueSheet } from "@lodev09/react-native-true-sheet"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { Sheet } from "@workspace/ui-native/components/wassiya/sheet"
 import { CameraView, useCameraPermissions } from "expo-camera"
 import { View } from "react-native"
@@ -60,7 +60,7 @@ export function QrScanSheet({
     >
       <View className="gap-3">
         {granted ? (
-          <View className="rounded-card aspect-square w-full overflow-hidden bg-black">
+          <View className="aspect-square w-full overflow-hidden rounded-card bg-black">
             {active ? (
               <CameraView
                 style={{ flex: 1 }}
@@ -75,16 +75,17 @@ export function QrScanSheet({
             ) : null}
           </View>
         ) : (
-          <View className="rounded-card bg-card gap-3 p-4">
-            <Text variant="metaSm" className="text-muted-foreground">
+          <View className="gap-3 rounded-card bg-card p-4">
+            <Text variant="metaSm">
               {permission?.canAskAgain === false
                 ? labels.cameraBlocked
                 : labels.cameraNeeded}
             </Text>
             {permission?.canAskAgain !== false ? (
-              <Button size="sm" onPress={() => void requestPermission()}>
-                <Text>{labels.cameraAllow}</Text>
-              </Button>
+              <PrimaryCta
+                label={labels.cameraAllow}
+                onPress={() => void requestPermission()}
+              />
             ) : null}
           </View>
         )}
@@ -92,4 +93,3 @@ export function QrScanSheet({
     </Sheet>
   )
 }
-

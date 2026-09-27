@@ -1,7 +1,8 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Surface } from "@workspace/ui-native/components/wassiya/surface"
 import { ProtectionScore } from "@workspace/ui-native/components/wassiya/protection-score"
 import {
   ProtectionScoreList,
@@ -61,7 +62,15 @@ export function SetupCompleteScreen() {
   const earned = items.filter((item) => item.done).length
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={
+        <View className="gap-2.5">
+          <PrimaryCta label={t.addExecutors!} onPress={() => router.replace("/executors")} />
+          <PrimaryCta tone="quiet" label={t.addAsset!} onPress={() => router.replace("/assets")} />
+        </View>
+      }
+    >
       <View className="mb-6 flex-row items-center gap-3.5">
         <ProtectionScore
           earned={earned}
@@ -73,34 +82,15 @@ export function SetupCompleteScreen() {
           <Text variant="screenTitle" className="mb-1">
             {t.title}
           </Text>
-          <Text className="text-section text-muted-foreground">
-            {t.subtitle}
-          </Text>
+          <Text variant="proseSm">{t.subtitle}</Text>
         </View>
       </View>
 
       <ProtectionScoreList className="mb-5" items={items} />
 
-      <View className="bg-terracotta-100 rounded-card px-4.5 py-4">
-        <Text className="text-section text-terracotta-800 leading-[1.65]">
-          {t.warning}
-        </Text>
-      </View>
-
-      <View className="grow" />
-
-      <View className="mt-5 gap-2.25">
-        <Button onPress={() => router.replace("/executors")}>
-          <Text>{t.addExecutors}</Text>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onPress={() => router.replace("/assets")}
-        >
-          <Text>{t.addAsset}</Text>
-        </Button>
-      </View>
+      <Surface tone="terracotta">
+        <Text className="text-section text-terracotta-800 leading-[1.65]">{t.warning}</Text>
+      </Surface>
     </Screen>
   )
 }

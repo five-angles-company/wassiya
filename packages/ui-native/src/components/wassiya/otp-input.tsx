@@ -144,7 +144,7 @@ export function OtpInput({
       </View>
 
       {message ? (
-        <Text className="text-terracotta-700 font-body-medium text-meta">{message}</Text>
+        <Text className="text-terracotta-800 font-body-medium text-meta">{message}</Text>
       ) : null}
 
       {resendInSeconds ? (

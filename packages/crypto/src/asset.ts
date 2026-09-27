@@ -83,6 +83,77 @@ export function encryptAsset(
 }
 
 /**
+ * Decrypt a blob as it arrives, in pieces of any size — a download read off a
+ * stream, so a long video is never held whole as ciphertext and plaintext at
+ * once. `push` returns the plaintext chunks the bytes so far complete.
+ *
+ * The final chunk is the one whose length the header does not give, so it opens
+ * only in `finish` — and `finish` throws unless exactly the framed asset
+ * arrived. **A caller that skips `finish` accepts a truncated file:** a stream
+ * cut short at a chunk boundary yields only valid chunks from `push`.
+ */
+export function createAssetDecryptor(dek: Uint8Array): {
+  push: (bytes: Uint8Array) => Uint8Array[]
+  finish: () => Uint8Array
+} {
+  assertKey(dek, "dek")
+  const pending: Uint8Array[] = []
+  let pendingBytes = 0
+  let header: AssetHeader | null = null
+  let index = 0
+
+  const take = (length: number): Uint8Array => {
+    const out = new Uint8Array(length)
+    let offset = 0
+    while (offset < length) {
+      const head = pending[0] as Uint8Array
+      const need = length - offset
+      if (head.length <= need) {
+        out.set(head, offset)
+        offset += head.length
+        pending.shift()
+      } else {
+        out.set(head.subarray(0, need), offset)
+        pending[0] = head.subarray(need)
+        offset += need
+      }
+    }
+    pendingBytes -= length
+    return out
+  }
+
+  return {
+    push(bytes) {
+      // A copy: a stream reader is free to reuse the buffer it handed over.
+      pending.push(bytes.slice())
+      pendingBytes += bytes.length
+      if (header === null) {
+        if (pendingBytes < HEADER_BYTES) return []
+        header = parseAssetHeader(take(HEADER_BYTES))
+      }
+      const fullChunkBytes = header.chunkSize + TAG_BYTES
+      const out: Uint8Array[] = []
+      while (index < header.chunkCount - 1 && pendingBytes >= fullChunkBytes) {
+        out.push(decryptChunk(dek, header, index, take(fullChunkBytes)))
+        index++
+      }
+      return out
+    },
+    finish() {
+      if (header === null || index !== header.chunkCount - 1) {
+        throw new Error("Encrypted asset ended before its last chunk")
+      }
+      if (pendingBytes < TAG_BYTES || pendingBytes > header.chunkSize + TAG_BYTES) {
+        throw new Error("Encrypted asset length does not match its header")
+      }
+      const last = decryptChunk(dek, header, index, take(pendingBytes))
+      index++
+      return last
+    },
+  }
+}
+
+/**
  * Reverse of {@link encryptAsset}. Throws on any modification, including one
  * that leaves every surviving chunk internally valid: `chunkCount` is inside
  * each chunk's AAD, so a truncated blob fails rather than decoding short.

@@ -19,23 +19,22 @@ import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { FieldLink } from "@workspace/ui-native/components/wassiya/field-link"
-import { FieldRow } from "@workspace/ui-native/components/wassiya/field-row"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { SettingsRow } from "@workspace/ui-native/components/wassiya/settings-row"
 import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 import { View } from "react-native"
 
-import { BackButton } from "@/components/back-button"
 import { CountryPicker } from "@/components/country-picker"
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 import { checkPhone } from "@/lib/phone"
 import { splitFullName } from "@/stores/onboarding"
 
 export function ProfileScreen() {
   const { t, locale } = useStrings("settings/profile")
-  const { t: common } = useStrings("common")
 
   const me = useQuery(api.users.me)
   const executors = useQuery(api.executors.list)
@@ -101,9 +100,28 @@ export function ProfileScreen() {
   const verified = me?.identityStatus === "verified"
 
   return (
-    <Screen keyboard contentClassName="gap-header">
-      <BackButton label={common.back} />
-      <Text variant="screenTitle">{t.title}</Text>
+    <Screen
+      keyboard
+      inset="footer"
+      footer={
+        dirty ? (
+          <View className="gap-3">
+            {failed ? (
+              <Text variant="meta" className="text-terracotta-800">
+                {t.saveFailed}
+              </Text>
+            ) : null}
+            <PrimaryCta
+              label={t.save!}
+              onPress={() => void save()}
+              disabled={value.name.trim().length === 0}
+              busy={saving}
+            />
+          </View>
+        ) : undefined
+      }
+    >
+      <ScreenHeader back title={t.title!} />
 
       <View className="gap-4">
         <Field
@@ -137,10 +155,6 @@ export function ProfileScreen() {
           />
         ) : null}
 
-        {/* Boxed like the two above it, because it is the third thing on this
-            screen you can change. It was a hairline `field-row` — the vault's
-            grammar — which made the one editable thing that leaves for another
-            screen look like the one thing that is read-only. */}
         <FieldLink
           label={t.emailLabel!}
           value={me?.email ?? ""}
@@ -148,42 +162,21 @@ export function ProfileScreen() {
         />
       </View>
 
-      {failed ? (
-        <Text variant="meta" className="text-terracotta-800">
-          {t.saveFailed}
-        </Text>
-      ) : null}
-
-      {dirty ? (
-        <PrimaryCta
-          label={t.save!}
-          onPress={() => void save()}
-          disabled={value.name.trim().length === 0}
-          busy={saving}
-        />
-      ) : null}
-
-      {/* Below the fields and apart from them: this is the one block on the
-          screen nobody can change, and hairline rows say that where a box would
-          imply otherwise. */}
-      <View className="mb-auto gap-2">
+      {/* Rows with no chevron: the one block on this screen nobody can
+          change, and it must not look like a field. */}
+      <View className="mt-6 gap-2">
         <Text variant="sectionLabel">{t.identityLabel}</Text>
-        <FieldRow
-          label={t.identityStatusLabel!}
-          divider={me?.identityVerifiedName != null}
-        >
-          <Text
-            variant="rowTitle"
-            className={verified ? "text-olive-700" : "text-terracotta-800"}
-          >
-            {verified ? t.identityVerified : t.identityUnverified}
-          </Text>
-        </FieldRow>
-        {me?.identityVerifiedName != null ? (
-          <FieldRow label={t.identityNameLabel!}>
-            <Text variant="rowTitle">{me.identityVerifiedName}</Text>
-          </FieldRow>
-        ) : null}
+        <View className="rounded-card bg-card overflow-hidden">
+          <SettingsRow
+            label={t.identityStatusLabel!}
+            value={verified ? t.identityVerified : t.identityUnverified}
+            valueTone={verified ? "done" : "attention"}
+            divider={me?.identityVerifiedName != null}
+          />
+          {me?.identityVerifiedName != null ? (
+            <SettingsRow label={t.identityNameLabel!} value={me.identityVerifiedName} />
+          ) : null}
+        </View>
       </View>
     </Screen>
   )

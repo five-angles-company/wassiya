@@ -26,15 +26,16 @@ import { useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { decodePaperCode } from "@workspace/crypto/papercode"
 import { recoverMk } from "@workspace/crypto/recovery"
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { useClerk } from "@clerk/expo"
 import { router } from "expo-router"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 
 import { Field } from "@/components/field"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { useSecureScreen } from "@/hooks/use-secure-screen"
 import { useStrings } from "@/i18n/use-strings"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
@@ -105,55 +106,68 @@ export function RecoveryScreen() {
 
   if (phase === "done") {
     return (
-      <Screen>
-        <Text variant="screenTitle">{t.doneTitle}</Text>
-        <Text className="mt-3 text-[15px] leading-[1.75] text-muted-foreground">
-          {t.doneBody}
-        </Text>
+      <Screen
+        inset="flow"
+        footer={
+          <View className="gap-2.5">
+            <PrimaryCta
+              label={t.reprint!}
+              onPress={() => router.replace("/setup/recovery-kit")}
+            />
+            <PrimaryCta
+              tone="quiet"
+              label={t.later!}
+              onPress={() => router.replace("/")}
+            />
+          </View>
+        }
+      >
+        <ScreenHeader title={t.doneTitle!} description={t.doneBody} />
         {/* Not a nag. The sheet just opened a vault, so it is a live key that
             has been handled — and nothing invalidates it until a new one is
             printed. */}
-        <AlertBanner
-          className="mt-4"
-          variant="security"
-          description={t.reprintUrgent}
-        />
-        <View className="grow" />
-        <View className="gap-2">
-          <Button onPress={() => router.replace("/setup/recovery-kit")}>
-            <Text>{t.reprint}</Text>
-          </Button>
-          <Button variant="outline" onPress={() => router.replace("/")}>
-            <Text>{t.later}</Text>
-          </Button>
-        </View>
+        <AlertBanner variant="security" description={t.reprintUrgent} />
       </Screen>
     )
   }
 
+  const canRecover =
+    keyring !== undefined &&
+    keyring !== null &&
+    !keyring.closed &&
+    keyring.wrapperVersion === CURRENT_WRAPPER_VERSION
+
+  const leave = () => {
+    void (async () => {
+      await signOut()
+      router.replace("/")
+    })()
+  }
+
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerClassName="px-gutter grow pb-10 pt-8"
-      keyboardShouldPersistTaps="handled"
+    <Screen
+      keyboard
+      inset="footer"
+      footer={
+        <View className="gap-2.5">
+          {canRecover ? (
+            <PrimaryCta
+              label={phase === "working" ? t.recovering! : t.recover!}
+              onPress={() => void recover()}
+              disabled={code.trim().length === 0}
+              busy={phase === "working"}
+            />
+          ) : null}
+          <PrimaryCta tone="quiet" label={t.signOut!} onPress={leave} />
+        </View>
+      }
     >
-      <Text variant="screenTitle">{t.title}</Text>
-      <Text className="mt-3 text-[15px] leading-[1.75] text-muted-foreground">
-        {t.intro}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.intro} />
 
       {keyring === null ? (
-        <AlertBanner
-          className="mt-header"
-          variant="security"
-          description={t.noKeyring}
-        />
+        <AlertBanner variant="security" description={t.noKeyring} />
       ) : keyring?.closed === true ? (
-        <AlertBanner
-          className="mt-header"
-          variant="security"
-          description={t.closed}
-        />
+        <AlertBanner variant="security" description={t.closed} />
       ) : keyring !== undefined &&
         keyring.wrapperVersion !== CURRENT_WRAPPER_VERSION ? (
         /* The one case this screen cannot solve. The wrapper predates the
@@ -162,16 +176,12 @@ export function RecoveryScreen() {
            the field anyway would spend an owner's afternoon on a sheet that
            was never going to work. Another device that still holds the key is
            the only route, and it is prompted to re-wrap on launch. */
-        <AlertBanner
-          className="mt-header"
-          variant="security"
-          description={t.staleWrapper}
-        />
+        <AlertBanner variant="security" description={t.staleWrapper} />
       ) : (
         <>
           <Field
             {...SECRET_INPUT_PROPS}
-            className="mt-header h-auto min-h-24 py-3 text-left"
+            className="text-left"
             label={t.codeLabel}
             hint={t.codeHint}
             value={code}
@@ -185,35 +195,12 @@ export function RecoveryScreen() {
           />
 
           {phase === "failed" ? (
-            <Text variant="meta" className="text-terracotta-800 mt-4 leading-[1.7]">
+            <Text variant="meta" className="mt-4 text-terracotta-800">
               {t.failed}
             </Text>
           ) : null}
-
-          <Button
-            className="mt-6"
-            onPress={() => void recover()}
-            disabled={phase === "working" || code.trim().length === 0}
-          >
-            <Text>{phase === "working" ? t.recovering : t.recover}</Text>
-          </Button>
         </>
       )}
-
-      <View className="grow" />
-
-      <Button
-        variant="outline"
-        className="mt-6"
-        onPress={() => {
-          void (async () => {
-            await signOut()
-            router.replace("/")
-          })()
-        }}
-      >
-        <Text>{t.signOut}</Text>
-      </Button>
-    </ScrollView>
+    </Screen>
   )
 }

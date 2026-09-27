@@ -1,12 +1,14 @@
-import { Button } from "@workspace/ui-native/components/ui/button"
 import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { Surface } from "@workspace/ui-native/components/wassiya/surface"
 import { router } from "expo-router"
 import { Check, Info } from "lucide-react-native"
 
 import { View } from "react-native"
 
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
@@ -28,43 +30,30 @@ export function BiometricsDoneScreen() {
   const { t: common } = useStrings("common")
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={<PrimaryCta label={t.cta!} onPress={() => router.replace("/setup/recovery-kit")} />}
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.biometrics}
         complete
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      <Text variant="screenTitle" className="mb-3 text-center text-[31px]">
-        {t.title}
-      </Text>
-      <Text className="text-body mb-6.5 text-center leading-[1.7] text-muted-foreground">
-        {t.body}
-      </Text>
+      <ScreenHeader title={t.title!} description={t.body} />
 
       <View className="gap-row">
-        <View className="rounded-row flex-row items-center gap-2.75 bg-olive-100 px-4 py-3.5">
+        <Surface tone="olive" as="row" row className="gap-3">
           <Icon as={Check} className="size-4.5 shrink-0 text-olive-800" />
           <Text className="text-section flex-1 text-olive-800">{t.sealed}</Text>
-        </View>
-        <View className="bg-terracotta-100 rounded-row flex-row items-center gap-2.75 px-4 py-3.5">
+        </Surface>
+        <Surface tone="terracotta" as="row" row className="gap-3">
           <Icon as={Info} className="text-terracotta-800 size-4.5 shrink-0" />
-          <Text className="text-section text-terracotta-800 flex-1">
-            {t.remaining}
-          </Text>
-        </View>
+          <Text className="text-section text-terracotta-800 flex-1">{t.remaining}</Text>
+        </Surface>
       </View>
-
-      <View className="grow" />
-
-      <Button
-        className="mt-6"
-        onPress={() => router.replace("/setup/recovery-kit")}
-      >
-        <Text>{t.cta}</Text>
-      </Button>
     </Screen>
   )
 }

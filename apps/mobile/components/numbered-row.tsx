@@ -13,24 +13,22 @@ export type NumberedRowProps = {
 
 /**
  * One numbered step — "what you'll need" on 2.1, "how it works" on an empty
- * list.
+ * list. A card like every other row in the app.
  *
  * The number is shaped to the locale — ١٢٣ in Arabic — because it is prose,
  * not data. Codes and identifiers stay Latin; a step count does not.
  */
 export function NumberedRow({ index, label, body, locale }: NumberedRowProps) {
   return (
-    <View className="rounded-row flex-row items-center gap-3 bg-card px-4 py-3.5">
-      <View className="size-7.5 shrink-0 items-center justify-center rounded-full bg-background">
-        <Text variant="meta">{fmtNum(index, locale)}</Text>
+    <View className="rounded-card bg-card flex-row items-center gap-3 px-4 py-3.5">
+      <View className="bg-background size-7.5 shrink-0 items-center justify-center rounded-full">
+        <Text variant="meta" className="text-foreground">
+          {fmtNum(index, locale)}
+        </Text>
       </View>
       <View className="flex-1 gap-0.5">
-        <Text className="text-notice">{label}</Text>
-        {body !== undefined ? (
-          <Text variant="metaSm" className="text-muted-foreground leading-[1.55]">
-            {body}
-          </Text>
-        ) : null}
+        <Text variant="rowTitle">{label}</Text>
+        {body !== undefined ? <Text variant="metaSm">{body}</Text> : null}
       </View>
     </View>
   )

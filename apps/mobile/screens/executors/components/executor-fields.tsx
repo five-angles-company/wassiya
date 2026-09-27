@@ -26,7 +26,12 @@ export type ExecutorFieldsProps = {
   hasIdNumber?: boolean
 }
 
-export function ExecutorFields({ form, t, error, hasIdNumber = false }: ExecutorFieldsProps) {
+export function ExecutorFields({
+  form,
+  t,
+  error,
+  hasIdNumber = false,
+}: ExecutorFieldsProps) {
   const { check, duplicate } = form
 
   return (

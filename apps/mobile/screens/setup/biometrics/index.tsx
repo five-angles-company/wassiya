@@ -1,15 +1,16 @@
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
-import { Button } from "@workspace/ui-native/components/ui/button"
-import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import * as LocalAuthentication from "expo-local-authentication"
 import { router } from "expo-router"
 
 import { useCallback, useEffect, useState } from "react"
-import { ActivityIndicator, Linking, Platform, View } from "react-native"
+import { Linking, Platform, View } from "react-native"
 
+import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
+import { ScreenHeader } from "@/components/screen-header"
 import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import {
@@ -129,67 +130,42 @@ export function BiometricsScreen() {
     }
   }
 
-  if (availability === "checking") {
-    return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
-      </View>
-    )
-  }
+  if (availability === "checking") return <LoadingScreen />
+
+  const unenrolled = availability === "unenrolled"
 
   return (
-    <Screen inset="flow">
+    <Screen
+      inset="flow"
+      footer={
+        unenrolled ? (
+          <View className="gap-2.5">
+            <PrimaryCta label={t.openSettings!} onPress={() => void Linking.openSettings()} />
+            <PrimaryCta
+              tone="quiet"
+              label={t.recheck!}
+              onPress={() => setAttempt((n) => n + 1)}
+            />
+          </View>
+        ) : (
+          <View className="gap-4">
+            {error !== null ? <AlertBanner variant="security" description={error} /> : null}
+            <PrimaryCta label={t.cta!} onPress={() => void enrol()} busy={busy} />
+          </View>
+        )
+      }
+    >
       <SetupStepMeter
         step={SETUP_STEP_INDEX.biometrics}
         locale={locale}
         separator={common.stepSeparator}
-        className="mb-header"
+        className="mb-6"
       />
 
-      {availability === "unenrolled" ? (
-        <>
-          <Text variant="screenTitle" className="mb-2.5 text-[28px]">
-            {t.unenrolledTitle}
-          </Text>
-          <Text className="mb-5 text-[14.5px] leading-[1.7] text-muted-foreground">
-            {t.unenrolledBody}
-          </Text>
-          <View className="grow" />
-          <Button onPress={() => void Linking.openSettings()}>
-            <Text>{t.openSettings}</Text>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2.25"
-            onPress={() => setAttempt((n) => n + 1)}
-          >
-            <Text>{t.recheck}</Text>
-          </Button>
-        </>
+      {unenrolled ? (
+        <ScreenHeader title={t.unenrolledTitle!} description={t.unenrolledBody} />
       ) : (
-        <>
-          <Text variant="display" className="mb-2.5 text-[28px]">
-            {t.title}
-          </Text>
-          <Text className="text-[14.5px] leading-[1.7] text-muted-foreground">
-            {t.body}
-          </Text>
-
-          <View className="grow" />
-
-          {error !== null ? (
-            <AlertBanner
-              className="mb-4"
-              variant="security"
-              description={error}
-            />
-          ) : null}
-
-          <Button disabled={busy} onPress={() => void enrol()}>
-            <Text>{t.cta}</Text>
-          </Button>
-        </>
+        <ScreenHeader title={t.title!} description={t.body} />
       )}
     </Screen>
   )

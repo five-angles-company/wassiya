@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 import { View } from "react-native"
 import QRCode from "react-native-qrcode-svg"
+import { NATIVE_COLOR } from "@workspace/ui-native/lib/native-colors"
 
 export type KitQrProps = {
   /** `WSYB1:<base64url blob>` — the wrapped key, never the paper code. */
@@ -58,7 +59,7 @@ export function KitQr({ value, size = 128, onCaptured }: KitQrProps) {
       <QRCode
         value={value}
         size={size}
-        color="#201e1d"
+        color={NATIVE_COLOR.foreground}
         backgroundColor="#ffffff"
         // Medium correction: the sheet is printed and filed, so it has to
         // survive a fold or a scuff, but the payload is small enough that

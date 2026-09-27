@@ -68,9 +68,9 @@ export default function TabsLayout() {
         // `(tabs)` so the sand ground cannot show beneath it.
         tabBarStyle: {
           backgroundColor: "#f9f4ed",
-          // The app's own `--color-border`, as a literal because this is a
-          // style object rather than a Uniwind class. The seam is what keeps
-          // two close sand tones from bleeding into one another.
+          // Lighter than `--color-border` (0.26) on purpose: two close sand
+          // tones need only a faint seam to stay apart, and the full border
+          // weight reads as a rule drawn across the screen.
           borderTopColor: "rgba(32, 30, 29, 0.16)",
         },
       }}
