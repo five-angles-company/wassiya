@@ -260,3 +260,31 @@ describe("a report names nobody before review", () => {
     await expect(own).rejects.toMatchObject({ data: { code: "claim", reason: "own_vault" } })
   })
 })
+
+describe("a live report is never hidden behind history", () => {
+  test("Home sees it and the check-in stops it, past twenty older reports", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    for (let i = 0; i < 25; i++) {
+      await t.run((ctx) =>
+        ctx.db.insert("claims", {
+          subjectUserId: owner,
+          claimantUserId: reporter,
+          claimantName: "Reporter",
+          claimantContact: "reporter@example.com",
+          status: "closed",
+        })
+      )
+    }
+    const live = await addClaim(t, owner, reporter, { status: "submitted" })
+
+    const asOwner = t.withIdentity({ subject: "owner" })
+    const seen = await asOwner.query(api.claims.againstMe, {})
+    expect(seen.find((row) => row.open)?.id).toBe(live)
+
+    const result = await asOwner.mutation(api.checkin.confirm, {})
+    expect(result.claimsStopped).toBe(1)
+    expect((await t.run((ctx) => ctx.db.get("claims", live)))?.status).toBe("vetoed")
+  })
+})

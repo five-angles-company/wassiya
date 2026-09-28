@@ -56,7 +56,9 @@ export const DATA_TABLE = {
   previous: { ar: "السابق", en: "Previous" },
   next: { ar: "التالي", en: "Next" },
   lastPage: { ar: "الصفحة الأخيرة", en: "Last page" },
-  rowCount: { ar: "{n} سجلاً", en: "{n} rows" },
+  // A label, not "{n} سجلاً": the Arabic noun changes form with the number
+  // (سجلّان، ٣ سجلات، ١١ سجلاً), and {n} may be "٥٠٠+".
+  rowCount: { ar: "السجلات: {n}", en: "{n} rows" },
 
   // Shown while a search is live, in place of working sort headers.
   sortedByRelevance: {

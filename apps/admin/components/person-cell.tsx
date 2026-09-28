@@ -23,12 +23,12 @@ export function PersonCell({
       {name ? (
         <span className="font-medium">{name}</span>
       ) : (
-        <span dir="ltr" className="inline-block font-mono text-xs">
+        <span dir="ltr" className="self-start font-mono text-xs">
           {id}
         </span>
       )}
       {email && (
-        <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+        <span dir="ltr" className="self-start text-xs text-muted-foreground">
           {email}
         </span>
       )}

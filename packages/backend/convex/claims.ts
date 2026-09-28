@@ -42,6 +42,8 @@ import {
   sendClaimReleased,
   sendClaimReviewFailed,
   sendClaimVetoed,
+  sendReportFiledToOwner,
+  sendReportWaitingToOwner,
 } from "./email"
 import { recordJobRun } from "./model/jobRuns"
 import { getCurrentUserOrThrow } from "./users"
@@ -237,6 +239,9 @@ export const submit = mutation({
       // lockout window must be able to tell "someone tried again and was
       // blocked" from "a claim is now running against your vault".
       await notify(ctx, subject._id, event, {}, claimId)
+      // Mail only for a report that is running: a barred attempt stops
+      // nothing, so it needs no action from the owner.
+      if (!barred) await sendReportFiledToOwner(ctx, subject._id)
     }
 
     // The claimant's receipt, and the reason this mutation stopped being silent.
@@ -399,10 +404,25 @@ export const againstMe = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireUser(ctx)
-    const rows = await ctx.db
+    const open = (
+      await Promise.all(
+        OPEN_STATUSES.map((status) =>
+          ctx.db
+            .query("claims")
+            .withIndex("by_subjectUserId_and_status", (q) =>
+              q.eq("subjectUserId", user._id).eq("status", status)
+            )
+            .take(20)
+        )
+      )
+    ).flat()
+    const openIds = new Set(open.map((row) => row._id))
+    const recent = await ctx.db
       .query("claims")
       .withIndex("by_subjectUserId", (q) => q.eq("subjectUserId", user._id))
+      .order("desc")
       .take(20)
+    const rows = [...open, ...recent.filter((row) => !openIds.has(row._id))]
     return rows.map((row) => ({
       id: row._id,
       status: row.status,
@@ -413,6 +433,17 @@ export const againstMe = query({
     }))
   },
 })
+
+/**
+ * The statuses a report can still be stopped in.
+ *
+ * ⚠️ Open reports are always read **by status**, never as the first `n` of an
+ * owner's reports: `take(n)` on `by_subjectUserId` returns the oldest rows, so
+ * an owner with a long history — or one flooded with junk reports — would have
+ * a live report past the bound, missing from Home and untouched by the
+ * check-in that is meant to stop it.
+ */
+const OPEN_STATUSES = ["submitted", "awaiting_veto"] as const
 
 /** A report the owner can still stop: not yet released, not already ended. */
 function isStoppable(claim: Doc<"claims">, now: number): boolean {
@@ -434,10 +465,18 @@ export async function stopOpenClaimsOf(
   ownerId: Id<"users">,
   now: number
 ): Promise<number> {
-  const rows = await ctx.db
-    .query("claims")
-    .withIndex("by_subjectUserId", (q) => q.eq("subjectUserId", ownerId))
-    .take(20)
+  // Every open report, however many: a veto that stopped only some of them
+  // would leave the rest to release while the owner is alive. Read in full
+  // before patching, because each patch moves a row out of the range read.
+  const rows: Doc<"claims">[] = []
+  for (const status of OPEN_STATUSES) {
+    const open = ctx.db
+      .query("claims")
+      .withIndex("by_subjectUserId_and_status", (q) =>
+        q.eq("subjectUserId", ownerId).eq("status", status)
+      )
+    for await (const claim of open) rows.push(claim)
+  }
 
   let stopped = 0
   for (const claim of rows) {
@@ -513,6 +552,7 @@ export const adminLinkSubject = mutation({
       meta: { claimId },
     })
     await notify(ctx, subjectUserId, "claim.submitted", {}, claimId)
+    await sendReportFiledToOwner(ctx, subjectUserId)
     return null
   },
 })
@@ -767,8 +807,8 @@ export const adminSetNameMatch = mutation({
       meta: { claimId, nameMatch, status },
     })
 
-    // The owner's last chance to say they are alive — on every channel the
-    // veto notification already uses.
+    // The owner's last chance to say they are alive: in the app, and by mail
+    // for an owner who has stopped opening it.
     if (vetoDeadline !== undefined) {
       await notify(
         ctx,
@@ -777,6 +817,7 @@ export const adminSetNameMatch = mutation({
         { vetoDeadline },
         claimId
       )
+      await sendReportWaitingToOwner(ctx, subjectUserId, vetoDeadline)
     }
 
     // The reporter, both ways. This is the review they have been waiting on and

@@ -59,7 +59,7 @@ function unmatchedColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
           <span className="font-medium">{row.original.claimantName}</span>
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.claimantContact}
           </span>

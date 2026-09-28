@@ -27,7 +27,7 @@ export const CLAIMS = {
   statusSubmitted: { ar: "قيد المراجعة اليدوية", en: "Manual review" },
   statusAwaitingVeto: { ar: "مدة الاعتراض جارية", en: "Veto window running" },
   statusReleased: { ar: "تم الإفراج", en: "Released" },
-  statusVetoed: { ar: "أُغلق الطلب", en: "Owner objected" },
+  statusVetoed: { ar: "اعترض المالك", en: "Owner objected" },
   // Not "Closed": `statusLocked` already uses that word, and the two mean
   // opposite things to an operator — locked is a ruling with a 90-day bar,
   // ended is a claim that never had a vault to rule on.

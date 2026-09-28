@@ -115,10 +115,12 @@ export function RiskTable({ risk }: { risk: RiskData | undefined }) {
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-medium">{row.name ?? "—"}</span>
-                    {/* An address is a machine string: LTR even inside Arabic. */}
+                    {/* An address is a machine string: LTR even inside Arabic.
+                        `self-start`, or the stretched span aligns to its own
+                        left edge in an RTL cell. */}
                     <span
                       dir="ltr"
-                      className="inline-block text-xs text-muted-foreground"
+                      className="self-start text-xs text-muted-foreground"
                     >
                       {row.email ?? "—"}
                     </span>

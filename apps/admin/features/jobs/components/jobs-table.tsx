@@ -113,7 +113,7 @@ function jobColumns(
           </span>
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.name}
           </span>

@@ -63,10 +63,11 @@ export function claimBrowserColumns(
           onClick={(event) => event.stopPropagation()}
         >
           <span className="font-medium">{row.original.claimantName}</span>
-          {/* An email or phone stays LTR inside Arabic prose. */}
+          {/* An email or phone stays LTR inside Arabic prose. `self-start`, or
+              the stretched span aligns to its own left edge in an RTL cell. */}
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.claimantContact}
           </span>

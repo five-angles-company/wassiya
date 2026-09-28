@@ -45,10 +45,11 @@ export function identityColumns(
               <span className="text-muted-foreground">{labels.nameNone}</span>
             )}
           </span>
-          {/* An address stays LTR inside Arabic prose. */}
+          {/* An address stays LTR inside Arabic prose. `self-start`, or the
+              stretched span aligns to its own left edge in an RTL cell. */}
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.email}
           </span>

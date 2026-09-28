@@ -38,6 +38,8 @@ import {
   DELIVERY_READY_COPY,
   ESCALATION_COPY,
   RECOVERY_COPY,
+  REPORT_FILED_OWNER_COPY,
+  REPORT_WAITING_OWNER_COPY,
   STAFF_INVITE_COPY,
   SUPPORT_REPLY_COPY,
   SUPPORT_REPLY_GUEST_COPY,
@@ -235,6 +237,30 @@ export async function sendRecoveryNotice(
   userId: Id<"users">
 ): Promise<void> {
   await send(ctx, userId, RECOVERY_COPY, "recovery notice")
+}
+
+/** Tell an owner a report about them is running. No link — see the copy. */
+export async function sendReportFiledToOwner(
+  ctx: MutationCtx,
+  ownerId: Id<"users">
+): Promise<void> {
+  await send(ctx, ownerId, REPORT_FILED_OWNER_COPY, "report filed (owner)")
+}
+
+/** The waiting period started; `vetoDeadline` fills `{date}`. */
+export async function sendReportWaitingToOwner(
+  ctx: MutationCtx,
+  ownerId: Id<"users">,
+  vetoDeadline: number
+): Promise<void> {
+  await send(
+    ctx,
+    ownerId,
+    REPORT_WAITING_OWNER_COPY,
+    "report waiting period (owner)",
+    undefined,
+    vetoDeadline
+  )
 }
 
 // ── The claimant's side ──────────────────────────────────────────────────────

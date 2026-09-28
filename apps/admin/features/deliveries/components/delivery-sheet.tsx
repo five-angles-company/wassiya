@@ -618,7 +618,7 @@ function ContactRow({
       {icon}
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-xs text-muted-foreground">{label}</span>
-        <span dir="ltr" className="truncate text-start text-sm font-medium">
+        <span dir="ltr" className="max-w-full self-start truncate text-sm font-medium">
           {value ?? none}
         </span>
       </div>

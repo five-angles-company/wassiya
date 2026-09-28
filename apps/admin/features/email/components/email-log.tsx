@@ -74,7 +74,7 @@ function emailColumns(
           <span>{row.original.recipientName}</span>
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.recipientEmail}
           </span>

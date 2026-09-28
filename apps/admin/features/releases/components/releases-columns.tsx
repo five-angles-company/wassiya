@@ -38,7 +38,7 @@ function Subject({
   return (
     <div className="flex flex-col">
       <span className="font-medium">{name}</span>
-      <span dir="ltr" className="inline-block text-xs text-muted-foreground">
+      <span dir="ltr" className="self-start text-xs text-muted-foreground">
         {email}
       </span>
     </div>

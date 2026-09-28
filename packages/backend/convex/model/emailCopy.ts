@@ -113,6 +113,39 @@ export const RECOVERY_COPY = {
   },
 } as const satisfies LocalisedCopy
 
+// ── A report about the owner ─────────────────────────────────────────────────
+//
+// The veto only works if the owner hears about a report while it can still be
+// stopped, and an in-app row reaches only an owner who happens to open the app.
+//
+// ⚠️ **No link, and each says so.** The only stop is a fingerprint in the app;
+// a "stop it here" button would be the first thing a phishing copy of this
+// mail imitates, so the real one teaches the reader never to expect one.
+
+/** A report was filed and matched this vault. */
+export const REPORT_FILED_OWNER_COPY = {
+  ar: {
+    subject: "مهم: قُدّم بلاغ وفاة عنك",
+    body: "قدّم أحدهم بلاغ وفاة عنك إلى وصيّة. إن كنت تقرأ هذا، افتح تطبيق وصيّة على جوّالك وأكّد الحياة ببصمتك — فهذا يوقف البلاغ. لا يُسلَّم شيء ما دام البلاغ يمكن إيقافه. لن نرسل لك رابطاً لإيقافه، فلا تضغط أي رابط يدّعي ذلك.",
+  },
+  en: {
+    subject: "Important: a death report was filed about you",
+    body: "Someone has reported your death to Wassiya. If you're reading this, open the Wassiya app on your phone and confirm you're alive with your fingerprint — that stops the report. Nothing is handed over while a report can still be stopped. We will never send you a link to stop it, so don't click any link that claims to.",
+  },
+} as const satisfies LocalisedCopy
+
+/** Staff matched the certificate; `{date}` is the end of the waiting period. */
+export const REPORT_WAITING_OWNER_COPY = {
+  ar: {
+    subject: "مهم: بدأت فترة الانتظار على خزنتك",
+    body: "راجعنا بلاغ الوفاة المقدَّم عنك وبدأت فترة الانتظار. إن لم تؤكّد الحياة من تطبيق وصيّة على جوّالك قبل {date}، نبدأ التسليم إلى أوصيائك. تأكيدك ببصمتك في التطبيق يوقفه فوراً. لن نرسل لك رابطاً لإيقافه.",
+  },
+  en: {
+    subject: "Important: the waiting period on your vault has started",
+    body: "We've reviewed the death report filed about you and the waiting period has started. If you don't confirm you're alive in the Wassiya app before {date}, we begin the handover to your executors. Confirming with your fingerprint in the app stops it at once. We will never send you a link to stop it.",
+  },
+} as const satisfies LocalisedCopy
+
 // ── The claimant's side ──────────────────────────────────────────────────────
 //
 // Until these existed the reporter received **nothing** across a claim's whole life:

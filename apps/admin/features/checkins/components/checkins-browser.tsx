@@ -74,7 +74,7 @@ function checkinColumns(
           <span className="font-medium">{row.original.ownerName}</span>
           <span
             dir="ltr"
-            className="inline-block text-xs text-muted-foreground"
+            className="self-start text-xs text-muted-foreground"
           >
             {row.original.ownerEmail}
           </span>
