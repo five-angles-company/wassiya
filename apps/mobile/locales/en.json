@@ -1,0 +1,13 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Wassiya",
+    "NSFaceIDUsageDescription": "Wassiya uses Face ID to unlock your vault key on this device.",
+    "NSCameraUsageDescription": "Wassiya uses the camera to photograph your documents and scan QR codes. Everything is encrypted on your device.",
+    "NSMicrophoneUsageDescription": "Wassiya uses the microphone to record your voice notes. The recording is encrypted on your device before it is saved.",
+    "NSSpeechRecognitionUsageDescription": "Speech is recognised on your device to dictate your notes. Your voice is never sent to a server.",
+    "NSPhotoLibraryUsageDescription": "Wassiya uses your photos so you can choose what to keep in your vault. Everything is encrypted on your device."
+  },
+  "android": {
+    "app_name": "Wassiya"
+  }
+}

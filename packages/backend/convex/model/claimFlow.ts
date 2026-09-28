@@ -95,6 +95,24 @@ export function nameMatchOutcome(nameMatch: boolean): ClaimStatus {
 /** Days an executor can open a delivery after release, before the vault is deleted. */
 export const DELIVERY_WINDOW_DAYS = 365
 
+/**
+ * How long a finished report keeps its death certificate — third-party
+ * personal data about someone who cannot consent. A released report keeps it
+ * through the delivery year it justified. Both await counsel's sign-off
+ * (`apps/landing/src/content/legal/REVIEW-NOTES.md`).
+ */
+export const CERTIFICATE_KEEP_DAYS = 30
+export const RELEASED_CERTIFICATE_KEEP_DAYS = DELIVERY_WINDOW_DAYS + 30
+
+/** When a report that has just ended must lose its certificate. */
+export function certificateDeleteAt(status: ClaimStatus, now: number): number {
+  const days =
+    status === "released"
+      ? RELEASED_CERTIFICATE_KEEP_DAYS
+      : CERTIFICATE_KEEP_DAYS
+  return now + days * DAY_MS
+}
+
 /** Tries a reviewer gets at the blind ID-number check, per report. */
 export const ID_CHECK_ATTEMPTS = 3
 

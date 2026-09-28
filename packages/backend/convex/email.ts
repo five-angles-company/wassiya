@@ -24,7 +24,11 @@ import { Resend } from "@convex-dev/resend"
 
 import { components } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
-import type { MutationCtx, QueryCtx } from "./_generated/server"
+import {
+  internalMutation,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server"
 import { writeAudit } from "./audit"
 import {
   CLAIM_CLOSED_COPY,
@@ -33,6 +37,7 @@ import {
   CLAIM_RELEASED_COPY,
   CLAIM_REVIEW_FAILED_COPY,
   CLAIM_VETOED_COPY,
+  DELETION_SCHEDULED_COPY,
   DELIVERY_EXPIRING_COPY,
   DELIVERY_INVITE_COPY,
   DELIVERY_READY_COPY,
@@ -46,6 +51,7 @@ import {
   TEST_COPY,
   type LocalisedCopy,
 } from "./model/emailCopy"
+import { recordJobRun } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
 
 /**
@@ -238,6 +244,49 @@ export async function sendRecoveryNotice(
 ): Promise<void> {
   await send(ctx, userId, RECOVERY_COPY, "recovery notice")
 }
+
+/** A deletion was requested; `dueAt` fills `{date}`. No link — see the copy. */
+export async function sendDeletionScheduled(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  dueAt: number
+): Promise<void> {
+  await send(
+    ctx,
+    userId,
+    DELETION_SCHEDULED_COPY,
+    "account deletion scheduled",
+    undefined,
+    dueAt
+  )
+}
+
+/**
+ * Delete sent mail from the Resend component's tables once it has settled —
+ * finalised a week ago, or stuck for a month (the component's defaults).
+ * An executor's invite carries their delivery link, so a copy kept forever is
+ * a copy of the capability.
+ */
+export const purgeSent = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    await ctx.scheduler.runAfter(0, components.resend.lib.cleanupOldEmails, {})
+    await ctx.scheduler.runAfter(
+      0,
+      components.resend.lib.cleanupAbandonedEmails,
+      {}
+    )
+    await recordJobRun(ctx, {
+      name: "email.purgeSent",
+      ranAt: Date.now(),
+      scanned: 0,
+      changed: 0,
+      rescheduled: false,
+      continued: false,
+    })
+    return null
+  },
+})
 
 /** Tell an owner a report about them is running. No link — see the copy. */
 export async function sendReportFiledToOwner(

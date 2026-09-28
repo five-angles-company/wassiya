@@ -52,7 +52,7 @@ type TodoLabel = "todoIdentity" | "todoSheet" | "todoExecutors" | "todoDelivery"
 
 const TODO: Partial<Record<ProtectionId, { icon: LucideIcon; label: TodoLabel; href: Href }>> = {
   identity: { icon: BadgeCheck, label: "todoIdentity", href: "/setup/kyc" },
-  sheet: { icon: FileText, label: "todoSheet", href: "/setup/recovery-kit" },
+  sheet: { icon: FileText, label: "todoSheet", href: "/settings/recovery-sheet/reissue" },
   executors: { icon: Users, label: "todoExecutors", href: "/executors/new" },
   delivery: { icon: FileText, label: "todoDelivery", href: "/executors" },
 }
@@ -68,6 +68,7 @@ export function HomeScreen() {
 
   const yearly = useQuery(api.executors.yearlyCheck)
   const confirmYearly = useMutation(api.executors.confirmYearlyCheck)
+  const cancelDeletion = useMutation(api.account.cancelDeletion)
   const [yearlyOpen, setYearlyOpen] = useState(false)
 
   const checkin = useCheckInState()
@@ -133,6 +134,22 @@ export function HomeScreen() {
             ]
               .filter((line) => line !== null)
               .join("\n\n")}
+          />
+        ) : null}
+
+        {me?.deletionDueAt != null ? (
+          <AlertBanner
+            variant="security"
+            description={t.deletionPending!.replace(
+              "{date}",
+              fmtDate(new Date(me.deletionDueAt), locale)
+            )}
+            actions={[
+              {
+                label: t.deletionCancel!,
+                onPress: () => void cancelDeletion({}).catch(() => undefined),
+              },
+            ]}
           />
         ) : null}
 

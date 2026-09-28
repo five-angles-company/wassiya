@@ -232,6 +232,22 @@ export const RECOVERY_KIT = {
     ar: "تعذّر تجهيز الوثيقة. حاول مرة أخرى.",
     en: "Could not prepare the document. Please try again.",
   },
+  retry: { ar: "حاول مرة أخرى", en: "Try again" },
+  confirmHint: {
+    ar: "تأكّد أن الوثيقة خرجت كاملة — لن يُعرض الرمز مرة أخرى.",
+    en: "Check the sheet came out whole — the code will not be shown again.",
+  },
+  confirmHave: { ar: "الوثيقة معي", en: "I have the sheet" },
+  printAgain: { ar: "اطبع مرة أخرى", en: "Print again" },
+  saveFailed: {
+    ar: "تعذّر حفظ الوثيقة. الرمز ما زال معروضاً — حاول مرة أخرى.",
+    en: "Could not save the sheet. The code is still on screen — try again.",
+  },
+  reissueTitle: { ar: "وثيقة استرداد جديدة", en: "A new recovery sheet" },
+  reissueNotice: {
+    ar: "تتوقف وثيقتك السابقة عن العمل حين تؤكد أن الجديدة معك.",
+    en: "Your previous sheet stops working once you confirm you have this one.",
+  },
 } satisfies LabelSet<string>
 
 export const SETUP_COMPLETE = {

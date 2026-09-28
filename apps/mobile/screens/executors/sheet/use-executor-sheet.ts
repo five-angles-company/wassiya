@@ -3,8 +3,8 @@
  *
  * Mint → display → confirm → save, in that order. The sheet secret exists only
  * in this hook's state; the wrapper is saved by `activate`, which the screen
- * calls only after a print or save intent succeeded. Until then the previous
- * sheet keeps working, so abandoning this screen costs nothing.
+ * calls only once the owner confirms the printed sheet is in their hands. Until
+ * then the previous sheet keeps working, so abandoning this screen costs nothing.
  *
  * The version is decided here, before the wrapper exists, because it is bound
  * into the wrapper's AAD; `executors.saveSheet` refuses one that does not

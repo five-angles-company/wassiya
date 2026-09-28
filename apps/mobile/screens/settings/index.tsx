@@ -37,6 +37,7 @@ import { View } from "react-native"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
+import { DeleteAccount } from "@/screens/settings/components/delete-account"
 import {
   AUTO_LOCK_CHOICES,
   LOCK_WHILE_OPEN,
@@ -204,8 +205,10 @@ export function SettingsScreen() {
         <SettingsRow
           icon={LogOut}
           label={t.signOut}
+          divider
           onPress={() => setSigningOut(true)}
         />
+        <DeleteAccount dueAt={me?.deletionDueAt ?? null} />
       </Group>
 
       <ConfirmSheet

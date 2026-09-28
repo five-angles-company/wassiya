@@ -8,7 +8,6 @@ import {
   type QueryCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
-import { syncIdentityLookup } from "./model/identityLookup"
 import { bindInvitation } from "./model/staff"
 
 // Protected query. A non-null result proves the Clerk JWT reached Convex and
@@ -137,25 +136,14 @@ export const me = query({
       criticalContacts: user.criticalContacts ?? [],
       identityStatus: user.identityStatus ?? "unverified",
       identityVerifiedName: user.identityVerifiedName ?? null,
+      /** When a requested deletion happens; cancellable until then. */
+      deletionDueAt: user.deletionDueAt ?? null,
       // `role` is deliberately absent. It used to be here for the console's
       // gate, which now reads `staff.me` — and this query is subscribed by
       // every owner's phone, where staff authority is noise at best.
       // The plan is not here: it is `plans.current`, which serves the limits
       // and the usage beside it so a screen cannot read one without the other.
     }
-  },
-})
-
-export const deleteFromClerk = internalMutation({
-  args: { clerkUserId: v.string() },
-  handler: async (ctx, { clerkUserId }) => {
-    const user = await userByExternalId(ctx, clerkUserId)
-    if (user === null) {
-      console.warn(`No user to delete for Clerk id ${clerkUserId}`)
-      return
-    }
-    await syncIdentityLookup(ctx, user._id, [])
-    await ctx.db.delete("users", user._id)
   },
 })
 

@@ -65,11 +65,13 @@ export function useProtectionScore(
         href: "/setup/kyc",
       },
       { id: "key", label: labels.key, done: keyring !== null },
+      // A used sheet has been out in the world and still opens the vault
+      // until a new one replaces it, so it counts as missing.
       {
         id: "sheet",
         label: labels.sheet,
-        done: keyring?.paperPrintedAt != null,
-        href: "/setup/recovery-kit",
+        done: keyring?.paperPrintedAt != null && keyring.paperUsedAt === null,
+        href: "/settings/recovery-sheet/reissue",
       },
       {
         id: "executors",

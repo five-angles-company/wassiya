@@ -26,12 +26,10 @@ import { useStrings } from "@/i18n/use-strings"
  *
  * ## Reissuing is a rotation, and it is stated as one
  *
- * `/setup/recovery-kit` mints fresh randomness on arrival — `use-recovery-material`
- * says so outright — so reaching it retires the sheet in the owner's drawer the
- * moment the new wrapper is saved. That consequence is printed here, before the
- * button, rather than discovered afterwards: somebody tapping through from
- * settings expecting a preview would otherwise silently destroy a document
- * filed with their will.
+ * The reissue screen mints a new code, and confirming it retires the sheet in
+ * the owner's drawer. That consequence is printed here, before the button,
+ * rather than discovered afterwards: somebody tapping through from settings
+ * expecting a preview would otherwise destroy a document filed with their will.
  */
 /** Groups after the prefix in a paper code — `encodePaperCode` emits 14. */
 const CODE_GROUPS = 14
@@ -51,7 +49,7 @@ export function RecoverySheetScreen() {
       footer={
         <PrimaryCta
           label={t.sheetReissueAction!}
-          onPress={() => router.push("/setup/recovery-kit")}
+          onPress={() => router.push("/settings/recovery-sheet/reissue")}
         />
       }
     >

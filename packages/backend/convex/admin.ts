@@ -446,7 +446,10 @@ export const risk = query({
       const done: Record<(typeof PROTECTION_ITEMS)[number], boolean> = {
         identity: owner.identityStatus === "verified",
         key: keyring !== null,
-        sheet: keyring?.paperPrintedAt !== undefined,
+        // A used sheet still opens the vault until a new one replaces it.
+        sheet:
+          keyring?.paperPrintedAt !== undefined &&
+          keyring.paperUsedAt === undefined,
         executors: executors.length > 0,
         // Every executor holds a printed sheet.
         delivery: executors.length > 0 && executorsWithoutSheet === 0,

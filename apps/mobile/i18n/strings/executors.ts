@@ -179,8 +179,8 @@ export const EXECUTOR_SHEET = {
     en: "Give it to {name} or keep it with your will. It opens nothing while you are alive.",
   },
   reprintNotice: {
-    ar: "هذه ورقة جديدة. بمجرد أن تطبعها تتوقف الورقة السابقة عن العمل.",
-    en: "This is a new sheet. Once you print it, the previous one stops working.",
+    ar: "هذه ورقة جديدة. حين تؤكد أنها معك تتوقف الورقة السابقة عن العمل.",
+    en: "This is a new sheet. Once you confirm you have it, the previous one stops working.",
   },
   locked: {
     ar: "افتح خزنتك أولاً — تُصنع الورقة بمفتاحها.",
@@ -249,13 +249,18 @@ export const EXECUTOR_SHEET = {
     ar: "لقطات الشاشة ممنوعة هنا. اطبع الورقة أو احفظها PDF.",
     en: "Screenshots are blocked here. Print the sheet or save it as a PDF.",
   },
+  confirmHint: {
+    ar: "تأكّد أن الورقة خرجت كاملة — لن يُعرض الرمز مرة أخرى.",
+    en: "Check the sheet came out whole — the code will not be shown again.",
+  },
+  confirmHave: { ar: "الورقة معي", en: "I have the sheet" },
+  printAgain: { ar: "اطبع مرة أخرى", en: "Print again" },
   // Printed but not stored: the paper opens nothing. Said plainly, with the
   // one action that fixes it, while the code is still in memory.
   activateFailed: {
-    ar: "طُبعت الورقة لكنها لم تُفعَّل بعد. لا تغادر — فعّلها الآن.",
-    en: "The sheet printed but is not active yet. Don't leave — activate it now.",
+    ar: "لم تُحفظ الورقة بعد، فهي لا تفتح شيئاً. لا تغادر — حاول مرة أخرى.",
+    en: "The sheet is not saved yet, so it opens nothing. Don't leave — try again.",
   },
-  activate: { ar: "فعّل الورقة", en: "Activate the sheet" },
 } satisfies LabelSet<string>
 
 /** The asset screen's handover choice — يُسلَّم / خاص. */

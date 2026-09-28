@@ -18,6 +18,9 @@ export type JobName =
   | "claims.sweepUnmatched"
   | "deliveries.expire"
   | "support.purgeFiles"
+  | "account.sweepDeletions"
+  | "claims.purgeCertificates"
+  | "email.purgeSent"
 
 /**
  * Retry a missed sweep.

@@ -1,4 +1,6 @@
-// The console's side of support. Every export is gated by `requirePermission`.
+// The console's side of support. Every registered function is gated by
+// `requirePermission`; the one plain helper, `deleteRequesterThreads`, lives
+// here only because this module alone may name the staff notes.
 //
 // Staff see what the requester wrote and what is already bound to the
 // requester's own account — never a vault, and never whether a stranger's
@@ -14,7 +16,12 @@ import { v } from "convex/values"
 
 import { internal } from "../_generated/api"
 import type { Doc, Id } from "../_generated/dataModel"
-import { mutation, query, type QueryCtx } from "../_generated/server"
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "../_generated/server"
 import { writeStaffAudit } from "../audit"
 import { hasPermission, requirePermission } from "../model/access"
 import { staffAccounts } from "../model/staff"
@@ -412,3 +419,51 @@ export const adminGenerateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl()
   },
 })
+
+const DELETE_THREAD_BATCH = 20
+const DELETE_ROW_BATCH = 500
+
+/**
+ * Delete the threads a deleted account opened, with their messages, files and
+ * staff notes. Called by `account.purge`, never by a client. Resolves true once
+ * nothing is left; false means run it again in a fresh transaction.
+ */
+export async function deleteRequesterThreads(
+  ctx: MutationCtx,
+  userId: Id<"users">
+): Promise<boolean> {
+  const threads = await ctx.db
+    .query("supportThreads")
+    .withIndex("by_requesterUserId_and_lastMessageAt", (q) =>
+      q.eq("requesterUserId", userId)
+    )
+    .take(DELETE_THREAD_BATCH)
+
+  for (const thread of threads) {
+    const messages = await ctx.db
+      .query("supportMessages")
+      .withIndex("by_threadId_and_at", (q) => q.eq("threadId", thread._id))
+      .take(DELETE_ROW_BATCH)
+    for (const message of messages) {
+      for (const file of message.attachments) {
+        await ctx.storage.delete(file.storageId)
+      }
+      await ctx.db.delete("supportMessages", message._id)
+    }
+    const notes = await ctx.db
+      .query("supportNotes")
+      .withIndex("by_threadId_and_at", (q) => q.eq("threadId", thread._id))
+      .take(DELETE_ROW_BATCH)
+    for (const note of notes) {
+      await ctx.db.delete("supportNotes", note._id)
+    }
+    if (
+      messages.length === DELETE_ROW_BATCH ||
+      notes.length === DELETE_ROW_BATCH
+    ) {
+      return false
+    }
+    await ctx.db.delete("supportThreads", thread._id)
+  }
+  return threads.length < DELETE_THREAD_BATCH
+}

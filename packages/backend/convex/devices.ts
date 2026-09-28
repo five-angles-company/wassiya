@@ -7,69 +7,17 @@
 // and audit act; what actually stops that phone is its own keystore.
 import { v } from "convex/values"
 
-import type { Doc, Id } from "./_generated/dataModel"
-import { mutation, query, type QueryCtx } from "./_generated/server"
+import { mutation, query } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { requireUser } from "./model/access"
+import { deviceArgs, deviceByInstallId, enrolDevice } from "./model/devices"
 
-const platform = v.union(
-  v.literal("ios"),
-  v.literal("android"),
-  v.literal("web")
-)
-
-/**
- * Enrol the calling device, or return the row it already has.
- *
- * Keyed on `installId` — a random string the client writes to its keystore
- * *before* the first call — so this is idempotent. That ordering matters: a
- * crash between the write and this mutation just means the retry finds the
- * same `installId` and updates the same row, where a server-minted id would
- * have left an orphan and enrolled the same phone twice.
- *
- * Re-registering an install that was revoked deliberately does **not** clear
- * `revoked`. Coming back from a revocation is a recovery flow with its own
- * checks, not something re-opening the app should silently undo.
- */
+/** Enrol the calling device, or return the row it already has. */
 export const register = mutation({
-  args: {
-    installId: v.string(),
-    name: v.string(),
-    platform,
-  },
+  args: deviceArgs.fields,
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
-    const existing = await byInstallId(ctx, user._id, args.installId)
-
-    if (existing !== null) {
-      if (existing.name !== args.name || existing.platform !== args.platform) {
-        await ctx.db.patch("devices", existing._id, {
-          name: args.name,
-          platform: args.platform,
-        })
-      }
-      return { deviceId: existing._id, created: false }
-    }
-    // A closed vault takes no new device: after a verified death, a phone set
-    // up with the owner's sheet must not become a way in.
-    if (user.vaultClosedAt !== undefined) {
-      throw new Error("This vault was closed after a verified death")
-    }
-
-    const deviceId = await ctx.db.insert("devices", {
-      userId: user._id,
-      installId: args.installId,
-      name: args.name,
-      platform: args.platform,
-      revoked: false,
-    })
-    await writeAudit(ctx, {
-      userId: user._id,
-      event: "device.registered",
-      deviceId,
-      meta: { platform: args.platform },
-    })
-    return { deviceId, created: true }
+    return await enrolDevice(ctx, user, args)
   },
 })
 
@@ -92,19 +40,6 @@ export const list = query({
     }))
   },
 })
-
-async function byInstallId(
-  ctx: QueryCtx,
-  userId: Id<"users">,
-  installId: string
-): Promise<Doc<"devices"> | null> {
-  return await ctx.db
-    .query("devices")
-    .withIndex("by_userId_and_installId", (q) =>
-      q.eq("userId", userId).eq("installId", installId)
-    )
-    .unique()
-}
 
 /**
  * Revoke a device.
@@ -154,7 +89,7 @@ export const setPushToken = mutation({
   args: { installId: v.string(), token: v.union(v.string(), v.null()) },
   handler: async (ctx, { installId, token }) => {
     const user = await requireUser(ctx)
-    const device = await byInstallId(ctx, user._id, installId)
+    const device = await deviceByInstallId(ctx, user._id, installId)
     if (device === null || device.revoked) throw new Error("Not found")
     if (token !== null && !/^Expo(nent)?PushToken\[[^\]]+\]$/.test(token)) {
       throw new Error("Not an Expo push token")

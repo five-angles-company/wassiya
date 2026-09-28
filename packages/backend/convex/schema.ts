@@ -134,6 +134,13 @@ export default defineSchema({
     // `claims.reopenVault`, run by hand for an owner proven alive.
     vaultClosedAt: v.optional(v.number()),
 
+    // Account deletion (`account.ts`). `deletionDueAt` is set while a request
+    // waits out its grace period and is what the sweep ranges on; it is cleared
+    // when the purge starts, which stamps `deletionStartedAt` — from then on
+    // the request can no longer be cancelled.
+    deletionDueAt: v.optional(v.number()),
+    deletionStartedAt: v.optional(v.number()),
+
     // This account's limits, overriding its plan's field by field. For a pilot,
     // a support case, an owner who needs more room than their tier gives.
     //
@@ -172,6 +179,7 @@ export default defineSchema({
     // them is a scan that gets slower as the product succeeds — and the role
     // fan-out above needs the same read on every role edit.
     .index("by_role", ["role"])
+    .index("by_deletionDueAt", ["deletionDueAt"])
     /**
      * Name and email in one column, for the console's owner lookup.
      *
@@ -490,6 +498,11 @@ export default defineSchema({
     /** Which of the two found the vault; absent while unmatched. */
     matchedBy: v.optional(v.union(v.literal("id_number"), v.literal("email"))),
     certificateStorageId: v.optional(v.id("_storage")),
+    /**
+     * When the certificate is deleted. Set by `patchClaim` the moment a report
+     * ends, so no writer can forget it; `purgeCertificates` ranges on it.
+     */
+    certificateDeleteAt: v.optional(v.number()),
     /** Typed by the reporter on reports filed before 2026-09-28; no longer asked. */
     certificateName: v.optional(v.string()),
     /**
@@ -627,7 +640,8 @@ export default defineSchema({
     // `undefined` is a real index value in Convex — `notifications` already
     // ranges on it via `by_userId_and_readAt`.
     .index("by_status_and_subjectUserId", ["status", "subjectUserId"])
-    .index("by_status_and_vetoDeadline", ["status", "vetoDeadline"]),
+    .index("by_status_and_vetoDeadline", ["status", "vetoDeadline"])
+    .index("by_certificateDeleteAt", ["certificateDeleteAt"]),
 
   /**
    * One executor's copy of a released death report.

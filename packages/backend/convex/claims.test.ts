@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test"
-import { describe, expect, test } from "vitest"
+import { describe, expect, test, vi } from "vitest"
 
 import { api, internal } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
@@ -468,7 +468,7 @@ describe("a report finds the vault by the ID number on the certificate", () => {
     )
     expect(rows.map((row) => row.hash)).toEqual([await identityNumberHash("2034567890")])
 
-    await t.mutation(internal.users.deleteFromClerk, { clerkUserId: "owner" })
+    await t.mutation(internal.account.onClerkDeleted, { clerkUserId: "owner" })
     expect(await t.run((ctx) => ctx.db.query("identityLookup").collect())).toEqual([])
   })
 })
@@ -553,3 +553,42 @@ async function verifyIdentity(
     birthDate: "1961-03-14",
   })
 }
+
+describe("death certificate retention", () => {
+  test("a stopped report's certificate goes after the retention window", async () => {
+    vi.useFakeTimers()
+    try {
+      const t = convexTest(schema, modules)
+      const owner = await addUser(t, "owner")
+      const reporter = await addUser(t, "reporter")
+      const certificate = await t.run((ctx) =>
+        ctx.storage.store(new Blob(["certificate"]))
+      )
+      const claimId = await t.run((ctx) =>
+        ctx.db.insert("claims", {
+          subjectUserId: owner,
+          claimantUserId: reporter,
+          claimantName: "Reporter",
+          claimantContact: "reporter@example.com",
+          status: "submitted",
+          certificateStorageId: certificate,
+        })
+      )
+
+      await t.withIdentity({ subject: "owner" }).mutation(api.checkin.confirm, {})
+      await t.mutation(internal.claims.purgeCertificates, {})
+      expect(await t.run((ctx) => ctx.storage.getUrl(certificate))).not.toBeNull()
+
+      vi.advanceTimersByTime(31 * DAY)
+      await t.mutation(internal.claims.purgeCertificates, {})
+      expect(await t.run((ctx) => ctx.storage.getUrl(certificate))).toBeNull()
+
+      const claim = await t.run((ctx) => ctx.db.get("claims", claimId))
+      expect(claim?.status).toBe("vetoed")
+      expect(claim?.certificateStorageId).toBeUndefined()
+      expect(claim?.certificateAttachedAt).toBeDefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

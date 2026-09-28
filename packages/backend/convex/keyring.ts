@@ -17,6 +17,7 @@ import type { Doc, Id } from "./_generated/dataModel"
 import { writeAudit } from "./audit"
 import { sendRecoveryNotice } from "./email"
 import { assertIdentityVerified, requireUser } from "./model/access"
+import { deviceArgs, enrolDevice } from "./model/devices"
 
 /**
  * Mirrors `RECOVERY_WRAPPER_VERSION` in `@workspace/crypto/recovery`, which is
@@ -45,8 +46,14 @@ export const save = mutation({
     mkWrappedByRecovery: v.bytes(),
     /** The version bound into this wrapper's AAD. Must follow from the stored one. */
     paperVersion: v.number(),
-    /** True when the caller regenerated S_paper and will print a new sheet. */
+    /** True when the caller regenerated S_paper for a new sheet. */
     rotatingPaper: v.boolean(),
+    /**
+     * The owner confirmed the new sheet is in their hands. The kit saves only
+     * after that confirmation, so the printed stamp lands in the same write as
+     * the wrapper it describes — never one without the other.
+     */
+    printed: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
@@ -85,9 +92,14 @@ export const save = mutation({
       // Stamped on every write, so a row that predates the AAD is identifiable
       // by its absence. Not derivable from `paperVersion` — see the schema.
       wrapperVersion: RECOVERY_WRAPPER_VERSION,
-      // A new sheet has not been printed or used yet; clearing both is what
-      // makes "printed?" and "already used?" honest after a rotation.
-      paperPrintedAt: args.rotatingPaper ? undefined : existing?.paperPrintedAt,
+      // A new sheet has not been used yet, and is printed only if the owner
+      // said so; clearing both otherwise is what makes "printed?" and "already
+      // used?" honest after a rotation.
+      paperPrintedAt: args.rotatingPaper
+        ? args.printed === true
+          ? now
+          : undefined
+        : existing?.paperPrintedAt,
       paperUsedAt: args.rotatingPaper ? undefined : existing?.paperUsedAt,
       rotatedAt: now,
     }
@@ -106,6 +118,13 @@ export const save = mutation({
         rotatedPaper: args.rotatingPaper,
       },
     })
+    if (args.rotatingPaper && args.printed === true) {
+      await writeAudit(ctx, {
+        userId: user._id,
+        event: "keyring.paper_printed",
+        meta: { paperVersion: args.paperVersion },
+      })
+    }
     return { paperVersion: args.paperVersion }
   },
 })
@@ -175,23 +194,6 @@ export const setReleaseKey = mutation({
   },
 })
 
-/** The owner confirms the sheet came out of the printer. */
-export const markPaperPrinted = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const keyring = await requireKeyring(ctx)
-    await ctx.db.patch("keyring", keyring.row._id, {
-      paperPrintedAt: Date.now(),
-    })
-    await writeAudit(ctx, {
-      userId: keyring.userId,
-      event: "keyring.paper_printed",
-      meta: { paperVersion: keyring.row.paperVersion },
-    })
-    return null
-  },
-})
-
 /**
  * Recorded the moment a sheet opens a vault. It does not invalidate the sheet
  * — only `save({ rotatingPaper: true })` does — and that separation is
@@ -204,15 +206,21 @@ export const markPaperPrinted = mutation({
  * under a code printed on no piece of paper, with no guardian left to fall back
  * on. So this marks, the owner is shown the new code, and only their
  * acknowledgement rotates. Mint → display → confirm → save.
+ *
+ * The recovered phone is enrolled here rather than by a second call: it must
+ * appear in `devices` whenever the alarm is raised, and a separate call could
+ * fail after the alarm and leave an unlisted phone holding the key.
  */
 export const markPaperUsed = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: { device: deviceArgs },
+  handler: async (ctx, { device }) => {
     const keyring = await requireKeyring(ctx)
+    const { deviceId } = await enrolDevice(ctx, keyring.user, device)
     await ctx.db.patch("keyring", keyring.row._id, { paperUsedAt: Date.now() })
     await writeAudit(ctx, {
       userId: keyring.userId,
       event: "keyring.paper_used",
+      deviceId,
       meta: { paperVersion: keyring.row.paperVersion },
     })
 
@@ -229,7 +237,7 @@ export const markPaperUsed = mutation({
       payload: { paperVersion: keyring.row.paperVersion },
     })
     await sendRecoveryNotice(ctx, keyring.userId)
-    return null
+    return { deviceId }
   },
 })
 
@@ -249,5 +257,5 @@ async function requireKeyring(ctx: QueryCtx) {
   if (row === null) {
     throw new Error("Not found")
   }
-  return { row, userId: user._id }
+  return { row, user, userId: user._id }
 }

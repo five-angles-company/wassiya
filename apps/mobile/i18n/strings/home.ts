@@ -51,6 +51,12 @@ export const HOME = {
   contactsLater: { ar: "لاحقاً", en: "Later" },
   contactsConfirm: { ar: "كل شيء صحيح", en: "All correct" },
   itemCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
+
+  deletionPending: {
+    ar: "سيُحذف حسابك وخزنتك في {date}.",
+    en: "Your account and vault will be deleted on {date}.",
+  },
+  deletionCancel: { ar: "ألغِ الحذف", en: "Cancel the deletion" },
 } satisfies LabelSet<string>
 
 /** ٣.٣ — notifications. */
@@ -91,5 +97,10 @@ export const NOTIFICATIONS = {
   },
   claimVetoed: { ar: "أُوقف طلب الوراثة", en: "The inheritance claim was stopped" },
   supportReply: { ar: "ردّ فريق الدعم على رسالتك", en: "Support replied to your message" },
+  deletionScheduled: { ar: "طُلب حذف حسابك", en: "Account deletion requested" },
+  deletionBlocked: {
+    ar: "لم يُنفَّذ حذف حسابك",
+    en: "Your account deletion was not carried out",
+  },
   generic: { ar: "تحديث في خزنتك", en: "An update in your vault" },
 } satisfies LabelSet<string>

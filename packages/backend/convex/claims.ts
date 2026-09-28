@@ -32,7 +32,9 @@ import {
   ID_CHECK_ATTEMPTS,
   VETO_LOCKOUT_DAYS,
   VETO_WINDOW_DAYS,
+  certificateDeleteAt,
   isLockedOut,
+  isTerminal,
   nameMatchBlockedReason,
   nameMatchOutcome,
   rejectReasonValidator,
@@ -93,12 +95,12 @@ export function requireSubject(claim: Doc<"claims">): Id<"users"> {
 /**
  * The only thing allowed to write a claim.
  *
- * It exists for one field. `updatedAt` has no trigger — Convex has none — so a
- * writer that forgets it leaves a row whose "last moved" is a lie, and nothing
- * anywhere fails. That is the same trap `searchText` documents on the schema,
- * and it was already loose once.
+ * It exists for two fields Convex has no trigger for. `updatedAt`: a writer
+ * that forgets it leaves a row whose "last moved" is a lie, and nothing
+ * anywhere fails. And `certificateDeleteAt`, set whenever a patch ends the
+ * report, so no way of ending one can leave a death certificate kept forever.
  *
- * So the stamp is not something a caller remembers: it is the price of writing
+ * So neither is something a caller remembers: they are the price of writing
  * at all. `scripts/verify-invariants.mjs` fails the build on any
  * `ctx.db.patch("claims", …)` outside this function, which is what stops the
  * next writer quietly reintroducing the problem.
@@ -106,10 +108,10 @@ export function requireSubject(claim: Doc<"claims">): Id<"users"> {
  * `now` is passed where the caller already has one, so the timestamp on the row
  * matches the one in its audit line rather than being a millisecond apart.
  *
- * Pass `null` to write **without** stamping. That is for a backfill — filling a
- * column that was always implicitly true — and nothing else. A state change that
- * skipped the stamp would be the exact bug this function exists to prevent, so
- * the opt-out is explicit at the call site rather than a default.
+ * Pass `null` to write **without** stamping. That is for a backfill or the
+ * certificate sweep — housekeeping that is not the report moving — and nothing
+ * else. A state change that skipped the stamp would be the exact bug this
+ * function exists to prevent, so the opt-out is explicit at the call site.
  */
 export async function patchClaim(
   ctx: MutationCtx,
@@ -117,10 +119,21 @@ export async function patchClaim(
   fields: Partial<Doc<"claims">>,
   now: number | null = Date.now()
 ): Promise<void> {
+  const ended =
+    fields.status !== undefined && isTerminal(fields.status)
+      ? {
+          certificateDeleteAt: certificateDeleteAt(
+            fields.status,
+            now ?? Date.now()
+          ),
+        }
+      : {}
   await ctx.db.patch(
     "claims",
     claimId,
-    now === null ? fields : { ...fields, updatedAt: now }
+    now === null
+      ? { ...fields, ...ended }
+      : { ...fields, ...ended, updatedAt: now }
   )
 }
 
@@ -247,6 +260,10 @@ export const submit = mutation({
       lockedUntil: barred ? lockout.lockedUntil : undefined,
       closedReason: barred ? "review_failed" : undefined,
       closedAt: barred ? now : undefined,
+      // Born ended, so `patchClaim` never sees it end: set here instead.
+      certificateDeleteAt: barred
+        ? certificateDeleteAt("locked", now)
+        : undefined,
       updatedAt: now,
       searchText: searchTextFor({
         claimantName: args.claimantName,
@@ -373,7 +390,7 @@ export const mine = query({
         status: row.status,
         vetoDeadline: row.vetoDeadline ?? null,
         lockedUntil: row.lockedUntil ?? null,
-        certificateReceived: row.certificateStorageId !== undefined,
+        certificateReceived: certificateReceived(row),
         submittedAt: row._creationTime,
         updatedAt: row.updatedAt ?? row._creationTime,
       }))
@@ -415,7 +432,7 @@ export const forClaimant = query({
       subjectName: await reviewedSubjectName(ctx, claim),
       subjectEmail: claim.subjectEmail ?? null,
       status: claim.status,
-      certificateReceived: claim.certificateStorageId !== undefined,
+      certificateReceived: certificateReceived(claim),
       vetoDeadline: claim.vetoDeadline ?? null,
       lockedUntil: claim.lockedUntil ?? null,
       submittedAt: claim._creationTime,
@@ -757,6 +774,71 @@ export const sweepUnmatched = internalMutation({
     if (stale.length === ADVANCE_BATCH) {
       await ctx.scheduler.runAfter(0, internal.claims.sweepUnmatched, {})
     }
+    return null
+  },
+})
+
+/**
+ * Delete the death certificates of reports that ended long enough ago —
+ * `certificateDeleteAt`, which `patchClaim` sets whenever a report ends.
+ */
+export const purgeCertificates = internalMutation({
+  args: { continued: v.optional(v.boolean()) },
+  handler: async (ctx, { continued }) => {
+    const now = Date.now()
+    // `gt(0)` keeps rows with nothing due out of the range: `undefined` sorts
+    // before every number in an index.
+    const due = await ctx.db
+      .query("claims")
+      .withIndex("by_certificateDeleteAt", (q) =>
+        q.gt("certificateDeleteAt", 0).lte("certificateDeleteAt", now)
+      )
+      .take(ADVANCE_BATCH)
+
+    let deleted = 0
+    for (const claim of due) {
+      if (claim.certificateStorageId !== undefined) {
+        await ctx.storage.delete(claim.certificateStorageId)
+        deleted += 1
+        if (claim.subjectUserId !== undefined) {
+          await writeAudit(ctx, {
+            userId: claim.subjectUserId,
+            event: "claim.certificate_deleted",
+            meta: { claimId: claim._id },
+          })
+        }
+      }
+      await patchClaim(
+        ctx,
+        claim._id,
+        {
+          certificateStorageId: undefined,
+          certificateDeleteAt: undefined,
+          // A certificate filed with the report has no attach date; keep the
+          // fact that one arrived after the file is gone.
+          ...(claim.certificateStorageId !== undefined &&
+          claim.certificateAttachedAt === undefined
+            ? { certificateAttachedAt: claim._creationTime }
+            : {}),
+        },
+        null
+      )
+    }
+
+    const rescheduled = due.length === ADVANCE_BATCH
+    if (rescheduled) {
+      await ctx.scheduler.runAfter(0, internal.claims.purgeCertificates, {
+        continued: true,
+      })
+    }
+    await recordJobRun(ctx, {
+      name: "claims.purgeCertificates",
+      ranAt: now,
+      scanned: due.length,
+      changed: deleted,
+      rescheduled,
+      continued: continued === true,
+    })
     return null
   },
 })
@@ -1186,6 +1268,14 @@ async function priorClaimsOf(
     .take(20)
 }
 
+/** Whether a certificate arrived — still true after retention deleted it. */
+function certificateReceived(claim: Doc<"claims">): boolean {
+  return (
+    claim.certificateStorageId !== undefined ||
+    claim.certificateAttachedAt !== undefined
+  )
+}
+
 export function searchTextFor(parts: {
   claimantName: string
   claimantContact: string
@@ -1255,7 +1345,7 @@ export const publicStatus = query({
       status: claim.status,
       submittedAt: claim._creationTime,
       vetoDeadline: claim.vetoDeadline ?? null,
-      certificateReceived: claim.certificateStorageId !== undefined,
+      certificateReceived: certificateReceived(claim),
     }
   },
 })

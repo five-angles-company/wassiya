@@ -1,6 +1,6 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
-/** The four crons, and whether they are alive. */
+/** The crons, and whether they are alive. */
 export const JOBS = {
   pageTitle: { ar: "المهام المجدولة", en: "Scheduled jobs" },
 
@@ -14,6 +14,9 @@ export const JOBS = {
   jobClaimsUnmatched: { ar: "إغلاق البلاغات بلا خزنة", en: "Close unmatched claims" },
   jobDeliveriesExpire: { ar: "إتلاف التسليمات المنتهية", en: "Expire deliveries" },
   jobSupportPurge: { ar: "حذف مرفقات الدعم القديمة", en: "Purge old support files" },
+  jobAccountDeletions: { ar: "تنفيذ حذف الحسابات المستحقة", en: "Carry out account deletions" },
+  jobCertificatesPurge: { ar: "حذف شهادات الوفاة المنتهية", en: "Purge old death certificates" },
+  jobEmailPurge: { ar: "حذف البريد المُرسَل القديم", en: "Purge old sent email" },
 
   lastRun: { ar: "آخر دورة", en: "Last run" },
   lastChange: { ar: "آخر تغيير", en: "Last change" },

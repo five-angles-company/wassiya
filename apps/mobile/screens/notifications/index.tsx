@@ -154,6 +154,10 @@ function titleFor(
       return t.claimVetoed!
     case "support.reply":
       return t.supportReply!
+    case "account.deletion_scheduled":
+      return t.deletionScheduled!
+    case "account.deletion_blocked":
+      return t.deletionBlocked!
     default:
       return t.generic!
   }
@@ -186,7 +190,10 @@ function actionsFor(
   if (kind === "recovery.attempted") {
     // Reprinting is the only thing that invalidates the sheet that was used.
     return [
-      { label: t.wasntMe!, onPress: () => router.push("/setup/recovery-kit") },
+      {
+        label: t.wasntMe!,
+        onPress: () => router.push("/settings/recovery-sheet/reissue"),
+      },
     ]
   }
   return undefined

@@ -1,21 +1,17 @@
 /**
- * Produces the paper share for 2.4, and persists the only piece of it the
- * server is ever allowed to see. The ordering is the security-critical part:
+ * Mints the paper share for the recovery kit. Mint → display → confirm → save:
  *
  *  1. `S_paper` is **never persisted anywhere**. It lives in this hook's return
  *     value for the life of one screen — that is what makes "we keep no copy"
  *     literally true.
- *  2. Only `mkWrappedByRecovery` crosses the wire: MK under K_rec = S_paper,
- *     and the deployment holds neither operand.
+ *  2. **Nothing is written on mount.** The wrapper is saved only by `commit`,
+ *     which the screen calls once the owner confirms the new sheet is in their
+ *     hands. Until then the previous sheet keeps working and leaving costs
+ *     nothing; saving first would retire it in favour of a code printed nowhere.
  *  3. The wrapper is sealed under an AAD of the owner's id and the paper
  *     version it is about to become, so the version is decided here, before the
  *     ciphertext exists — which is why `save` is told the number rather than
  *     choosing it, and refuses one that does not follow from the stored row.
- *
- * Issuing and reissuing are the same act now that the guardian is out of
- * recovery; only the version number varies. Re-entering after abandoning an
- * unprinted sheet therefore **rotates** rather than reprints — `S_paper` is
- * gone — and the abandoned code stops working once the new wrapper lands.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation } from "convex/react"
@@ -47,13 +43,8 @@ export type RecoveryMaterialState =
 
 /**
  * Everything the wrapper's AAD needs, or `null` while the queries behind it are
- * still in flight.
- *
- * One object rather than two arguments, deliberately. The previous shape took a
- * `keyringLoaded` flag beside a derived boolean, because "still loading" and
- * "no keyring yet" both read as `false` and only one of them was true — a
- * caller who forgot the flag would start on the wrong branch. Here there is no
- * flag to forget: until every input has answered there is nothing to pass.
+ * still in flight — "still loading" and "no keyring yet" must never share a
+ * value, or a caller starts on the wrong branch.
  */
 export type RecoveryContext = {
   userId: string
@@ -64,19 +55,25 @@ export type RecoveryContext = {
 export function useRecoveryMaterial(
   context: RecoveryContext | null,
   authPrompt: string
-): { state: RecoveryMaterialState; wipe: () => void } {
+): {
+  state: RecoveryMaterialState
+  /** Saves the wrapper, stamped printed. Resolves false when it did not land. */
+  commit: () => Promise<boolean>
+  wipe: () => void
+  retry: () => void
+} {
   const save = useMutation(api.keyring.save)
   const [state, setState] = useState<RecoveryMaterialState>({
     status: "preparing",
   })
-  // Guards against StrictMode double-invocation and any re-render: generating
-  // twice would issue two paper versions and invalidate the first silently.
+  const wrapped = useRef<ArrayBuffer | null>(null)
+  // Guards against StrictMode double-invocation and any re-render: minting
+  // twice would show one code and save another.
   const started = useRef(false)
 
   const prepare = useCallback(
     async (ctx: RecoveryContext) => {
       try {
-        // Both mint functions draw fresh randomness.
         ensureWebCrypto()
         const mk = await readMk(authPrompt)
 
@@ -89,15 +86,11 @@ export function useRecoveryMaterial(
           ctx.currentPaperVersion === null
             ? splitRecovery(mk, ctx.userId, paperVersion)
             : rotatePaperShare(mk, ctx.userId, paperVersion)
+        mk.fill(0)
 
-        await save({
-          mkWrappedByRecovery: toArrayBuffer(mkWrappedByRecovery),
-          paperVersion,
-          rotatingPaper: true,
-        })
-        await patchEnrolment({ paperVersion })
-
+        wrapped.current = toArrayBuffer(mkWrappedByRecovery)
         const code = encodePaperCode(sPaper, paperVersion)
+        sPaper.fill(0)
         setState({
           status: "ready",
           material: {
@@ -114,7 +107,7 @@ export function useRecoveryMaterial(
         })
       }
     },
-    [authPrompt, save]
+    [authPrompt]
   )
 
   useEffect(() => {
@@ -123,9 +116,40 @@ export function useRecoveryMaterial(
     void prepare(context)
   }, [context, prepare])
 
-  const wipe = useCallback(() => setState({ status: "wiped" }), [])
+  const commit = useCallback(async () => {
+    if (state.status !== "ready" || wrapped.current === null) return false
+    const { paperVersion } = state.material
+    try {
+      await save({
+        mkWrappedByRecovery: wrapped.current,
+        paperVersion,
+        rotatingPaper: true,
+        printed: true,
+      })
+    } catch {
+      return false
+    }
+    try {
+      await patchEnrolment({ paperVersion })
+    } catch {
+      // The local marker is this install's own record, not a routing input;
+      // the server row just written is the truth.
+    }
+    return true
+  }, [save, state])
 
-  return { state, wipe }
+  const wipe = useCallback(() => {
+    wrapped.current = null
+    setState({ status: "wiped" })
+  }, [])
+
+  const retry = useCallback(() => {
+    if (context === null) return
+    setState({ status: "preparing" })
+    void prepare(context)
+  }, [context, prepare])
+
+  return { state, commit, wipe, retry }
 }
 
 /**

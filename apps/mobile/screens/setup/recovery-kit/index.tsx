@@ -1,6 +1,7 @@
-import { useMutation, useQuery } from "convex/react"
+import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
+import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { RecoveryCodeDisplay } from "@workspace/ui-native/components/wassiya/recovery-code-display"
 import * as Print from "expo-print"
 import { Redirect, router } from "expo-router"
@@ -9,9 +10,11 @@ import {
   useScreenshotListener,
 } from "expo-screen-capture"
 import * as Sharing from "expo-sharing"
+import { Fingerprint } from "lucide-react-native"
 import { useCallback, useMemo, useState } from "react"
 import { View } from "react-native"
 
+import { CenteredNote } from "@/components/centered-note"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
@@ -24,18 +27,16 @@ import { KitQr } from "@/screens/setup/recovery-kit/components/kit-qr"
 import { useRecoveryMaterial } from "@/screens/setup/recovery-kit/use-recovery-material"
 
 /**
- * 2.4 — the printed recovery sheet.
+ * 2.4 — the printed recovery sheet, and ٩.٥'s reissue of it.
  *
- * There is no confirmation screen after this one. A successful print or save
- * intent **is** the milestone, recorded from the intent's result; if the user
- * never completes one, Home re-prompts rather than the app trapping them here.
+ * `setup` is the onboarding step and ends on 2.6; `reissue` is reached from
+ * the app (settings, a used sheet, a recovery alert) and returns there.
  *
  * Screen capture is blocked for the screen's lifetime, and the code never
- * reaches the clipboard, a log or analytics. The shown-once promise is real:
- * `S_paper` exists only in this render, and once the sheet is out it is gone
- * for good — a later reprint issues a new version instead.
+ * reaches the clipboard, a log or analytics. `S_paper` exists only in this
+ * render; once the owner confirms the sheet it is gone for good.
  */
-export function RecoveryKitScreen() {
+export function RecoveryKitScreen({ mode }: { mode: "setup" | "reissue" }) {
   const { t, locale } = useStrings("setup/recovery-kit")
   const { t: common } = useStrings("common")
 
@@ -43,7 +44,6 @@ export function RecoveryKitScreen() {
 
   const me = useQuery(api.users.me)
   const keyring = useQuery(api.keyring.get)
-  const markPaperPrinted = useMutation(api.keyring.markPaperPrinted)
 
   // Nothing may start until both queries have answered: the owner's id and the
   // current paper version are bound into the wrapper's AAD, and a wrapper built
@@ -57,11 +57,15 @@ export function RecoveryKitScreen() {
         : { userId: me.id, currentPaperVersion: keyring?.paperVersion ?? null },
     [me, keyring]
   )
-  const { state, wipe } = useRecoveryMaterial(recoveryContext, t.keyPrompt)
+  const { state, commit, wipe, retry } = useRecoveryMaterial(
+    recoveryContext,
+    t.keyPrompt
+  )
 
   const [qrDataUri, setQrDataUri] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [delivered, setDelivered] = useState(false)
 
   useScreenshotListener(() => setNotice(t.screenshotBlocked))
 
@@ -69,10 +73,9 @@ export function RecoveryKitScreen() {
     if (state.status !== "ready" || me === undefined || me === null) return null
 
     // Refuse to print rather than print a blank identity line. This sheet is
-    // filed with a will for decades, and the email is how the death-report funnel
-    // finds the deceased — a document missing it looks complete and is not.
-    // (Both fields come from webhook-synced columns, so a null here means a
-    // sync has not landed, not that the user has no name or address.)
+    // filed with a will for decades, and a document missing the owner looks
+    // complete and is not. (Both fields come from webhook-synced columns, so a
+    // null here means a sync has not landed, not that the user has no name.)
     const ownerName = me.identityVerifiedName ?? me.name
     if (ownerName === null || me.email === null) return null
 
@@ -110,30 +113,7 @@ export function RecoveryKitScreen() {
     })
   }, [locale, me, qrDataUri, state, t])
 
-  /**
-   * Wipe, navigate, *then* record.
-   *
-   * The order is not stylistic. `markPaperPrinted` flips the evidence the
-   * setup gate reads, and the gate re-renders the moment the Convex query
-   * updates — which can land before a navigation issued after it. Awaiting the
-   * mutation first would therefore race the gate into bouncing this run
-   * straight to the tabs, skipping 2.6 entirely.
-   *
-   * A failed mutation is a designed degradation, not an error to surface: the
-   * sheet is out, and an unrecorded milestone simply means Home re-prompts.
-   */
-  async function complete() {
-    // Drop the code from memory before the next frame renders.
-    wipe()
-    router.replace("/setup/complete")
-    try {
-      await markPaperPrinted()
-    } catch {
-      // Home re-prompts from the unchanged `paperPrintedAt`.
-    }
-  }
-
-  async function run(action: "print" | "save" | "share") {
+  async function run(action: "print" | "share") {
     setBusy(true)
     setNotice(null)
     try {
@@ -146,25 +126,11 @@ export function RecoveryKitScreen() {
       if (action === "print") {
         await Print.printAsync({ html })
       } else {
+        // `printToFileAsync` writes into the app's cache, which no file manager
+        // lists: the share sheet is the only way the PDF reaches the reader.
         const { uri } = await Print.printToFileAsync({ html })
-
-        // ⚠️ `printToFileAsync` writes into the app's **cache**, which no file
-        // manager lists and the OS is free to clear. Handing the file to the
-        // system sheet is the only way it reaches the reader on either
-        // platform — "Save to Files" and "Save to Drive" both live there — so
-        // "save" and "share" are the same act and take the same path.
-        //
-        // This used to run the share step for `"share"` only, so `"save"`
-        // generated a PDF into the cache, dropped the uri on the floor, and
-        // fell through to `complete()` — which wipes the code from memory and
-        // records the sheet as printed. The code is shown **once**. Anyone who
-        // tapped save walked away believing they had their recovery document
-        // and had nothing, and would have found out on the one day it is
-        // needed.
         if (!(await Sharing.isAvailableAsync())) {
           setNotice(t.failed)
-          // Emphatically no `complete()`: nothing was delivered, so the code
-          // must stay on screen rather than be wiped behind a false success.
           return
         }
         await Sharing.shareAsync(uri, {
@@ -172,23 +138,50 @@ export function RecoveryKitScreen() {
           UTI: "com.adobe.pdf",
         })
       }
-      await complete()
+      setDelivered(true)
     } catch {
       // A dismissed printer picker and a missing printer arrive the same way;
-      // the sheet is still on screen either way, so this is a notice, not a
-      // failure state.
+      // the sheet is still on screen either way.
       setNotice(t.cancelled)
     } finally {
       setBusy(false)
     }
   }
 
+  /**
+   * Save, wipe, then leave. The save is what retires the previous sheet, so it
+   * must land while the code is still on screen: a failure keeps it there with
+   * the button that retries.
+   */
+  async function confirm() {
+    setBusy(true)
+    setNotice(null)
+    if (!(await commit())) {
+      setBusy(false)
+      setNotice(t.saveFailed)
+      return
+    }
+    wipe()
+    if (mode === "setup") router.replace("/setup/complete")
+    else if (router.canGoBack()) router.back()
+    else router.replace("/home")
+  }
+
   if (state.status === "error") {
-    return <Redirect href={state.reason === "keyLost" ? "/recovery" : "/"} />
+    if (state.reason === "keyLost") return <Redirect href="/recovery" />
+    if (mode === "setup") return <Redirect href="/" />
+    return (
+      <Screen footer={<PrimaryCta label={t.retry!} onPress={retry} />}>
+        <ScreenHeader back title={t.reissueTitle!} />
+        <CenteredNote icon={Fingerprint} body={t.failed!} />
+      </Screen>
+    )
   }
 
   if (state.status !== "ready" || me === undefined) {
-    return <LoadingScreen label={t.preparing} />
+    return (
+      <LoadingScreen back={mode === "reissue" ? true : undefined} label={t.preparing} />
+    )
   }
 
   return (
@@ -207,24 +200,46 @@ export function RecoveryKitScreen() {
             disabled={busy}
             onPrint={() => void run("print")}
             onSave={() => void run("share")}
+            confirm={
+              delivered
+                ? {
+                    hint: t.confirmHint!,
+                    label: t.confirmHave!,
+                    againLabel: t.printAgain!,
+                    busy,
+                    onConfirm: () => void confirm(),
+                    onAgain: () => setDelivered(false),
+                  }
+                : undefined
+            }
           />
         </View>
       }
     >
-      <SetupStepMeter
-        step={SETUP_STEP_INDEX.recoveryKit}
-        locale={locale}
-        separator={common.stepSeparator}
-        className="mb-6"
-      />
-
-      {/* The first sheet follows the key being made on this phone — the one
-          moment the vault has a key and no way back if the phone is lost. */}
-      <ScreenHeader
-        eyebrow={state.material.paperVersion === 1 ? t.keyReady : undefined}
-        title={t.title!}
-        description={t.body}
-      />
+      {mode === "setup" ? (
+        <>
+          <SetupStepMeter
+            step={SETUP_STEP_INDEX.recoveryKit}
+            locale={locale}
+            separator={common.stepSeparator}
+            className="mb-6"
+          />
+          {/* The first sheet follows the key being made on this phone — the one
+              moment the vault has a key and no way back if the phone is lost. */}
+          <ScreenHeader
+            eyebrow={state.material.paperVersion === 1 ? t.keyReady : undefined}
+            title={t.title!}
+            description={t.body}
+          />
+        </>
+      ) : (
+        <>
+          <ScreenHeader back title={t.reissueTitle!} description={t.body} />
+          <Text variant="meta" className="mb-4 text-terracotta-800">
+            {t.reissueNotice}
+          </Text>
+        </>
+      )}
 
       <RecoveryCodeDisplay
         groups={state.material.groups}
@@ -240,7 +255,6 @@ export function RecoveryKitScreen() {
           />
         }
       />
-
     </Screen>
   )
 }

@@ -67,35 +67,47 @@ are the points to re-read:
   development Convex deployment is in eu-west-1 (Ireland); the production
   region is not decided in the repo. Clerk, Didit, Resend and Twilio regions are
   not in the code.
-- Retention periods for death reports and certificates, support text, sent
-  emails, and executors' details after a vault is deleted (see gaps below).
+- Retention periods. The code now sets defaults for counsel to confirm or
+  change (see "What the code now does" below): death certificates 30 days after
+  a report ends (a released report's: through the delivery year + 30 days),
+  sent emails 7 days after delivery (30 if never confirmed). Still blank: the
+  death-report records themselves, support text, and delivery records after a
+  vault is deleted.
 - How a Wassiya executor relates to one appointed under law.
 - Effect of account termination; liability wording; governing law.
+
+## What the code now does (2026-09-28)
+
+The drafts do not describe these yet; please add them where they belong.
+
+- **Account deletion, in the app, with a 7-day grace period.** The owner asks
+  from the mobile app behind their fingerprint. We email them at once; they can
+  cancel from the app until the date. Then we delete the vault (items, files,
+  executors with their details and sheet copies, the recovery copy), devices,
+  check-in, notifications, support conversations and the sign-in account.
+  The security audit log is kept (it is append-only). Deletion is refused while
+  a death report about the owner is open or after release, and a pending one is
+  cancelled if a report is open on the due date. Please confirm the 7 days and
+  the retained audit log are acceptable under the PDPL.
+- **Death certificates are deleted** 30 days after a report ends (stopped,
+  rejected or closed), and a released report's certificate a year and 30 days
+  after release.
+- **Sent emails are deleted** from our email provider's tables in our database
+  7 days after delivery, or 30 days if delivery was never confirmed. Resend's
+  own retention is set in their dashboard and is not in the code.
+- **Executors' details are deleted with the vault**, however many executors
+  there are. Delivery records stay, without the executor they pointed to.
 
 ## Places where the product does not yet match what a policy would promise
 
 These are code gaps, not wording problems. The drafts avoid promising any of them.
 
-1. **No account deletion.** There is no in-app delete (Apple requires one for
-   apps that create accounts). Deleting a user in Clerk removes only the `users`
-   row; executors, assets, files, keyring, devices, claims, deliveries and
-   support threads remain, orphaned.
-2. **Death certificates are never deleted.** `claims.ts` says a failed claim's
-   certificate should be deleted on a schedule; no job does it.
-3. **Sent emails are kept indefinitely** in the Resend component's tables
-   (`cleanupOldEmails` is never scheduled). Executor emails contain the
-   delivery link.
-4. **No data export** for the right of access / copy.
-5. **Executors' details outlive the vault.** When the last delivery closes,
-   `vault.purge` deletes items, files, the keyring and the copies locked under
-   the executors' sheets, but keeps each executor's record (name, phone, email,
-   ID-number fingerprint) and the delivery records. The privacy draft leaves
-   their retention blank.
-6. **The apps' own copy must match these drafts.** The web and mobile apps are
+1. **No data export** for the right of access / copy.
+2. **The apps' own copy must match these drafts.** The web and mobile apps are
    being moved to the executor model alongside these drafts; before publishing,
    check that nothing in them still says Wassiya can open a delivery (for
    example `apps/web/features/account/strings/account.ts`).
-7. SMS to executors (Twilio) is off unless `OUTREACH_PROVIDER=twilio`, and push
+3. SMS to executors (Twilio) is off unless `OUTREACH_PROVIDER=twilio`, and push
    notifications are wired on the server but no client registers a token.
    Billing (RevenueCat / stores) is not built. The drafts name these providers
    as the intended ones.

@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Convex Starter",
-    "slug": "convex-starter-mobile",
-    "version": "0.0.1",
+    "name": "Wassiya",
+    "slug": "wassiya",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "convexstarter",
+    "scheme": "wassiya",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fiveangles.convexstarter"
+      "bundleIdentifier": "com.fiveangles.wassiya"
     },
     "android": {
-      "package": "com.fiveangles.convexstarter",
+      "package": "com.fiveangles.wassiya",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
@@ -67,6 +67,14 @@
           "forcesRTL": true
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "تستخدم وصيّة صورك لتختار ما تحفظه في خزنتك، ويُشفَّر كل ذلك على جهازك.",
+          "cameraPermission": "تستخدم وصيّة الكاميرا لتصوير مستنداتك ومسح رموز QR، ويُشفَّر كل ذلك على جهازك.",
+          "microphonePermission": "تستخدم وصيّة الميكروفون لتسجيل ملاحظاتك الصوتية، ويُشفَّر التسجيل على جهازك قبل الحفظ."
+        }
+      ],
       "expo-sharing",
       "expo-asset",
       [
@@ -86,6 +94,10 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "locales": {
+      "ar": "./locales/ar.json",
+      "en": "./locales/en.json"
     }
   }
 }

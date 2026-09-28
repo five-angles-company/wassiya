@@ -2,9 +2,10 @@
  * ٥.٣ — printing an executor's sheet.
  *
  * Screen capture is blocked for the screen's lifetime, and the code never
- * reaches the clipboard, a log or analytics. It is saved only after a print or
- * save intent succeeds; a sheet that printed but did not save opens nothing,
- * so that failure keeps the code on screen with the one action that fixes it.
+ * reaches the clipboard, a log or analytics. It is saved only once the owner
+ * confirms the printed sheet is in their hands; a sheet that printed but did
+ * not save opens nothing, so that failure keeps the code on screen with the
+ * one action that fixes it.
  */
 import { useCallback, useMemo, useState } from "react"
 import { useQuery } from "convex/react"
@@ -59,7 +60,7 @@ export function ExecutorSheetScreen() {
 
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
-  const [unsaved, setUnsaved] = useState(false)
+  const [delivered, setDelivered] = useState(false)
 
   useScreenshotListener(() => setNotice(t.screenshotBlocked))
 
@@ -103,27 +104,26 @@ export function ExecutorSheetScreen() {
 
   async function finish() {
     setBusy(true)
+    setNotice(null)
     const saved = await activate()
     setBusy(false)
     if (!saved) {
-      setUnsaved(true)
       setNotice(t.activateFailed)
       return
     }
     router.back()
   }
 
-  async function run(action: "print" | "save" | "share") {
+  async function run(action: "print" | "share") {
     setBusy(true)
     setNotice(null)
-    let delivered = false
     try {
       const html = await buildHtml()
       if (html === null) {
         setNotice(t.failed)
       } else if (action === "print") {
         await Print.printAsync({ html })
-        delivered = true
+        setDelivered(true)
       } else {
         // `printToFileAsync` writes into the app's cache, which no file manager
         // lists: the share sheet is the only way the PDF reaches the reader.
@@ -133,7 +133,7 @@ export function ExecutorSheetScreen() {
             mimeType: "application/pdf",
             UTI: "com.adobe.pdf",
           })
-          delivered = true
+          setDelivered(true)
         } else {
           setNotice(t.failed)
         }
@@ -144,7 +144,6 @@ export function ExecutorSheetScreen() {
     } finally {
       setBusy(false)
     }
-    if (delivered) await finish()
   }
 
   const title = t.title!.replace("{name}", executor?.name ?? "")
@@ -191,21 +190,25 @@ export function ExecutorSheetScreen() {
               {notice}
             </Text>
           ) : null}
-          {unsaved ? (
-            <PrimaryCta
-              label={t.activate!}
-              onPress={() => void finish()}
-              busy={busy}
-            />
-          ) : (
-            <KitActions
-              printLabel={t.print!}
-              saveLabel={t.saveOrShare!}
-              disabled={busy}
-              onPrint={() => void run("print")}
-              onSave={() => void run("share")}
-            />
-          )}
+          <KitActions
+            printLabel={t.print!}
+            saveLabel={t.saveOrShare!}
+            disabled={busy}
+            onPrint={() => void run("print")}
+            onSave={() => void run("share")}
+            confirm={
+              delivered
+                ? {
+                    hint: t.confirmHint!,
+                    label: t.confirmHave!,
+                    againLabel: t.printAgain!,
+                    busy,
+                    onConfirm: () => void finish(),
+                    onAgain: () => setDelivered(false),
+                  }
+                : undefined
+            }
+          />
         </View>
       }
     >

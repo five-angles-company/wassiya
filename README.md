@@ -88,10 +88,10 @@ pnpm dev                      # turbo: web + admin + convex dev (+ native if sta
 | `CLERK_FRONTEND_API_URL` | ✅ (auth.config) | — | — |
 | `CLERK_WEBHOOK_SIGNING_SECRET` | ✅ (http.ts) | — | — |
 | `*_CLERK_PUBLISHABLE_KEY` | — | ✅ (`NEXT_PUBLIC_`) | ✅ (`EXPO_PUBLIC_`) |
-| `CLERK_SECRET_KEY` | — | ✅ | ❌ never (public bundle) |
+| `CLERK_SECRET_KEY` | ✅ (account.ts — deletes the Clerk user of a deleted account) | ✅ | ❌ never (public bundle) |
 | `*_CONVEX_URL` | — | ✅ (`NEXT_PUBLIC_`) | ✅ (`EXPO_PUBLIC_`) |
 | `NEXT_PUBLIC_CLERK_SIGN_{IN,UP}_URL` | — | ✅ `/sign-in`, `/sign-up` | — |
-| `RESEND_FROM`, `RESEND_TEST_MODE` | ✅ (email.ts) | — | — |
+| `RESEND_API_KEY`, `RESEND_FROM`, `RESEND_TEST_MODE` | ✅ (email.ts) | — | — |
 | `APP_URL` | ✅ (email.ts, deliveries) | — | — |
 | `CONSOLE_URL` | ✅ (staff invitations) | — | — |
 | `WASSIYA_ENV` | ✅ (seed.ts refuses dev helpers on `production`) | — | — |
@@ -99,6 +99,8 @@ pnpm dev                      # turbo: web + admin + convex dev (+ native if sta
 | `OUTREACH_PROVIDER`, `TWILIO_*` | ✅ (outreach.ts) | — | — |
 
 `APP_URL` is where `apps/web` lives (`http://localhost:3001` in dev). Outbound mail appends a link built from it; unset, the mail still sends without one. It is **not** `CONVEX_SITE_URL`, which is this deployment's own origin — using that would mail people a link to the backend. And `RESEND_TEST_MODE` keeps test mode **on** unless it is exactly `"false"`, so a deployment that has never set it delivers nothing. `CONSOLE_URL` is where `apps/admin` lives, and only a staff invitation links to it — a separate origin, because an invitation that landed on `APP_URL` would sign the new operator into the owner app. Both URLs can also be set from the console's Integrations screen, which takes precedence over the environment.
+
+`CLERK_SECRET_KEY` on the deployment is what lets an owner's in-app account deletion remove their Clerk user. With it set, turn **off** "Allow users to delete their accounts" in the Clerk dashboard: a web profile page must not delete a vault without the owner's fingerprint.
 
 `convex dev` only writes `packages/backend/.env.local` — mirror the needed values into each app's `.env.local` yourself. Verify deployment vars with `npx convex env list`.
 

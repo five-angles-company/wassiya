@@ -96,6 +96,18 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
     ar: "تشغيل حذف مرفقات الدعم القديمة",
     en: "Run the support-file purge",
   },
+  "jobs.run:account.sweepDeletions": {
+    ar: "تشغيل حذف الحسابات التي انتهت مهلتها — لا رجعة فيه",
+    en: "Run account deletion for requests past their grace period — irreversible",
+  },
+  "jobs.run:claims.purgeCertificates": {
+    ar: "تشغيل حذف شهادات الوفاة المنتهية",
+    en: "Run the death-certificate purge",
+  },
+  "jobs.run:email.purgeSent": {
+    ar: "تشغيل حذف البريد المُرسَل القديم",
+    en: "Run the sent-email purge",
+  },
   "settings.read": {
     ar: "قراءة الإعدادات والسياسات",
     en: "Read settings and policy",

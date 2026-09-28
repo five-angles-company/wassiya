@@ -79,6 +79,9 @@ export const PERMISSIONS = [
   { key: "jobs.run:claims.sweepUnmatched", group: "operations" },
   { key: "jobs.run:deliveries.expire", group: "operations" },
   { key: "jobs.run:support.purgeFiles", group: "operations" },
+  { key: "jobs.run:account.sweepDeletions", group: "operations" },
+  { key: "jobs.run:claims.purgeCertificates", group: "operations" },
+  { key: "jobs.run:email.purgeSent", group: "operations" },
   { key: "settings.read", group: "settings" },
   { key: "settings.manage", group: "settings" },
   { key: "staff.read", group: "settings" },
@@ -116,6 +119,9 @@ export const JOB_RUN_PERMISSION: Record<JobName, PermissionKey> = {
   "claims.sweepUnmatched": "jobs.run:claims.sweepUnmatched",
   "deliveries.expire": "jobs.run:deliveries.expire",
   "support.purgeFiles": "jobs.run:support.purgeFiles",
+  "account.sweepDeletions": "jobs.run:account.sweepDeletions",
+  "claims.purgeCertificates": "jobs.run:claims.purgeCertificates",
+  "email.purgeSent": "jobs.run:email.purgeSent",
 }
 
 export function isPermissionKey(value: string): value is PermissionKey {

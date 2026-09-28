@@ -145,6 +145,48 @@ export const SETTINGS = {
   },
   cancel: { ar: "إلغاء", en: "Cancel" },
 
+  // Account deletion. "٧ أيام" mirrors `DELETION_GRACE_DAYS` in
+  // `convex/account.ts`; change both together.
+  rowDeleteAccount: { ar: "حذف الحساب", en: "Delete account" },
+  deleteScheduled: { ar: "يُحذف في {date}", en: "Deleted on {date}" },
+  deleteTitle: { ar: "حذف حسابك وخزنتك؟", en: "Delete your account and vault?" },
+  deleteBody: {
+    ar: "نحذف كل ما في خزنتك بعد ٧ أيام، ولن يستلم أوصياؤك شيئاً.",
+    en: "We delete everything in your vault in 7 days, and your executors receive nothing.",
+  },
+  deleteFinal: {
+    ar: "لا يستطيع أحد — ولا نحن — استعادتها بعد ذلك. يمكنك الإلغاء من هنا حتى ذلك اليوم.",
+    en: "Nobody — us included — can restore it afterwards. You can cancel here until then.",
+  },
+  deleteConfirm: { ar: "احذف بعد ٧ أيام", en: "Delete in 7 days" },
+  deletePrompt: {
+    ar: "أكّد ببصمتك لحذف حسابك",
+    en: "Confirm with your fingerprint to delete your account",
+  },
+  deleteNotConfirmed: {
+    ar: "لم تُؤكَّد البصمة، فلم يُطلب الحذف.",
+    en: "Fingerprint not confirmed, so nothing was requested.",
+  },
+  deleteReportOpen: {
+    ar: "يوجد بلاغ وفاة مفتوح عنك. أكّد الحياة من الرئيسية أولاً.",
+    en: "A death report about you is open. Confirm you're alive on Home first.",
+  },
+  deleteVaultClosed: {
+    ar: "أُغلقت هذه الخزنة بعد بلاغ وفاة، فلا تُحذف من هنا.",
+    en: "This vault was closed after a death report and cannot be deleted here.",
+  },
+  deleteFailed: {
+    ar: "تعذّر طلب الحذف. حاول مرة أخرى.",
+    en: "Could not request the deletion. Try again.",
+  },
+  keepTitle: { ar: "إلغاء حذف حسابك؟", en: "Cancel the deletion?" },
+  keepBody: { ar: "تبقى خزنتك كما هي.", en: "Your vault stays as it is." },
+  keepConfirm: { ar: "أبقِ حسابي", en: "Keep my account" },
+  keepFailed: {
+    ar: "تعذّر الإلغاء. حاول مرة أخرى.",
+    en: "Could not cancel. Try again.",
+  },
+
   languageArabic: { ar: "العربية", en: "Arabic" },
   languageEnglish: { ar: "English", en: "English" },
   // Direction is native config and cannot follow the locale at runtime.

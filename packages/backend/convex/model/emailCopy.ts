@@ -146,6 +146,23 @@ export const REPORT_WAITING_OWNER_COPY = {
   },
 } as const satisfies LocalisedCopy
 
+/**
+ * The owner asked to delete their account; `{date}` is when it happens. Mailed
+ * because the inbox is where an owner whose phone was used without them finds
+ * out — and, like the report notices, with no link: the only cancel is in the
+ * app.
+ */
+export const DELETION_SCHEDULED_COPY = {
+  ar: {
+    subject: "مهم: طُلب حذف حسابك في وصيّة",
+    body: "طُلب حذف حسابك وخزنتك. سنحذف كل شيء في {date}، ولن يستلم أوصياؤك شيئاً، ولا يستطيع أحد — ولا نحن — استعادتها بعد ذلك. إن لم تكن أنت، افتح تطبيق وصيّة على جوّالك وألغِ الحذف قبل هذا التاريخ. لن نرسل لك رابطاً لإلغائه.",
+  },
+  en: {
+    subject: "Important: deletion of your Wassiya account was requested",
+    body: "Deletion of your account and vault was requested. We will delete everything on {date}; your executors will receive nothing, and nobody — us included — can restore it afterwards. If this wasn't you, open the Wassiya app on your phone and cancel before that date. We will never send you a link to cancel it.",
+  },
+} as const satisfies LocalisedCopy
+
 // ── The claimant's side ──────────────────────────────────────────────────────
 //
 // Until these existed the reporter received **nothing** across a claim's whole life:

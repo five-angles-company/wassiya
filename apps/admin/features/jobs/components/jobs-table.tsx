@@ -33,6 +33,9 @@ export function jobLabel(name: string, locale: Locale): string {
   if (name === "claims.sweepUnmatched") return labels.jobClaimsUnmatched
   if (name === "deliveries.expire") return labels.jobDeliveriesExpire
   if (name === "support.purgeFiles") return labels.jobSupportPurge
+  if (name === "account.sweepDeletions") return labels.jobAccountDeletions
+  if (name === "claims.purgeCertificates") return labels.jobCertificatesPurge
+  if (name === "email.purgeSent") return labels.jobEmailPurge
   // A name with no label is a cron that was added without one. Showing it raw
   // beats hiding the job.
   return name

@@ -18,25 +18,20 @@ import type { SetupStep } from "@/lib/setup-flow"
  *  - `recoveryKit` owns `/setup/biometrics` so the key screen can hand off to
  *    the kit after the key exists, and `explainer` owns it so it can be reached
  *    before it does.
- *  - `done` owns `/setup/complete` so 2.6 is not immediately redirected to the
- *    tabs by the very milestone it is reporting.
+ *  - `recoveryKit` and `done` both own the kit and 2.6: the kit's save is the
+ *    milestone that flips one into the other, and it lands while the kit is
+ *    still on screen. Owning only one side would bounce the user mid-hand-off.
+ *    Sitting on the kit when already `done` is harmless — it writes nothing
+ *    until the owner confirms a new sheet.
  */
 const OWNED_PATHS: Record<SetupStep, readonly string[]> = {
   welcome: [],
   kyc: ["/setup/kyc"],
   kycPending: ["/setup/kyc"],
   explainer: ["/setup/kyc", "/setup/biometrics"],
-  recoveryKit: [
-    "/setup/biometrics",
-    "/setup/recovery-kit",
-    // 2.6 is reached *before* `markPaperPrinted` lands, so the kit step has to
-    // own the destination too or the gate bounces the user back mid-hand-off.
-    "/setup/complete",
-  ],
+  recoveryKit: ["/setup/biometrics", "/setup/recovery-kit", "/setup/complete"],
   recovery: [],
-  // Deliberately NOT `/setup/recovery-kit`: a finished run that wandered back
-  // there would re-enter the ceremony and rotate the paper version for nothing.
-  done: ["/setup/complete"],
+  done: ["/setup/recovery-kit", "/setup/complete"],
 }
 
 /**

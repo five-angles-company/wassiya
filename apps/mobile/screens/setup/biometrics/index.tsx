@@ -17,11 +17,11 @@ import { SetupStepMeter } from "@/components/setup-step-meter"
 import { useStrings } from "@/i18n/use-strings"
 import {
   generateAndStoreMk,
-  getInstallId,
   patchEnrolment,
   readEnrolment,
 } from "@/lib/secure-vault"
 import { SETUP_STEP_INDEX } from "@/lib/setup-flow"
+import { thisDevice } from "@/lib/this-device"
 
 type Availability = "checking" | "ready" | "unenrolled"
 
@@ -106,20 +106,14 @@ export function BiometricsScreen() {
         }
       }
 
-      // Persisted before `register` so a crash between the two cannot enrol
-      // this handset twice — the retry finds the same id and updates one row.
-      const installId = await getInstallId()
+      const device = await thisDevice()
 
       await generateAndStoreMk(t.prompt)
       // MK now exists. Record that before anything that can fail on the network.
       await patchEnrolment({})
 
       try {
-        const { deviceId } = await registerDevice({
-          installId,
-          name: Platform.OS === "ios" ? "iPhone" : "Android",
-          platform: Platform.OS === "ios" ? "ios" : "android",
-        })
+        const { deviceId } = await registerDevice(device)
         await patchEnrolment({ deviceId })
       } catch {
         // Inventory only. The key is already sealed and usable.

@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as account from "../account.js";
 import type * as admin from "../admin.js";
 import type * as assets from "../assets.js";
 import type * as audit from "../audit.js";
@@ -27,6 +28,7 @@ import type * as keyring from "../keyring.js";
 import type * as model_access from "../model/access.js";
 import type * as model_assetTypes from "../model/assetTypes.js";
 import type * as model_claimFlow from "../model/claimFlow.js";
+import type * as model_devices from "../model/devices.js";
 import type * as model_didit from "../model/didit.js";
 import type * as model_emailCopy from "../model/emailCopy.js";
 import type * as model_entitlements from "../model/entitlements.js";
@@ -38,6 +40,7 @@ import type * as model_plans from "../model/plans.js";
 import type * as model_settings from "../model/settings.js";
 import type * as model_staff from "../model/staff.js";
 import type * as model_support from "../model/support.js";
+import type * as model_vault from "../model/vault.js";
 import type * as notifications from "../notifications.js";
 import type * as outreach from "../outreach.js";
 import type * as plans from "../plans.js";
@@ -60,6 +63,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  account: typeof account;
   admin: typeof admin;
   assets: typeof assets;
   audit: typeof audit;
@@ -79,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "model/access": typeof model_access;
   "model/assetTypes": typeof model_assetTypes;
   "model/claimFlow": typeof model_claimFlow;
+  "model/devices": typeof model_devices;
   "model/didit": typeof model_didit;
   "model/emailCopy": typeof model_emailCopy;
   "model/entitlements": typeof model_entitlements;
@@ -90,6 +95,7 @@ declare const fullApi: ApiFromModules<{
   "model/settings": typeof model_settings;
   "model/staff": typeof model_staff;
   "model/support": typeof model_support;
+  "model/vault": typeof model_vault;
   notifications: typeof notifications;
   outreach: typeof outreach;
   plans: typeof plans;

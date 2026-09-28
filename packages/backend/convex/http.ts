@@ -32,7 +32,9 @@ http.route({
         // `id` is optional on the deleted-user payload.
         const clerkUserId = event.data.id
         if (clerkUserId !== undefined) {
-          await ctx.runMutation(internal.users.deleteFromClerk, { clerkUserId })
+          await ctx.runMutation(internal.account.onClerkDeleted, {
+            clerkUserId,
+          })
         }
         break
       }

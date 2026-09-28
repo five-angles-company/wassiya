@@ -15,9 +15,10 @@
  *  1. MK is sealed into the keystore before anything is marked used. A crash
  *     between them leaves a working device and a sheet the server still believes
  *     is unused; the reverse burns the sheet without recovering anything.
- *  2. `markPaperUsed` last — it writes the in-app alert *and* sends the mail.
- *     With no guardian in the loop it is the only thing standing between a
- *     stolen sheet and a silent theft.
+ *  2. `markPaperUsed` last — it writes the in-app alert, sends the mail *and*
+ *     lists this phone in `devices`, in one transaction. With no guardian in
+ *     the loop it is the only thing standing between a stolen sheet and a
+ *     silent theft.
  *  3. Marking a sheet used does not invalidate it. Only printing a new one does,
  *     which is why the success screen pushes at reprinting.
  */
@@ -41,6 +42,7 @@ import { useStrings } from "@/i18n/use-strings"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 import { SECRET_INPUT_PROPS } from "@/lib/secret-input-props"
 import { patchEnrolment, storeRecoveredMk } from "@/lib/secure-vault"
+import { thisDevice } from "@/lib/this-device"
 
 type Phase = "input" | "working" | "done" | "failed" | "badCode"
 
@@ -88,11 +90,14 @@ export function RecoveryScreen() {
         keyring.paperVersion
       )
 
+      const device = await thisDevice()
+
       // 1 — the key, before anything is spent.
       await storeRecoveredMk(mk, t.storePrompt)
       await patchEnrolment({ paperVersion: keyring.paperVersion })
       // 2 — last, and it is what raises the alarm.
-      await markPaperUsed({})
+      const { deviceId } = await markPaperUsed({ device })
+      await patchEnrolment({ deviceId }).catch(() => undefined)
 
       setPhase("done")
     } catch {
@@ -112,7 +117,7 @@ export function RecoveryScreen() {
           <View className="gap-2.5">
             <PrimaryCta
               label={t.reprint!}
-              onPress={() => router.replace("/setup/recovery-kit")}
+              onPress={() => router.replace("/settings/recovery-sheet/reissue")}
             />
             <PrimaryCta
               tone="quiet"

@@ -57,4 +57,23 @@ crons.interval(
   {}
 )
 
+// Carry out account deletions whose grace period has run out.
+crons.interval(
+  "carry out account deletions",
+  { hours: 1 },
+  internal.account.sweep,
+  {}
+)
+
+// Delete the death certificates of reports that ended long enough ago.
+crons.interval(
+  "purge death certificates",
+  { hours: 24 },
+  internal.claims.purgeCertificates,
+  {}
+)
+
+// Delete settled mail from the Resend component's tables.
+crons.interval("purge sent email", { hours: 24 }, internal.email.purgeSent, {})
+
 export default crons
