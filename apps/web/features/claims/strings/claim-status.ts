@@ -60,11 +60,11 @@ export const CLAIM_STATUS = {
     en: "A new report about this vault can't be filed for 90 days.",
   },
   // Not `locked`: nothing is held against the person who filed. The commonest
-  // cause is a mistyped email, and the right next step is to file again.
+  // cause is a typo, and the right next step is to file again.
   closedHeading: { ar: "انتهى هذا البلاغ", en: "This report has ended" },
   closedBody: {
-    ar: "لم نجد خزنة بالبريد الذي أدخلته. غالباً يكون السبب خطأً في كتابته — راجعه وقدّم بلاغاً جديداً، ولا قيد عليك في ذلك.",
-    en: "We found no vault with the email you entered. Usually it's a typo — check it and file a new report. There's no restriction on doing so.",
+    ar: "لم نجد خزنة برقم الهوية أو البريد الذي أدخلته. غالباً يكون السبب خطأً في الكتابة — راجعه وقدّم بلاغاً جديداً، ولا قيد عليك في ذلك.",
+    en: "We found no vault with the ID number or email you entered. Usually it's a typo — check it and file a new report. There's no restriction on doing so.",
   },
   lockedHeading: { ar: "هذه الخزنة موقوفة مؤقتاً", en: "This vault is paused for now" },
   lockedBody: {

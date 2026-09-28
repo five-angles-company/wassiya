@@ -2,7 +2,7 @@ import type { Dictionary } from "@/lib/i18n/locale"
 
 /** ٧ — the release pipeline, from the console's side. */
 export const RELEASES = {
-  pageTitle: { ar: "التسليم", en: "Releases" },
+  pageTitle: { ar: "مسار التسليم", en: "Releases" },
 
   intro: {
     ar: "ما ينتظر انقضاء مهلة الاعتراض، وما انقضت مهلته وكم من أوصيائه صار تسليمه جاهزاً.",
@@ -14,13 +14,13 @@ export const RELEASES = {
   // vocabulary in both places.
   colBand: { ar: "الحالة", en: "State" },
   bandCounting: { ar: "في المهلة", en: "Counting down" },
-  bandReleased: { ar: "أُفرج عنها", en: "Released" },
+  bandReleased: { ar: "بدأ تسليمها", en: "Released" },
 
   colOwner: { ar: "صاحب الخزنة", en: "Vault owner" },
-  colClaimant: { ar: "مقدّم الطلب", en: "Claimant" },
+  colClaimant: { ar: "المُبلِّغ", en: "Claimant" },
   colDeadline: { ar: "نهاية المهلة", en: "Veto ends" },
   colRemaining: { ar: "المتبقي", en: "Remaining" },
-  colReleased: { ar: "تاريخ الإفراج", en: "Released" },
+  colReleased: { ar: "بدء التسليم", en: "Released" },
   colDelivery: { ar: "التسليم", en: "Delivery" },
 
   searchPlaceholder: { ar: "ابحث باسم صاحب الخزنة", en: "Search by vault owner" },
@@ -38,7 +38,7 @@ export const RELEASES = {
     en: "{n} of {total} executors hold a sheet",
   },
   noSheetHint: {
-    ar: "لم يطبع صاحب الخزنة ورقة لأي وصي، فلا يُفتح شيء إلا بورقة استرجاعه.",
+    ar: "لم يطبع صاحب الخزنة ورقة لأي وصي، فلا يُفتح شيء إلا بوثيقة استرداده.",
     en: "The owner printed no executor sheet, so nothing opens except with their own recovery sheet.",
   },
 
@@ -51,7 +51,7 @@ export const RELEASES = {
 
   empty: { ar: "لا شيء في مسار التسليم", en: "Nothing in the release pipeline" },
   emptyHint: {
-    ar: "لا طلب وفاة في المهلة ولا طلب أُفرج عنه بعد.",
+    ar: "لا بلاغ في مدة الاعتراض، ولا بلاغ بدأ تسليمه بعد.",
     en: "No death report is counting down, and none has been released yet.",
   },
 } as const satisfies Dictionary

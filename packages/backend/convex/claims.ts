@@ -4,9 +4,10 @@
 // claim except through those guards, and the release action re-checks
 // `status === "released"` on its own rather than trusting this file.
 //
-// A report reaches `released` only when the death certificate's name matches
-// the owner's verified legal name (an admin's judgement, never a string
-// comparison) and the veto window has elapsed without the owner confirming
+// A report reaches `released` only when staff have judged the person on the
+// death certificate to be the owner, against their verified identity (a blind
+// ID-number check, then name and birth date — never a name string comparison),
+// and the veto window has elapsed without the owner confirming
 // they are alive. The reporter is never asked to verify: they receive nothing
 // by reporting. What each executor receives is a `deliveries` row, with its own
 // identity gate. Release also closes the owner's vault (`users.vaultClosedAt`).
@@ -28,11 +29,13 @@ import {
   CLAIM_RATE_LIMIT,
   CLAIM_RATE_WINDOW_MS,
   DAY_MS,
+  ID_CHECK_ATTEMPTS,
   VETO_LOCKOUT_DAYS,
   VETO_WINDOW_DAYS,
   isLockedOut,
   nameMatchBlockedReason,
   nameMatchOutcome,
+  rejectReasonValidator,
   vetoWindowElapsed,
 } from "./model/claimFlow"
 import {
@@ -45,6 +48,12 @@ import {
   sendReportFiledToOwner,
   sendReportWaitingToOwner,
 } from "./email"
+import {
+  MIN_ID_NUMBER_LENGTH,
+  identityNumberHash,
+  normalizeIdentityNumber,
+} from "./model/identityHash"
+import { usersWithIdentityHash } from "./model/identityLookup"
 import { recordJobRun } from "./model/jobRuns"
 import { getCurrentUserOrThrow } from "./users"
 
@@ -141,30 +150,52 @@ export async function patchClaim(
  * distinguishes a match from a miss — the first two steps of the funnel are
  * identical either way, and `sweepUnmatched` is what eventually says so, by
  * email, days later.
+ *
+ * ## How it finds the vault
+ *
+ * By the ID number on the certificate first, through `identityLookup`; the
+ * owner's email is the optional second route. At least one is required. The
+ * number wins when the two point at different vaults; a number that matches
+ * several accounts decides nothing unless the email picks one of them, and
+ * otherwise the report goes to staff unmatched. The number is hashed on
+ * arrival and only the hash is kept.
  */
 export const submit = mutation({
   args: {
-    subjectEmail: v.string(),
+    subjectIdNumber: v.optional(v.string()),
+    subjectEmail: v.optional(v.string()),
     claimantName: v.string(),
     claimantContact: v.string(),
     certificateStorageId: v.optional(v.id("_storage")),
-    certificateName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const claimant = await getCurrentUserOrThrow(ctx)
     const now = Date.now()
 
-    await assertUnderRateLimit(ctx, claimant._id, now)
-
     // Normalised here, not in the form. The web client lowercases already, but
     // it is not the only possible caller, and a stray capital used to mean a
     // real vault silently did not match.
-    const subjectEmail = args.subjectEmail.trim().toLowerCase()
+    const subjectEmail = args.subjectEmail?.trim().toLowerCase() || undefined
+    const idNumber = args.subjectIdNumber?.trim() || undefined
+    if (subjectEmail === undefined && idNumber === undefined) {
+      throw new ConvexError({ code: "claim", reason: "no_subject" })
+    }
+    if (
+      idNumber !== undefined &&
+      normalizeIdentityNumber(idNumber).length < MIN_ID_NUMBER_LENGTH
+    ) {
+      throw new ConvexError({ code: "claim", reason: "bad_id_number" })
+    }
 
-    const subject = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", subjectEmail))
-      .unique()
+    await assertUnderRateLimit(ctx, claimant._id, now)
+
+    const subjectIdHash =
+      idNumber === undefined ? undefined : await identityNumberHash(idNumber)
+    const { subject, matchedBy } = await findSubject(
+      ctx,
+      subjectIdHash,
+      subjectEmail
+    )
 
     // Claiming against yourself is not an information leak to refuse loudly:
     // you already know whether you have a vault.
@@ -172,16 +203,15 @@ export const submit = mutation({
       throw new ConvexError({ code: "claim", reason: "own_vault" })
     }
 
-    // Keyed on the person and the address, not on the typed contact string. The
-    // old key let a vetoed claimant walk around their own 90-day bar by
-    // entering a different phone number, and it could not index an unmatched
-    // claim at all.
-    const prior = await ctx.db
-      .query("claims")
-      .withIndex("by_claimantUserId_and_subjectEmail", (q) =>
-        q.eq("claimantUserId", claimant._id).eq("subjectEmail", subjectEmail)
-      )
-      .take(20)
+    // Keyed on the person and the vault, not on the typed contact string, which
+    // let a vetoed claimant walk around their own 90-day bar by entering a
+    // different phone number. A matched report is keyed on the vault however it
+    // was found, so filing by number cannot dodge a bar earned filing by email.
+    const prior = await priorClaimsOf(ctx, claimant._id, {
+      subject,
+      subjectIdHash,
+      subjectEmail,
+    })
 
     // An open claim already exists — do not stack a second one on it. The
     // claimant gets the id of the one they already have rather than silence:
@@ -207,11 +237,12 @@ export const submit = mutation({
       // staff have something to resolve.
       subjectUserId: subject?._id,
       subjectEmail,
+      subjectIdHash,
+      matchedBy,
       claimantName: args.claimantName,
       claimantContact: args.claimantContact,
       claimantUserId: claimant._id,
       certificateStorageId: args.certificateStorageId,
-      certificateName: args.certificateName,
       status: barred ? "locked" : "submitted",
       lockedUntil: barred ? lockout.lockedUntil : undefined,
       closedReason: barred ? "review_failed" : undefined,
@@ -220,7 +251,6 @@ export const submit = mutation({
       searchText: searchTextFor({
         claimantName: args.claimantName,
         claimantContact: args.claimantContact,
-        certificateName: args.certificateName,
       }),
     })
 
@@ -368,7 +398,7 @@ export const mine = query({
  * Returns `null` rather than throwing for a bad or foreign id: this backs a page
  * reached from an emailed link, and mail clients truncate them.
  *
- * Never returns `nameMatch` or `staffNote` — the same exclusions
+ * Never returns `nameMatch`, `staffNote` or `rejectReason` — the same exclusions
  * `publicStatus` states, for the same reason.
  */
 export const forClaimant = query({
@@ -386,7 +416,6 @@ export const forClaimant = query({
       subjectEmail: claim.subjectEmail ?? null,
       status: claim.status,
       certificateReceived: claim.certificateStorageId !== undefined,
-      certificateName: claim.certificateName ?? null,
       vetoDeadline: claim.vetoDeadline ?? null,
       lockedUntil: claim.lockedUntil ?? null,
       submittedAt: claim._creationTime,
@@ -558,10 +587,65 @@ export const adminLinkSubject = mutation({
 })
 
 /**
+ * The reviewer's blind check: does the ID number printed on the certificate
+ * match the owner's verified document? Answers only yes or no — staff never
+ * read the owner's number, and the typed one is hashed and dropped.
+ *
+ * ⚠️ `ID_CHECK_ATTEMPTS` per report, each audited. Uncapped, this is an oracle
+ * for guessing an owner's number. A number too short to hash costs no attempt.
+ * It does not stamp `updatedAt`: the reporter's case page must not read a
+ * staff check as the report moving.
+ */
+export const adminCheckIdNumber = mutation({
+  args: { claimId: v.id("claims"), idNumber: v.string() },
+  handler: async (ctx, { claimId, idNumber }) => {
+    const actor = await requirePermission(ctx, "claims.rule")
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) {
+      throw new Error("Not found")
+    }
+    const subjectUserId = claim.subjectUserId
+    if (subjectUserId === undefined) {
+      throw new Error("This claim matched no vault")
+    }
+    if (claim.status !== "submitted") {
+      throw new Error("This claim is past review")
+    }
+    if (claim.idCheckMatched === true) {
+      throw new Error("The number already matched")
+    }
+    const attempts = claim.idCheckAttempts ?? 0
+    if (attempts >= ID_CHECK_ATTEMPTS) {
+      throw new Error("No attempts left")
+    }
+    if (normalizeIdentityNumber(idNumber).length < MIN_ID_NUMBER_LENGTH) {
+      throw new Error("That number is too short")
+    }
+
+    const hash = await identityNumberHash(idNumber)
+    const subject = await ctx.db.get("users", subjectUserId)
+    const matched = (subject?.identityDocHashes ?? []).includes(hash)
+    await patchClaim(
+      ctx,
+      claimId,
+      { idCheckAttempts: attempts + 1, idCheckMatched: matched },
+      null
+    )
+    await writeStaffAudit(ctx, {
+      actor,
+      subject: subjectUserId,
+      event: "claim.id_checked",
+      meta: { claimId, matched, attempt: attempts + 1 },
+    })
+    return { matched, attemptsLeft: ID_CHECK_ATTEMPTS - attempts - 1 }
+  },
+})
+
+/**
  * End a claim without a verdict.
  *
- * Distinct from rejecting one. `adminSetNameMatch(false)` is a *ruling* — it
- * locks the claimant out for 90 days — and it needs a vault to rule about. This
+ * Distinct from rejecting one. `adminSetNameMatch(false)` is a *ruling*, and it
+ * needs a vault to rule about. This
  * is for a claim that cannot be ruled on at all: no vault matched and staff
  * cannot find one. It carries no bar, because the commonest cause is a mistyped
  * address and the right next step is to file again with the right one.
@@ -684,10 +768,8 @@ export const sweepUnmatched = internalMutation({
  * address used to insert nothing — so the address is recoverable from the
  * subject's own row.
  *
- * It matters because `subjectEmail` is now the dedupe and lockout key. A
- * vetoed claimant whose old claim has no email on it would not be found by
- * `by_claimantUserId_and_subjectEmail`, and would walk straight through their
- * own 90-day bar.
+ * Housekeeping only: a matched report's dedupe and lockout key is
+ * `subjectUserId`, which every pre-existing claim already has.
  *
  * Run once per deployment: `npx convex run claims:backfillSubjectEmail '{}'`.
  * Idempotent — it skips anything already filled — so running it twice is safe
@@ -736,7 +818,6 @@ export const pendingReview = query({
         return {
           id: row._id,
           claimantName: row.claimantName,
-          certificateName: row.certificateName ?? null,
           certificateUrl:
             row.certificateStorageId === undefined
               ? null
@@ -754,11 +835,24 @@ export const pendingReview = query({
  * as the owner's verified legal identity. Never a string comparison in code:
  * transliteration, honorifics and name order make that unsafe in Arabic and in
  * every other script this ships to.
+ *
+ * A rejection must say why (`rejectReason`), and only a rejection may. The
+ * reason is for staff: the claimant's notification and email carry none.
  */
 export const adminSetNameMatch = mutation({
-  args: { claimId: v.id("claims"), nameMatch: v.boolean() },
-  handler: async (ctx, { claimId, nameMatch }) => {
+  args: {
+    claimId: v.id("claims"),
+    nameMatch: v.boolean(),
+    rejectReason: v.optional(rejectReasonValidator),
+  },
+  handler: async (ctx, { claimId, nameMatch, rejectReason }) => {
     const actor = await requirePermission(ctx, "claims.rule")
+    if (!nameMatch && rejectReason === undefined) {
+      throw new Error("A rejection needs a reason")
+    }
+    if (nameMatch && rejectReason !== undefined) {
+      throw new Error("Only a rejection takes a reason")
+    }
     const claim = await ctx.db.get("claims", claimId)
     if (claim === null) {
       throw new Error("Not found")
@@ -781,6 +875,8 @@ export const adminSetNameMatch = mutation({
     }
 
     const status = nameMatchOutcome(nameMatch)
+    // Recorded with the ruling, so the audit says what the reviewer knew.
+    const idCheckMatched = claim.idCheckMatched ?? null
 
     const reviewedAt = Date.now()
     const vetoDeadline =
@@ -797,6 +893,7 @@ export const adminSetNameMatch = mutation({
         vetoDeadline,
         // A rejection is terminal, so review is also when this claim closed.
         closedAt: status === "locked" ? reviewedAt : undefined,
+        rejectReason,
       },
       reviewedAt
     )
@@ -804,7 +901,10 @@ export const adminSetNameMatch = mutation({
       actor,
       subject: subjectUserId,
       event: "claim.name_match_set",
-      meta: { claimId, nameMatch, status },
+      meta:
+        rejectReason === undefined
+          ? { claimId, nameMatch, status, idCheckMatched }
+          : { claimId, nameMatch, status, idCheckMatched, rejectReason },
     })
 
     // The owner's last chance to say they are alive: in the app, and by mail
@@ -1014,12 +1114,83 @@ async function assertUnderRateLimit(
  * Not security-sensitive and not new disclosure: all three fields are already
  * readable by the same admin queries that read this one.
  */
+/** The vault a report names — see "How it finds the vault" on `submit`. */
+async function findSubject(
+  ctx: QueryCtx,
+  subjectIdHash: string | undefined,
+  subjectEmail: string | undefined
+): Promise<{
+  subject: Doc<"users"> | null
+  matchedBy: "id_number" | "email" | undefined
+}> {
+  const byEmail =
+    subjectEmail === undefined
+      ? null
+      : await ctx.db
+          .query("users")
+          .withIndex("by_email", (q) => q.eq("email", subjectEmail))
+          .unique()
+  const byNumber =
+    subjectIdHash === undefined
+      ? []
+      : await usersWithIdentityHash(ctx, subjectIdHash)
+
+  const numbered =
+    byNumber.length === 1
+      ? byNumber[0]
+      : byEmail !== null && byNumber.includes(byEmail._id)
+        ? byEmail._id
+        : undefined
+  if (numbered !== undefined) {
+    const subject = await ctx.db.get("users", numbered)
+    if (subject !== null) return { subject, matchedBy: "id_number" }
+  }
+  if (byNumber.length > 1) return { subject: null, matchedBy: undefined }
+  return byEmail === null
+    ? { subject: null, matchedBy: undefined }
+    : { subject: byEmail, matchedBy: "email" }
+}
+
+/** This claimant's earlier reports about the same vault — dedupe and lockout. */
+async function priorClaimsOf(
+  ctx: QueryCtx,
+  claimantUserId: Id<"users">,
+  target: {
+    subject: Doc<"users"> | null
+    subjectIdHash: string | undefined
+    subjectEmail: string | undefined
+  }
+): Promise<Doc<"claims">[]> {
+  const claims = ctx.db.query("claims")
+  const { subject, subjectIdHash, subjectEmail } = target
+  if (subject !== null) {
+    return await claims
+      .withIndex("by_claimantUserId_and_subjectUserId", (q) =>
+        q.eq("claimantUserId", claimantUserId).eq("subjectUserId", subject._id)
+      )
+      .take(20)
+  }
+  if (subjectIdHash !== undefined) {
+    return await claims
+      .withIndex("by_claimantUserId_and_subjectIdHash", (q) =>
+        q
+          .eq("claimantUserId", claimantUserId)
+          .eq("subjectIdHash", subjectIdHash)
+      )
+      .take(20)
+  }
+  return await claims
+    .withIndex("by_claimantUserId_and_subjectEmail", (q) =>
+      q.eq("claimantUserId", claimantUserId).eq("subjectEmail", subjectEmail)
+    )
+    .take(20)
+}
+
 export function searchTextFor(parts: {
   claimantName: string
   claimantContact: string
-  certificateName?: string | undefined
 }): string {
-  return [parts.claimantName, parts.claimantContact, parts.certificateName]
+  return [parts.claimantName, parts.claimantContact]
     .filter((part): part is string => part !== undefined && part.length > 0)
     .join(" ")
 }
@@ -1056,8 +1227,9 @@ export type Claim = Doc<"claims">
  *  - `subjectUserId` and anything about the deceased's account, including
  *    whether one exists. `claims.submit` is careful to answer uniformly so it
  *    is not an oracle; this must not undo that.
- *  - `certificateName`, `nameMatch` — review internals. A claimant
- *    learning that name matching failed would learn how to make it pass.
+ *  - `certificateName`, `nameMatch`, `rejectReason`, `subjectIdHash`,
+ *    `idCheck*` — review internals. A claimant learning which check failed
+ *    would learn how to make it pass.
  *  - Anything at all about the vault's contents.
  *
  * What is left is a status, two dates and a reference, which is precisely the
@@ -1136,7 +1308,6 @@ export const attachCertificate = mutation({
   args: {
     claimId: v.id("claims"),
     certificateStorageId: v.id("_storage"),
-    certificateName: v.string(),
   },
   handler: async (ctx, args) => {
     const claimant = await getCurrentUserOrThrow(ctx)
@@ -1147,22 +1318,10 @@ export const attachCertificate = mutation({
     if (claim.status !== "submitted") {
       throw new Error("This claim is no longer accepting documents")
     }
-    if (args.certificateName.trim().length === 0) {
-      throw new Error("The name on the certificate is required")
-    }
 
     await patchClaim(ctx, args.claimId, {
       certificateAttachedAt: Date.now(),
       certificateStorageId: args.certificateStorageId,
-      certificateName: args.certificateName.trim(),
-      // Rebuilt, not appended to: the certificate name is arriving now, and a
-      // stale `searchText` would leave the console unable to find a claim by
-      // the very document it is being reviewed against.
-      searchText: searchTextFor({
-        claimantName: claim.claimantName,
-        claimantContact: claim.claimantContact,
-        certificateName: args.certificateName.trim(),
-      }),
     })
     // The audit log is the **owner's** history, and an unmatched claim has no
     // owner — so there is no log for this line to belong to. The fact is not

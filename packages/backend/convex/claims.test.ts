@@ -4,10 +4,13 @@ import { describe, expect, test } from "vitest"
 
 import { api, internal } from "./_generated/api"
 import type { Id } from "./_generated/dataModel"
+import { identityNumberHash } from "./model/identityHash"
 import schema from "./schema"
 
 const modules = import.meta.glob("/convex/**/*.*s")
 const DAY = 24 * 60 * 60 * 1000
+
+process.env.IDENTITY_HASH_SECRET = "test-identity-hash-secret-0123456789abcdef"
 
 async function addUser(t: ReturnType<typeof convexTest>, externalId: string) {
   return await t.run((ctx) =>
@@ -288,3 +291,265 @@ describe("a live report is never hidden behind history", () => {
     expect((await t.run((ctx) => ctx.db.get("claims", live)))?.status).toBe("vetoed")
   })
 })
+
+describe("a rejection says why, to staff only", () => {
+  async function submittedClaim() {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    await t.run((ctx) =>
+      ctx.db.insert("users", {
+        externalId: "staff",
+        name: "Reviewer",
+        email: "staff@example.com",
+        role: "admin",
+        identityStatus: "verified",
+        staffPermissions: ["*"],
+      })
+    )
+    const claimId = await addClaim(t, owner, reporter, { status: "submitted" })
+    return { t, claimId, staff: t.withIdentity({ subject: "staff" }) }
+  }
+
+  test("a rejection without a reason is refused", async () => {
+    const { t, claimId, staff } = await submittedClaim()
+    await expect(
+      staff.mutation(api.claims.adminSetNameMatch, { claimId, nameMatch: false })
+    ).rejects.toThrow("A rejection needs a reason")
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.status).toBe(
+      "submitted"
+    )
+  })
+
+  test("an approval cannot carry a reason", async () => {
+    const { claimId, staff } = await submittedClaim()
+    await expect(
+      staff.mutation(api.claims.adminSetNameMatch, {
+        claimId,
+        nameMatch: true,
+        rejectReason: "unreadable",
+      })
+    ).rejects.toThrow("Only a rejection takes a reason")
+  })
+
+  test("staff read the reason and the reviewer; the reporter reads neither", async () => {
+    const { t, claimId, staff } = await submittedClaim()
+    await staff.mutation(api.claims.adminSetNameMatch, {
+      claimId,
+      nameMatch: false,
+      rejectReason: "not_certificate",
+    })
+
+    const detail = await staff.query(api.admin.claimDetail, { claimId })
+    expect(detail?.claim.status).toBe("locked")
+    expect(detail?.claim.rejectReason).toBe("not_certificate")
+    expect(detail?.claim.reviewedBy).toBe("Reviewer")
+
+    const mine = await t
+      .withIdentity({ subject: "reporter" })
+      .query(api.claims.forClaimant, { claimId })
+    expect(mine?.status).toBe("locked")
+    expect(mine).not.toHaveProperty("rejectReason")
+    expect(mine).not.toHaveProperty("nameMatch")
+  })
+})
+
+describe("a report finds the vault by the ID number on the certificate", () => {
+  const filing = { claimantName: "Reporter", claimantContact: "0500000000" }
+
+  test("the number finds the vault, and only its hash is kept", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    await addUser(t, "reporter")
+    await verifyIdentity(t, owner, "1023456789")
+
+    const { claimId } = await t
+      .withIdentity({ subject: "reporter" })
+      .mutation(api.claims.submit, { ...filing, subjectIdNumber: "1 023-456 789" })
+    const claim = await t.run((ctx) => ctx.db.get("claims", claimId))
+    expect(claim?.subjectUserId).toBe(owner)
+    expect(claim?.matchedBy).toBe("id_number")
+    expect(claim?.subjectIdHash).toBeDefined()
+    expect(JSON.stringify(claim)).not.toContain("1023456789")
+  })
+
+  test("the number wins over an email that names another vault", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    await addUser(t, "other")
+    await addUser(t, "reporter")
+    await verifyIdentity(t, owner, "1023456789")
+
+    const { claimId } = await t.withIdentity({ subject: "reporter" }).mutation(api.claims.submit, {
+      ...filing,
+      subjectIdNumber: "1023456789",
+      subjectEmail: "other@example.com",
+    })
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.subjectUserId).toBe(owner)
+  })
+
+  test("the email still finds the vault when the number matches nothing", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    await addUser(t, "reporter")
+
+    const { claimId } = await t.withIdentity({ subject: "reporter" }).mutation(api.claims.submit, {
+      ...filing,
+      subjectIdNumber: "2099999999",
+      subjectEmail: "owner@example.com",
+    })
+    const claim = await t.run((ctx) => ctx.db.get("claims", claimId))
+    expect(claim?.subjectUserId).toBe(owner)
+    expect(claim?.matchedBy).toBe("email")
+  })
+
+  test("a number on two accounts decides nothing unless the email picks one", async () => {
+    const t = convexTest(schema, modules)
+    const first = await addUser(t, "first")
+    const second = await addUser(t, "second")
+    await addUser(t, "reporter")
+    await verifyIdentity(t, first, "1023456789")
+    await verifyIdentity(t, second, "1023456789")
+    const reporter = t.withIdentity({ subject: "reporter" })
+
+    const alone = await reporter.mutation(api.claims.submit, { ...filing, subjectIdNumber: "1023456789" })
+    expect((await t.run((ctx) => ctx.db.get("claims", alone.claimId)))?.subjectUserId).toBeUndefined()
+
+    const picked = await reporter.mutation(api.claims.submit, {
+      ...filing,
+      subjectIdNumber: "1023456789",
+      subjectEmail: "second@example.com",
+    })
+    expect((await t.run((ctx) => ctx.db.get("claims", picked.claimId)))?.subjectUserId).toBe(second)
+  })
+
+  test("a report needs a number or an email, and a number long enough to be one", async () => {
+    const t = convexTest(schema, modules)
+    await addUser(t, "reporter")
+    const reporter = t.withIdentity({ subject: "reporter" })
+    await expect(reporter.mutation(api.claims.submit, filing)).rejects.toMatchObject({
+      data: { code: "claim", reason: "no_subject" },
+    })
+    await expect(
+      reporter.mutation(api.claims.submit, { ...filing, subjectIdNumber: "12" })
+    ).rejects.toMatchObject({ data: { code: "claim", reason: "bad_id_number" } })
+  })
+
+  test("a veto earned by email bars a report filed by number", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    await verifyIdentity(t, owner, "1023456789")
+    await t.run((ctx) =>
+      ctx.db.insert("claims", {
+        subjectUserId: owner,
+        subjectEmail: "owner@example.com",
+        claimantUserId: reporter,
+        claimantName: "Reporter",
+        claimantContact: "0500000000",
+        status: "vetoed",
+        lockedUntil: Date.now() + 30 * DAY,
+      })
+    )
+
+    const { claimId } = await t
+      .withIdentity({ subject: "reporter" })
+      .mutation(api.claims.submit, { ...filing, subjectIdNumber: "1023456789" })
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.status).toBe("locked")
+  })
+
+  test("the lookup follows the verified document, and leaves with the account", async () => {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    await verifyIdentity(t, owner, "1023456789")
+    await verifyIdentity(t, owner, "2034567890")
+    const rows = await t.run((ctx) =>
+      ctx.db.query("identityLookup").withIndex("by_userId", (q) => q.eq("userId", owner)).collect()
+    )
+    expect(rows.map((row) => row.hash)).toEqual([await identityNumberHash("2034567890")])
+
+    await t.mutation(internal.users.deleteFromClerk, { clerkUserId: "owner" })
+    expect(await t.run((ctx) => ctx.db.query("identityLookup").collect())).toEqual([])
+  })
+})
+
+describe("the reviewer's blind ID-number check", () => {
+  async function setup() {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    await t.run((ctx) =>
+      ctx.db.insert("users", {
+        externalId: "staff",
+        name: "Reviewer",
+        email: "staff@example.com",
+        role: "admin",
+        identityStatus: "verified",
+        staffPermissions: ["*"],
+      })
+    )
+    await verifyIdentity(t, owner, "1023456789")
+    const claimId = await addClaim(t, owner, reporter, { status: "submitted" })
+    return { t, owner, claimId, staff: t.withIdentity({ subject: "staff" }) }
+  }
+
+  test("a match answers yes once, and is recorded without the number", async () => {
+    const { t, owner, claimId, staff } = await setup()
+    const result = await staff.mutation(api.claims.adminCheckIdNumber, {
+      claimId,
+      idNumber: "1023 456 789",
+    })
+    expect(result).toEqual({ matched: true, attemptsLeft: 2 })
+    await expect(
+      staff.mutation(api.claims.adminCheckIdNumber, { claimId, idNumber: "1023456789" })
+    ).rejects.toThrow("The number already matched")
+
+    const audit = await t.run((ctx) =>
+      ctx.db.query("auditLog").withIndex("by_userId_and_at", (q) => q.eq("userId", owner)).collect()
+    )
+    const checks = audit.filter((row) => row.event === "claim.id_checked")
+    expect(checks).toHaveLength(1)
+    expect(JSON.stringify(checks)).not.toContain("1023456789")
+  })
+
+  test("three wrong numbers close the check; a short one costs nothing", async () => {
+    const { claimId, staff } = await setup()
+    await expect(
+      staff.mutation(api.claims.adminCheckIdNumber, { claimId, idNumber: "12" })
+    ).rejects.toThrow("too short")
+    for (const left of [2, 1, 0]) {
+      const result = await staff.mutation(api.claims.adminCheckIdNumber, {
+        claimId,
+        idNumber: "2099999999",
+      })
+      expect(result).toEqual({ matched: false, attemptsLeft: left })
+    }
+    await expect(
+      staff.mutation(api.claims.adminCheckIdNumber, { claimId, idNumber: "1023456789" })
+    ).rejects.toThrow("No attempts left")
+  })
+
+  test("the owner's identity reaches the reviewer, never the numbers", async () => {
+    const { claimId, staff } = await setup()
+    const detail = await staff.query(api.admin.claimDetail, { claimId })
+    expect(detail?.subject.birthDate).toBe("1961-03-14")
+    expect(detail?.subject.hasIdNumbers).toBe(true)
+    expect(detail?.claim.idCheck).toEqual({ attempts: 0, max: 3, matched: null })
+    expect(JSON.stringify(detail)).not.toContain(await identityNumberHash("1023456789"))
+  })
+})
+
+async function verifyIdentity(
+  t: ReturnType<typeof convexTest>,
+  userId: Id<"users">,
+  idNumber: string
+) {
+  await t.mutation(internal.identity.applyWebhookResult, {
+    sessionId: `session-${userId}`,
+    vendorData: userId,
+    status: "verified",
+    verifiedName: "Owner Name",
+    docHashes: [await identityNumberHash(idNumber)],
+    birthDate: "1961-03-14",
+  })
+}

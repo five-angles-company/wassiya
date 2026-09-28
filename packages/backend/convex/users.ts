@@ -8,6 +8,7 @@ import {
   type QueryCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
+import { syncIdentityLookup } from "./model/identityLookup"
 import { bindInvitation } from "./model/staff"
 
 // Protected query. A non-null result proves the Clerk JWT reached Convex and
@@ -153,6 +154,7 @@ export const deleteFromClerk = internalMutation({
       console.warn(`No user to delete for Clerk id ${clerkUserId}`)
       return
     }
+    await syncIdentityLookup(ctx, user._id, [])
     await ctx.db.delete("users", user._id)
   },
 })

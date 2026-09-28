@@ -77,8 +77,8 @@ export const FAQ: readonly { q: LabelSet; a: LabelSet }[] = [
   {
     q: { ar: "كيف أبلّغ عن وفاة؟", en: "How do I report a death?" },
     a: {
-      ar: "اضغط «أبلغ عن وفاة» في الأعلى، ثم أدخل بريد المتوفّى، وأرفق شهادة الوفاة. سنراسلك عند كل خطوة.",
-      en: "Tap “Report a death” above, enter the email the person used and attach the death certificate. We'll email you at every step.",
+      ar: "اضغط «أبلغ عن وفاة» في الأعلى، ثم أدخل رقم هوية المتوفّى كما في شهادة الوفاة، وأرفق الشهادة. سنراسلك عند كل خطوة.",
+      en: "Tap “Report a death” above, enter the person's ID number as printed on the death certificate, and attach the certificate. We'll email you at every step.",
     },
   },
 ]

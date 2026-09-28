@@ -26,14 +26,14 @@ export const RISK = {
 
   itemIdentity: { ar: "الهوية", en: "Identity" },
   itemKey: { ar: "المفتاح", en: "Key" },
-  itemSheet: { ar: "ورقة الاسترجاع", en: "Recovery sheet" },
+  itemSheet: { ar: "وثيقة الاسترداد", en: "Recovery sheet" },
   itemExecutors: { ar: "الأوصياء", en: "Executors" },
   itemDelivery: { ar: "التسليم", en: "Delivery" },
-  itemCheckin: { ar: "نبض الحياة", en: "Check-in" },
+  itemCheckin: { ar: "تأكيد الحياة", en: "Check-in" },
 
   neverPrinted: { ar: "لم تُطبع الورقة", en: "Sheet never printed" },
   neverPrintedHint: {
-    ar: "بلا ورقة، لا طريق للاسترجاع إن فُقد الجهاز.",
+    ar: "بلا وثيقة، لا طريق للاسترداد إن فُقد الجهاز.",
     en: "With no sheet there is no recovery path if the device is lost.",
   },
 

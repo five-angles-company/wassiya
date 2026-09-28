@@ -1,69 +1,51 @@
 "use client"
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card"
-
+import { ClaimFact } from "@/features/claims/components/claim-fact"
+import type { ClaimDetail } from "@/features/claims/lib/detail"
 import { CLAIMS } from "@/features/claims/strings/claims"
 import { t, type Locale } from "@/lib/i18n/locale"
 
 /**
- * Who this report would deliver to. Read-only: on release every executor gets
- * their own delivery and proves their own identity, so there is nothing to act
- * on here — only the fact a reviewer should weigh, which is whether anyone
- * could open what is handed over.
+ * Who this report would deliver to. Read-only: each executor proves their own
+ * identity on release, so the only fact to weigh here is whether anyone could
+ * open what is handed over.
  */
 export function ClaimExecutors({
   executors,
   locale,
 }: {
-  executors: readonly { id: string; name: string; hasSheet: boolean }[]
+  executors: ClaimDetail["executors"]
   locale: Locale
 }) {
   const labels = t(CLAIMS, locale)
   const anyWithoutSheet = executors.some((executor) => !executor.hasSheet)
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-heading text-base">
-          {labels.executorTitle}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
-        <p className="text-xs text-muted-foreground">{labels.executorHint}</p>
-        {executors.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{labels.executorNone}</p>
-        ) : (
-          <ul className="flex flex-col divide-y">
-            {executors.map((executor) => (
-              <li
-                key={executor.id}
-                className="flex items-center justify-between gap-3 py-2 text-sm"
-              >
-                <span className="font-medium">{executor.name}</span>
-                {executor.hasSheet ? (
-                  <span className="text-muted-foreground">
-                    {labels.executorSheet}
-                  </span>
-                ) : (
-                  <span className="text-destructive">
-                    {labels.executorNoSheet}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-        {anyWithoutSheet && (
-          <p className="text-xs text-muted-foreground">
-            {labels.executorNoSheetNote}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <ClaimFact label={labels.executorTitle}>
+      {executors.length === 0 ? (
+        <span className="text-destructive">{labels.executorNone}</span>
+      ) : (
+        executors.map((executor) => (
+          <span key={executor.id}>
+            <bdi className="font-medium">{executor.name}</bdi>
+            <span
+              className={
+                executor.hasSheet ? "text-muted-foreground" : "text-destructive"
+              }
+            >
+              {" · "}
+              {executor.hasSheet
+                ? labels.executorSheet
+                : labels.executorNoSheet}
+            </span>
+          </span>
+        ))
+      )}
+      {anyWithoutSheet && (
+        <span className="mt-1 text-xs text-muted-foreground">
+          {labels.executorNoSheetNote}
+        </span>
+      )}
+    </ClaimFact>
   )
 }

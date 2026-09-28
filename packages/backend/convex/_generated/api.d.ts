@@ -31,6 +31,7 @@ import type * as model_didit from "../model/didit.js";
 import type * as model_emailCopy from "../model/emailCopy.js";
 import type * as model_entitlements from "../model/entitlements.js";
 import type * as model_identityHash from "../model/identityHash.js";
+import type * as model_identityLookup from "../model/identityLookup.js";
 import type * as model_jobRuns from "../model/jobRuns.js";
 import type * as model_permissions from "../model/permissions.js";
 import type * as model_plans from "../model/plans.js";
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "model/emailCopy": typeof model_emailCopy;
   "model/entitlements": typeof model_entitlements;
   "model/identityHash": typeof model_identityHash;
+  "model/identityLookup": typeof model_identityLookup;
   "model/jobRuns": typeof model_jobRuns;
   "model/permissions": typeof model_permissions;
   "model/plans": typeof model_plans;

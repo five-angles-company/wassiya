@@ -35,10 +35,10 @@ import {
  *
  * Row selection exists, because it is how an operator exports a slice or copies
  * a set of ids. **No verdict on a claim may ever be a bulk action**, though:
- * `adminSetNameMatch` routes a rejected claim to `locked` with a 90-day bar and
+ * `adminSetNameMatch` routes a rejected claim to `locked`, and
  * `nameMatchBlockedReason` then answers `"past-review"` for every later call, so
- * there is no admin path back and a mis-aimed bulk reject would permanently lock
- * legitimate executors out of an estate. Bulk operations here are read-only by
+ * there is no admin path back and a mis-aimed bulk reject would irreversibly
+ * close every genuine report it touched. Bulk operations here are read-only by
  * construction; see `data-table-bulk-bar.tsx`.
  */
 export const features = tableFeatures({

@@ -11,10 +11,10 @@ export const ACTIVATION = {
   stageSignedUp: { ar: "سجّل", en: "Signed up" },
   stageIdentityVerified: { ar: "وُثّقت هويته", en: "Identity verified" },
   stageVaultCreated: { ar: "أنشأ الخزنة", en: "Vault created" },
-  stageSheetPrinted: { ar: "طبع ورقة الاسترجاع", en: "Recovery sheet" },
+  stageSheetPrinted: { ar: "طبع وثيقة الاسترداد", en: "Recovery sheet" },
   stageExecutorNamed: { ar: "سمّى وصياً", en: "Executor named" },
   stageDeliveryPrepared: { ar: "طبع ورقة الوصي", en: "Executor sheet" },
-  stageCheckinConfigured: { ar: "فعّل نبض الحياة", en: "Check-in configured" },
+  stageCheckinConfigured: { ar: "فعّل تأكيد الحياة", en: "Check-in configured" },
 
   // Stated on the page rather than quietly omitted: the app's own setup meter
   // has a step this console structurally cannot see.

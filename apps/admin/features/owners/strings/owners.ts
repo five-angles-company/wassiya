@@ -41,7 +41,7 @@ export const OWNERS = {
   sectionExecutors: { ar: "الأوصياء", en: "Executors" },
   sectionDelivery: { ar: "أوراق الأوصياء", en: "Executor sheets" },
   sectionDevices: { ar: "الأجهزة", en: "Devices" },
-  sectionClaims: { ar: "الطلبات", en: "Claims" },
+  sectionClaims: { ar: "بلاغات الوفاة", en: "Death reports" },
 
   verifiedName: { ar: "الاسم الموثّق", en: "Verified name" },
   docType: { ar: "المستند", en: "Document" },
@@ -79,11 +79,11 @@ export const OWNERS = {
   // Said here because this is where an operator is asked to "recover" a
   // handover, and there is nothing Wassiya could recover it with.
   deliveryNote: {
-    ar: "لا نملك أي مفتاح: يفتح الوصي ما سُلِّم بورقته، أو بورقة استرجاع المالك. إن ضاعت كلها فلا يفتحه أحد، ولا نحن.",
+    ar: "لا نملك أي مفتاح: يفتح الوصي ما سُلِّم بورقته، أو بوثيقة استرداد صاحب الخزنة. إن ضاعت كلها فلا يفتحه أحد، ولا نحن.",
     en: "We hold no key: an executor opens the handover with their sheet, or with the owner's recovery sheet. If all of them are lost, nobody can open it — us included.",
   },
   devicesNone: { ar: "لا أجهزة", en: "No devices" },
-  claimsNone: { ar: "لا طلبات", en: "No claims" },
+  claimsNone: { ar: "لا بلاغات", en: "No reports" },
   deviceRevoked: { ar: "مُلغى", en: "Revoked" },
   lastUnlock: { ar: "آخر فتح", en: "Last unlock" },
   never: { ar: "لم يُفتح", en: "Never" },

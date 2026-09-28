@@ -18,19 +18,19 @@ export const DASHBOARD = {
 
   awaitingReview: { ar: "بانتظار المراجعة", en: "Awaiting review" },
   awaitingReviewHint: {
-    ar: "مطالبات لا تتقدّم خطوة واحدة قبل أن يبتّ مراجع في تطابق الاسم.",
+    ar: "بلاغات لا تتقدّم خطوة واحدة قبل أن يبتّ مراجع في تطابق الاسم.",
     en: "Claims that do not move at all until a reviewer rules on the name match.",
   },
 
   vetoWindow: { ar: "في مهلة الاعتراض", en: "In the veto window" },
   vetoWindowHint: {
-    ar: "المالك ما زال قادراً على الاعتراض. بعدها يقع الإفراج تلقائياً.",
+    ar: "المالك ما زال قادراً على الاعتراض. بعدها يبدأ التسليم تلقائياً.",
     en: "The owner can still object. After that, release is automatic.",
   },
-  nextRelease: { ar: "الإفراج التالي", en: "Next release" },
+  nextRelease: { ar: "التسليم التالي", en: "Next release" },
   nextReleaseNone: { ar: "لا شيء مجدول", en: "Nothing scheduled" },
 
-  escalating: { ar: "تصعيد نبض الحياة", en: "Check-ins escalating" },
+  escalating: { ar: "تصعيد تأكيد الحياة", en: "Check-ins escalating" },
   escalatingHint: {
     ar: "مالكون تجاوزوا الأسبوع الأول دون تأكيد — نفس الحدّ الذي يعتبره التطبيق «متأخّراً».",
     en: "Owners a week or more past due — the same line the app itself calls overdue.",
@@ -50,7 +50,7 @@ export const DASHBOARD = {
     en: "Executors without a sheet",
   },
   executorsWithoutSheetHint: {
-    ar: "لم تُطبع ورقتهم، فلو وقع الإفراج الليلة لما فتحوا شيئاً إلا بورقة استرجاع المالك.",
+    ar: "لم تُطبع ورقتهم، فلو بدأ التسليم الليلة لما فتحوا شيئاً إلا بوثيقة استرداد صاحب الخزنة.",
     en: "Their sheet was never printed: if a claim released tonight, they could open nothing without the owner's recovery sheet.",
   },
 

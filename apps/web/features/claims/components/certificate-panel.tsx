@@ -9,7 +9,6 @@ import { FileCheckIcon, ShieldCheckIcon, UploadIcon } from "lucide-react"
 import { Button } from "@/components/button"
 import { IconDisc } from "@/components/icon-disc"
 import { useLocale } from "@/components/locale-provider"
-import { Field } from "@/components/field"
 import { fmtBytes } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 import { CLAIM_CERTIFICATE } from "@/features/claims/strings/claim-certificate"
@@ -41,12 +40,10 @@ function certificateType(file: File): string | null {
  * arrives as a PDF already on the laptop; the camera path exists for families
  * who only have paper.
  *
- * **A name mismatch is never a rejection here.** Matching is *"fuzzy on
- * transliteration, strict on identity, and a mismatch routes to manual review
- * rather than blocking — an inconsistent transliteration is far commoner than a
- * forgery."* So this panel makes no matching judgement at all: it uploads,
- * records the name as written, and submits. `claims.adminSetNameMatch` is a
- * human's judgement by design, and the note under the field says so.
+ * **This panel makes no matching judgement.** It uploads and submits; staff
+ * check the certificate against the owner's verified identity
+ * (`claims.adminCheckIdNumber`, `claims.adminSetNameMatch`), and the note under
+ * the upload says a spelling difference alone does not fail the report.
  *
  * The certificate is the one piece of plaintext third-party personal data this
  * product holds — a reviewer has to read it, and the claimant has no key a
@@ -66,7 +63,6 @@ export function CertificatePanel({
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<{ name: string; size: number } | null>(null)
   const [storageId, setStorageId] = useState<string | null>(null)
-  const [deceasedName, setDeceasedName] = useState("")
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -112,7 +108,6 @@ export function CertificatePanel({
       await attachCertificate({
         claimId: claimId as Id<"claims">,
         certificateStorageId: storageId as Id<"_storage">,
-        certificateName: deceasedName.trim(),
       })
       // No navigation: the claim's own query re-runs and this panel is replaced
       // by the next step. That is the point of hanging the flow off the report.
@@ -185,7 +180,6 @@ export function CertificatePanel({
         </div>
       )}
 
-      <Field label={labels.nameLabel} hint={labels.nameHint} value={deceasedName} onChange={setDeceasedName} />
 
       {/* Said before they send, not after a mismatch: someone whose
           grandmother's name is spelled three ways should not spend a month
@@ -199,7 +193,7 @@ export function CertificatePanel({
         <Button
           size="lg"
           onClick={() => void send()}
-          disabled={busy || storageId === null || deceasedName.trim().length === 0}
+          disabled={busy || storageId === null}
         >
           {busy ? labels.submitting : labels.submit}
         </Button>

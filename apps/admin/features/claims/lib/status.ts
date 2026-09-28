@@ -14,17 +14,11 @@ export const CLAIM_STATUSES = [
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number]
 
 /**
- * One status, in the same words the claimant is shown for it.
+ * One status, for an operator.
  *
- * The labels come from `apps/web/lib/claim-copy.ts`'s `status*` set, which was
- * written for the claimant's status page and never wired up. Reusing them is
- * what stops an operator and the person they are helping describing the same
- * claim differently.
- *
- * Note `vetoed` and `locked` are **not** given the same label here, even though
- * the claimant's status page currently collapses both into "the owner objected".
- * That collapse is wrong for an operator: a veto is the owner acting, a lock is
- * usually a failed name match, and the two need different follow-ups.
+ * `vetoed` and `locked` keep separate labels even where the reporter's page
+ * says "closed" for both: a veto is the owner acting, a lock is a ruling, and
+ * the two need different follow-ups.
  */
 export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
   const labels = t(CLAIMS, locale)
@@ -37,6 +31,28 @@ export function claimStatusLabel(status: ClaimStatus, locale: Locale): string {
     closed: labels.statusClosed,
   }
   return map[status]
+}
+
+/** Mirrors `rejectReasonValidator` in `convex/model/claimFlow.ts`. */
+export const REJECT_REASONS = [
+  "not_certificate",
+  "unreadable",
+  "names_differ",
+] as const
+
+export type RejectReason = (typeof REJECT_REASONS)[number]
+
+export function rejectReasonLabel(
+  reason: RejectReason,
+  locale: Locale
+): string {
+  const labels = t(CLAIMS, locale)
+  const map: Record<RejectReason, string> = {
+    not_certificate: labels.reasonNotCertificate,
+    unreadable: labels.reasonUnreadable,
+    names_differ: labels.reasonNamesDiffer,
+  }
+  return map[reason]
 }
 
 /**

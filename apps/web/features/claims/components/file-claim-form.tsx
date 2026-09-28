@@ -6,10 +6,10 @@ import { api } from "@workspace/backend/api"
 import { useConvexAuth, useMutation, useQuery } from "convex/react"
 import { ConvexError } from "convex/values"
 import {
-  AtSignIcon,
   ClipboardListIcon,
   FilePenLineIcon,
   FileTextIcon,
+  IdCardIcon,
   LogInIcon,
   ShieldCheckIcon,
 } from "lucide-react"
@@ -27,6 +27,10 @@ import { CLAIMS } from "@/features/claims/strings/claims"
 /** Shape only — the server matches the address; this catches a missing `@` or domain. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/** Mirrors `MIN_ID_NUMBER_LENGTH` and the normalisation in `convex/model/identityHash.ts`. */
+const MIN_ID_NUMBER_LENGTH = 4
+const idLength = (raw: string) => raw.toUpperCase().replace(/[^0-9A-Z]/g, "").length
+
 /**
  * The report form, below what to prepare. The checklist renders signed out
  * too: the one sentence that stops people stalling — you can't finish without
@@ -42,6 +46,8 @@ export function FileClaimForm() {
   const { isAuthenticated, isLoading } = useConvexAuth()
   const me = useQuery(api.users.me, isAuthenticated ? {} : "skip")
 
+  const [idNumber, setIdNumber] = useState("")
+  const [idTouched, setIdTouched] = useState(false)
   const [subjectEmail, setSubjectEmail] = useState("")
   const [emailTouched, setEmailTouched] = useState(false)
   // `null` until edited, so the account's name fills the field without an
@@ -52,15 +58,25 @@ export function FileClaimForm() {
   const [error, setError] = useState<string | null>(null)
 
   const name = typedName ?? me?.name ?? ""
+  const hasId = idNumber.trim().length > 0
+  const hasEmail = subjectEmail.trim().length > 0
+  const idValid = idLength(idNumber) >= MIN_ID_NUMBER_LENGTH
   const emailValid = EMAIL.test(subjectEmail.trim())
-  const ready = emailValid && name.trim().length > 0 && contact.trim().length > 0
+  // One route to the vault is enough, but whatever was typed must be usable.
+  const ready =
+    (idValid || emailValid) &&
+    (!hasId || idValid) &&
+    (!hasEmail || emailValid) &&
+    name.trim().length > 0 &&
+    contact.trim().length > 0
 
   async function file() {
     setBusy(true)
     setError(null)
     try {
       const { claimId } = await submit({
-        subjectEmail: subjectEmail.trim().toLowerCase(),
+        subjectIdNumber: hasId ? idNumber.trim() : undefined,
+        subjectEmail: hasEmail ? subjectEmail.trim().toLowerCase() : undefined,
         claimantName: name.trim(),
         claimantContact: contact.trim(),
       })
@@ -90,9 +106,19 @@ export function FileClaimForm() {
         <Ask eyebrow={common.askEyebrow} title={labels.formTitle} icon={FilePenLineIcon}>
           <div className="flex flex-col gap-5">
             <Field
+              label={labels.idLabel}
+              hint={labels.idHint}
+              error={idTouched && hasId && !idValid ? labels.idInvalid : undefined}
+              value={idNumber}
+              onChange={setIdNumber}
+              onBlur={() => setIdTouched(true)}
+              dir="ltr"
+              autoComplete="off"
+            />
+            <Field
               label={labels.subjectLabel}
               hint={labels.subjectHint}
-              error={emailTouched && subjectEmail.trim().length > 0 && !emailValid ? labels.subjectInvalid : undefined}
+              error={emailTouched && hasEmail && !emailValid ? labels.subjectInvalid : undefined}
               value={subjectEmail}
               onChange={setSubjectEmail}
               onBlur={() => setEmailTouched(true)}
@@ -137,6 +163,8 @@ function refusalText(cause: unknown, labels: Resolved<typeof CLAIMS>): string {
     const data = cause.data as { code?: string; reason?: string }
     if (data.code === "claim" && data.reason === "rate_limited") return labels.fileRateLimited
     if (data.code === "claim" && data.reason === "own_vault") return labels.fileOwnVault
+    if (data.code === "claim" && data.reason === "no_subject") return labels.fileNoSubject
+    if (data.code === "claim" && data.reason === "bad_id_number") return labels.idInvalid
   }
   return labels.fileFailed
 }
@@ -144,7 +172,7 @@ function refusalText(cause: unknown, labels: Resolved<typeof CLAIMS>): string {
 function Checklist({ labels }: { labels: Resolved<typeof CLAIMS> }) {
   const items = [
     { icon: FileTextIcon, title: labels.needCertificateTitle, body: labels.needCertificateBody },
-    { icon: AtSignIcon, title: labels.needEmailTitle, body: labels.needEmailBody },
+    { icon: IdCardIcon, title: labels.needIdTitle, body: labels.needIdBody },
   ]
 
   return (

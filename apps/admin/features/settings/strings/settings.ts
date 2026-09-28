@@ -134,14 +134,14 @@ export const SETTINGS = {
     ar: "كم يبقى الباب مفتوحاً للوصي.",
     en: "How long the door stays open for an executor.",
   },
-  sectionCheckin: { ar: "نبض الحياة", en: "Life check-in" },
+  sectionCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
   sectionCheckinHint: {
     ar: "سلّم التصعيد حين يتوقّف صاحب الخزنة عن الرد.",
     en: "The escalation ladder when an owner stops answering.",
   },
   vetoWindow: { ar: "مهلة الاعتراض", en: "Objection period" },
   vetoWindowHint: {
-    ar: "من موافقة الموظّف على الشهادة حتى الإفراج، ما لم يعترض صاحب الخزنة ببصمته.",
+    ar: "من موافقة الموظّف على الشهادة حتى بدء التسليم، ما لم يعترض صاحب الخزنة ببصمته.",
     en: "From staff approving the certificate to release, unless the owner vetoes with their fingerprint.",
   },
   vetoLockout: { ar: "الحظر بعد الاعتراض", en: "Lockout after a veto" },

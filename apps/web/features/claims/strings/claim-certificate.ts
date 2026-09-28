@@ -4,13 +4,13 @@ import type { Dictionary } from "@/lib/i18n/locale"
  * The death certificate step.
  *
  * Spellings of a name vary far more often than anyone forges a certificate, so
- * a mismatch goes to a person, never to a rejection — and `matchNote` says so
- * *before* they send, not after.
+ * a spelling difference goes to a person — and `matchNote` says so *before*
+ * they send, not after.
  */
 export const CLAIM_CERTIFICATE = {
   intro: {
-    ar: "ارفع الشهادة الرسمية. نطابق الاسم فيها بالاسم الموثّق لصاحب الخزنة.",
-    en: "Upload the official certificate. We match its name to the vault owner's verified name.",
+    ar: "ارفع الشهادة الرسمية. نطابقها بهوية صاحب الخزنة الموثّقة.",
+    en: "Upload the official certificate. We check it against the vault owner's verified identity.",
   },
   dropHere: { ar: "اسحب الملف إلى هنا", en: "Drag the file here" },
   dropHint: { ar: "PDF أو صورة · حتى ٢٠ م.ب", en: "PDF or photo · up to 20 MB" },
@@ -24,14 +24,9 @@ export const CLAIM_CERTIFICATE = {
   wrongType: { ar: "نقبل ملف PDF أو صورة فقط.", en: "We accept a PDF or a photo only." },
   uploading: { ar: "جارٍ الرفع…", en: "Uploading…" },
 
-  nameLabel: { ar: "اسم المتوفّى كما في الشهادة", en: "Their name, as on the certificate" },
-  nameHint: {
-    ar: "اكتبه حرفاً بحرف كما في الشهادة، حتى لو اختلف عن المعتاد",
-    en: "Copy it letter by letter from the certificate, even if it's spelled unusually",
-  },
   matchNote: {
-    ar: "إن اختلفت كتابة الاسم عمّا لدينا، يراجعه شخص من فريقنا — ولا يُرفض البلاغ.",
-    en: "If the spelling differs from what we have, a person on our team checks it — the report isn't rejected.",
+    ar: "اختلاف كتابة الاسم وحده لا يُسقط البلاغ — يراجعه شخص من فريقنا.",
+    en: "A name spelled differently won't fail the report on its own — a person on our team checks it.",
   },
 
   submit: { ar: "أرسل للمراجعة", en: "Send for review" },

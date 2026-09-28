@@ -35,6 +35,8 @@
 // one. An owner who vetoes has proved they were alive *then*, which is not
 // evidence about later — so a permanent bar would be the wrong default.
 
+import { v } from "convex/values"
+
 import type { Doc } from "../_generated/dataModel"
 
 export const DAY_MS = 24 * 60 * 60 * 1000
@@ -92,6 +94,16 @@ export function nameMatchOutcome(nameMatch: boolean): ClaimStatus {
 
 /** Days an executor can open a delivery after release, before the vault is deleted. */
 export const DELIVERY_WINDOW_DAYS = 365
+
+/** Tries a reviewer gets at the blind ID-number check, per report. */
+export const ID_CHECK_ATTEMPTS = 3
+
+/** Why staff rejected a report. Staff-only — see `claims.rejectReason`. */
+export const rejectReasonValidator = v.union(
+  v.literal("not_certificate"),
+  v.literal("unreadable"),
+  v.literal("names_differ")
+)
 
 /** Why a verdict cannot be given yet. `null` means it can. */
 export type NameMatchBlock = "past-review"

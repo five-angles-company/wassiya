@@ -25,7 +25,7 @@ import { query, type QueryCtx } from "./_generated/server"
 import type { Doc, Id } from "./_generated/dataModel"
 
 import { MAX_IDENTITY_ATTEMPTS } from "./identity"
-import { nameMatchBlockedReason } from "./model/claimFlow"
+import { ID_CHECK_ATTEMPTS, nameMatchBlockedReason } from "./model/claimFlow"
 import {
   excludeStaff,
   isStaffAccount,
@@ -714,7 +714,6 @@ export const claimsPage = query({
           status: row.status,
           claimantName: row.claimantName,
           claimantContact: row.claimantContact,
-          certificateName: row.certificateName ?? null,
           subjectName: subject?.name ?? null,
           subjectVerifiedName: subject?.identityVerifiedName ?? null,
           nameMatch: row.nameMatch ?? null,
@@ -2210,7 +2209,7 @@ export const unmatchedClaims = query({
         subjectEmail: claim.subjectEmail ?? null,
         claimantName: claim.claimantName,
         claimantContact: claim.claimantContact,
-        certificateName: claim.certificateName ?? null,
+        filedByIdNumber: claim.subjectIdHash !== undefined,
         submittedAt: claim._creationTime,
       })),
     }
@@ -2277,9 +2276,33 @@ export const claimDetail = query({
       .withIndex("by_userId_and_at", (q) => q.eq("userId", subjectUserId!))
       .order("desc")
       .take(HISTORY_SCAN)
-    const history = auditRows
-      .filter((row) => row.meta.claimId === (claim._id as string))
-      .map((row) => ({ event: row.event, at: row.at }))
+    const claimRows = auditRows.filter(
+      (row) => row.meta.claimId === (claim._id as string)
+    )
+    const actors = new Map<string, Doc<"users"> | null>()
+    for (const row of claimRows) {
+      const id = row.actorUserId
+      if (id !== undefined && !actors.has(id)) {
+        actors.set(id, await ctx.db.get("users", id))
+      }
+    }
+    const actorName = (id: Id<"users"> | undefined) => {
+      const actor = id === undefined ? null : (actors.get(id) ?? null)
+      return actor?.name ?? actor?.email ?? null
+    }
+    const history = claimRows.map((row) => {
+      // The ruling's verdict, or the ID check's result — the one yes/no each
+      // event carries.
+      const outcome = row.meta.nameMatch ?? row.meta.matched
+      return {
+        event: row.event,
+        at: row.at,
+        actor: actorName(row.actorUserId),
+        outcome: typeof outcome === "boolean" ? outcome : null,
+      }
+    })
+    // One verdict per claim, so the first ruling row is the ruling.
+    const ruling = claimRows.find((row) => row.event === "claim.name_match_set")
 
     // Whether the certificate is an image or a PDF decides how the console
     // shows it; the stored upload's own content type is the only honest source.
@@ -2303,17 +2326,25 @@ export const claimDetail = query({
         status: claim.status,
         claimantName: claim.claimantName,
         claimantContact: claim.claimantContact,
-        certificateName: claim.certificateName ?? null,
+        matchedBy: claim.matchedBy ?? null,
+        idCheck: {
+          attempts: claim.idCheckAttempts ?? 0,
+          max: ID_CHECK_ATTEMPTS,
+          matched: claim.idCheckMatched ?? null,
+        },
         certificateUrl:
           claim.certificateStorageId === undefined
             ? null
             : await ctx.storage.getUrl(claim.certificateStorageId),
         certificateContentType: certificateMeta?.contentType ?? null,
         nameMatch: claim.nameMatch ?? null,
+        rejectReason: claim.rejectReason ?? null,
         vetoDeadline: claim.vetoDeadline ?? null,
         lockedUntil: claim.lockedUntil ?? null,
         reviewedAt: claim.reviewedAt ?? null,
+        reviewedBy: actorName(ruling?.actorUserId),
         releasedAt: claim.releasedAt ?? null,
+        closedAt: claim.closedAt ?? null,
         submittedAt: claim._creationTime,
       },
       deliveries: deliveries.map((row) => ({
@@ -2322,10 +2353,18 @@ export const claimDetail = query({
         status: row.status,
         contactedAt: row.contactedAt ?? null,
       })),
+      // What the certificate is judged against. Never the ID numbers: those
+      // exist here only as hashes, and `adminCheckIdNumber` is the one way to
+      // compare against them.
       subject: {
+        id: subject?._id ?? null,
         name: subject?.name ?? null,
         email: subject?.email ?? null,
         verifiedName: subject?.identityVerifiedName ?? null,
+        birthDate: subject?.identityBirthDate ?? null,
+        docType: subject?.identityDocType ?? null,
+        verifiedAt: subject?.identityVerifiedAt ?? null,
+        hasIdNumbers: (subject?.identityDocHashes ?? []).length > 0,
       },
       executors: executorRows.map((executor) => ({
         id: executor._id,

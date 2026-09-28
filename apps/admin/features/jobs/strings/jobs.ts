@@ -10,8 +10,8 @@ export const JOBS = {
   },
 
   jobCheckinSweep: { ar: "تصعيد التحقق من الحياة", en: "Check-in escalation" },
-  jobClaimsAdvance: { ar: "تقديم طلبات الوراثة", en: "Advance death claims" },
-  jobClaimsUnmatched: { ar: "إغلاق الطلبات بلا خزنة", en: "Close unmatched claims" },
+  jobClaimsAdvance: { ar: "بدء التسليم بعد مدة الاعتراض", en: "Advance death claims" },
+  jobClaimsUnmatched: { ar: "إغلاق البلاغات بلا خزنة", en: "Close unmatched claims" },
   jobDeliveriesExpire: { ar: "إتلاف التسليمات المنتهية", en: "Expire deliveries" },
   jobSupportPurge: { ar: "حذف مرفقات الدعم القديمة", en: "Purge old support files" },
 

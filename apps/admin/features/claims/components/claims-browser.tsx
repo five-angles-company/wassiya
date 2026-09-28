@@ -144,10 +144,6 @@ export function ClaimsBrowser() {
           { header: labels.contactLabel, value: (row) => row.claimantContact },
           { header: labels.colOwner, value: (row) => row.subjectVerifiedName },
           {
-            header: labels.certificateNameLabel,
-            value: (row) => row.certificateName,
-          },
-          {
             header: labels.colSubmitted,
             value: (row) => fmtDate(row.submittedAt, locale),
           },

@@ -16,8 +16,8 @@ export const NAV = {
   groupReview: { ar: "المراجعة", en: "Review" },
   dashboard: { ar: "لوحة التحكم", en: "Dashboard" },
   deliveries: { ar: "التسليمات", en: "Deliveries" },
-  claims: { ar: "المطالبات", en: "Claims" },
-  unmatched: { ar: "طلبات بلا خزنة", en: "Unmatched" },
+  claims: { ar: "بلاغات الوفاة", en: "Death reports" },
+  unmatched: { ar: "بلاغات بلا خزنة", en: "Unmatched" },
   identity: { ar: "التحقق من الهوية", en: "Identity" },
 
   groupSupport: { ar: "الدعم", en: "Support" },
@@ -31,8 +31,8 @@ export const NAV = {
   subscriptions: { ar: "الاشتراكات", en: "Subscriptions" },
 
   groupOperations: { ar: "التشغيل", en: "Operations" },
-  checkins: { ar: "نبض الحياة", en: "Check-ins" },
-  releases: { ar: "الإفراج", en: "Releases" },
+  checkins: { ar: "تأكيد الحياة", en: "Check-ins" },
+  releases: { ar: "مسار التسليم", en: "Releases" },
   email: { ar: "البريد", en: "Email" },
   jobs: { ar: "المهام المجدولة", en: "Scheduled jobs" },
 

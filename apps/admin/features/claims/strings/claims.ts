@@ -1,126 +1,241 @@
 import type { Dictionary } from "@/lib/i18n/locale"
 
 /**
- * The claims feature's copy.
- *
- * ## The word for a claim is `طلب`, not `مطالبة`
- *
- * The console used to say `مطالبة`, which appears nowhere else in the product.
- * The claimant reads `بلاغ وفاة` and `طلب` on the web funnel; the owner reads
- * `طلب وراثة` on their phone. An operator on a support call has to use the same
- * word as the person they are helping, so the console adopts theirs.
- *
- * ## The status labels are lifted from `apps/web/lib/claim-copy.ts`
- *
- * That file carries six `status*` labels — written, reviewed, and with no
- * consumer anywhere in the product. Reusing them means the operator's status
- * vocabulary and the claimant's are the same by construction rather than by
- * anyone remembering.
+ * The claims feature's copy. The console uses the product's words — بلاغ وفاة,
+ * المُبلِّغ, التسليم — because an operator on a support call must name things
+ * the way the reporter's own screens (`apps/web/features/claims`) name them.
  */
 export const CLAIMS = {
   queueTitle: { ar: "طابور المراجعة", en: "Review queue" },
-  pageTitle: { ar: "الطلبات", en: "Claims" },
-  reviewTitle: { ar: "مراجعة الطلب", en: "Claim review" },
-  back: { ar: "رجوع إلى الطلبات", en: "Back to claims" },
+  pageTitle: { ar: "بلاغات الوفاة", en: "Death reports" },
+  back: { ar: "كل البلاغات", en: "All reports" },
 
-  // Status labels, matching what the claimant is shown for the same state.
-  statusSubmitted: { ar: "قيد المراجعة اليدوية", en: "Manual review" },
+  statusSubmitted: { ar: "بانتظار المراجعة", en: "Awaiting review" },
   statusAwaitingVeto: { ar: "مدة الاعتراض جارية", en: "Veto window running" },
-  statusReleased: { ar: "تم الإفراج", en: "Released" },
-  statusVetoed: { ar: "اعترض المالك", en: "Owner objected" },
-  // Not "Closed": `statusLocked` already uses that word, and the two mean
-  // opposite things to an operator — locked is a ruling with a 90-day bar,
-  // ended is a claim that never had a vault to rule on.
-  statusClosed: { ar: "مُنتهٍ", en: "Ended, no vault" },
-  statusLocked: { ar: "الطلب مغلق", en: "Closed" },
+  statusReleased: { ar: "بدأ التسليم", en: "Handover started" },
+  statusVetoed: { ar: "أوقفه صاحب الخزنة", en: "Stopped by the owner" },
+  statusLocked: { ar: "مرفوض", en: "Rejected" },
+  // Not "closed": a rejection is a ruling, this is a report with no vault.
+  statusClosed: { ar: "انتهى بلا خزنة", en: "Ended, no vault" },
 
-  colClaimant: { ar: "مقدّم الطلب", en: "Claimant" },
+  colClaimant: { ar: "المُبلِّغ", en: "Reporter" },
   colCertificate: { ar: "شهادة الوفاة", en: "Certificate" },
-  colOwner: { ar: "الاسم المُوثّق للمالك", en: "Owner's verified name" },
-  colSubmitted: { ar: "تاريخ التقديم", en: "Submitted" },
+  colOwner: { ar: "الاسم المُوثّق لصاحب الخزنة", en: "Owner's verified name" },
+  colSubmitted: { ar: "تاريخ البلاغ", en: "Filed" },
   colStatus: { ar: "الحالة", en: "Status" },
-  actionCopyContact: {
-    ar: "انسخ وسيلة التواصل",
-    en: "Copy contact",
-  },
+  actionCopyContact: { ar: "انسخ وسيلة التواصل", en: "Copy contact" },
   colActions: { ar: "إجراءات", en: "Actions" },
 
+  contactLabel: { ar: "وسيلة التواصل", en: "Contact" },
   certificateView: { ar: "فتح الملف", en: "Open file" },
   certificateNone: { ar: "لم تصل", en: "Not received" },
   ownerNameNone: { ar: "—", en: "—" },
 
   openMenu: { ar: "فتح القائمة", en: "Open menu" },
-  actionCopyId: { ar: "نسخ معرّف الطلب", en: "Copy claim id" },
-  actionOpen: { ar: "افتح الطلب", en: "Open claim" },
+  actionCopyId: { ar: "نسخ معرّف البلاغ", en: "Copy report id" },
+  actionOpen: { ar: "افتح البلاغ", en: "Open report" },
 
-  // "In this state" assumed a status was always selected. None is, now.
-  empty: { ar: "لا طلبات", en: "No claims" },
+  empty: { ar: "لا بلاغات", en: "No reports" },
   emptyHint: {
     ar: "لا شيء هنا الآن — وهذا هو الوضع الطبيعي، لا خلل.",
     en: "Nothing here right now. That is the normal state, not a fault.",
   },
   filterPlaceholder: {
-    ar: "ابحث باسم مقدّم الطلب",
-    en: "Filter by claimant name",
+    ar: "ابحث باسم المُبلِّغ",
+    en: "Filter by reporter name",
   },
   columns: { ar: "الأعمدة", en: "Columns" },
   previous: { ar: "السابق", en: "Previous" },
   next: { ar: "التالي", en: "Next" },
 
   // ── The review screen ────────────────────────────────────────────────────
-  comparisonTitle: { ar: "المقارنة", en: "The comparison" },
-  comparisonHint: {
-    ar: "هذا هو الحكم كلّه: الاسم على الشهادة مقابل الاسم المُوثّق للمالك. لا يقارنهما البرنامج — اختلاف الرسم والألقاب وترتيب الأسماء يجعل المقارنة الآلية غير آمنة.",
-    en: "This is the whole judgement: the name on the certificate against the owner's verified legal name. No code compares them — transliteration, honorifics and name order make that unsafe.",
-  },
-  certificateNameLabel: {
-    ar: "الاسم على الشهادة",
-    en: "Name on the certificate",
-  },
-  ownerNameLabel: { ar: "الاسم المُوثّق للمالك", en: "Owner's verified name" },
-  claimantLabel: { ar: "مقدّم الطلب", en: "Claimant" },
-  contactLabel: { ar: "وسيلة التواصل", en: "Contact" },
+  reviewTitle: { ar: "بلاغ وفاة", en: "Death report" },
+  subjectUnmatched: { ar: "بلا خزنة", en: "no vault" },
 
-  executorTitle: { ar: "الأوصياء", en: "Executors" },
-  executorHint: {
-    ar: "بعد مدة الاعتراض يستلم كل وصي كل ما اختار المالك تسليمه، ويُثبت هويته بنفسه، ثم يفتحه بورقته.",
-    en: "After the objection period each executor receives everything the owner chose to hand over, proves their own identity, then opens it with their sheet.",
+  sitUnmatched: {
+    ar: "لم يُطابَق بخزنة. اربطه بالخزنة الصحيحة أو أغلقه من «بلاغات بلا خزنة».",
+    en: "Matched no vault. Link it to the right one, or close it, from Unmatched reports.",
   },
-  executorSheet: { ar: "ورقته مطبوعة", en: "Sheet printed" },
-  executorNoSheet: { ar: "لا ورقة", en: "No sheet" },
-  executorNone: {
-    ar: "لم يُسمِّ هذا المالك وصياً — لن يُسلَّم شيء لأحد.",
-    en: "This owner named no executor — nothing will be delivered to anyone.",
+  sitNoCertificate: {
+    ar: "بانتظار شهادة الوفاة من المُبلِّغ.",
+    en: "Waiting for the reporter to send the death certificate.",
   },
-  // Only the owner's recovery sheet could stand in; Wassiya holds no key.
-  executorNoSheetNote: {
-    ar: "وصيّ بلا ورقة لا يفتح شيئاً إلا بورقة استرجاع المالك — لا نملك أي مفتاح.",
-    en: "An executor without a sheet can open nothing except with the owner's recovery sheet — we hold no key.",
+  sitSubmitted: {
+    ar: "بانتظار المراجعة منذ {date}.",
+    en: "Awaiting review since {date}.",
   },
-
-  priorTitle: {
-    ar: "طلبات سابقة من نفس الشخص",
-    en: "Earlier claims by this person",
+  sitAwaiting: {
+    ar: "مدة الاعتراض تنتهي {date}.",
+    en: "The veto window ends {date}.",
   },
-  priorWarning: {
-    ar: "اعتُرض على طلب سابق من هذا الشخص. الحجب لمدة ٩٠ يوماً يُطابَق بوسيلة التواصل المكتوبة فقط، فقد لا يمنع طلباً جديداً بعنوان مختلف — تحقّق قبل الموافقة.",
-    en: "An earlier claim by this person was vetoed. The 90-day bar is matched on the typed contact string alone, so a new claim under a different address can slip past it — check before approving.",
+  sitReleased: { ar: "بدأ التسليم {date}.", en: "Handover started {date}." },
+  sitVetoed: {
+    ar: "أوقفه صاحب الخزنة بتأكيد الحياة {date}.",
+    en: "The owner stopped it by confirming they are alive, {date}.",
+  },
+  sitLocked: { ar: "رُفض {date}.", en: "Rejected {date}." },
+  sitLockedAtFiling: {
+    ar: "رُفض عند تقديمه: المُبلِّغ ممنوع من البلاغ عن هذه الخزنة حتى {date}.",
+    en: "Refused when filed: the reporter is barred from reporting this vault until {date}.",
+  },
+  sitClosed: {
+    ar: "انتهى بلا خزنة {date}.",
+    en: "Ended with no vault, {date}.",
   },
 
-  // The redesigned review: certificate on one side, decision on the other.
   certificateTitle: { ar: "شهادة الوفاة", en: "Death certificate" },
   certificateOpen: { ar: "افتح في نافذة جديدة", en: "Open in a new tab" },
+  certificateMissing: {
+    ar: "لم تصل الشهادة بعد",
+    en: "The certificate hasn't arrived yet",
+  },
   certificateUnsupported: {
-    ar: "لا يمكن عرض هذا الملف هنا — افتحه في نافذة جديدة.",
+    ar: "لا يُعرض هذا الملف هنا — افتحه في نافذة جديدة.",
     en: "This file can't be shown here — open it in a new tab.",
   },
-  decisionTitle: { ar: "القرار", en: "Decision" },
-  stateAwaiting: {
-    ar: "مدة الاعتراض تنتهي {date}. لا شيء مطلوب حتى ذلك.",
-    en: "The objection period ends {date}. Nothing is needed until then.",
+  zoomIn: { ar: "تكبير", en: "Zoom in" },
+  zoomOut: { ar: "تصغير", en: "Zoom out" },
+  zoomFit: { ar: "ملء الإطار", en: "Fit" },
+  rotate: { ar: "تدوير", en: "Rotate" },
+
+  none: { ar: "—", en: "—" },
+  identityTitle: {
+    ar: "الهوية الموثّقة لصاحب الخزنة",
+    en: "Owner's verified identity",
   },
-  stateReleased: { ar: "أُفرج عنه {date}", en: "Released {date}" },
-  stateClosed: { ar: "انتهى هذا الطلب.", en: "This claim has ended." },
+  identityVerifiedOn: { ar: "وُثّقت {date}", en: "Verified {date}" },
+  identityNone: {
+    ar: "لم يوثّق صاحب الخزنة هويته — لا شيء تُطابَق به الشهادة.",
+    en: "The owner never verified their identity — there is nothing to check the certificate against.",
+  },
+  birthDateLabel: { ar: "تاريخ الميلاد", en: "Date of birth" },
+  docTypeLabel: { ar: "الوثيقة", en: "Document" },
+
+  // ── The compare table ────────────────────────────────────────────────────
+  compareTitle: {
+    ar: "قارن الشهادة بصاحب الخزنة",
+    en: "Compare the certificate with the owner",
+  },
+  compareVerifiedOn: {
+    ar: "هويته موثّقة عبر Didit · {date}",
+    en: "Identity verified with Didit · {date}",
+  },
+  nameLabel: { ar: "الاسم", en: "Name" },
+  idLabel: { ar: "رقم الهوية", en: "ID number" },
+  idRowHint: {
+    ar: "انقله من الشهادة. لا يظهر رقم صاحب الخزنة لأحد.",
+    en: "Copy it from the certificate. Nobody sees the owner's number.",
+  },
+  matches: { ar: "يطابق", en: "Matches" },
+  noMatch: { ar: "لا يطابق", en: "Doesn't match" },
+  notOnFile: { ar: "غير مسجّل", en: "Not on file" },
+
+  idCheckPlaceholder: { ar: "الرقم كما في الشهادة", en: "As printed on it" },
+  idCheckAction: { ar: "طابِق", en: "Check" },
+  idCheckNoNumber: {
+    ar: "لا يوجد رقم في الشهادة",
+    en: "There's no number on the certificate",
+  },
+  idCheckMatched: {
+    ar: "يطابق وثيقته الموثّقة",
+    en: "Matches their verified document",
+  },
+  idCheckMismatch: {
+    ar: "لا يطابق · المحاولات المتبقية: {n}",
+    en: "No match · tries left: {n}",
+  },
+  idCheckExhausted: {
+    ar: "لم يطابق بعد {max} محاولات. قد تحمل الشهادة رقم وثيقة أخرى — الحكم بالاسم وتاريخ الميلاد.",
+    en: "No match after {max} tries. The certificate may carry another document's number — judge on name and date of birth.",
+  },
+  idCheckNoNumbers: {
+    ar: "لا رقم هوية موثّق لصاحب الخزنة — الحكم بالاسم وتاريخ الميلاد.",
+    en: "The owner has no verified ID number — judge on name and date of birth.",
+  },
+  idCheckNoneChosen: {
+    ar: "لا رقم في الشهادة — الحكم بالاسم وتاريخ الميلاد.",
+    en: "No number on the certificate — judge on name and date of birth.",
+  },
+  undo: { ar: "تراجع", en: "Undo" },
+
+  idLineMatched: { ar: "يطابق", en: "Matches" },
+  idLineMissed: { ar: "لم يطابق", en: "Didn't match" },
+  idLineUnchecked: { ar: "لم يُطابَق", en: "Not checked" },
+
+  summaryLeft: {
+    ar: "بقي {n} من {total} للمقارنة.",
+    en: "{n} of {total} left to compare.",
+  },
+  summaryAllMatch: {
+    ar: "كل ما في الشهادة يطابق صاحب الخزنة.",
+    en: "Everything on the certificate matches the owner.",
+  },
+  summaryMismatch: {
+    ar: "ما في الشهادة لا يطابق صاحب الخزنة — ارفض البلاغ.",
+    en: "The certificate doesn't match the owner — reject the report.",
+  },
+
+  approve: { ar: "وافق", en: "Approve" },
+  reject: { ar: "ارفض", en: "Reject" },
+  cancel: { ar: "تراجع", en: "Back" },
+  approveBody: {
+    ar: "تبدأ مدة اعتراض مدتها ٣٠ يوماً ويُشعَر صاحب الخزنة، ويستطيع إيقافها ببصمته. بعدها نتواصل مع أوصيائه.",
+    en: "A 30-day veto window starts and the owner is notified; they can stop it with their fingerprint. After it, we contact their executors.",
+  },
+  approveConfirm: { ar: "ابدأ مدة الاعتراض", en: "Start the veto window" },
+  rejectQuestion: {
+    ar: "رفض البلاغ نهائياً؟ لا يُعاد فتحه، ويُبلَّغ المُبلِّغ دون ذكر السبب.",
+    en: "Reject the report for good? It can't be reopened, and the reporter is told without a reason.",
+  },
+  rejectConfirm: { ar: "ارفض البلاغ", en: "Reject the report" },
+  reasonNotCertificate: {
+    ar: "ليست شهادة وفاة",
+    en: "Not a death certificate",
+  },
+  reasonUnreadable: { ar: "غير مقروءة", en: "Unreadable" },
+  reasonNamesDiffer: { ar: "ليست لصاحب الخزنة", en: "Not the vault owner's" },
+
+  awaitingTitle: { ar: "بانتظار المراجعة", en: "Awaiting review" },
+  unmatchedTitle: { ar: "لم يُطابَق بخزنة", en: "No vault matched" },
+
+  toastApproved: {
+    ar: "بدأت مدة الاعتراض.",
+    en: "The veto window has started.",
+  },
+  toastRejected: { ar: "رُفض البلاغ.", en: "The report is rejected." },
+  toastFailed: {
+    ar: "تعذّر تنفيذ الإجراء. لم يتغيّر شيء.",
+    en: "That did not go through. Nothing changed.",
+  },
+
+  detailsOpen: { ar: "تفاصيل البلاغ", en: "Report details" },
+  detailsHide: { ar: "إخفاء تفاصيل البلاغ", en: "Hide report details" },
+
+  // ── A decided report ─────────────────────────────────────────────────────
+  outcomeAwaitingSub: {
+    ar: "تنتهي {date}. لا شيء مطلوب منك حتى ذلك.",
+    en: "It ends {date}. Nothing is needed from you until then.",
+  },
+  outcomeRejected: { ar: "رُفض البلاغ", en: "Report rejected" },
+  outcomeRefused: { ar: "رُفض عند تقديمه", en: "Refused when filed" },
+  outcomeRefusedSub: {
+    ar: "المُبلِّغ ممنوع من البلاغ عن هذه الخزنة حتى {date}.",
+    en: "The reporter is barred from reporting this vault until {date}.",
+  },
+  outcomeVetoedSub: {
+    ar: "أكّد أنه حيّ ببصمته · {date}",
+    en: "They confirmed they are alive with their fingerprint · {date}",
+  },
+  outcomeClosedSub: {
+    ar: "لم يُطابَق بأي خزنة · {date}",
+    en: "It matched no vault · {date}",
+  },
+  rowRuling: { ar: "القرار", en: "Ruling" },
+  rowApprovedBy: { ar: "وافق عليه {name}", en: "Approved by {name}" },
+  rowRejectedBy: { ar: "رفضه {name}", en: "Rejected by {name}" },
+  rowReason: { ar: "السبب", en: "Reason" },
+  rowBarredUntil: { ar: "المُبلِّغ ممنوع حتى", en: "Reporter barred until" },
+  rulingSomeone: { ar: "أحد الموظفين", en: "A staff member" },
   deliveriesSummary: {
     ar: "{ready} من {total} أوصياء تحقّقت هويتهم",
     en: "{ready} of {total} executors have been verified",
@@ -133,61 +248,47 @@ export const CLAIMS = {
     ar: "تابع التواصل مع الأوصياء",
     en: "Follow up with the executors",
   },
-  tabExecutors: { ar: "الأوصياء", en: "Executors" },
-  tabHistory: { ar: "السجل", en: "History" },
-  historyTitle: { ar: "ما حدث لهذا الطلب", en: "What has happened" },
+
+  ownerTitle: { ar: "صاحب الخزنة", en: "Vault owner" },
+  matchedByIdNumber: {
+    ar: "وُجدت خزنته برقم الهوية",
+    en: "Vault found by ID number",
+  },
+  matchedByEmail: { ar: "وُجدت خزنته بالبريد", en: "Vault found by email" },
+  unmatchedOpen: { ar: "بلاغات بلا خزنة", en: "Unmatched reports" },
+
+  reporterTitle: { ar: "المُبلِّغ", en: "Reporter" },
+  copied: { ar: "نُسخ", en: "Copied" },
+  priorTitle: { ar: "بلاغات سابقة", en: "Earlier reports" },
+  priorWarning: {
+    ar: "أوقف صاحب الخزنة بلاغاً سابقاً من هذا الشخص — تحقّق قبل الموافقة.",
+    en: "The owner stopped an earlier report by this person — check before approving.",
+  },
+
+  executorTitle: { ar: "الأوصياء", en: "Executors" },
+  executorSheet: { ar: "ورقته مطبوعة", en: "Sheet printed" },
+  executorNoSheet: { ar: "لا ورقة", en: "No sheet" },
+  executorNone: {
+    ar: "لم يُسمِّ صاحب الخزنة وصياً — لن يُسلَّم شيء لأحد.",
+    en: "The owner named no executor — nothing will be delivered to anyone.",
+  },
+  // Only the owner's recovery sheet could stand in; Wassiya holds no key.
+  executorNoSheetNote: {
+    ar: "وصيّ بلا ورقة لا يفتح شيئاً إلا بوثيقة استرداد صاحب الخزنة.",
+    en: "An executor without a sheet opens nothing except with the owner's recovery sheet.",
+  },
+
+  historyTitle: { ar: "السجل", en: "History" },
   historyEmpty: { ar: "لا سجل بعد", en: "Nothing recorded yet" },
-
-  // ── Actions and their dialogs ────────────────────────────────────────────
-  verdictTitle: { ar: "الحكم على تطابق الاسم", en: "Rule on the name match" },
-  approve: { ar: "الاسمان لشخص واحد", en: "Same person" },
-  reject: { ar: "الاسمان لشخصين مختلفين", en: "Different people" },
-
-  approveDialogTitle: { ar: "تأكيد التطابق؟", en: "Confirm the match?" },
-  approveDialogBody: {
-    ar: "تبدأ مدة اعتراض مدتها ٣٠ يوماً يستطيع المالك خلالها إيقافه، ثم نتواصل مع أوصيائه.",
-    en: "A 30-day window opens in which the owner can stop it; after it, we contact their executors.",
-  },
-  approveConfirm: { ar: "نعم، الاسمان متطابقان", en: "Yes, they match" },
-
-  // The destructive one. Different title, different body, different verb, and
-  // the destructive button variant — a dialog that reads like the safe one has
-  // failed at the only job it has.
-  rejectDialogTitle: {
-    ar: "إغلاق الطلب نهائياً؟",
-    en: "Close this claim for good?",
-  },
-  rejectDialogBody: {
-    ar: "سيُغلق الطلب ولا يمكن إعادة فتحه — لا يوجد في المنتج أي مسار يُخرج طلباً من حالة «مغلق». على مقدّم الطلب أن يبدأ طلباً جديداً من البداية.",
-    en: "The claim closes and cannot be reopened — nothing anywhere moves a claim out of closed. The claimant would have to start a new claim from scratch.",
-  },
-  rejectConfirm: { ar: "أغلق الطلب", en: "Close the claim" },
-
-  cancel: { ar: "تراجع", en: "Cancel" },
-
-  // Why an action is unavailable — the same reasons the mutation throws.
-  blockedPastReview: {
-    ar: "خرج هذا الطلب من مرحلة المراجعة.",
-    en: "This claim is past the review stage.",
-  },
-
-  toastApproved: {
-    ar: "بدأت مدة الاعتراض.",
-    en: "The objection period has started.",
-  },
-  toastRejected: { ar: "أُغلق الطلب.", en: "The claim is closed." },
-  toastFailed: {
-    ar: "تعذّر تنفيذ الإجراء. لم يتغيّر شيء.",
-    en: "That did not go through. Nothing changed.",
-  },
-
-  // What approving sets in motion, stated before it is set in motion.
-  approveNextTitle: {
-    ar: "ماذا يحدث بعد الموافقة",
-    en: "What approving does",
-  },
-  approveNextBody: {
-    ar: "تبدأ مهلة اعتراض مدّتها ثلاثون يوماً ويُشعَر صاحب الخزنة. إن لم يعترض، نُنشئ تسليماً لكل وصي ونتواصل معه ليُثبت هويته.",
-    en: "A thirty-day objection period starts and the owner is notified. If they do not object, we create a delivery for every executor and contact each one to prove their identity.",
-  },
+  eventSubmitted: { ar: "قُدِّم البلاغ", en: "Report filed" },
+  eventBlocked: { ar: "رُفض عند تقديمه", en: "Refused when filed" },
+  eventCertificate: { ar: "وصلت الشهادة", en: "Certificate received" },
+  eventLinked: { ar: "رُبط بالخزنة", en: "Linked to the vault" },
+  eventApproved: { ar: "تمت الموافقة", en: "Approved" },
+  eventRejected: { ar: "رُفض", en: "Rejected" },
+  eventIdMatched: { ar: "طابق رقم الهوية", en: "ID number matched" },
+  eventIdMismatch: { ar: "لم يطابق رقم الهوية", en: "ID number didn't match" },
+  eventVetoed: { ar: "أوقفه صاحب الخزنة", en: "Stopped by the owner" },
+  eventClosed: { ar: "أُغلق", en: "Closed" },
+  eventReleased: { ar: "بدأ التسليم", en: "Handover started" },
 } as const satisfies Dictionary

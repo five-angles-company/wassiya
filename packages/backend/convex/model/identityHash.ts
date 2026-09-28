@@ -9,6 +9,14 @@
 // ("SAU") where the app uses alpha-2, and a mismatch there would fail a
 // genuine executor. A match is also always against one named executor of one
 // owner, so a cross-country collision cannot release anything by itself.
+//
+// The same hash finds a vault from a death report (`claims.submit`, through
+// `identityLookup`) and backs the reviewer's blind check
+// (`claims.adminCheckIdNumber`). A collision there names the wrong vault, and
+// review and the owner's veto still stand between it and any release.
+
+/** Shortest normalised number `identityNumberHash` accepts. */
+export const MIN_ID_NUMBER_LENGTH = 4
 
 /** Uppercase, letters and digits only — "1 023-456 789" and "1023456789" agree. */
 export function normalizeIdentityNumber(raw: string): string {
@@ -28,7 +36,7 @@ export async function identityNumberHash(raw: string): Promise<string> {
     )
   }
   const normalized = normalizeIdentityNumber(raw)
-  if (normalized.length < 4) {
+  if (normalized.length < MIN_ID_NUMBER_LENGTH) {
     throw new Error("Identity number is too short")
   }
   const key = await crypto.subtle.importKey(

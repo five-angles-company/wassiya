@@ -29,6 +29,7 @@ import { v } from "convex/values"
 import { internal } from "./_generated/api"
 import { internalAction, internalMutation } from "./_generated/server"
 import { DAY_MS as FLOW_DAY_MS, VETO_WINDOW_DAYS } from "./model/claimFlow"
+import { patchClaim } from "./claims"
 import { identityNumberHash } from "./model/identityHash"
 import type { Id } from "./_generated/dataModel"
 
@@ -304,16 +305,11 @@ export const demo = internalMutation({
         })
       }
 
-      // The certificate name deliberately differs from the owner's verified
-      // name only in transliteration and honorific — which is the judgement the
-      // reviewer is there to make, rather than a case any string comparison
-      // could settle.
       await ctx.db.insert("claims", {
         subjectUserId: ownerId,
         claimantName: "بدر الدوسري",
         claimantContact: "seed-demo-claimant@example.test",
         claimantUserId: claimantId,
-        certificateName: "سلمى عبدالله الدوسري",
         status: "submitted" as const,
       })
     }
@@ -327,7 +323,6 @@ export const demo = internalMutation({
         subjectUserId,
         claimantName: `${pick(FIRST)} ${pick(LAST)}`,
         claimantContact: `claimant${claimCount}@example.test`,
-        certificateName: rand() < 0.6 ? "death-certificate.pdf" : undefined,
         status,
         vetoDeadline:
           status === "awaiting_veto"
@@ -370,6 +365,7 @@ export const wipe = internalMutation({
         "executors",
         "checkinConfig",
         "notifications",
+        "identityLookup",
       ] as const) {
         const rows = await ctx.db
           .query(table)
@@ -565,7 +561,6 @@ export const fastForwardRelease = internalMutation({
       claimantName: reporter.name ?? "Dev reporter",
       claimantContact: reporter.email ?? "dev",
       claimantUserId: reporterUserId,
-      certificateName: subject.identityVerifiedName ?? subject.name ?? "—",
       nameMatch: true,
       status: "awaiting_veto" as const,
       reviewedAt: now - VETO_WINDOW_DAYS * FLOW_DAY_MS,
@@ -611,3 +606,38 @@ export const simulateDidit = internalAction({
   },
 })
 
+
+/**
+ * Put one report back in review, so the console's review can be tried on it
+ * again. Refuses a released report: release closed the vault, and
+ * `claims:reopenVault` is the way back from that. Its audit lines stay — the
+ * log is append-only.
+ *
+ * ```bash
+ * npx convex run seed:resetClaimToReview '{"confirm":"reset-claim","claimId":"…"}'
+ * ```
+ */
+export const resetClaimToReview = internalMutation({
+  args: { confirm: v.literal("reset-claim"), claimId: v.id("claims") },
+  handler: async (ctx, { claimId }) => {
+    assertNotProduction()
+    const claim = await ctx.db.get("claims", claimId)
+    if (claim === null) throw new Error("Not found")
+    if (claim.status === "released") {
+      throw new Error("Released reports close the vault — run claims:reopenVault first")
+    }
+    await patchClaim(ctx, claimId, {
+      status: "submitted",
+      nameMatch: undefined,
+      rejectReason: undefined,
+      reviewedAt: undefined,
+      vetoDeadline: undefined,
+      lockedUntil: undefined,
+      closedAt: undefined,
+      closedReason: undefined,
+      idCheckAttempts: undefined,
+      idCheckMatched: undefined,
+    })
+    return null
+  },
+})

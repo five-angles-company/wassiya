@@ -1,57 +1,38 @@
 "use client"
 
-import Link from "next/link"
 import { api } from "@workspace/backend/api"
-import { Badge } from "@workspace/ui/components/badge"
-import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs"
 import { useQuery } from "convex/react"
-import { ArrowRightIcon } from "lucide-react"
 
 import { useLocale } from "@/components/locale-provider"
 import { RecordNotFound } from "@/components/record-not-found"
 import { ClaimCertificate } from "@/features/claims/components/claim-certificate"
-import { ClaimDecision } from "@/features/claims/components/claim-decision"
-import { ClaimExecutors } from "@/features/claims/components/claim-executors"
-import { ClaimHistory } from "@/features/claims/components/claim-history"
-import {
-  claimStatusLabel,
-  type ClaimStatus,
-} from "@/features/claims/lib/status"
+import { ClaimHeader } from "@/features/claims/components/claim-header"
+import { ClaimPanel } from "@/features/claims/components/claim-panel"
 import { CLAIMS } from "@/features/claims/strings/claims"
-import { fmtDate } from "@/lib/format"
 import { t } from "@/lib/i18n/locale"
 
 /**
- * One claim, where an irreversible decision gets made.
- *
- * The certificate and the decision sit side by side, because the decision is a
- * judgement *about* the certificate and the reviewer should never have to
- * scroll between them. Everything else — the executors, the history — is one
- * tab away rather than stacked on the page.
- *
- * The buttons disable on `detail.blocked`, which the server computes with the
- * same `nameMatchBlockedReason` the mutation throws on — one predicate, so a
- * button can never look available for something the server will refuse.
+ * One death report: the certificate, and beside it the comparison with the
+ * owner's verified identity while it waits, the ruling once decided. On a wide
+ * screen the page is exactly the viewport, so the document and the comparison
+ * are always on screen together.
  */
 export function ClaimReview({ claimId }: { claimId: string }) {
   const locale = useLocale()
   const labels = t(CLAIMS, locale)
-  // No cast: the server normalises the raw path segment, so a malformed id and
-  // a claim that is gone come back the same way rather than throwing.
+  // The server normalises the raw path segment, so a malformed id and a
+  // report that is gone both come back as `null`.
   const detail = useQuery(api.admin.claimDetail, { claimId })
 
   if (detail === undefined) {
     return (
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <Skeleton className="h-[72vh] rounded-xl" />
-        <Skeleton className="h-96 rounded-xl" />
+      <div className="flex flex-col gap-6 lg:h-full lg:min-h-0">
+        <Skeleton className="h-20 rounded-xl" />
+        <div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_500px]">
+          <Skeleton className="h-[70svh] rounded-xl lg:h-full" />
+          <Skeleton className="h-96 rounded-xl lg:h-full" />
+        </div>
       </div>
     )
   }
@@ -61,48 +42,21 @@ export function ClaimReview({ claimId }: { claimId: string }) {
     )
   }
 
-  const { claim, executors, history } = detail
+  const { claim } = detail
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/claims">
-            {/* `ltr:`, not `rtl:`: back is leftward in LTR and rightward in
-                RTL, so an arrow that points right turns only in LTR. */}
-            <ArrowRightIcon className="ltr:rotate-180" />
-            {labels.back}
-          </Link>
-        </Button>
-        <Badge variant="outline">
-          {claimStatusLabel(claim.status as ClaimStatus, locale)}
-        </Badge>
-        <span className="text-sm text-muted-foreground">
-          {fmtDate(claim.submittedAt, locale)}
-        </span>
-      </div>
+    <div className="flex flex-col gap-6 lg:h-full lg:min-h-0">
+      <ClaimHeader detail={detail} locale={locale} />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_500px] lg:grid-rows-[minmax(0,1fr)]">
         <ClaimCertificate
           url={claim.certificateUrl}
           contentType={claim.certificateContentType}
           locale={locale}
+          className="h-[70svh] rounded-[18px] lg:h-full"
         />
-        <ClaimDecision detail={detail} locale={locale} />
+        <ClaimPanel detail={detail} locale={locale} />
       </div>
-
-      <Tabs defaultValue="executors" className="gap-4">
-        <TabsList>
-          <TabsTrigger value="executors">{labels.tabExecutors}</TabsTrigger>
-          <TabsTrigger value="history">{labels.tabHistory}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="executors">
-          <ClaimExecutors executors={executors} locale={locale} />
-        </TabsContent>
-        <TabsContent value="history">
-          <ClaimHistory history={history} locale={locale} />
-        </TabsContent>
-      </Tabs>
     </div>
   )
 }

@@ -35,15 +35,6 @@ export type PendingClaim = FunctionReturnType<
 
 const helper = createColumnHelper<DataTableFeatures, PendingClaim>()
 
-/** Machine strings stay LTR inside Arabic prose — ids, filenames, emails. */
-function Machine({ children }: { children: React.ReactNode }) {
-  return (
-    <span dir="ltr" className="inline-block font-mono text-xs">
-      {children}
-    </span>
-  )
-}
-
 export function claimColumns(
   locale: Locale
 ): ColumnDef<DataTableFeatures, PendingClaim>[] {
@@ -61,11 +52,11 @@ export function claimColumns(
       ),
     }),
 
-    helper.accessor("certificateName", {
-      id: "certificateName",
+    helper.display({
+      id: "certificate",
       header: () => labels.colCertificate,
       cell: ({ row }) => {
-        const { certificateUrl, certificateName } = row.original
+        const { certificateUrl } = row.original
         if (certificateUrl === null) {
           return (
             <span className="text-muted-foreground">
@@ -81,20 +72,12 @@ export function claimColumns(
             className="inline-flex items-center gap-1 text-primary hover:underline"
           >
             <ExternalLinkIcon className="size-3.5 shrink-0" />
-            {certificateName === null ? (
-              labels.certificateView
-            ) : (
-              <Machine>{certificateName}</Machine>
-            )}
+            {labels.certificateView}
           </a>
         )
       },
     }),
 
-    // The comparison the reviewer is actually making: this name against the one
-    // on the certificate. Never done by string equality in code —
-    // `adminSetNameMatch`'s own comment explains that transliteration,
-    // honorifics and name order make that unsafe in Arabic. A human reads both.
     helper.accessor("subjectVerifiedName", {
       id: "subjectVerifiedName",
       header: () => labels.colOwner,
@@ -163,7 +146,7 @@ export function claimColumnLabels(locale: Locale): Record<string, string> {
   const labels = t(CLAIMS, locale)
   return {
     claimantName: labels.colClaimant,
-    certificateName: labels.colCertificate,
+    certificate: labels.colCertificate,
     subjectVerifiedName: labels.colOwner,
     submittedAt: labels.colSubmitted,
     actions: labels.colActions,

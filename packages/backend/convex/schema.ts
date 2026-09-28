@@ -2,6 +2,7 @@ import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
 import { assetTypeValidator } from "./model/assetTypes"
+import { rejectReasonValidator } from "./model/claimFlow"
 
 // Wassiya's data model. The rule that shapes every table here: the server may
 // hold ciphertext and non-sensitive metadata, never plaintext key material.
@@ -480,10 +481,27 @@ export default defineSchema({
     // Set once the claimant signs in through Clerk, so their own client can
     // read the claim back without a token in the URL.
     claimantUserId: v.optional(v.id("users")),
+    /**
+     * Keyed hash of the ID number the reporter copied from the certificate —
+     * see `model/identityHash.ts`. It finds the vault through `identityLookup`
+     * and wins over `subjectEmail` when both match. Never the number.
+     */
+    subjectIdHash: v.optional(v.string()),
+    /** Which of the two found the vault; absent while unmatched. */
+    matchedBy: v.optional(v.union(v.literal("id_number"), v.literal("email"))),
     certificateStorageId: v.optional(v.id("_storage")),
+    /** Typed by the reporter on reports filed before 2026-09-28; no longer asked. */
     certificateName: v.optional(v.string()),
-    // Admin-set: does the certificate name match the owner's verified legal
-    // name? Never derived by string comparison in code.
+    /**
+     * The reviewer's blind check of the certificate's ID number against the
+     * owner's verified document (`adminCheckIdNumber`). Capped at
+     * `ID_CHECK_ATTEMPTS`: without a cap, the check is an oracle for guessing
+     * an owner's number.
+     */
+    idCheckAttempts: v.optional(v.number()),
+    idCheckMatched: v.optional(v.boolean()),
+    // Admin-set: is the person on the certificate the owner, judged against
+    // their verified identity? Never derived by string comparison in code.
     nameMatch: v.optional(v.boolean()),
     status: v.union(
       v.literal("submitted"),
@@ -516,6 +534,11 @@ export default defineSchema({
     ),
     /** Admin-only. Never returned to a claimant or an executor by any function. */
     staffNote: v.optional(v.string()),
+    /**
+     * Why staff rejected the report — set by `adminSetNameMatch(false)` and by
+     * nothing else. Admin-only like `staffNote`, for `closedReason`'s reason.
+     */
+    rejectReason: v.optional(rejectReasonValidator),
 
     /**
      * When this claim last moved, and when it entered each state that has no
@@ -587,6 +610,16 @@ export default defineSchema({
     .index("by_claimantUserId_and_subjectEmail", [
       "claimantUserId",
       "subjectEmail",
+    ])
+    // The same, for a matched report (the lockout's key once a vault is
+    // known, however it was found) and for an unmatched one filed by number.
+    .index("by_claimantUserId_and_subjectUserId", [
+      "claimantUserId",
+      "subjectUserId",
+    ])
+    .index("by_claimantUserId_and_subjectIdHash", [
+      "claimantUserId",
+      "subjectIdHash",
     ])
     // The admin review queue, and the scheduler's veto-expiry sweep.
     .index("by_status", ["status"])
@@ -682,6 +715,19 @@ export default defineSchema({
 
   // Append-only. `audit.ts` exposes an internal insert and an owner-only read,
   // and there is deliberately no mutation anywhere that patches or deletes it.
+  /**
+   * `users.identityDocHashes`, one row per hash, so a death report can find a
+   * vault by the ID number on the certificate — an array field cannot be
+   * indexed. ⚠️ A mirror: written only by `syncIdentityLookup`, which every
+   * writer of `identityDocHashes` must call in the same mutation.
+   */
+  identityLookup: defineTable({
+    hash: v.string(),
+    userId: v.id("users"),
+  })
+    .index("by_hash", ["hash"])
+    .index("by_userId", ["userId"]),
+
   auditLog: defineTable({
     userId: v.id("users"),
     event: v.string(),

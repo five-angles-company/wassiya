@@ -2,24 +2,29 @@ import type { Dictionary } from "@/lib/i18n/locale"
 
 /** Death reports that matched no vault — the typo queue. */
 export const UNMATCHED = {
-  pageTitle: { ar: "طلبات بلا خزنة", en: "Unmatched reports" },
+  pageTitle: { ar: "بلاغات بلا خزنة", en: "Unmatched reports" },
 
   // Says what the queue is and why it has a deadline. An operator who does not
   // know that these close themselves would treat it as a backlog rather than
   // as a queue.
   intro: {
-    ar: "بلاغات وفاة لم تطابق أي خزنة — غالباً خطأ حرف في البريد. من يُربط بالخزنة الصحيحة يكمل مساره كأنه طابق من البداية، وما لا يُربط تُغلقه المهمة المجدولة بعد المهلة.",
-    en: "Death reports that matched no vault — usually one wrong character in an address. Linked to the right vault, a report carries on as if it had matched; left alone, the scheduled job closes it after the grace window.",
+    ar: "بلاغات وفاة لم تطابق أي خزنة — غالباً خطأ في رقم الهوية أو البريد، أو وثيقة غير التي وثّق بها صاحب الخزنة هويته. من يُربط بالخزنة الصحيحة يكمل مساره كأنه طابق من البداية، وما لا يُربط تُغلقه المهمة المجدولة بعد المهلة.",
+    en: "Death reports that matched no vault — usually a typo in the ID number or email, or a different document from the one the owner verified with. Linked to the right vault, a report carries on as if it had matched; left alone, the scheduled job closes it after the grace window.",
   },
 
-  colTyped: { ar: "البريد كما كُتب", en: "Address as typed" },
-  colClaimant: { ar: "مقدّم البلاغ", en: "Filed by" },
-  colCertificate: { ar: "الاسم في الشهادة", en: "Name on certificate" },
+  colTyped: { ar: "ما أُدخل", en: "Entered" },
+  withIdNumber: { ar: "ومعه رقم هوية", en: "Plus an ID number" },
+  openReport: { ar: "افتح البلاغ", en: "Open report" },
+  colClaimant: { ar: "المُبلِّغ", en: "Filed by" },
+  colCertificate: { ar: "الشهادة", en: "Certificate" },
   colSubmitted: { ar: "تاريخ البلاغ", en: "Filed" },
   colActions: { ar: "إجراءات", en: "Actions" },
 
   none: { ar: "—", en: "—" },
-  searchPlaceholder: { ar: "ابحث في البريد المكتوب", en: "Search the typed address" },
+  searchPlaceholder: {
+    ar: "ابحث في البريد المكتوب",
+    en: "Search the typed address",
+  },
 
   empty: { ar: "لا بلاغات بلا خزنة", en: "No unmatched reports" },
   emptyHint: {
@@ -32,7 +37,11 @@ export const UNMATCHED = {
   linkTitle: { ar: "ربط البلاغ بخزنة", en: "Link this report to a vault" },
   linkBody: {
     ar: "كُتب «{typed}». ابحث عن صاحب الخزنة المقصود واخترهـ ليكمل البلاغ مساره المعتاد.",
-    en: "\"{typed}\" was typed. Find the vault owner who was meant and pick them, and the report carries on through its ordinary path.",
+    en: '"{typed}" was typed. Find the vault owner who was meant and pick them, and the report carries on through its ordinary path.',
+  },
+  linkBodyNoEmail: {
+    ar: "أُدخل رقم هوية لم يطابق أي خزنة. اقرأ الشهادة من صفحة البلاغ، ثم ابحث عن صاحب الخزنة واختره.",
+    en: "An ID number was entered that matched no vault. Read the certificate on the report's page, then find the vault owner and pick them.",
   },
   // The one-way rule, said where it matters rather than discovered as an error.
   linkOnce: {

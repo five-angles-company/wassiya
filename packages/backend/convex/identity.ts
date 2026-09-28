@@ -25,6 +25,7 @@ import { requirePermission } from "./model/access"
 import { getCurrentUser } from "./users"
 import { reevaluateDeliveriesFor } from "./deliveries"
 import { verifiedDocument } from "./model/didit"
+import { syncIdentityLookup } from "./model/identityLookup"
 
 const DEFAULT_API_URL = "https://verification.didit.me/v2/session/"
 
@@ -218,6 +219,9 @@ export const applyWebhookResult = internalMutation({
         ? {}
         : { identityBirthDate: args.birthDate }),
     })
+    if (args.docHashes !== undefined) {
+      await syncIdentityLookup(ctx, user._id, args.docHashes)
+    }
     await writeAudit(ctx, {
       userId: user._id,
       event: "identity.webhook",
@@ -316,6 +320,34 @@ export const adminResetAttempts = mutation({
       meta: { from },
     })
     return null
+  },
+})
+
+/**
+ * One-off: fill `identityLookup` from the `identityDocHashes` already stored,
+ * so owners verified before the table existed can be found by ID number.
+ * Idempotent, and continues itself in batches:
+ * `npx convex run identity:backfillIdentityLookup '{}'`.
+ */
+export const backfillIdentityLookup = internalMutation({
+  args: { cursor: v.optional(v.union(v.string(), v.null())) },
+  handler: async (ctx, { cursor }) => {
+    const page = await ctx.db
+      .query("users")
+      .paginate({ cursor: cursor ?? null, numItems: 200 })
+    let synced = 0
+    for (const user of page.page) {
+      const hashes = user.identityDocHashes ?? []
+      if (hashes.length === 0) continue
+      await syncIdentityLookup(ctx, user._id, hashes)
+      synced += 1
+    }
+    if (!page.isDone) {
+      await ctx.scheduler.runAfter(0, internal.identity.backfillIdentityLookup, {
+        cursor: page.continueCursor,
+      })
+    }
+    return { scanned: page.page.length, synced, done: page.isDone }
   },
 })
 

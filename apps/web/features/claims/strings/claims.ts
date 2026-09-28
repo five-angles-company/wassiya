@@ -63,19 +63,28 @@ export const CLAIMS = {
     ar: "ملف PDF أو صورة واضحة، حتى ٢٠ م.ب",
     en: "A PDF or a clear photo, up to 20 MB",
   },
-  needEmailTitle: { ar: "بريد المتوفّى في وصيّة", en: "Their Wassiya email" },
-  needEmailBody: {
-    ar: "البريد الذي أنشأ به حسابه — تجده غالباً على ورقة الاسترداد المطبوعة",
-    en: "The email they signed up with — often printed on their recovery sheet",
+  needIdTitle: { ar: "رقم هوية المتوفّى", en: "Their ID number" },
+  needIdBody: {
+    ar: "مكتوب على شهادة الوفاة — به نجد الخزنة",
+    en: "It's on the death certificate — it's how we find the vault",
   },
 
-  // Three fields and no more: every extra one is a chance to stall someone
-  // filling this in during the week of a funeral.
+  // Only what finds the vault and reaches the reporter: every extra field is a
+  // chance to stall someone filling this in during the week of a funeral.
   formTitle: { ar: "بيانات البلاغ", en: "About the report" },
-  subjectLabel: { ar: "بريد المتوفّى في وصيّة", en: "The email they used with Wassiya" },
+  idLabel: { ar: "رقم هوية المتوفّى", en: "Their ID number" },
+  idHint: {
+    ar: "انقله كما هو على شهادة الوفاة",
+    en: "Copy it as printed on the death certificate",
+  },
+  idInvalid: {
+    ar: "الرقم قصير جداً — انقله كاملاً من الشهادة.",
+    en: "That number is too short — copy it in full from the certificate.",
+  },
+  subjectLabel: { ar: "بريده في وصيّة (اختياري)", en: "Their Wassiya email (optional)" },
   subjectHint: {
-    ar: "كما هو على ورقة الاسترداد إن وجدتها",
-    en: "As printed on their recovery sheet, if you have it",
+    ar: "إن كنت تعرفه — يفيد إن لم يكن في الشهادة رقم هوية",
+    en: "If you know it — it helps when the certificate shows no ID number",
   },
   subjectInvalid: {
     ar: "هذا لا يبدو بريداً إلكترونياً كاملاً — تأكّد من @ ومن النطاق بعدها.",
@@ -100,12 +109,16 @@ export const CLAIMS = {
     en: "You've filed several reports today, so this one wasn't sent. You can try again tomorrow, or write to us if it's urgent.",
   },
   fileOwnVault: {
-    ar: "هذا بريد حسابك أنت. أدخل البريد الذي استخدمه المتوفّى في وصيّة.",
-    en: "That's your own account's email. Enter the email the person who died used with Wassiya.",
+    ar: "هذا حسابك أنت. أدخل رقم هوية المتوفّى أو بريده في وصيّة.",
+    en: "That's your own account. Enter the ID number or Wassiya email of the person who died.",
   },
-  // `submit` answers the same whether or not the email matched a vault — it
-  // must not reveal which emails have one — so nothing after it may promise
-  // that a vault was found.
+  fileNoSubject: {
+    ar: "أدخل رقم هوية المتوفّى، أو بريده في وصيّة.",
+    en: "Enter their ID number, or their Wassiya email.",
+  },
+  // `submit` answers the same whether or not the number or email matched a
+  // vault — it must not reveal which have one — so nothing after it may
+  // promise that a vault was found.
 
   disclaimer: {
     ar: "وصيّة ليست جهة قانونية ولا تقسّم التركات؛ تقسيم الميراث يحكمه الشرع والقانون. نحن نوصل ما اختار صاحب الخزنة تسليمه إلى الأوصياء الذين سمّاهم فقط، وهم من ينفّذون وصيّته.",
@@ -120,7 +133,7 @@ export const CLAIMS = {
   detailEyebrow: { ar: "بلاغ وفاة", en: "Death report" },
   detailTitle: { ar: "بلاغ عن {name}", en: "Report about {name}" },
   // Before review a report names nobody: a name, or its absence, would say
-  // whether the email matched a vault (`claims.reviewedSubjectName`).
+  // whether the report matched a vault (`claims.reviewedSubjectName`).
   detailTitleNeutral: { ar: "بلاغ وفاة", en: "Death report" },
   backToList: { ar: "كل البلاغات", en: "All reports" },
 } as const satisfies Dictionary

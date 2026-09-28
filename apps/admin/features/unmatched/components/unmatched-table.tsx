@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import Link from "next/link"
 import { api } from "@workspace/backend/api"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table"
@@ -36,18 +37,29 @@ function unmatchedColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
   return helper.columns([
     // First column, because it is the whole point of the screen: a human
     // reading the typed address next to a real one is what spots the typo.
+    // The number is never shown — only that one was given.
     helper.accessor((row) => row.subjectEmail ?? "", {
       id: "typed",
       enableSorting: false,
       header: () => labels.colTyped,
-      cell: ({ row }) =>
-        row.original.subjectEmail === null ? (
-          <span className="text-muted-foreground">{labels.none}</span>
-        ) : (
-          <span dir="ltr" className="inline-block font-medium">
-            {row.original.subjectEmail}
-          </span>
-        ),
+      cell: ({ row }) => (
+        <div className="flex flex-col">
+          {row.original.subjectEmail === null ? (
+            !row.original.filedByIdNumber && (
+              <span className="text-muted-foreground">{labels.none}</span>
+            )
+          ) : (
+            <span dir="ltr" className="self-start font-medium">
+              {row.original.subjectEmail}
+            </span>
+          )}
+          {row.original.filedByIdNumber && (
+            <span className="text-xs text-muted-foreground">
+              {labels.withIdNumber}
+            </span>
+          )}
+        </div>
+      ),
     }),
 
     helper.accessor("claimantName", {
@@ -57,26 +69,24 @@ function unmatchedColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="font-medium">{row.original.claimantName}</span>
-          <span
-            dir="ltr"
-            className="self-start text-xs text-muted-foreground"
-          >
+          <span dir="ltr" className="self-start text-xs text-muted-foreground">
             {row.original.claimantContact}
           </span>
         </div>
       ),
     }),
 
-    helper.accessor((row) => row.certificateName ?? "", {
+    helper.display({
       id: "certificate",
-      enableSorting: false,
       header: () => labels.colCertificate,
-      cell: ({ row }) =>
-        row.original.certificateName === null ? (
-          <span className="text-muted-foreground">{labels.none}</span>
-        ) : (
-          <span>{row.original.certificateName}</span>
-        ),
+      cell: ({ row }) => (
+        <Link
+          href={`/claims/${row.original.id}`}
+          className="text-primary hover:underline"
+        >
+          {labels.openReport}
+        </Link>
+      ),
     }),
 
     helper.accessor("submittedAt", {
@@ -98,7 +108,7 @@ function unmatchedColumns(locale: Locale): ColumnDef<DataTableFeatures, Row>[] {
         <div className="flex items-center justify-end">
           <LinkSubject
             claimId={row.original.id}
-            typed={row.original.subjectEmail ?? ""}
+            typed={row.original.subjectEmail}
             locale={locale}
           />
         </div>

@@ -422,6 +422,38 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   }
 }
 
+// ── 8. The ID-number lookup stays a mirror ──────────────────────────────────
+//
+// `identityLookup` is how a death report finds a vault by the number on the
+// certificate. It mirrors `users.identityDocHashes`, so a file that writes that
+// column without calling `syncIdentityLookup` leaves reports silently failing
+// to match. Only `model/identityLookup.ts` touches the table itself.
+{
+  for (const file of files) {
+    const name = rel(file)
+    const source = code(file)
+    if (name === "schema.ts") {
+      continue
+    }
+    if (
+      /identityDocHashes\s*:/.test(source) &&
+      !source.includes("syncIdentityLookup(")
+    ) {
+      failures.push(
+        `${name} writes identityDocHashes without syncIdentityLookup — reports filed by ID number would stop finding the vault.`
+      )
+    }
+    if (
+      /\.(insert|patch|replace|delete)\(\s*["']identityLookup["']/.test(source) &&
+      name !== "model/identityLookup.ts"
+    ) {
+      failures.push(
+        `${name} writes identityLookup directly — use syncIdentityLookup in model/identityLookup.ts.`
+      )
+    }
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -431,5 +463,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one handover serving path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault."
+  "Backend invariants hold: one handover serving path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault, the ID-number lookup in step."
 )

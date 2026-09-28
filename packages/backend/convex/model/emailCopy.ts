@@ -255,18 +255,18 @@ export const CLAIM_RELEASED_COPY = {
  * existence — see `sweepUnmatched` for why that trade is worth making and why
  * the delay in front of it is load-bearing.
  *
- * It leads with the likely cause rather than the verdict. A mistyped address is
- * far commoner than a deceased person who never used Wassiya, and someone who
- * reads "no vault" as final stops looking for the right address.
+ * It leads with the likely cause rather than the verdict. A typo in the number
+ * or address is far commoner than a deceased person who never used Wassiya,
+ * and someone who reads "no vault" as final stops looking for the right one.
  */
 export const CLAIM_CLOSED_COPY = {
   ar: {
-    subject: "لم نتمكّن من بدء إجراء على هذا البريد",
-    body: "لم نجد خزنة مرتبطة بالبريد الذي أدخلته، فأُغلق بلاغك. غالباً ما يكون السبب خطأً في كتابة البريد — تحقّق منه وقدّم بلاغاً جديداً. لا يوجد أي قيد على تقديم بلاغ آخر.",
+    subject: "لم نجد خزنة لهذا البلاغ",
+    body: "لم نجد خزنة برقم الهوية أو البريد الذي أدخلته، فأُغلق بلاغك. غالباً ما يكون السبب خطأً في الكتابة — تحقّق منه وقدّم بلاغاً جديداً. لا يوجد أي قيد على تقديم بلاغ آخر.",
   },
   en: {
-    subject: "We could not start a process from that address",
-    body: "We found no vault for the address you entered, so your report is closed. The commonest reason is a typo in the address — check it and file again. There is no restriction on filing another.",
+    subject: "We could not find a vault for this report",
+    body: "We found no vault for the ID number or email you entered, so your report is closed. The commonest reason is a typo — check it and file again. There is no restriction on filing another.",
   },
 } as const satisfies LocalisedCopy
 

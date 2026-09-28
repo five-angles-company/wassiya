@@ -39,8 +39,8 @@ export function LinkSubject({
   locale,
 }: {
   claimId: Id<"claims">
-  /** The address as the claimant typed it — what the operator reads against. */
-  typed: string
+  /** The address as the claimant typed it, if they gave one. */
+  typed: string | null
   locale: Locale
 }) {
   const labels = t(UNMATCHED, locale)
@@ -102,7 +102,11 @@ export function LinkSubject({
         </Button>
       }
       title={labels.linkTitle}
-      description={labels.linkBody.replace("{typed}", typed)}
+      description={
+        typed === null
+          ? labels.linkBodyNoEmail
+          : labels.linkBody.replace("{typed}", typed)
+      }
     >
       <SheetBody>
         <p className="text-xs text-muted-foreground">{labels.linkOnce}</p>

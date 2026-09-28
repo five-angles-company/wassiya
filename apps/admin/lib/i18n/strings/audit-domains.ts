@@ -13,7 +13,7 @@ export const AUDIT_DOMAIN_LABELS = {
   asset: { ar: "الأصول", en: "Assets" },
   billing: { ar: "الاشتراكات", en: "Billing" },
   checkin: { ar: "التحقق من الحياة", en: "Check-in" },
-  claim: { ar: "طلبات الوراثة", en: "Claims" },
+  claim: { ar: "بلاغات الوفاة", en: "Claims" },
   delivery: { ar: "التسليمات", en: "Deliveries" },
   device: { ar: "الأجهزة", en: "Devices" },
   email: { ar: "البريد", en: "Email" },

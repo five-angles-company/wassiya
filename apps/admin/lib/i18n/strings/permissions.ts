@@ -60,7 +60,7 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
     en: "Assign threads to others and edit the help center",
   },
   "owners.read": {
-    ar: "قراءة الحسابات: الملّاك، الأوصياء، الأجهزة، النبض",
+    ar: "قراءة الحسابات: الملّاك، الأوصياء، الأجهزة، تأكيد الحياة",
     en: "Read accounts: owners, executors, devices, check-ins",
   },
   "billing.read": {
