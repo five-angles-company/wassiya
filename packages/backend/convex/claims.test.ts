@@ -592,3 +592,138 @@ describe("death certificate retention", () => {
     }
   })
 })
+
+describe("the ruling", () => {
+  async function setup(certificate: boolean) {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    await t.run((ctx) =>
+      ctx.db.insert("users", {
+        externalId: "staff",
+        name: "Reviewer",
+        email: "staff@example.com",
+        role: "admin",
+        staffPermissions: ["claims.rule"],
+      })
+    )
+    const certificateStorageId = certificate
+      ? await t.run((ctx) => ctx.storage.store(new Blob(["certificate"])))
+      : undefined
+    const claimId = await t.run((ctx) =>
+      ctx.db.insert("claims", {
+        subjectUserId: owner,
+        claimantUserId: reporter,
+        claimantName: "Reporter",
+        claimantContact: "reporter@example.com",
+        status: "submitted",
+        certificateStorageId,
+      })
+    )
+    return { t, claimId, staff: t.withIdentity({ subject: "staff" }) }
+  }
+
+  test("no report is approved without its death certificate", async () => {
+    const { t, claimId, staff } = await setup(false)
+    await expect(
+      staff.mutation(api.claims.adminSetNameMatch, { claimId, nameMatch: true })
+    ).rejects.toThrow(/death certificate/)
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.status).toBe(
+      "submitted"
+    )
+
+    await staff.mutation(api.claims.adminSetNameMatch, {
+      claimId,
+      nameMatch: false,
+      rejectReason: "not_certificate",
+    })
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.status).toBe(
+      "locked"
+    )
+  })
+
+  test("with the certificate on file, approval starts the waiting period", async () => {
+    const { t, claimId, staff } = await setup(true)
+    await staff.mutation(api.claims.adminSetNameMatch, {
+      claimId,
+      nameMatch: true,
+    })
+    expect((await t.run((ctx) => ctx.db.get("claims", claimId)))?.status).toBe(
+      "awaiting_veto"
+    )
+  })
+})
+
+describe("the end of a released vault", () => {
+  async function releaseWithoutExecutors() {
+    const t = convexTest(schema, modules)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    await t.run(async (ctx) => {
+      const bytes = new ArrayBuffer(8)
+      await ctx.db.insert("assets", {
+        userId: owner,
+        type: "note",
+        labelSealed: bytes,
+        meta: {},
+        dekWrappedByMk: bytes,
+        files: [],
+      })
+    })
+    await addClaim(t, owner, reporter, {
+      status: "awaiting_veto",
+      vetoDeadline: Date.now() - 1000,
+    })
+    await t.mutation(internal.claims.advance, {})
+    return { t, owner }
+  }
+
+  const assetsOf = (
+    t: Awaited<ReturnType<typeof releaseWithoutExecutors>>["t"],
+    owner: Id<"users">
+  ) =>
+    t.run(async (ctx) =>
+      (
+        await ctx.db
+          .query("assets")
+          .withIndex("by_userId", (q) => q.eq("userId", owner))
+          .collect()
+      ).length
+    )
+
+  test("a vault with no executors is still deleted after the delivery year", async () => {
+    vi.useFakeTimers()
+    try {
+      const { t, owner } = await releaseWithoutExecutors()
+      const released = await t.run((ctx) => ctx.db.get("users", owner))
+      expect(released?.vaultClosedAt).toBeDefined()
+      expect(released?.vaultPurgeAt).toBeGreaterThan(Date.now() + 364 * DAY)
+
+      await t.mutation(internal.deliveries.expire, {})
+      await t.finishAllScheduledFunctions(vi.runAllTimers)
+      expect(await assetsOf(t, owner)).toBe(1)
+
+      vi.advanceTimersByTime(366 * DAY)
+      await t.mutation(internal.deliveries.expire, {})
+      await t.finishAllScheduledFunctions(vi.runAllTimers)
+      expect(await assetsOf(t, owner)).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  test("a reopened vault is not deleted", async () => {
+    vi.useFakeTimers()
+    try {
+      const { t, owner } = await releaseWithoutExecutors()
+      await t.mutation(internal.claims.reopenVault, { userId: owner })
+
+      vi.advanceTimersByTime(366 * DAY)
+      await t.mutation(internal.deliveries.expire, {})
+      await t.finishAllScheduledFunctions(vi.runAllTimers)
+      expect(await assetsOf(t, owner)).toBe(1)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

@@ -170,7 +170,12 @@ export async function bindInvitation(
   ctx: MutationCtx,
   user: Doc<"users">
 ): Promise<{ bound: boolean }> {
-  if (user.email === null) return { bound: false }
+  // ⚠️ Only an address Clerk verified may bind — on the webhook path and on the
+  // console's `claimInvitation` alike. Signing up as someone else's invited
+  // address is otherwise a way into the console.
+  if (user.email === null || user.emailVerified !== true) {
+    return { bound: false }
+  }
   const invitation = await pendingInvitationFor(ctx, normaliseEmail(user.email))
   if (invitation === null) return { bound: false }
 

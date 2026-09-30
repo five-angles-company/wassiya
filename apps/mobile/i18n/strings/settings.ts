@@ -284,7 +284,6 @@ export const PLAN = {
   assetsLabel: { ar: "الأصول", en: "Assets" },
   executorsLabel: { ar: "الأوصياء", en: "Executors" },
   ofLimit: { ar: "{used} من {limit}", en: "{used} of {limit}" },
-  unlimited: { ar: "بلا حد", en: "Unlimited" },
   upgrade: { ar: "وسّع خطتك", en: "See the annual plan" },
 
   /** The meter formats in GB by default; a 500 MB allowance needs its own. */

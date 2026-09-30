@@ -20,9 +20,12 @@ import type { LabelSet } from "@workspace/ui-native/lib/labels"
 /** The limit sheet. One title and one line per wall an owner can hit. */
 export const PAYWALL = {
   assetsTitle: { ar: "خزنتك المجانية ممتلئة", en: "Your free vault is full" },
+  // Counts are bare numbers in a "limit: n" frame, so every value reads right
+  // in Arabic without a counted-noun form for each — and "up to", because even
+  // the annual plan stops at the vault's ceiling.
   assetsBody: {
-    ar: "خطتك الحالية تحفظ {free} أصول. الخطة السنوية تفتح عدداً غير محدود.",
-    en: "Your current plan holds {free} assets. The annual plan makes it unlimited.",
+    ar: "حدّ الأصول في خطتك الحالية {free}، وفي الخطة السنوية حتى {paid}.",
+    en: "Asset limit on your current plan: {free}. On the annual plan: up to {paid}.",
   },
 
   storageTitle: { ar: "انتهت مساحتك", en: "You are out of space" },
@@ -33,8 +36,8 @@ export const PAYWALL = {
 
   executorsTitle: { ar: "وصلت إلى حدّ الأوصياء", en: "You have reached your executor limit" },
   executorsBody: {
-    ar: "خطتك الحالية تتيح {free}. السنوية تتيح أكثر من وصيّ.",
-    en: "Your plan allows {free}. The annual plan allows more than one executor.",
+    ar: "حدّ الأوصياء في خطتك الحالية {free}، وفي الخطة السنوية حتى {paid}.",
+    en: "Executor limit on your current plan: {free}. On the annual plan: up to {paid}.",
   },
 
   photosTitle: {
@@ -60,17 +63,13 @@ export const PAYWALL = {
 
   /** What the annual plan is, in four lines. Order is deliberate: value first. */
   unlocksTitle: { ar: "الخطة السنوية", en: "The annual plan" },
-  unlockAssets: { ar: "أصول بلا حد", en: "Unlimited assets" },
-  unlockAssetsCount: { ar: "{paid} أصل", en: "{paid} assets" },
-  unlockExecutors: { ar: "أوصياء بلا حد", en: "Unlimited executors" },
-  unlockExecutorsCount: { ar: "{paid} أوصياء", en: "{paid} executors" },
+  unlockAssets: { ar: "الأصول: حتى {paid}", en: "Assets: up to {paid}" },
+  unlockExecutors: { ar: "الأوصياء: حتى {paid}", en: "Executors: up to {paid}" },
   unlockPhotos: { ar: "الصور والفيديو والملفات الكبيرة", en: "Photos, videos and large files" },
   unlockStorage: { ar: "{paid} مساحة مشفّرة", en: "{paid} of encrypted storage" },
 
-  /** Counts, where a limit is a number of things rather than a size. */
-  assetsCount: { ar: "{n} أصول", en: "{n} assets" },
-  executorsCount: { ar: "{n} أوصياء", en: "{n} executors" },
-  unlimited: { ar: "عدداً غير محدود", en: "an unlimited number" },
+  /** A size with no cap. Counts always have one — the vault's ceiling. */
+  unlimited: { ar: "بلا حد", en: "no limit" },
   unitMb: { ar: "م.ب", en: "MB" },
   unitGb: { ar: "غ.ب", en: "GB" },
 

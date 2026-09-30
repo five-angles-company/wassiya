@@ -19,7 +19,16 @@ import { VoiceRecorder } from "@workspace/ui-native/components/wassiya/voice-rec
 import { fmtDuration, fmtNum } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
 import { cn } from "@workspace/ui-native/lib/utils"
-import { AudioLines, Heart, ListChecks, MapPin, Mic, Square } from "lucide-react-native"
+import {
+  AudioLines,
+  Heart,
+  ListChecks,
+  MapPin,
+  Mic,
+  Pause,
+  Play,
+  Square,
+} from "lucide-react-native"
 import { Pressable, TextInput, View } from "react-native"
 
 import { Field } from "@/components/field"
@@ -57,7 +66,14 @@ export function useNoteSteps({
   formatLocked: boolean
   voice: ReturnType<typeof useVoiceNote>
   /** The saved recording, which stays until a new take replaces it. */
-  stored: { durationMs: number; byteSize: number } | null
+  stored: {
+    durationMs: number
+    byteSize: number
+    playing: boolean
+    loading: boolean
+    onPlay: () => void
+    onPause: () => void
+  } | null
   /** Where an unsaved draft lives — creating only. */
   draftLine?: string
 }): FlowStep[] {
@@ -197,10 +213,30 @@ export function useNoteSteps({
                     {`${detail.recordingRowLabel} · ${formatSize(stored.byteSize)}`}
                   </Text>
                 </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={stored.playing ? detail.pauseListening : detail.listen}
+                  onPress={stored.playing ? stored.onPause : stored.onPlay}
+                  disabled={stored.loading}
+                  className={cn(
+                    "bg-background size-10.5 shrink-0 items-center justify-center rounded-full active:opacity-70",
+                    stored.loading && "opacity-50"
+                  )}
+                >
+                  <Icon
+                    as={stored.playing ? Pause : Play}
+                    size={18}
+                    strokeWidth={2.75}
+                    className="text-foreground"
+                  />
+                </Pressable>
               </View>
               <Pressable
                 accessibilityRole="button"
-                onPress={voice.start}
+                onPress={() => {
+                  stored.onPause()
+                  voice.start()
+                }}
                 className="bg-card h-11.5 flex-row items-center justify-center gap-2 rounded-full active:opacity-80"
               >
                 <Icon as={Mic} size={16} strokeWidth={2.75} className="text-foreground" />

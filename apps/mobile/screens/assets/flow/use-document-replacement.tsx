@@ -16,7 +16,7 @@ import DocumentScanner, {
   ScanDocumentResponseStatus,
 } from "react-native-document-scanner-plugin"
 import { FileText, ScanLine } from "lucide-react-native"
-import { View } from "react-native"
+import { Pressable, View } from "react-native"
 
 import { useStrings } from "@/i18n/use-strings"
 import { fileSize } from "@/lib/asset-upload"
@@ -29,11 +29,16 @@ export function useDocumentReplacement({
   replacement,
   current,
   onReplace,
+  onOpen,
+  opening = false,
 }: {
   replacement: PickedFile | null
   /** How the stored file reads — "PDF · ٢٫١ م.ب" — or `null` when there is none. */
   current: string | null
   onReplace: (file: PickedFile) => void
+  /** Opens the stored file; absent while creating, when nothing is stored. */
+  onOpen?: () => void
+  opening?: boolean
 }): { content: ReactNode; release: () => void } {
   const { t, locale } = useStrings("assets/new/document")
   const { t: detail } = useStrings("assets/detail")
@@ -115,6 +120,16 @@ export function useDocumentReplacement({
               <Text variant="metaSm" className="text-terracotta-800 mt-0.5">
                 {detail.pendingReplace}
               </Text>
+            ) : onOpen !== undefined ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onOpen}
+                disabled={opening}
+                hitSlop={8}
+                className="mt-1 self-start"
+              >
+                <Text variant="action">{opening ? detail.opening : detail.openFile}</Text>
+              </Pressable>
             ) : null}
           </View>
         </View>

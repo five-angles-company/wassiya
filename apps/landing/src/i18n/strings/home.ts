@@ -227,6 +227,9 @@ export const HOME = {
   planPhotos: { ar: "الصور والفيديو", en: "Photos & videos" },
   planFileSize: { ar: "أكبر ملف", en: "Largest file" },
   planUnlimited: { ar: "بلا حدود", en: "Unlimited" },
+  // A count with no plan cap still stops at the vault's ceiling, fetched with
+  // the plans — never "unlimited".
+  planUpTo: { ar: "حتى {n}", en: "Up to {n}" },
   planIncluded: { ar: "متاحة", en: "Included" },
   planNotIncluded: { ar: "غير متاحة", en: "Not included" },
   unitMb: { ar: "م.ب", en: "MB" },

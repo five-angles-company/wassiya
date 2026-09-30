@@ -34,8 +34,8 @@ export const currentUser = query({
 // Called by the Clerk webhook (http.ts) on user.created / user.updated.
 // Internal: only other Convex functions can reach it, never the public API.
 //
-// `attributes` holds *only* the three Clerk-owned columns, and the update path
-// is `patch`, which shallow-merges — so a re-sync can never touch `country`,
+// `attributes` holds *only* Clerk-owned columns, and the update path is
+// `patch`, which shallow-merges — so a re-sync can never touch `country`,
 // `identityStatus`, `role` or `subscription`. The insert path seeds the two
 // fields every Wassiya function reads, so downstream code never has to treat
 // "column absent" and "unverified" as two different states.
@@ -49,6 +49,7 @@ export const upsertFromClerk = internalMutation({
       externalId: data.id,
       name,
       email,
+      emailVerified: verifiedPrimaryEmail(data) !== null,
       // The console searches one column, so it is composed where the two halves
       // are written. This is the only writer of either — a stale value here
       // fails silently, as an owner the console cannot find.
@@ -69,14 +70,9 @@ export const upsertFromClerk = internalMutation({
     // before the account exists (insert) or after it changed its email
     // (update). Deliberately a second patch rather than part of `attributes`,
     // so the rule above still holds: a Clerk sync cannot touch a Wassiya field.
-    //
-    // ⚠️ Only a **verified** address may bind. `primaryEmail` does not check,
-    // because nothing else cares; an invitation does, or signing up as someone
-    // else's address is a way into the console.
-    if (verifiedPrimaryEmail(data) !== null) {
-      const user = await ctx.db.get("users", userId)
-      if (user !== null) await bindInvitation(ctx, user)
-    }
+    // `bindInvitation` refuses an address Clerk has not verified.
+    const user = await ctx.db.get("users", userId)
+    if (user !== null) await bindInvitation(ctx, user)
   },
 })
 
@@ -185,12 +181,10 @@ function primaryEmail(data: UserJSON): string | null {
 }
 
 /**
- * The primary address, but only once Clerk says it was proved.
- *
- * Used by exactly one caller: staff invitation binding. Everything else in the
- * product is content for the account's own owner, where an unverified address
- * costs a bounced email; an invitation is authority, and an unverified one
- * would hand the console to whoever typed the address first.
+ * The primary address, but only once Clerk says it was proved. Stored as
+ * `emailVerified`, which staff invitation binding requires: everything else in
+ * the product is content for the account's own owner, where an unverified
+ * address costs a bounced email; an invitation is authority.
  */
 function verifiedPrimaryEmail(data: UserJSON): string | null {
   const primary = data.email_addresses.find(

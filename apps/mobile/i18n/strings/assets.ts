@@ -227,6 +227,16 @@ export const ASSET_DETAIL = {
   // pretending the swap already happened.
   pendingReplace: { ar: "بانتظار الحفظ", en: "not saved yet" },
   removePhoto: { ar: "أزل من الألبوم", en: "Remove from the album" },
+  // Opening what is stored. Decrypted on this phone, only when asked.
+  openFile: { ar: "افتح الملف", en: "Open the file" },
+  opening: { ar: "جارٍ الفتح…", en: "Opening…" },
+  openFailed: {
+    ar: "تعذّر فتح الملف. حاول مرة أخرى.",
+    en: "Could not open the file. Try again.",
+  },
+  listen: { ar: "استمع", en: "Listen" },
+  pauseListening: { ar: "إيقاف مؤقت", en: "Pause" },
+  closeViewer: { ar: "إغلاق", en: "Close" },
   // ٤.٣ does not collect these yet; the asset screen does, because an executor who
   // finds the device and knows its PIN never has to type twelve words.
   fieldDevicePassword: { ar: "كلمة مرور الجهاز", en: "Device password" },

@@ -1,6 +1,6 @@
 /**
- * One step of a saved document. The stored file is never downloaded; the file
- * step replaces it (`use-document-replacement.tsx`).
+ * One step of a saved document. The file step opens the stored file on request
+ * (`use-stored-files.ts`) and replaces it (`use-document-replacement.tsx`).
  */
 import type { Id } from "@workspace/backend/dataModel"
 import { fmtNum } from "@workspace/ui-native/lib/format"
@@ -18,6 +18,7 @@ import {
 import { StepEditFrame } from "@/screens/assets/detail/step-edit-frame"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
 import { useEditForm } from "@/screens/assets/detail/use-edit-form"
+import { useStoredFiles } from "@/screens/assets/detail/use-stored-files"
 import { useDocumentAboutStep } from "@/screens/assets/flow/document-steps"
 import { useDocumentReplacement } from "@/screens/assets/flow/use-document-replacement"
 
@@ -30,9 +31,12 @@ const EMPTY_DOCUMENT: DocumentForm = {
 
 export function DocumentStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; stepKey: string }) {
   const { t, locale } = useStrings("assets/new/document")
-  const { load, save, saving, error, noteReveal } = useAssetEditor(assetId)
+  const { asset, load, save, saving, error, noteReveal } = useAssetEditor(assetId)
   const { form, patch, dirty } = useEditForm(load.status === "ready" ? load : null, parseDocument)
   const value = form ?? EMPTY_DOCUMENT
+  const { t: detail } = useStrings("assets/detail")
+  const stored = useStoredFiles(asset?.dekWrappedByMk)
+  const storedFile = load.status === "ready" ? load.files[0] : undefined
 
   const formatSize = (bytes: number) =>
     `${fmtNum(Math.round((bytes / 1024 / 1024) * 10) / 10, locale)} ${locale === "ar" ? "م.ب" : "MB"}`
@@ -47,6 +51,11 @@ export function DocumentStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; 
         // The file's own name, but never over a title that already exists.
         ...(value.title.trim().length === 0 ? { title: stripExtension(file.name) } : null),
       }),
+    onOpen:
+      storedFile === undefined
+        ? undefined
+        : () => void stored.share(storedFile, value.current.mimeType),
+    opening: stored.busy !== null,
   })
 
   async function onSave() {
@@ -83,6 +92,7 @@ export function DocumentStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; 
       error={error}
       dirty={dirty}
       onReveal={noteReveal}
+      notice={stored.failed ? detail.openFailed : undefined}
     />
   )
 }

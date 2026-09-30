@@ -4,9 +4,9 @@
  * reverse-chronological list buries a recovery attempt under routine history
  * within a day.
  *
- * `NEEDS_ACTION` events stay in the top band whether or not they carry a
- * `readAt`. Marking read is a *reading* gesture and must not dismiss something
- * the owner still has to act on.
+ * The top band holds what is *still actionable*, judged from state, never from
+ * `readAt`: marking read is a reading gesture and must not dismiss something
+ * the owner still has to act on, and a band that never clears stops being read.
  *
  * **A death claim must never appear here as a row.** Home carries it, above
  * everything, right over the fingerprint check-in that stops it; claim events
@@ -14,7 +14,7 @@
  * interrupt, which is the failure that loses someone their veto window.
  */
 import { useMemo } from "react"
-import { usePaginatedQuery, useMutation } from "convex/react"
+import { usePaginatedQuery, useMutation, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
@@ -22,7 +22,7 @@ import { AuditRow } from "@workspace/ui-native/components/wassiya/audit-row"
 import { EmptyState } from "@workspace/ui-native/components/wassiya/empty-state"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
-import { BellOff, KeyRound, Users } from "lucide-react-native"
+import { BellOff, Fingerprint, KeyRound, Users } from "lucide-react-native"
 import { Pressable, View } from "react-native"
 
 import { LoadMore } from "@/components/load-more"
@@ -30,14 +30,13 @@ import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
 
-/**
- * Events that belong in the top band. Everything else is history.
- *
- * Deliberately a small, explicit list rather than a heuristic: a new event kind
- * should have to be *chosen* into the attention band, because the band's value
- * is entirely in how rarely it is used.
- */
-const NEEDS_ACTION = new Set(["recovery.attempted", "checkin.due"])
+/** The ladder `checkin.sweep` writes, one kind per rung. */
+const CHECKIN_REMINDERS: Record<string, string> = {
+  "checkin.day0": "checkinDay0",
+  "checkin.day7": "checkinDay7",
+  "checkin.day14": "checkinDay14",
+  "checkin.countdown": "checkinCountdown",
+}
 
 export function NotificationsScreen() {
   const { t, locale } = useStrings("notifications")
@@ -47,12 +46,31 @@ export function NotificationsScreen() {
     { initialNumItems: 30 }
   )
   const markRead = useMutation(api.notifications.markRead)
+  const checkin = useQuery(api.checkin.get)
+  const keyring = useQuery(api.keyring.get)
 
+  // Deliberately two explicit rules rather than a heuristic: a new event kind
+  // should have to be *chosen* into the attention band, because the band's
+  // value is entirely in how rarely it is used.
   const { attention, history } = useMemo(() => {
-    const attention = results.filter((row) => NEEDS_ACTION.has(row.kind))
-    const history = results.filter((row) => !NEEDS_ACTION.has(row.kind))
-    return { attention, history }
-  }, [results])
+    // Only the newest rung of a ladder the owner has not yet answered.
+    const reminder =
+      checkin != null && checkin.escalationState !== "idle"
+        ? results.find(
+            (row) =>
+              row.kind in CHECKIN_REMINDERS &&
+              row._creationTime > checkin.lastConfirmedAt
+          )
+        : undefined
+    // A used sheet stays a live key until a new one replaces it.
+    const sheetStillUsed = keyring?.paperUsedAt != null
+    const actionable = (row: (typeof results)[number]) =>
+      row === reminder || (row.kind === "recovery.attempted" && sheetStillUsed)
+    return {
+      attention: results.filter(actionable),
+      history: results.filter((row) => !actionable(row)),
+    }
+  }, [results, checkin, keyring])
 
   async function markAllRead() {
     // Only the history band. The attention band survives by design — see the
@@ -140,11 +158,11 @@ function titleFor(
   payload: Record<string, string | number | boolean | null>,
   t: Record<string, string>
 ): string {
+  const rung = CHECKIN_REMINDERS[kind]
+  if (rung !== undefined) return t[rung]!
   switch (kind) {
     case "recovery.attempted":
       return t.recoveryAttempt!
-    case "checkin.due":
-      return t.checkinDue!
     // Claims appear as history only. The interrupt is a screen, never a row.
     case "claim.submitted":
       return t.claimSubmitted!
@@ -165,13 +183,12 @@ function titleFor(
 
 /**
  * Body copy for the attention band. Total rather than partial because
- * `AlertBanner` requires a description — and only `NEEDS_ACTION` kinds reach
- * here, so the fallback is unreachable today and exists to stay honest if that
- * set grows.
+ * `AlertBanner` requires a description — only actionable kinds reach here, so
+ * the fallback exists to stay honest if that set grows.
  */
 function bodyFor(kind: string, t: Record<string, string>): string {
   if (kind === "recovery.attempted") return t.recoveryAttemptBody!
-  if (kind === "checkin.due") return t.checkinDueBody!
+  if (kind in CHECKIN_REMINDERS) return t.checkinDueBody!
   return t.generic!
 }
 
@@ -179,7 +196,7 @@ function actionsFor(
   kind: string,
   t: Record<string, string>
 ): { label: string; onPress: () => void }[] | undefined {
-  if (kind === "checkin.due") {
+  if (kind in CHECKIN_REMINDERS) {
     return [
       {
         label: t.openCheckin!,
@@ -201,5 +218,6 @@ function actionsFor(
 
 function iconFor(kind: string) {
   if (kind.startsWith("claim")) return Users
+  if (kind in CHECKIN_REMINDERS) return Fingerprint
   return KeyRound
 }

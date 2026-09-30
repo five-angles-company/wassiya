@@ -30,11 +30,16 @@ export function ReceiveEntry({ token }: { token: string }) {
   const common = t(COMMON, locale)
   const { isAuthenticated, isLoading } = useConvexAuth()
   const info = useQuery(api.deliveries.byToken, { token })
+  // The Clerk webhook creates the account row a moment after sign-up. Binding
+  // before it lands fails as "nobody", and a first-time executor is exactly
+  // the person who just signed up.
+  const me = useQuery(api.users.me, isAuthenticated ? {} : "skip")
   const bind = useMutation(api.deliveries.bind)
   const [failed, setFailed] = useState(false)
   const sent = useRef(false)
 
-  const canBind = isAuthenticated && info !== undefined && info !== null && info.open
+  const canBind =
+    isAuthenticated && me != null && info != null && info.open
 
   useEffect(() => {
     if (!canBind || sent.current) return

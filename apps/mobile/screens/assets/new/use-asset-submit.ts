@@ -11,12 +11,17 @@ import { useConvexAuth, useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { AssetLabel } from "@workspace/crypto/label"
 import type { Id } from "@workspace/backend/dataModel"
+import { fmtNum } from "@workspace/ui-native/lib/format"
 
 import type { UploadProgress } from "@/lib/asset-upload"
 import type { AssetType } from "@/lib/asset-types"
 import { usePaywall } from "@/components/paywall"
 import { useStrings } from "@/i18n/use-strings"
-import { limitBeforeUpload, planLimitOf } from "@/lib/plan-limit"
+import {
+  limitBeforeUpload,
+  planLimitOf,
+  vaultCeilingOf,
+} from "@/lib/plan-limit"
 import {
   type AssetMeta,
   type NewFile,
@@ -44,7 +49,7 @@ export type AssetSubmit = {
 }
 
 export function useAssetSubmit(): AssetSubmit {
-  const { t } = useStrings("assets/new")
+  const { t, locale } = useStrings("assets/new")
   const save = useSaveAsset()
   const paywall = usePaywall()
   // Same "skip" as the paywall's: `plans.current` calls `requireUser`, so a
@@ -116,12 +121,15 @@ export function useAssetSubmit(): AssetSubmit {
         if (limit !== null) {
           paywall.open(limit)
         }
+        const ceiling = vaultCeilingOf(cause)
         setError(
           cause instanceof VaultLockedError
             ? t.vaultLocked
             : limit !== null
               ? t.quotaExceeded
-              : t.saveFailed
+              : ceiling !== null
+                ? t.vaultFull.replace("{n}", fmtNum(ceiling, locale))
+                : t.saveFailed
         )
         console.warn("[wassiya] asset create failed", cause)
         return null
@@ -130,7 +138,16 @@ export function useAssetSubmit(): AssetSubmit {
         setSubmitting(false)
       }
     },
-    [save, paywall, plan, t.quotaExceeded, t.saveFailed, t.vaultLocked]
+    [
+      save,
+      paywall,
+      plan,
+      locale,
+      t.quotaExceeded,
+      t.saveFailed,
+      t.vaultFull,
+      t.vaultLocked,
+    ]
   )
 
   return { submit, submitting, error }

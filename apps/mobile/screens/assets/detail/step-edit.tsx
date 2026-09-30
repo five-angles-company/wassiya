@@ -7,7 +7,7 @@
 import { useQuery } from "convex/react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
-import { useLocalSearchParams } from "expo-router"
+import { Redirect, useLocalSearchParams } from "expo-router"
 
 import { LoadingScreen } from "@/components/loading-screen"
 import { useStrings } from "@/i18n/use-strings"
@@ -41,6 +41,7 @@ export function AssetStepEditScreen() {
   const asset = useQuery(api.assets.get, { assetId })
 
   if (asset === undefined) return <LoadingScreen back="/assets" />
+  if (asset === null) return <Redirect href="/assets" />
 
   const props = { assetId, stepKey: step ?? "" }
   switch (asset.type) {

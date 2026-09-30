@@ -17,7 +17,7 @@ import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import { fmtDate } from "@workspace/ui-native/lib/format"
 import { cn } from "@workspace/ui-native/lib/utils"
 import { ChevronRight, Lock } from "lucide-react-native"
-import { router } from "expo-router"
+import { Redirect, router } from "expo-router"
 import { Pressable, View } from "react-native"
 
 import { CenteredNote } from "@/components/centered-note"
@@ -66,6 +66,7 @@ export function AssetOverviewFrame({
   )
 
   if (load.status === "loading") return <LoadingScreen back="/assets" />
+  if (load.status === "gone") return <Redirect href="/assets" />
 
   if (load.status === "locked") {
     return (

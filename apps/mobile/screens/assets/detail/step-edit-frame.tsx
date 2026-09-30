@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
 import { ScreenTop } from "@workspace/ui-native/components/wassiya/screen-top"
 import * as LocalAuthentication from "expo-local-authentication"
-import { router } from "expo-router"
+import { Redirect, router } from "expo-router"
 import { Fingerprint, Lock } from "lucide-react-native"
 
 import { CenteredNote } from "@/components/centered-note"
@@ -36,6 +36,8 @@ export type StepEditFrameProps = {
   dirty: boolean
   /** Audits a reveal — called once a guarded step is shown. */
   onReveal: () => void
+  /** A failure that is not the save's own — opening a stored file. */
+  notice?: string
 }
 
 export function StepEditFrame({
@@ -48,6 +50,7 @@ export function StepEditFrame({
   error,
   dirty,
   onReveal,
+  notice,
 }: StepEditFrameProps) {
   const { t } = useStrings("assets/detail")
   const { t: chrome } = useStrings("assets/new")
@@ -80,6 +83,8 @@ export function StepEditFrame({
     // the button rather than re-raising itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
+
+  if (load.status === "gone") return <Redirect href="/assets" />
 
   if (!ready || (guarded && !unlocked)) {
     const message =
@@ -123,7 +128,7 @@ export function StepEditFrame({
       busy={saving}
       error={
         error === null
-          ? null
+          ? (notice ?? null)
           : error === "locked"
             ? t.saveLocked!
             : t.saveFailed!

@@ -8,6 +8,7 @@
  * that decides whether the queries run at all.
  */
 import { useEffect, useState } from "react"
+import { useAuth } from "@clerk/expo"
 import { useConvexAuth, useQuery } from "convex/react"
 import type { FunctionReturnType } from "convex/server"
 import { api } from "@workspace/backend/api"
@@ -39,8 +40,16 @@ export function useSetupEvidence(): SetupEvidenceResult {
   const me = useQuery(api.users.me, isAuthenticated ? {} : "skip")
   const keyring = useQuery(api.keyring.get, isAuthenticated ? {} : "skip")
 
-  const [enrolment, setEnrolment] = useState<VaultEnrolment | null>(null)
-  const [enrolmentLoaded, setEnrolmentLoaded] = useState(false)
+  // The keystore slot is the signed-in account's own; another account's key on
+  // this phone is not evidence of anything for this one.
+  const { isLoaded: clerkLoaded, userId: owner } = useAuth()
+
+  // Tagged with the account it was read for, so a switch of accounts reads as
+  // "loading" rather than routing one account on the other's marker.
+  const [marker, setMarker] = useState<{
+    owner: string | null
+    value: VaultEnrolment | null
+  } | null>(null)
   const [nonce, setNonce] = useState(0)
 
   // Re-read on every navigation. `me` and `keyring` are Convex queries and push
@@ -54,23 +63,29 @@ export function useSetupEvidence(): SetupEvidenceResult {
   const pathname = usePathname()
 
   useEffect(() => {
+    if (!clerkLoaded) return
     let active = true
-    void readEnrolment().then((value) => {
-      if (!active) return
-      setEnrolment(value)
-      // Sticky: re-reads must not flip `loading` back on, or every navigation
-      // inside /setup would flash a spinner.
-      setEnrolmentLoaded(true)
+    const current = owner ?? null
+    const read =
+      current === null ? Promise.resolve(null) : readEnrolment(current)
+    void read.then((value) => {
+      // Sticky per account: a re-read for the same one replaces the value
+      // without flipping `loading` back on, or every navigation inside /setup
+      // would flash a spinner.
+      if (active) setMarker({ owner: current, value })
     })
     return () => {
       active = false
     }
-  }, [nonce, pathname])
+  }, [clerkLoaded, owner, nonce, pathname])
+
+  const enrolmentLoaded = marker !== null && marker.owner === (owner ?? null)
+  const enrolment = enrolmentLoaded ? marker.value : null
 
   const serverLoading =
     authLoading ||
     (isAuthenticated && (me === undefined || keyring === undefined))
-  const loading = serverLoading || !enrolmentLoaded
+  const loading = serverLoading || !clerkLoaded || !enrolmentLoaded
 
   const step = resolveSetupStep({
     signedIn: isAuthenticated,

@@ -32,6 +32,7 @@ import {
   requirePermission,
 } from "./model/access"
 import { ASSET_TYPES, type AssetType } from "./model/assetTypes"
+import { MAX_EXECUTORS } from "./model/entitlements"
 import { planOf, storageUsed } from "./model/plans"
 import { JOB_EVERY_HOURS, JOB_NAMES } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
@@ -430,7 +431,7 @@ export const risk = query({
       const executors = await ctx.db
         .query("executors")
         .withIndex("by_userId", (q) => q.eq("userId", owner._id))
-        .take(20)
+        .take(MAX_EXECUTORS)
 
       const checkin = await ctx.db
         .query("checkinConfig")
@@ -1060,7 +1061,7 @@ export const ownerDetail = query({
     const executors = await ctx.db
       .query("executors")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .take(20)
+      .take(MAX_EXECUTORS)
     const keyring = await ctx.db
       .query("keyring")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
@@ -1606,7 +1607,7 @@ export const releasesTable = query({
           : await ctx.db
               .query("executors")
               .withIndex("by_userId", (q) => q.eq("userId", ownerId))
-              .take(20)
+              .take(MAX_EXECUTORS)
       rows.push({
         id: row._id,
         band: "counting",
@@ -2244,7 +2245,7 @@ export const claimDetail = query({
         : await ctx.db
             .query("executors")
             .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
-            .take(20)
+            .take(MAX_EXECUTORS)
 
     // Other claims this person has filed against this vault. Matched on the
     // claimant's account where there is one, because that is the identity the
@@ -2378,8 +2379,8 @@ export const claimDetail = query({
       history,
       /** Why each verdict is unavailable, or `null`. The button reads this. */
       blocked: {
-        approve: nameMatchBlockedReason(claim),
-        reject: nameMatchBlockedReason(claim),
+        approve: nameMatchBlockedReason(claim, "approve"),
+        reject: nameMatchBlockedReason(claim, "reject"),
       },
     }
   },

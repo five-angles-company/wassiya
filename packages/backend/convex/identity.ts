@@ -194,6 +194,28 @@ export const applyWebhookResult = internalMutation({
       return null
     }
 
+    // ⚠️ Webhooks arrive late, out of order and replayed, and a person can open
+    // several sessions. Only an approval may land from any session; anything
+    // else from a superseded session, or once the person is verified, is
+    // history. Applied, it would clear a verification that an executor's
+    // delivery — or an owner's whole vault — rests on.
+    const superseded =
+      user.diditSessionId !== undefined && user.diditSessionId !== args.sessionId
+    if (
+      args.status !== "verified" &&
+      (superseded || user.identityStatus === "verified")
+    ) {
+      await writeAudit(ctx, {
+        userId: user._id,
+        event: "identity.webhook_ignored",
+        meta: {
+          status: args.status,
+          reason: superseded ? "superseded_session" : "already_verified",
+        },
+      })
+      return null
+    }
+
     // Only a real decline burns an attempt. Counting sessions would spend one
     // every time a user opened the hosted flow and backed out; counting every
     // "rejected" would do the same, because an expired or abandoned session
@@ -208,6 +230,9 @@ export const applyWebhookResult = internalMutation({
       identityStatus: args.status,
       identityVerifiedAt: args.status === "verified" ? Date.now() : undefined,
       identityAttempts: attempts,
+      // An approval from an earlier session becomes the session on record, so
+      // `refreshDocument` reads the one that actually passed.
+      ...(superseded ? { diditSessionId: args.sessionId } : {}),
       ...(args.verifiedName === undefined
         ? {}
         : { identityVerifiedName: args.verifiedName }),

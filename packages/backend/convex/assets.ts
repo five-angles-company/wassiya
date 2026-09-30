@@ -33,7 +33,11 @@ import {
 import { writeAudit } from "./audit"
 import { assertCanAddAssets, requireUser } from "./model/access"
 import { assetTypeValidator } from "./model/assetTypes"
-import { assertCanAddAsset, assertEditWithinLimits } from "./model/entitlements"
+import {
+  assertCanAddAsset,
+  assertEditWithinLimits,
+  MAX_ASSETS,
+} from "./model/entitlements"
 import { storageUsed } from "./model/plans"
 
 const assetType = assetTypeValidator
@@ -101,13 +105,13 @@ export const list = query({
         ? await ctx.db
             .query("assets")
             .withIndex("by_userId", (q) => q.eq("userId", user._id))
-            .take(500)
+            .take(MAX_ASSETS)
         : await ctx.db
             .query("assets")
             .withIndex("by_userId_and_type", (q) =>
               q.eq("userId", user._id).eq("type", type)
             )
-            .take(500)
+            .take(MAX_ASSETS)
 
     return rows.map((row) => ({
       id: row._id,
@@ -122,14 +126,20 @@ export const list = query({
   },
 })
 
-/** The owner's device asks for this when it is about to decrypt an asset. */
+/**
+ * The owner's device asks for this when it is about to decrypt an asset.
+ *
+ * `null`, not a throw, for an asset that is gone or not the caller's: the
+ * screens showing one are still subscribed the moment it is deleted, and a
+ * throwing query takes the whole screen down with it.
+ */
 export const get = query({
   args: { assetId: v.id("assets") },
   handler: async (ctx, { assetId }) => {
     const user = await requireUser(ctx)
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
-      throw new Error("Not found")
+      return null
     }
     const files = await Promise.all(
       asset.files.map(async (file) => ({

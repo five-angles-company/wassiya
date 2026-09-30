@@ -37,6 +37,10 @@ export default defineSchema({
     externalId: v.string(),
     name: v.union(v.string(), v.null()),
     email: v.union(v.string(), v.null()),
+    // Clerk says the primary address was proved. What a staff invitation binds
+    // on (`bindInvitation`): an unverified address would hand the console to
+    // whoever typed it first. Absent on rows not synced since it was added.
+    emailVerified: v.optional(v.boolean()),
 
     // Onboarding profile. Country is a parameter, never a branch.
     country: v.optional(v.string()), // ISO 3166-1 alpha-2
@@ -133,6 +137,11 @@ export default defineSchema({
     // death, what the owner chose to let die with them. The one way back is
     // `claims.reopenVault`, run by hand for an owner proven alive.
     vaultClosedAt: v.optional(v.number()),
+    // When a released vault is deleted: release + the delivery window. Its own
+    // date rather than "when the last delivery closes", because a vault with no
+    // executors, or whose deliveries were all refused, has no delivery to
+    // close. Cleared by `reopenVault` and by the sweep that starts the purge.
+    vaultPurgeAt: v.optional(v.number()),
 
     // Account deletion (`account.ts`). `deletionDueAt` is set while a request
     // waits out its grace period and is what the sweep ranges on; it is cleared
@@ -180,6 +189,7 @@ export default defineSchema({
     // fan-out above needs the same read on every role edit.
     .index("by_role", ["role"])
     .index("by_deletionDueAt", ["deletionDueAt"])
+    .index("by_vaultPurgeAt", ["vaultPurgeAt"])
     /**
      * Name and email in one column, for the console's owner lookup.
      *

@@ -37,6 +37,10 @@ export const ASSET_NEW = {
     ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
     en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
   },
+  vaultFull: {
+    ar: "بلغت خزنتك أقصى عدد من العناصر ({n}). احذف عنصراً لتضيف غيره.",
+    en: "Your vault holds as many items as it can ({n}). Delete one to add another.",
+  },
 } satisfies LabelSet<string>
 
 /** ٤.٣ — the hard screen. */
@@ -259,6 +263,7 @@ export const NEW_PHOTOS = {
   chooseMore: { ar: "أضف المزيد", en: "Add more" },
   selected: { ar: "{n} مختارة", en: "{n} selected" },
   removePhoto: { ar: "أزل من الألبوم", en: "Remove from the album" },
+  openItem: { ar: "افتح", en: "Open" },
   preparing: { ar: "جارٍ التحضير…", en: "Preparing…" },
   uploading: { ar: "جارٍ رفع {done} من {total}", en: "Uploading {done} of {total}" },
 

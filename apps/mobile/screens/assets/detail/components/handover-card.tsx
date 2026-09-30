@@ -33,13 +33,13 @@ export function HandoverCard({
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  if (asset === undefined) return null
+  if (asset == null) return null
 
   const noExecutor = executors !== undefined && executors.length === 0
 
   async function choose(value: string) {
     const handedOver = value === "handedOver"
-    if (busy || asset === undefined || handedOver === asset.handedOver) return
+    if (busy || asset == null || handedOver === asset.handedOver) return
     setBusy(true)
     setFailed(false)
     try {

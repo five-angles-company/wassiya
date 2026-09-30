@@ -234,3 +234,73 @@ describe("handover.open", () => {
     }
   })
 })
+
+describe("a vault too large for one page", () => {
+  async function largeVault(extra: number) {
+    const vault = await releasedVault()
+    await vault.t.run(async (ctx) => {
+      const bytes = new ArrayBuffer(8)
+      for (let i = 0; i < extra; i++) {
+        await ctx.db.insert("assets", {
+          userId: vault.ownerId,
+          type: "note",
+          labelSealed: bytes,
+          meta: {},
+          dekWrappedByMk: bytes,
+          files: [],
+          dekWrappedByRelease: bytes,
+        })
+      }
+    })
+    return vault
+  }
+
+  test("every handed-over asset arrives across pages, and the open is audited once", async () => {
+    const { t, ownerId, deliveryId, assetIds } = await largeVault(120)
+    const as = t.withIdentity({ subject: "executor" })
+
+    const seen: string[] = []
+    let page = await as.mutation(api.handover.open, { deliveryId })
+    seen.push(...page.items.map((item) => item.assetId))
+    while (!page.isDone) {
+      page = await as.mutation(api.handover.open, {
+        deliveryId,
+        cursor: page.continueCursor,
+      })
+      seen.push(...page.items.map((item) => item.assetId))
+    }
+
+    // 120 extra plus the one handed over by `releasedVault`; the private one never.
+    expect(new Set(seen).size).toBe(121)
+    expect(seen).not.toContain(assetIds[1])
+
+    const opens = await t.run(async (ctx) =>
+      (
+        await ctx.db
+          .query("auditLog")
+          .withIndex("by_userId_and_at", (q) => q.eq("userId", ownerId))
+          .collect()
+      ).filter((row) => row.event === "release.delivery_opened")
+    )
+    expect(opens).toHaveLength(1)
+  })
+
+  test("a later page is refused without a recent audited open", async () => {
+    const { t, deliveryId } = await largeVault(60)
+    const as = t.withIdentity({ subject: "executor" })
+
+    const first = await as.mutation(api.handover.open, { deliveryId })
+    expect(first.isDone).toBe(false)
+    await t.run((ctx) =>
+      ctx.db.patch("deliveries", deliveryId, {
+        lastOpenedAt: Date.now() - 60 * 60 * 1000,
+      })
+    )
+    await expect(
+      as.mutation(api.handover.open, {
+        deliveryId,
+        cursor: first.continueCursor,
+      })
+    ).rejects.toThrow("Not found")
+  })
+})

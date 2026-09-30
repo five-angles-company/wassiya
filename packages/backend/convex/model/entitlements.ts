@@ -43,6 +43,31 @@ function refuse(limit: LimitCode, plan: PlanId): never {
   throw new ConvexError<LimitError>({ code: "limit", limit, plan })
 }
 
+/**
+ * The most executors any vault may name, whatever its plan — "unlimited" means
+ * this. It is what makes every read of an owner's executors complete at
+ * `take(MAX_EXECUTORS)`, and it bounds the release transaction, which creates a
+ * delivery and sends an invite per executor in one mutation.
+ */
+export const MAX_EXECUTORS = 50
+
+/**
+ * The most assets any vault may hold, whatever its plan — an album counts once
+ * however many photos it holds. The owner's list has to load every label to
+ * search and sort (the server cannot read names), so this is what keeps it
+ * complete at `take(MAX_ASSETS)`. The handover pages instead (`handover.open`).
+ */
+export const MAX_ASSETS = 1000
+
+/**
+ * What a `null` count limit means in words: "up to" these. Served by
+ * `plans.current` and `plans.published` so no client writes them down.
+ */
+export const VAULT_CEILINGS = {
+  assets: MAX_ASSETS,
+  executors: MAX_EXECUTORS,
+} as const
+
 /** Rows up to `cap + 1`, which is all a cap check ever needs to know. */
 async function countUpTo(
   ctx: QueryCtx,
@@ -98,6 +123,11 @@ export async function assertCanAddAsset(
       refuse("assets", plan)
     }
   }
+  // Not a plan wall — no upgrade lifts it — so not a paywall code either.
+  const held = await countUpTo(ctx, "assets", user._id, MAX_ASSETS)
+  if (held >= MAX_ASSETS) {
+    throw new ConvexError({ code: "asset_cap", max: MAX_ASSETS })
+  }
 }
 
 /**
@@ -146,12 +176,16 @@ export async function assertCanAddExecutor(
 ): Promise<void> {
   const plan = planOf(user)
   const limits = await limitsFor(ctx, user, now)
-  if (limits.executors === null) {
-    return
+  if (limits.executors !== null) {
+    const count = await countUpTo(ctx, "executors", user._id, limits.executors)
+    if (count >= limits.executors) {
+      refuse("executors", plan)
+    }
   }
-  const count = await countUpTo(ctx, "executors", user._id, limits.executors)
-  if (count >= limits.executors) {
-    refuse("executors", plan)
+  // Not a plan wall — no upgrade lifts it — so not a paywall code either.
+  const named = await countUpTo(ctx, "executors", user._id, MAX_EXECUTORS)
+  if (named >= MAX_EXECUTORS) {
+    throw new ConvexError({ code: "executor_cap", max: MAX_EXECUTORS })
   }
 }
 

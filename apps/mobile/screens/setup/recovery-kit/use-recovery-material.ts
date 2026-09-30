@@ -14,6 +14,7 @@
  *     choosing it, and refuses one that does not follow from the stored row.
  */
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useAuth } from "@clerk/expo"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { encodePaperCode } from "@workspace/crypto/papercode"
@@ -63,6 +64,7 @@ export function useRecoveryMaterial(
   retry: () => void
 } {
   const save = useMutation(api.keyring.save)
+  const owner = useAuth().userId ?? null
   const [state, setState] = useState<RecoveryMaterialState>({
     status: "preparing",
   })
@@ -75,7 +77,8 @@ export function useRecoveryMaterial(
     async (ctx: RecoveryContext) => {
       try {
         ensureWebCrypto()
-        const mk = await readMk(authPrompt)
+        if (owner === null) throw new Error("Signed out")
+        const mk = await readMk(owner, authPrompt)
 
         // Always a rotation from the server's point of view, so the next
         // version is this one plus one — or the first, when there is no row.
@@ -107,7 +110,7 @@ export function useRecoveryMaterial(
         })
       }
     },
-    [authPrompt]
+    [authPrompt, owner]
   )
 
   useEffect(() => {
@@ -130,13 +133,13 @@ export function useRecoveryMaterial(
       return false
     }
     try {
-      await patchEnrolment({ paperVersion })
+      if (owner !== null) await patchEnrolment(owner, { paperVersion })
     } catch {
       // The local marker is this install's own record, not a routing input;
       // the server row just written is the truth.
     }
     return true
-  }, [save, state])
+  }, [owner, save, state])
 
   const wipe = useCallback(() => {
     wrapped.current = null

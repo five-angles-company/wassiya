@@ -18,11 +18,15 @@ const home = t(HOME, locale)
 const units = { mb: home.unitMb, gb: home.unitGb }
 
 type Limits = PublishedPlans["free"]
+type Ceilings = PublishedPlans["ceilings"]
 type Row = { label: string; value: string; kind: "value" | "unlimited" | "yes" | "no" }
 
-// Every value is interpolated from the fetched row; `null` is "no cap".
-function rowsFor(limits: Limits): Row[] {
+// Every value is interpolated from the fetched row. A size with no cap is
+// "unlimited"; a count with none stops at the vault's ceiling.
+function rowsFor(limits: Limits, ceilings: Ceilings): Row[] {
   const count = (value: number | null): Row["kind"] => (value === null ? "unlimited" : "value")
+  const upTo = (value: number | null, ceiling: number) =>
+    value === null ? home.planUpTo.replace("{n}", fmtNumber(ceiling, locale)) : fmtNumber(value, locale)
   return [
     {
       label: home.planStorage,
@@ -31,13 +35,13 @@ function rowsFor(limits: Limits): Row[] {
     },
     {
       label: home.planAssets,
-      value: limits.assets === null ? home.planUnlimited : fmtNumber(limits.assets, locale),
-      kind: count(limits.assets),
+      value: upTo(limits.assets, ceilings.assets),
+      kind: "value",
     },
     {
       label: home.planExecutors,
-      value: limits.executors === null ? home.planUnlimited : fmtNumber(limits.executors, locale),
-      kind: count(limits.executors),
+      value: upTo(limits.executors, ceilings.executors),
+      kind: "value",
     },
     {
       label: home.planPhotos,
@@ -52,19 +56,23 @@ function rowsFor(limits: Limits): Row[] {
   ]
 }
 
+// A deployment older than the ceilings serves no `ceilings`; built against one,
+// the site shows its fallback copy rather than failing the build.
+const readable = plans !== null && plans.ceilings !== undefined
+
 const tiers = [
   {
     name: home.planFree,
     tagline: home.planFreeTagline,
     fallback: home.planFreeFallback,
-    rows: plans ? rowsFor(plans.free) : null,
+    rows: readable ? rowsFor(plans.free, plans.ceilings) : null,
     featured: false,
   },
   {
     name: home.planAnnual,
     tagline: home.planAnnualTagline,
     fallback: home.planAnnualFallback,
-    rows: plans ? rowsFor(plans.annual) : null,
+    rows: readable ? rowsFor(plans.annual, plans.ceilings) : null,
     featured: true,
   },
 ]

@@ -12,7 +12,7 @@ import { v } from "convex/values"
 
 import { internalMutation, query } from "./_generated/server"
 import { requirePermission, requireUser } from "./model/access"
-import { usageFor } from "./model/entitlements"
+import { usageFor, VAULT_CEILINGS } from "./model/entitlements"
 import { limitsFor, limitsOfPlan, PLAN_IDS, planOf } from "./model/plans"
 
 export const current = query({
@@ -35,6 +35,8 @@ export const current = query({
       renewsAt: user.subscription?.renewsAt ?? null,
       limits,
       usage: await usageFor(ctx, user, limits),
+      // A `null` count is "up to" these, never "unlimited".
+      ceilings: VAULT_CEILINGS,
       // What the paywall is selling, so its copy can state the actual numbers
       // instead of repeating numbers that were true when it was written. Null
       // for an owner already on the annual plan, who is not being sold
@@ -49,8 +51,9 @@ export const current = query({
  * is built. Unauthenticated on purpose: a plan's limits are marketing copy, and
  * the site has no session to present.
  *
- * ⚠️ Only the tier rows, through `limitsOfPlan`. Never an override (that is one
- * account's business) and never a price.
+ * ⚠️ Only the tier rows, through `limitsOfPlan`, and the vault ceilings a
+ * `null` count stops at. Never an override (that is one account's business)
+ * and never a price.
  *
  * ⚠️ The site is static, so what it prints is what this returned at its last
  * build. Editing a plan does not reach wassiya.app until the landing image is
@@ -61,6 +64,7 @@ export const published = query({
   handler: async (ctx) => ({
     free: await limitsOfPlan(ctx, "free"),
     annual: await limitsOfPlan(ctx, "annual"),
+    ceilings: VAULT_CEILINGS,
   }),
 })
 

@@ -658,7 +658,9 @@ async function hasPendingInvitation(
   ctx: QueryCtx,
   user: Doc<"users">
 ): Promise<boolean> {
-  if (user.email === null) return false
+  // Mirrors `bindInvitation`: an invitation this account cannot bind is not
+  // pending for it, or the console would wait on it forever.
+  if (user.email === null || user.emailVerified !== true) return false
   return (await pendingInvitationFor(ctx, normaliseEmail(user.email))) !== null
 }
 

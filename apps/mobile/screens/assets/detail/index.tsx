@@ -36,7 +36,7 @@ export function AssetDetailScreen() {
 
   const type: AssetType = asset?.type ?? "note"
   const sections =
-    asset !== undefined && load.status === "ready"
+    asset != null && load.status === "ready"
       ? sectionsFor(asset.type, load, labels, locale, formatSize, chrome.notRecorded!)
       : null
 

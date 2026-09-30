@@ -6,13 +6,14 @@ import { useState } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
+import { fmtNum } from "@workspace/ui-native/lib/format"
 import { router } from "expo-router"
 
 import { usePaywall } from "@/components/paywall"
 import { Screen } from "@/components/screen"
 import { ScreenHeader } from "@/components/screen-header"
 import { useStrings } from "@/i18n/use-strings"
-import { planLimitOf } from "@/lib/plan-limit"
+import { planLimitOf, vaultCeilingOf } from "@/lib/plan-limit"
 import { ExecutorFields } from "@/screens/executors/components/executor-fields"
 import { ExecutorSteps } from "@/screens/executors/components/executor-steps"
 import { useExecutorForm } from "@/screens/executors/use-executor-form"
@@ -27,12 +28,12 @@ export function NewExecutorScreen() {
   )
 
   const [saving, setSaving] = useState(false)
-  const [failed, setFailed] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   async function save() {
     if (!form.canSubmit) return
     setSaving(true)
-    setFailed(false)
+    setError(null)
     try {
       const { email, ...rest } = form.values
       const executorId = await add({
@@ -47,10 +48,13 @@ export function NewExecutorScreen() {
       // A plan limit has a remedy, so it opens the paywall instead of turning
       // the form red.
       const limit = planLimitOf(cause)
+      const ceiling = vaultCeilingOf(cause)
       if (limit !== null) {
         paywall.open(limit)
+      } else if (ceiling !== null) {
+        setError(t.atCeiling!.replace("{n}", fmtNum(ceiling, locale)))
       } else {
-        setFailed(true)
+        setError(t.failed!)
       }
     } finally {
       setSaving(false)
@@ -81,7 +85,7 @@ export function NewExecutorScreen() {
           { label: t.step3!, body: t.step3Body! },
         ]}
       />
-      <ExecutorFields form={form} t={t} error={failed ? t.failed : undefined} />
+      <ExecutorFields form={form} t={t} error={error ?? undefined} />
     </Screen>
   )
 }

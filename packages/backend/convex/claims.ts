@@ -29,6 +29,7 @@ import {
   CLAIM_RATE_LIMIT,
   CLAIM_RATE_WINDOW_MS,
   DAY_MS,
+  DELIVERY_WINDOW_DAYS,
   ID_CHECK_ATTEMPTS,
   VETO_LOCKOUT_DAYS,
   VETO_WINDOW_DAYS,
@@ -952,8 +953,15 @@ export const adminSetNameMatch = mutation({
 
     // `nameMatchBlockedReason` is the same predicate the console disables its
     // button on, so the two cannot disagree.
-    if (nameMatchBlockedReason(claim) === "past-review") {
+    const blocked = nameMatchBlockedReason(
+      claim,
+      nameMatch ? "approve" : "reject"
+    )
+    if (blocked === "past-review") {
       throw new Error("This claim is past review")
+    }
+    if (blocked === "no-certificate") {
+      throw new Error("A report cannot be approved without its death certificate")
     }
 
     const status = nameMatchOutcome(nameMatch)
@@ -1081,8 +1089,13 @@ export const advance = internalMutation({
         now
       )
       // From here the printed sheet opens nothing: recovery and new devices
-      // are refused. See `users.vaultClosedAt`.
-      await ctx.db.patch("users", claim.subjectUserId, { vaultClosedAt: now })
+      // are refused. See `users.vaultClosedAt`. The vault's end is dated here
+      // too, so it comes whether its deliveries run out, are all refused, or
+      // there were never any executors to deliver to.
+      await ctx.db.patch("users", claim.subjectUserId, {
+        vaultClosedAt: now,
+        vaultPurgeAt: now + DELIVERY_WINDOW_DAYS * DAY_MS,
+      })
       await writeAudit(ctx, {
         userId: claim.subjectUserId,
         event: "claim.released",
@@ -1135,7 +1148,10 @@ export const reopenVault = internalMutation({
   args: { userId: v.id("users") },
   handler: async (ctx, { userId }) => {
     const now = Date.now()
-    await ctx.db.patch("users", userId, { vaultClosedAt: undefined })
+    await ctx.db.patch("users", userId, {
+      vaultClosedAt: undefined,
+      vaultPurgeAt: undefined,
+    })
 
     let stopped = 0
     for (const status of ["awaiting_executor", "identity_pending", "ready"] as const) {

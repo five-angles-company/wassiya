@@ -16,7 +16,7 @@ import { mutation, query } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { evaluateDeliveryIdentity } from "./deliveries"
 import { requireUser } from "./model/access"
-import { assertCanAddExecutor } from "./model/entitlements"
+import { assertCanAddExecutor, MAX_EXECUTORS } from "./model/entitlements"
 import { identityNumberHash } from "./model/identityHash"
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -38,7 +38,7 @@ export const list = query({
     const rows = await ctx.db
       .query("executors")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .take(20)
+      .take(MAX_EXECUTORS)
     return rows.map((row) => ({
       id: row._id,
       name: row.name,
@@ -200,7 +200,7 @@ export const yearlyCheck = query({
     const executors = await ctx.db
       .query("executors")
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
-      .take(20)
+      .take(MAX_EXECUTORS)
     if (executors.length === 0) return { due: false, confirmedAt: null }
     const since =
       user.executorsConfirmedAt ??

@@ -71,7 +71,7 @@ export const NOTIFICATIONS = {
 
   empty: { ar: "لا إشعارات", en: "Nothing here" },
   emptyBody: {
-    ar: "سنُعلمك هنا بأي محاولة استرداد، أو عند موعد التحقق من الحياة.",
+    ar: "سنُعلمك هنا بأي محاولة استرداد، أو عند موعد تأكيد الحياة.",
     en: "We'll tell you here about any recovery attempt, or when a check-in is due.",
   },
 
@@ -83,7 +83,11 @@ export const NOTIFICATIONS = {
   },
   wasntMe: { ar: "لم أكن أنا", en: "Wasn't me" },
 
-  checkinDue: { ar: "وقت التحقق من الحياة", en: "Time to check in" },
+  // One per rung of the ladder, matching the email subjects.
+  checkinDay0: { ar: "حان وقت تأكيد الحياة", en: "Your check-in is due" },
+  checkinDay7: { ar: "أسبوع على موعد تأكيدك", en: "A week since your check-in was due" },
+  checkinDay14: { ar: "أسبوعان على موعد تأكيدك", en: "Two weeks since your check-in was due" },
+  checkinCountdown: { ar: "شهر على موعد تأكيدك", en: "A month since your check-in was due" },
   checkinDueBody: {
     ar: "تأكيد واحد بالبصمة",
     en: "One confirmation with your fingerprint",

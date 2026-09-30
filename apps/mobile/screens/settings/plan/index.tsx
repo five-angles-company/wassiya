@@ -56,6 +56,7 @@ export function PlanScreen() {
   const { t, locale } = useStrings("settings/plan")
   const plan = useQuery(api.plans.current)
   const rows = useQuery(api.assets.list, {})
+  const executors = useQuery(api.executors.list)
   const { t: assets } = useStrings("assets")
   const paywall = usePaywall()
 
@@ -144,7 +145,14 @@ export function PlanScreen() {
       <View className="mb-6 overflow-hidden rounded-card bg-card">
         <SettingsRow
           label={t.assetsLabel}
-          value={countLine(t, locale, plan?.usage.assets, plan?.limits.assets)}
+          value={countLine(
+            t,
+            locale,
+            plan?.usage.assets,
+            plan?.limits.assets,
+            plan?.ceilings.assets,
+            rows?.length
+          )}
           divider
         />
         <SettingsRow
@@ -153,7 +161,9 @@ export function PlanScreen() {
             t,
             locale,
             plan?.usage.executors,
-            plan?.limits.executors
+            plan?.limits.executors,
+            plan?.ceilings.executors,
+            executors?.length
           )}
         />
       </View>
@@ -194,20 +204,23 @@ export function PlanScreen() {
   )
 }
 
-/** "٣ من ٥", or "بلا حد" where the plan has no cap. */
+/**
+ * "٣ من ٥" — or, where the plan has no cap, "٣ من ١٬٠٠٠" against the vault's
+ * ceiling, which is what "unlimited" means. Nothing is counted on a plan with
+ * no cap (`used` is null), so the count is taken from the rows on the phone.
+ */
 function countLine(
-  t: { ofLimit: string; unlimited: string },
+  t: { ofLimit: string },
   locale: Locale,
   used: number | null | undefined,
-  limit: number | null | undefined
+  limit: number | null | undefined,
+  ceiling: number | undefined,
+  held?: number
 ): string {
-  if (used === undefined || used === null || limit === undefined) {
-    return ""
-  }
-  if (limit === null) {
-    return t.unlimited
-  }
+  const cap = limit ?? ceiling
+  const count = used ?? held
+  if (cap === undefined || count === undefined) return ""
   return t.ofLimit
-    .replace("{used}", fmtNum(used, locale))
-    .replace("{limit}", fmtNum(limit, locale))
+    .replace("{used}", fmtNum(count, locale))
+    .replace("{limit}", fmtNum(cap, locale))
 }

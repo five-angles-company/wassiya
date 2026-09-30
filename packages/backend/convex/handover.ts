@@ -10,6 +10,10 @@
 //    in is trusted, and every refusal is the same "not found".
 //  - An open that passes the gate is audited in the same transaction.
 //  - Only handed-over assets are served. A private asset never leaves.
+//  - It is paged, so no vault is too large to deliver: every page runs the
+//    whole gate, the first one audits the open, and a later page is served
+//    only within `PAGE_WINDOW_MS` of that audited open — no page leaves without
+//    an audit line behind it.
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
@@ -17,24 +21,41 @@ import { mutation, type MutationCtx } from "./_generated/server"
 import { writeAudit } from "./audit"
 import { getCurrentUserOrThrow } from "./users"
 
+/** Assets per page. Each may be an album of twenty files, two links apiece. */
+const PAGE = 50
+
+/** How long after an audited open its later pages may be fetched. */
+const PAGE_WINDOW_MS = 15 * 60 * 1000
+
 export const open = mutation({
-  args: { deliveryId: v.id("deliveries") },
-  handler: async (ctx, { deliveryId }) => {
+  args: {
+    deliveryId: v.id("deliveries"),
+    /** Absent on the first page, which is the one that audits the open. */
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, { deliveryId, cursor }) => {
     const delivery = await openableDelivery(ctx, deliveryId)
     if (delivery === null) throw new Error("Not found")
 
     const now = Date.now()
-    await ctx.db.patch("deliveries", deliveryId, { lastOpenedAt: now })
-    await writeAudit(ctx, {
-      userId: delivery.subjectUserId,
-      event: "release.delivery_opened",
-      meta: {
-        deliveryId,
-        executorId: delivery.executorId,
-        executorUserId: delivery.executorUserId ?? null,
-      },
-      at: now,
-    })
+    if (cursor === undefined) {
+      await ctx.db.patch("deliveries", deliveryId, { lastOpenedAt: now })
+      await writeAudit(ctx, {
+        userId: delivery.subjectUserId,
+        event: "release.delivery_opened",
+        meta: {
+          deliveryId,
+          executorId: delivery.executorId,
+          executorUserId: delivery.executorUserId ?? null,
+        },
+        at: now,
+      })
+    } else if (
+      delivery.lastOpenedAt === undefined ||
+      now - delivery.lastOpenedAt > PAGE_WINDOW_MS
+    ) {
+      throw new Error("Not found")
+    }
 
     const ownerId = delivery.subjectUserId
     const executor = await ctx.db.get("executors", delivery.executorId)
@@ -42,13 +63,13 @@ export const open = mutation({
       .query("keyring")
       .withIndex("by_userId", (q) => q.eq("userId", ownerId))
       .unique()
-    const assets = await ctx.db
+    const page = await ctx.db
       .query("assets")
       .withIndex("by_userId", (q) => q.eq("userId", ownerId))
-      .take(500)
+      .paginate({ cursor: cursor ?? null, numItems: PAGE })
 
     const items = []
-    for (const asset of assets) {
+    for (const asset of page.page) {
       if (asset.dekWrappedByRelease === undefined) continue
       items.push({
         assetId: asset._id,
@@ -92,6 +113,9 @@ export const open = mutation({
               releaseKeyWrappedByMk: keyring.releaseKeyWrappedByMk,
             },
       items,
+      /** Pass back as `cursor` until `isDone`. */
+      continueCursor: page.continueCursor,
+      isDone: page.isDone,
     }
   },
 })

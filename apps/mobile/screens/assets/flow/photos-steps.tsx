@@ -9,6 +9,7 @@ import { Icon } from "@workspace/ui-native/components/ui/icon"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { fmtDuration, fmtNum } from "@workspace/ui-native/lib/format"
 import type { Locale } from "@workspace/ui-native/lib/labels"
+import { cn } from "@workspace/ui-native/lib/utils"
 import { Play, Plus, X } from "lucide-react-native"
 import { Image, Pressable, View } from "react-native"
 
@@ -26,6 +27,9 @@ export type GridMedia = {
   durationMs?: number
   /** `null` while a stored thumbnail is still decrypting, or when there is none. */
   uri: string | null
+  /** A stored item opens its original; one not saved yet has nothing to open. */
+  onOpen?: () => void
+  opening?: boolean
 }
 
 export function usePhotosSteps({
@@ -74,11 +78,19 @@ export function usePhotosSteps({
           <View className="flex-row flex-wrap gap-2.5">
             {items.map((item, i) => (
               <View key={item.key} className="size-22">
-                {item.uri === null ? (
-                  <View className="bg-card rounded-box size-full" />
-                ) : (
-                  <Image source={{ uri: item.uri }} className="rounded-box size-full" />
-                )}
+                <Pressable
+                  accessibilityRole={item.onOpen !== undefined ? "button" : undefined}
+                  accessibilityLabel={item.onOpen !== undefined ? t.openItem : undefined}
+                  onPress={item.onOpen}
+                  disabled={item.onOpen === undefined || item.opening === true}
+                  className={cn("size-full", item.opening === true && "opacity-50")}
+                >
+                  {item.uri === null ? (
+                    <View className="bg-card rounded-box size-full" />
+                  ) : (
+                    <Image source={{ uri: item.uri }} className="rounded-box size-full" />
+                  )}
+                </Pressable>
                 {item.kind === "video" ? (
                   <View className="bg-background absolute start-1.5 bottom-1.5 flex-row items-center gap-1 rounded-full px-1.5 py-0.5">
                     <Icon as={Play} size={10} strokeWidth={3} className="text-foreground" />

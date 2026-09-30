@@ -129,14 +129,15 @@ function Paywall({
   const units = { mb: t.unitMb, gb: t.unitGb }
   const here = plan?.limits
   const paid = plan?.upgrade ?? plan?.limits
+  const ceilings = plan?.ceilings
 
   const body = t[bodyKey]
-    .replace("{free}", freeSide(limit, here, t, locale, units))
-    .replace("{paid}", paidSide(limit, paid, t, locale, units))
+    .replace("{free}", freeSide(limit, here, ceilings, t, locale, units))
+    .replace("{paid}", paidSide(limit, paid, ceilings, t, locale, units))
 
   const unlocks = [
-    count(paid?.assets, t.unlockAssets, t.unlockAssetsCount, locale),
-    count(paid?.executors, t.unlockExecutors, t.unlockExecutorsCount, locale),
+    upTo(paid?.assets, ceilings?.assets, t.unlockAssets, locale),
+    upTo(paid?.executors, ceilings?.executors, t.unlockExecutors, locale),
     t.unlockPhotos,
     paid?.storageBytes == null
       ? t.unlockStorage.replace("{paid}", t.unlimited)
@@ -144,7 +145,7 @@ function Paywall({
           "{paid}",
           fmtBytes(paid.storageBytes, locale, units)
         ),
-  ]
+  ].filter((line) => line.length > 0)
 
   return (
     <Sheet ref={sheet} title={t[titleKey]} onDismiss={onClose}>
@@ -214,16 +215,19 @@ type Limits = {
 
 type Units = { mb: string; gb: string }
 
+type Ceilings = { assets: number; executors: number }
+
 type Copy = Record<string, string>
 
 /**
  * The limit the owner just hit, in words. Which field that is depends on the
- * wall, which is why this is a switch and not a lookup: "five assets" and
- * "500 MB" are the same sentence slot and different types.
+ * wall, which is why this is a switch and not a lookup: "five" and "500 MB"
+ * are the same sentence slot and different types.
  */
 function freeSide(
   limit: PlanLimit,
   limits: Limits | undefined,
+  ceilings: Ceilings | undefined,
   t: Copy,
   locale: Locale,
   units: Units
@@ -233,9 +237,9 @@ function freeSide(
   }
   switch (limit) {
     case "assets":
-      return plural(limits.assets, t.assetsCount!, t.unlimited!, locale)
+      return count(limits.assets, ceilings?.assets, locale)
     case "executors":
-      return plural(limits.executors, t.executorsCount!, t.unlimited!, locale)
+      return count(limits.executors, ceilings?.executors, locale)
     case "storage":
       return size(limits.storageBytes, t.unlimited!, locale, units)
     case "fileSize":
@@ -249,6 +253,7 @@ function freeSide(
 function paidSide(
   limit: PlanLimit,
   limits: Limits | null | undefined,
+  ceilings: Ceilings | undefined,
   t: Copy,
   locale: Locale,
   units: Units
@@ -256,18 +261,17 @@ function paidSide(
   if (limits === null || limits === undefined) {
     return ""
   }
-  return freeSide(limit, limits, t, locale, units)
+  return freeSide(limit, limits, ceilings, t, locale, units)
 }
 
-function plural(
+/** A count limit as a bare number; a plan with no cap stops at the ceiling. */
+function count(
   value: number | null,
-  template: string,
-  unlimited: string,
+  ceiling: number | undefined,
   locale: Locale
 ): string {
-  return value === null
-    ? unlimited
-    : template.replace("{n}", fmtNum(value, locale))
+  const cap = value ?? ceiling
+  return cap === undefined ? "" : fmtNum(cap, locale)
 }
 
 function size(
@@ -279,14 +283,14 @@ function size(
   return value === null ? unlimited : fmtBytes(value, locale, units)
 }
 
-/** An unlocked line: "unlimited executors", or the number when there is a cap. */
-function count(
+/** An unlocked line — "الأصول: حتى ١٬٠٠٠" — or nothing while the plan loads. */
+function upTo(
   value: number | null | undefined,
-  unlimitedLine: string,
-  countedLine: string,
+  ceiling: number | undefined,
+  line: string,
   locale: Locale
 ): string {
-  return value === null || value === undefined
-    ? unlimitedLine
-    : countedLine.replace("{paid}", fmtNum(value, locale))
+  if (value === undefined) return ""
+  const cap = count(value, ceiling, locale)
+  return cap === "" ? "" : line.replace("{paid}", cap)
 }

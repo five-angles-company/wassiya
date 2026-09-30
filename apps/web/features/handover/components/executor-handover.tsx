@@ -32,10 +32,11 @@ type State =
 /**
  * ٧.٦ — the executor's handover: the sheet code, and what it opens.
  *
- * `handover.open` re-checks every gate and audits the visit, so it is called
- * once per mount, not per attempt at the code. It returns wrappers only; the
- * sheet opens them in this tab, and the keys live exactly as long as this
- * component is mounted.
+ * `handover.open` re-checks every gate and audits the visit, so it is read
+ * once per mount — every page of it, back to back, since a later page is
+ * served only shortly after the audited first — not per attempt at the code.
+ * It returns wrappers only; the sheet opens them in this tab, and the keys live
+ * exactly as long as this component is mounted.
  */
 export function ExecutorHandover({ deliveryId }: { deliveryId: Id<"deliveries"> }) {
   const locale = useLocale()
@@ -64,13 +65,20 @@ export function ExecutorHandover({ deliveryId }: { deliveryId: Id<"deliveries"> 
     return () => window.removeEventListener("beforeunload", warn)
   }, [isOpen])
 
-  const load = useCallback(
-    () =>
-      openHandover({ deliveryId })
-        .then((response) => setState({ status: "locked", response }))
-        .catch(() => setState({ status: "failed" })),
-    [openHandover, deliveryId]
-  )
+  const load = useCallback(async () => {
+    try {
+      const first = await openHandover({ deliveryId })
+      const items = [...first.items]
+      let page = first
+      while (!page.isDone) {
+        page = await openHandover({ deliveryId, cursor: page.continueCursor })
+        items.push(...page.items)
+      }
+      setState({ status: "locked", response: { ...page, items } })
+    } catch {
+      setState({ status: "failed" })
+    }
+  }, [openHandover, deliveryId])
 
   useEffect(() => {
     if (sent.current) return

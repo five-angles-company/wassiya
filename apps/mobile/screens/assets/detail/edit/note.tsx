@@ -7,7 +7,7 @@
  * state — see `forms/note.ts`.
  *
  * A new take is **staged, not applied**: nothing uploads and nothing is deleted
- * until save, and the stored recording is never downloaded.
+ * until save. The stored recording is fetched only when the owner listens.
  */
 import type { Id } from "@workspace/backend/dataModel"
 import { fmtDuration, fmtNum } from "@workspace/ui-native/lib/format"
@@ -24,6 +24,8 @@ import {
 import { StepEditFrame } from "@/screens/assets/detail/step-edit-frame"
 import { useAssetEditor } from "@/screens/assets/detail/use-asset-editor"
 import { useEditForm } from "@/screens/assets/detail/use-edit-form"
+import { useStoredFiles } from "@/screens/assets/detail/use-stored-files"
+import { useStoredRecording } from "@/screens/assets/detail/use-stored-recording"
 import { useNoteSteps } from "@/screens/assets/flow/note-steps"
 
 const EMPTY_NOTE: NoteForm = {
@@ -38,11 +40,17 @@ const EMPTY_NOTE: NoteForm = {
 
 export function NoteStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; stepKey: string }) {
   const { t, locale } = useStrings("assets/new/note")
-  const { load, save, saving, error, noteReveal } = useAssetEditor(assetId)
+  const { asset, load, save, saving, error, noteReveal } = useAssetEditor(assetId)
   const { form, patch, dirty } = useEditForm(load.status === "ready" ? load : null, parseNote)
   const voice = useVoiceNote()
   const value = form ?? EMPTY_NOTE
   const take = voice.take
+  const { t: detail } = useStrings("assets/detail")
+  const storedFiles = useStoredFiles(asset?.dekWrappedByMk)
+  const recording = useStoredRecording(
+    load.status === "ready" ? load.files[0] : undefined,
+    storedFiles
+  )
 
   const steps = useNoteSteps({
     value,
@@ -51,7 +59,14 @@ export function NoteStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; step
     voice,
     stored:
       value.format === "voice" && value.hasRecording
-        ? { durationMs: value.durationMs, byteSize: value.current.byteSize }
+        ? {
+            durationMs: value.durationMs,
+            byteSize: value.current.byteSize,
+            playing: recording.playing,
+            loading: recording.loading,
+            onPlay: recording.play,
+            onPause: recording.pause,
+          }
         : null,
   })
 
@@ -93,6 +108,7 @@ export function NoteStepEdit({ assetId, stepKey }: { assetId: Id<"assets">; step
       error={error}
       dirty={dirty || take !== null}
       onReveal={noteReveal}
+      notice={storedFiles.failed ? detail.openFailed : undefined}
     />
   )
 }

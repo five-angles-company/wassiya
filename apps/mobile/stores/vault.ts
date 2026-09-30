@@ -16,6 +16,9 @@
  * - **One prompt at a time.** Two components calling `unlock()` together would
  *   stack two biometric sheets, the second of which the OS may reject.
  *   In-flight calls share one promise.
+ * - **The key belongs to the signed-in account.** `bindOwner` — called by
+ *   `VaultOwner` in the root layout whenever Clerk's user changes, sign-out
+ *   included — locks first, so no key outlives the session it was opened in.
  *
  * Server state still belongs to Convex; this holds a key, which is the one
  * thing Convex must never see.
@@ -74,6 +77,9 @@ export type VaultState = {
   mk: Uint8Array | null
   /** When the session opened. See `autoLockMs` — a duration caps, not idles. */
   unlockedAt: number | null
+  /** The Clerk user whose keystore slot `unlock` reads; null when signed out. */
+  ownerId: string | null
+  bindOwner: (ownerId: string | null) => void
   unlock: (authenticationPrompt: string) => Promise<void>
   lock: () => void
   /** True when the session cap has elapsed. The auto-lock hook polls this. */
@@ -91,15 +97,31 @@ export const useVault = create<VaultState>()((set, get) => ({
   status: "locked",
   mk: null,
   unlockedAt: null,
+  ownerId: null,
+
+  bindOwner: (ownerId) => {
+    if (get().ownerId === ownerId) return
+    get().lock()
+    // "lost" described the previous account's slot, not this one's.
+    set({ ownerId, status: "locked" })
+  },
 
   unlock: async (authenticationPrompt) => {
     if (get().status === "unlocked") return
     if (inFlight !== null) return inFlight
+    const ownerId = get().ownerId
+    if (ownerId === null) return
 
     inFlight = (async () => {
       set({ status: "unlocking" })
       try {
-        const mk = await readMk(authenticationPrompt)
+        const mk = await readMk(ownerId, authenticationPrompt)
+        // The account changed while the prompt was up: this key is not the
+        // signed-in person's to hold.
+        if (get().ownerId !== ownerId) {
+          mk.fill(0)
+          return
+        }
         set({ status: "unlocked", mk, unlockedAt: Date.now() })
       } catch (error) {
         if (error instanceof VaultKeyLostError) {

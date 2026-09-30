@@ -33,6 +33,8 @@ import { useVault } from "@/stores/vault"
 
 export type EditorLoad =
   | { status: "loading" }
+  /** Deleted — here, or from another device — while the screen was open. */
+  | { status: "gone" }
   /** No key in memory — the vault closed under the screen. */
   | { status: "locked" }
   /** The secret did not open, or is not the format this type writes. */
@@ -70,9 +72,16 @@ export function useAssetEditor(assetId: Id<"assets">) {
 
   const load = useMemo((): EditorLoad => {
     if (asset === undefined) return { status: "loading" }
+    if (asset === null) return { status: "gone" }
     if (mk === null) return { status: "locked" }
 
-    const dek = unwrap(new Uint8Array(asset.dekWrappedByMk), mk)
+    let dek: Uint8Array
+    try {
+      dek = unwrap(new Uint8Array(asset.dekWrappedByMk), mk)
+    } catch {
+      // The key in memory is not the one this asset was sealed under.
+      return { status: "unreadable", title: "", subtitle: "" }
+    }
     try {
       // Tier one: the label. Opened first so a secret that fails still leaves
       // the owner on a screen that names what they were looking at.
@@ -108,7 +117,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
 
   const save = useCallback(
     async (input: SaveInput): Promise<boolean> => {
-      if (asset === undefined) return false
+      if (asset == null) return false
       setSaving(true)
       setError(null)
       try {

@@ -14,10 +14,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context"
 import { PortalHost } from "@rn-primitives/portal"
 
 import { MissingEnv } from "@/components/missing-env"
+
+// A render error anywhere below lands here instead of closing the app.
+export { CrashScreen as ErrorBoundary } from "@/components/crash-screen"
 import { PaywallProvider } from "@/components/paywall"
 import { SafeAreaShell } from "@/components/safe-area-shell"
+import { VaultOwner } from "@/components/vault-owner"
 import { useAppFonts } from "@/hooks/use-app-fonts"
 import { initLayoutDirection } from "@/lib/direction"
+import { sweepOpenedFiles } from "@/lib/opened-files"
 
 // Read, but never throw. A module-scope throw here costs this module its
 // default export, and expo-router then reports *every* route in the tree as
@@ -86,6 +91,9 @@ export default function RootLayout() {
     if (ready) void SplashScreen.hideAsync()
   }, [ready])
 
+  // Plaintext a crash or a killed app left behind is gone by the next start.
+  useEffect(() => sweepOpenedFiles(), [])
+
   // Before the font gate: an unconfigured app should explain itself even if
   // the type stack never loads.
   if (missingEnv.length > 0) return <MissingEnv missing={missingEnv} />
@@ -110,6 +118,7 @@ export default function RootLayout() {
             publishableKey={publishableKey!}
             tokenCache={tokenCache}
           >
+            <VaultOwner />
             <ConvexProviderWithClerk client={convex!} useAuth={useAuth}>
               {/* Route *gating* is not this layout's job: `index` reads the
                   evidence and redirects, and `auth/` and `setup/` each guard

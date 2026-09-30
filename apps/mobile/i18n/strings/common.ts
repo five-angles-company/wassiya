@@ -19,6 +19,14 @@ export const COMMON = {
     ar: "افتح خزنتك لعرض أصولك",
     en: "Unlock your vault to see your assets",
   },
+  // The error boundary's screen. It sits above Convex, so it cannot read the
+  // profile's language and uses the default.
+  crashTitle: { ar: "حدث خطأ غير متوقع", en: "Something went wrong" },
+  crashBody: {
+    ar: "خزنتك بخير — لم يُحفظ ولم يُحذف شيء بسبب هذا الخطأ.",
+    en: "Your vault is fine — nothing was saved or deleted because of this.",
+  },
+  crashRetry: { ar: "حاول مرة أخرى", en: "Try again" },
 } satisfies LabelSet<string>
 
 export const TABS = {

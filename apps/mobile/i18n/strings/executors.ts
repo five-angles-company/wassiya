@@ -123,6 +123,10 @@ export const EXECUTOR_NEW = {
   },
   saving: { ar: "جارٍ الإضافة…", en: "Adding…" },
   failed: { ar: "تعذّرت الإضافة. حاول مرة أخرى.", en: "Could not add. Try again." },
+  atCeiling: {
+    ar: "بلغت أقصى عدد من الأوصياء ({n}).",
+    en: "You have named as many executors as a vault can hold ({n}).",
+  },
 } satisfies LabelSet<string>
 
 /** ٥.٢b — editing one, and deleting one. Field labels come from EXECUTOR_NEW. */

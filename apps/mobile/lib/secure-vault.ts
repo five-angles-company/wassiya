@@ -3,7 +3,7 @@
  * rest. MK lives in the OS keystore behind `requireAuthentication`; it is the
  * only secret here, since K_rec is the printed sheet alone.
  *
- * Two consequences shape everything:
+ * Three consequences shape everything:
  *
  *  1. **Reading an authenticated item prompts.** The splash screen therefore
  *     cannot probe for MK's presence — it would greet every cold start with a
@@ -14,6 +14,12 @@
  *     `null` from `readMk` is not a bug to swallow — this device has lost its
  *     key and the caller must route to recovery. `VaultKeyLostError` names that
  *     case so it cannot be confused with "not enrolled yet".
+ *  3. **Every slot belongs to one account** — the Clerk user id, `owner` below.
+ *     A phone can be signed into more than one account over its life, and a
+ *     shared slot would hand one account's key to the next: a new account
+ *     would wrap it as its own, an existing one would open nothing and never be
+ *     sent to recovery. The key stays on the phone after sign-out, in its
+ *     owner's slot.
  *
  * Nothing here returns key material to a Convex function.
  */
@@ -25,10 +31,10 @@ import { generateMk } from "@workspace/crypto/keys"
 import { ensureWebCrypto } from "@/lib/crypto-polyfill"
 
 /** MK: 32 random bytes, generated on this device, never sent anywhere. */
-const MK_KEY = "wassiya.mk.v1"
+const MK_KEY = "wassiya.mk.v2"
 
 /** The unauthenticated routing probe. Contains no secret. */
-const ENROLMENT_KEY = "wassiya.enrolment.v1"
+const ENROLMENT_KEY = "wassiya.enrolment.v2"
 
 /** Stable per-install id, so `devices.register` is idempotent across retries. */
 const INSTALL_ID_KEY = "wassiya.install.v1"
@@ -48,6 +54,14 @@ const authenticated = (
   authenticationPrompt,
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 })
+
+/** One account's slot. SecureStore keys admit only `[A-Za-z0-9._-]`. */
+function slot(base: string, owner: string): string {
+  if (!/^[A-Za-z0-9_-]+$/.test(owner)) {
+    throw new Error("Not a keystore owner id")
+  }
+  return `${base}.${owner}`
+}
 
 /**
  * Thrown when the keystore has an entry we know exists but can no longer hand
@@ -84,8 +98,10 @@ export type VaultEnrolment = {
   enrolledAt: number
 }
 
-export async function readEnrolment(): Promise<VaultEnrolment | null> {
-  const raw = await SecureStore.getItemAsync(ENROLMENT_KEY)
+export async function readEnrolment(
+  owner: string
+): Promise<VaultEnrolment | null> {
+  const raw = await SecureStore.getItemAsync(slot(ENROLMENT_KEY, owner))
   if (raw === null) return null
   try {
     return JSON.parse(raw) as VaultEnrolment
@@ -98,21 +114,26 @@ export async function readEnrolment(): Promise<VaultEnrolment | null> {
 
 /** Merge into the existing marker, creating it if this is the first write. */
 export async function patchEnrolment(
+  owner: string,
   patch: Partial<Omit<VaultEnrolment, "enrolledAt">>
 ): Promise<VaultEnrolment> {
-  const current = await readEnrolment()
+  const current = await readEnrolment(owner)
   const next: VaultEnrolment = {
     deviceId: patch.deviceId ?? current?.deviceId ?? null,
     paperVersion: patch.paperVersion ?? current?.paperVersion ?? null,
     enrolledAt: current?.enrolledAt ?? Date.now(),
   }
-  await SecureStore.setItemAsync(ENROLMENT_KEY, JSON.stringify(next))
+  await SecureStore.setItemAsync(
+    slot(ENROLMENT_KEY, owner),
+    JSON.stringify(next)
+  )
   return next
 }
 
 /**
  * Read-or-create the install id. Called — and therefore persisted — *before*
  * `devices.register`, so a crash between the two cannot enrol this phone twice.
+ * It identifies the handset, not an account, so it has no owner slot.
  */
 export async function getInstallId(): Promise<string> {
   const existing = await SecureStore.getItemAsync(INSTALL_ID_KEY)
@@ -132,6 +153,7 @@ export async function getInstallId(): Promise<string> {
  * wrapped under it.
  */
 export async function generateAndStoreMk(
+  owner: string,
   authenticationPrompt: string
 ): Promise<Uint8Array> {
   // Hermes has no Web Crypto global and `generateMk` refuses to run without
@@ -139,7 +161,7 @@ export async function generateAndStoreMk(
   ensureWebCrypto()
   const mk = generateMk()
   await SecureStore.setItemAsync(
-    MK_KEY,
+    slot(MK_KEY, owner),
     bytesToHex(mk),
     authenticated(authenticationPrompt)
   )
@@ -151,10 +173,11 @@ export async function generateAndStoreMk(
  * has invalidated it.
  */
 export async function readMk(
+  owner: string,
   authenticationPrompt: string
 ): Promise<Uint8Array> {
   const hex = await SecureStore.getItemAsync(
-    MK_KEY,
+    slot(MK_KEY, owner),
     authenticated(authenticationPrompt)
   )
   if (hex === null) throw new VaultKeyLostError("The vault key")
@@ -162,14 +185,15 @@ export async function readMk(
 }
 
 /**
- * Forget this device's copy of everything. Used when a read proves the
- * keystore has invalidated the key, so the app stops claiming an enrolment it
- * cannot honour. The install id survives — it identifies the handset, not the
- * vault, and reusing it keeps `devices.register` idempotent.
+ * Forget this device's copy of one account's key and marker. The install id
+ * survives — it identifies the handset, not the vault, and reusing it keeps
+ * `devices.register` idempotent.
  */
-export async function clearVault(): Promise<void> {
-  await SecureStore.deleteItemAsync(MK_KEY, { keychainService: VAULT_SERVICE })
-  await SecureStore.deleteItemAsync(ENROLMENT_KEY)
+export async function clearVault(owner: string): Promise<void> {
+  await SecureStore.deleteItemAsync(slot(MK_KEY, owner), {
+    keychainService: VAULT_SERVICE,
+  })
+  await SecureStore.deleteItemAsync(slot(ENROLMENT_KEY, owner))
 }
 
 /**
@@ -178,13 +202,14 @@ export async function clearVault(): Promise<void> {
  * Distinct from `generateAndStoreMk`, which mints a new key during setup. Here
  * the key already exists — it was just recovered with the paper sheet — and
  * generating a fresh one instead would orphan the entire vault it was meant to
- * reopen. Two functions rather than one flag, because
- * that is the sort of mistake a boolean invites.
+ * reopen. Two functions rather than one flag, because that is the sort of
+ * mistake a boolean invites.
  *
  * Idempotent by contract, not by hope: 8.1 only reaches here when
- * `readEnrolment()` said this device has no key.
+ * `readEnrolment()` said this device has no key for this account.
  */
 export async function storeRecoveredMk(
+  owner: string,
   mk: Uint8Array,
   authenticationPrompt: string
 ): Promise<void> {
@@ -192,7 +217,7 @@ export async function storeRecoveredMk(
     throw new Error("A recovered master key must be 32 bytes")
   }
   await SecureStore.setItemAsync(
-    MK_KEY,
+    slot(MK_KEY, owner),
     bytesToHex(mk),
     authenticated(authenticationPrompt)
   )

@@ -45,6 +45,20 @@ export function planLimitOf(cause: unknown): PlanLimit | null {
     : null
 }
 
+/**
+ * The vault's hard ceiling — most assets, or most executors — when this error
+ * hit one, else `null`. Not a plan wall: no purchase lifts it, so it opens no
+ * paywall, and the number comes from the error rather than from this app.
+ */
+export function vaultCeilingOf(cause: unknown): number | null {
+  if (!(cause instanceof ConvexError)) return null
+  const data: unknown = cause.data
+  if (typeof data !== "object" || data === null) return null
+  const { code, max } = data as { code?: unknown; max?: unknown }
+  if (code !== "asset_cap" && code !== "executor_cap") return null
+  return typeof max === "number" ? max : null
+}
+
 /** What `plans.current` serves, narrowed to the parts a pre-check needs. */
 export type PlanState = {
   limits: {

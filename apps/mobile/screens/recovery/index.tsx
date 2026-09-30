@@ -30,7 +30,7 @@ import { recoverMk } from "@workspace/crypto/recovery"
 import { Text } from "@workspace/ui-native/components/ui/text"
 import { AlertBanner } from "@workspace/ui-native/components/wassiya/alert-banner"
 import { PrimaryCta } from "@workspace/ui-native/components/wassiya/primary-cta"
-import { useClerk } from "@clerk/expo"
+import { useAuth, useClerk } from "@clerk/expo"
 import { router } from "expo-router"
 import { View } from "react-native"
 
@@ -58,12 +58,18 @@ export function RecoveryScreen() {
   const keyring = useQuery(api.keyring.get)
   const markPaperUsed = useMutation(api.keyring.markPaperUsed)
   const { signOut } = useClerk()
+  const owner = useAuth().userId ?? null
 
   const [code, setCode] = useState("")
   const [phase, setPhase] = useState<Phase>("input")
 
   async function recover() {
-    if (keyring == null || keyring.mkWrappedByRecovery === null || me == null) {
+    if (
+      keyring == null ||
+      keyring.mkWrappedByRecovery === null ||
+      me == null ||
+      owner === null
+    ) {
       return
     }
     const wrapper = keyring.mkWrappedByRecovery
@@ -93,11 +99,11 @@ export function RecoveryScreen() {
       const device = await thisDevice()
 
       // 1 — the key, before anything is spent.
-      await storeRecoveredMk(mk, t.storePrompt)
-      await patchEnrolment({ paperVersion: keyring.paperVersion })
+      await storeRecoveredMk(owner, mk, t.storePrompt)
+      await patchEnrolment(owner, { paperVersion: keyring.paperVersion })
       // 2 — last, and it is what raises the alarm.
       const { deviceId } = await markPaperUsed({ device })
-      await patchEnrolment({ deviceId }).catch(() => undefined)
+      await patchEnrolment(owner, { deviceId }).catch(() => undefined)
 
       setPhase("done")
     } catch {

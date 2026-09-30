@@ -1,3 +1,4 @@
+import { useAuth } from "@clerk/expo"
 import { useMutation } from "convex/react"
 import { api } from "@workspace/backend/api"
 import { Text } from "@workspace/ui-native/components/ui/text"
@@ -49,6 +50,7 @@ export function BiometricsScreen() {
   const { t: keys } = useStrings("setup/explainer")
   const { t: common } = useStrings("common")
   const registerDevice = useMutation(api.devices.register)
+  const owner = useAuth().userId ?? null
 
   const [availability, setAvailability] = useState<Availability>("checking")
   const [busy, setBusy] = useState(false)
@@ -60,14 +62,15 @@ export function BiometricsScreen() {
    * can leave while the biometric hardware is still being queried.
    */
   const probe = useCallback(async (): Promise<Availability | "enrolled"> => {
+    if (owner === null) return "checking"
     // Already has a key. Re-entering must not re-run the ceremony.
-    if ((await readEnrolment()) !== null) return "enrolled"
+    if ((await readEnrolment(owner)) !== null) return "enrolled"
     const [hasHardware, isEnrolled] = await Promise.all([
       LocalAuthentication.hasHardwareAsync(),
       LocalAuthentication.isEnrolledAsync(),
     ])
     return hasHardware && isEnrolled ? "ready" : "unenrolled"
-  }, [])
+  }, [owner])
 
   const [attempt, setAttempt] = useState(0)
 
@@ -87,6 +90,7 @@ export function BiometricsScreen() {
   }, [probe, attempt])
 
   async function enrol() {
+    if (owner === null) return
     setBusy(true)
     setError(null)
     try {
@@ -108,13 +112,13 @@ export function BiometricsScreen() {
 
       const device = await thisDevice()
 
-      await generateAndStoreMk(t.prompt)
+      await generateAndStoreMk(owner, t.prompt)
       // MK now exists. Record that before anything that can fail on the network.
-      await patchEnrolment({})
+      await patchEnrolment(owner, {})
 
       try {
         const { deviceId } = await registerDevice(device)
-        await patchEnrolment({ deviceId })
+        await patchEnrolment(owner, { deviceId })
       } catch {
         // Inventory only. The key is already sealed and usable.
       }

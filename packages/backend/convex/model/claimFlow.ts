@@ -124,16 +124,23 @@ export const rejectReasonValidator = v.union(
 )
 
 /** Why a verdict cannot be given yet. `null` means it can. */
-export type NameMatchBlock = "past-review"
+export type NameMatchBlock = "past-review" | "no-certificate"
 
 /**
- * Whether an admin may record a verdict on this claim right now: once, while it
- * is `submitted`. The reporter's own identity is not a condition — they
- * receive nothing, and the certificate, the veto window and each executor's own
- * verification guard everything that matters.
+ * Whether an admin may record this verdict on this claim right now: once, while
+ * it is `submitted` — and an approval only with the death certificate on file,
+ * because approving is what starts the road to release. The reporter's own
+ * identity is not a condition — they receive nothing, and the certificate, the
+ * veto window and each executor's own verification guard everything that
+ * matters.
  */
 export function nameMatchBlockedReason(
-  claim: Doc<"claims">
+  claim: Doc<"claims">,
+  verdict: "approve" | "reject"
 ): NameMatchBlock | null {
-  return claim.status === "submitted" ? null : "past-review"
+  if (claim.status !== "submitted") return "past-review"
+  if (verdict === "approve" && claim.certificateStorageId === undefined) {
+    return "no-certificate"
+  }
+  return null
 }

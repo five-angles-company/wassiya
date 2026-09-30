@@ -36,6 +36,7 @@ import {
 } from "./email"
 import { requirePermission } from "./model/access"
 import { DAY_MS, DELIVERY_WINDOW_DAYS } from "./model/claimFlow"
+import { MAX_EXECUTORS } from "./model/entitlements"
 import { recordJobRun } from "./model/jobRuns"
 import { settingsFor } from "./model/settings"
 import { getCurrentUserOrThrow } from "./users"
@@ -120,7 +121,7 @@ export async function createDeliveriesForClaim(
   const executors = await ctx.db
     .query("executors")
     .withIndex("by_userId", (q) => q.eq("userId", subjectUserId))
-    .take(100)
+    .take(MAX_EXECUTORS)
 
   let created = 0
   for (const { _id: executorId } of executors) {
@@ -715,10 +716,10 @@ export const recordSms = internalMutation({
 })
 
 /**
- * Daily. Warns each bound executor thirty days before their delivery closes, then
- * closes every delivery past its window and, with the last one, deletes the
- * vault (`vault.purge`), so after a year nobody — Wassiya included — can open
- * it again.
+ * Daily. Warns each bound executor thirty days before their delivery closes,
+ * closes every delivery past its window, and deletes every released vault past
+ * `users.vaultPurgeAt` — the same moment — so after a year nobody, Wassiya
+ * included, can open it again.
  */
 export const expire = internalMutation({
   // Set by the reschedule below, absent on the pass the cron itself started —
@@ -770,20 +771,6 @@ export const expire = internalMutation({
           status: "expired",
           destroyedAt: now,
         })
-        // Every executor receives the same vault, so it goes only once the last
-        // of this report's deliveries has closed.
-        const siblings = await ctx.db
-          .query("deliveries")
-          .withIndex("by_claimId", (q) => q.eq("claimId", delivery.claimId))
-          .take(100)
-        const stillOpen = siblings.some((row) =>
-          (LIVE_STATUSES as readonly string[]).includes(row.status)
-        )
-        if (!stillOpen) {
-          await ctx.scheduler.runAfter(0, internal.vault.purge, {
-            ownerId: delivery.subjectUserId,
-          })
-        }
         await writeAudit(ctx, {
           userId: delivery.subjectUserId,
           event: "delivery.expired",
@@ -793,7 +780,26 @@ export const expire = internalMutation({
         expired += 1
       }
     }
-    const rescheduled = expired === EXPIRE_BATCH
+
+    // The vault ends on its own date rather than with its last delivery: one
+    // with no executors, or whose deliveries were all refused, has none to
+    // close. Clearing the date moves the owner out of the range drained here.
+    const vaults = await ctx.db
+      .query("users")
+      .withIndex("by_vaultPurgeAt", (q) =>
+        q.gt("vaultPurgeAt", 0).lte("vaultPurgeAt", now)
+      )
+      .take(EXPIRE_BATCH)
+    for (const owner of vaults) {
+      await ctx.db.patch("users", owner._id, { vaultPurgeAt: undefined })
+      if (owner.vaultClosedAt === undefined) continue
+      await ctx.scheduler.runAfter(0, internal.vault.purge, {
+        ownerId: owner._id,
+      })
+    }
+
+    const rescheduled =
+      expired === EXPIRE_BATCH || vaults.length === EXPIRE_BATCH
     if (rescheduled) {
       await ctx.scheduler.runAfter(0, internal.deliveries.expire, {
         continued: true,
@@ -808,13 +814,13 @@ export const expire = internalMutation({
     await recordJobRun(ctx, {
       name: "deliveries.expire",
       ranAt: now,
-      scanned: reminded + expired,
-      changed: expired,
+      scanned: reminded + expired + vaults.length,
+      changed: expired + vaults.length,
       rescheduled,
       continued: continued === true,
     })
 
-    return { expired }
+    return { expired, vaults: vaults.length }
   },
 })
 
