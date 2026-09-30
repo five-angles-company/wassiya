@@ -4,6 +4,7 @@ import { useRef, useState } from "react"
 import { api } from "@workspace/backend/api"
 import type { Id } from "@workspace/backend/dataModel"
 import { useMutation } from "convex/react"
+import { ConvexError } from "convex/values"
 import { FileCheckIcon, ShieldCheckIcon, UploadIcon } from "lucide-react"
 
 import { Button } from "@/components/button"
@@ -111,8 +112,17 @@ export function CertificatePanel({
       })
       // No navigation: the claim's own query re-runs and this panel is replaced
       // by the next step. That is the point of hanging the flow off the report.
-    } catch {
-      setError(labels.failed)
+    } catch (cause) {
+      // The server refuses a file uploaded more than a day ago, so a page left
+      // open overnight must upload again rather than retry the same one.
+      const data = cause instanceof ConvexError ? (cause.data as { reason?: string }) : null
+      if (data?.reason === "bad_certificate") {
+        setFile(null)
+        setStorageId(null)
+        setError(labels.uploadAgain)
+      } else {
+        setError(labels.failed)
+      }
     } finally {
       setBusy(false)
     }

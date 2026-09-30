@@ -31,6 +31,7 @@ import { internalAction, internalMutation } from "./_generated/server"
 import { DAY_MS as FLOW_DAY_MS, VETO_WINDOW_DAYS } from "./model/claimFlow"
 import { patchClaim } from "./claims"
 import { identityNumberHash } from "./model/identityHash"
+import { dropBlobs } from "./model/storage"
 import type { Id } from "./_generated/dataModel"
 
 /** The marker. `user_…` is Clerk's prefix, so these can never collide. */
@@ -440,6 +441,7 @@ export const wipe = internalMutation({
  * ```
  */
 const PURGE_TABLES = [
+  "storageSweep",
   "notifications",
   "deliveries",
   "jobRuns",
@@ -466,10 +468,11 @@ export const purgeAll = internalMutation({
     // dropping the rows first would strand the files with nothing pointing at
     // them.
     const files = await ctx.db.system.query("_storage").take(PURGE_BATCH)
-    for (const file of files) {
-      await ctx.storage.delete(file._id)
-      deleted += 1
-    }
+    await dropBlobs(
+      ctx,
+      files.map((file) => file._id)
+    )
+    deleted += files.length
 
     for (const table of PURGE_TABLES) {
       const rows = await ctx.db.query(table).take(PURGE_BATCH)

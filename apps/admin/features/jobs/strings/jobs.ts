@@ -17,6 +17,7 @@ export const JOBS = {
   jobAccountDeletions: { ar: "تنفيذ حذف الحسابات المستحقة", en: "Carry out account deletions" },
   jobCertificatesPurge: { ar: "حذف شهادات الوفاة المنتهية", en: "Purge old death certificates" },
   jobEmailPurge: { ar: "حذف البريد المُرسَل القديم", en: "Purge old sent email" },
+  jobStorageSweep: { ar: "حذف الملفات المرفوعة غير المستخدمة", en: "Delete unused uploads" },
 
   lastRun: { ar: "آخر دورة", en: "Last run" },
   lastChange: { ar: "آخر تغيير", en: "Last change" },

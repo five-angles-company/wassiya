@@ -10,12 +10,14 @@
 //  - A sheet is saved only after the owner confirms the new code is printed
 //    (mint → display → confirm → save), and its version must follow the stored
 //    one, because the version is bound into the wrapper.
+//  - Every write refuses a closed vault (`assertVaultOpen`). Deliveries exist
+//    only once it is closed, so an executor record never changes under one; a
+//    verified document that does not match it goes to a staff decision.
 import { v } from "convex/values"
 
 import { mutation, query } from "./_generated/server"
 import { writeAudit } from "./audit"
-import { evaluateDeliveryIdentity } from "./deliveries"
-import { requireUser } from "./model/access"
+import { assertVaultOpen, requireUser } from "./model/access"
 import { assertCanAddExecutor, MAX_EXECUTORS } from "./model/entitlements"
 import { identityNumberHash } from "./model/identityHash"
 
@@ -59,6 +61,7 @@ export const add = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     await assertCanAddExecutor(ctx, user, Date.now())
     const executorId = await ctx.db.insert("executors", {
       userId: user._id,
@@ -88,6 +91,7 @@ export const update = mutation({
   },
   handler: async (ctx, { executorId, name, phone, email, idNumber }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const executor = await ctx.db.get("executors", executorId)
     if (executor === null || executor.userId !== user._id) {
       throw new Error("Not found")
@@ -100,23 +104,6 @@ export const update = mutation({
         ? {}
         : { idNumberHash: await identityNumberHash(idNumber) }),
     })
-
-    // A corrected number must be able to open a delivery already bound: the
-    // match is otherwise re-checked only on bind and on a verdict.
-    if (idNumber !== undefined) {
-      const waiting = await ctx.db
-        .query("deliveries")
-        .withIndex("by_executorId", (q) => q.eq("executorId", executorId))
-        .take(10)
-      const now = Date.now()
-      for (const delivery of waiting) {
-        if (delivery.executorUserId === undefined) continue
-        const bound = await ctx.db.get("users", delivery.executorUserId)
-        if (bound !== null) {
-          await evaluateDeliveryIdentity(ctx, delivery, bound, now)
-        }
-      }
-    }
 
     const changed = [
       name === undefined ? null : "name",
@@ -146,6 +133,7 @@ export const saveSheet = mutation({
   },
   handler: async (ctx, { executorId, releaseKeyWrapped, version }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const executor = await ctx.db.get("executors", executorId)
     if (executor === null || executor.userId !== user._id) {
       throw new Error("Not found")
@@ -174,6 +162,7 @@ export const remove = mutation({
   args: { executorId: v.id("executors") },
   handler: async (ctx, { executorId }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const executor = await ctx.db.get("executors", executorId)
     if (executor === null || executor.userId !== user._id) {
       throw new Error("Not found")

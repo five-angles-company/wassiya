@@ -5,6 +5,8 @@
 // the two can never disagree about what "deleted" means.
 import type { Id } from "../_generated/dataModel"
 import type { MutationCtx } from "../_generated/server"
+import { blobsOf } from "./assetFiles"
+import { dropBlobs } from "./storage"
 
 const ASSET_BATCH = 25
 const EXECUTOR_BATCH = 50
@@ -23,12 +25,7 @@ export async function deleteVaultBatch(
     .withIndex("by_userId", (q) => q.eq("userId", ownerId))
     .take(ASSET_BATCH)
   for (const asset of assets) {
-    for (const file of asset.files) {
-      await ctx.storage.delete(file.storageId)
-      if (file.thumbnailId !== undefined) {
-        await ctx.storage.delete(file.thumbnailId)
-      }
-    }
+    await dropBlobs(ctx, blobsOf(asset.files))
     await ctx.db.delete("assets", asset._id)
   }
   if (assets.length === ASSET_BATCH) return false

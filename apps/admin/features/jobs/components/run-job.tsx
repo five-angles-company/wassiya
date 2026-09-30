@@ -21,6 +21,7 @@ export type JobName =
   | "account.sweepDeletions"
   | "claims.purgeCertificates"
   | "email.purgeSent"
+  | "storage.sweep"
 
 /**
  * Retry a missed sweep.

@@ -108,6 +108,10 @@ export const PERMISSION_LABELS: Record<string, LabelSet> = {
     ar: "تشغيل حذف البريد المُرسَل القديم",
     en: "Run the sent-email purge",
   },
+  "jobs.run:storage.sweep": {
+    ar: "تشغيل حذف الملفات المرفوعة غير المستخدمة",
+    en: "Run the unused-upload sweep",
+  },
   "settings.read": {
     ar: "قراءة الإعدادات والسياسات",
     en: "Read settings and policy",

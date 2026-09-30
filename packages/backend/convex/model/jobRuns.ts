@@ -19,6 +19,7 @@ export const JOB_NAMES = [
   "account.sweepDeletions",
   "claims.purgeCertificates",
   "email.purgeSent",
+  "storage.sweep",
 ] as const
 
 export type JobName = (typeof JOB_NAMES)[number]
@@ -40,6 +41,7 @@ export const JOB_EVERY_HOURS: Record<JobName, number> = {
   "account.sweepDeletions": 1,
   "claims.purgeCertificates": 24,
   "email.purgeSent": 24,
+  "storage.sweep": 24,
 }
 
 /**

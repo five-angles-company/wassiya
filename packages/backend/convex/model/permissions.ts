@@ -82,6 +82,7 @@ export const PERMISSIONS = [
   { key: "jobs.run:account.sweepDeletions", group: "operations" },
   { key: "jobs.run:claims.purgeCertificates", group: "operations" },
   { key: "jobs.run:email.purgeSent", group: "operations" },
+  { key: "jobs.run:storage.sweep", group: "operations" },
   { key: "settings.read", group: "settings" },
   { key: "settings.manage", group: "settings" },
   { key: "staff.read", group: "settings" },
@@ -122,6 +123,7 @@ export const JOB_RUN_PERMISSION: Record<JobName, PermissionKey> = {
   "account.sweepDeletions": "jobs.run:account.sweepDeletions",
   "claims.purgeCertificates": "jobs.run:claims.purgeCertificates",
   "email.purgeSent": "jobs.run:email.purgeSent",
+  "storage.sweep": "jobs.run:storage.sweep",
 }
 
 export function isPermissionKey(value: string): value is PermissionKey {

@@ -25,6 +25,7 @@ import {
 import { writeStaffAudit } from "../audit"
 import { hasPermission, requirePermission } from "../model/access"
 import { staffAccounts } from "../model/staff"
+import { dropBlobs } from "../model/storage"
 import {
   appendMessage,
   attachmentInput,
@@ -445,9 +446,10 @@ export async function deleteRequesterThreads(
       .withIndex("by_threadId_and_at", (q) => q.eq("threadId", thread._id))
       .take(DELETE_ROW_BATCH)
     for (const message of messages) {
-      for (const file of message.attachments) {
-        await ctx.storage.delete(file.storageId)
-      }
+      await dropBlobs(
+        ctx,
+        message.attachments.map((file) => file.storageId)
+      )
       await ctx.db.delete("supportMessages", message._id)
     }
     const notes = await ctx.db

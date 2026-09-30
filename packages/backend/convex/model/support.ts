@@ -20,6 +20,7 @@ import { components } from "../_generated/api"
 import type { Doc, Id } from "../_generated/dataModel"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { getCurrentUser } from "../users"
+import { freshUpload, holdBlobs } from "./storage"
 
 export const MAX_BODY_CHARS = 4000
 export const MAX_ATTACHMENTS = 5
@@ -32,10 +33,11 @@ export const ATTACHMENT_TYPES = [
   "application/pdf",
 ] as const
 /**
- * An attachment must have been uploaded recently. Storage ids of vault blobs
- * are not secret to an executor who received a delivery, and this — with the type
- * allow-list, which excludes the octet-stream every ciphertext is — stops a
- * thread from being used to mint fresh URLs for someone else's files.
+ * An attachment must be a recent upload held by nothing (`freshUpload`). That —
+ * with the type allow-list, which excludes the octet-stream every ciphertext
+ * is — stops a thread from being used to mint fresh URLs for someone else's
+ * files. Must stay within `JOIN_WINDOW_MS`, or the orphan sweep could delete an
+ * upload before it joins a message.
  */
 const UPLOAD_FRESH_MS = HOUR
 /** Staff replies notify only if still unread this long after sending. */
@@ -234,13 +236,12 @@ export async function resolveAttachments(
   if (inputs.length > MAX_ATTACHMENTS) refuse("attachment")
   const out: Attachment[] = []
   for (const input of inputs) {
-    const meta = await ctx.db.system.get("_storage", input.storageId)
+    const meta = await freshUpload(ctx, input.storageId, now, UPLOAD_FRESH_MS)
     if (
       meta === null ||
       meta.contentType === undefined ||
       !(ATTACHMENT_TYPES as readonly string[]).includes(meta.contentType) ||
-      meta.size > MAX_ATTACHMENT_BYTES ||
-      now - meta._creationTime > UPLOAD_FRESH_MS
+      meta.size > MAX_ATTACHMENT_BYTES
     ) {
       refuse("attachment")
     }
@@ -305,6 +306,11 @@ export async function appendMessage(
     attachments: message.attachments,
     at: message.at,
   })
+  await holdBlobs(
+    ctx,
+    message.attachments.map((file) => file.storageId),
+    "support"
+  )
   const fromRequester = message.author === "requester"
   await ctx.db.patch("supportThreads", thread._id, {
     status: fromRequester ? "open" : "waiting",

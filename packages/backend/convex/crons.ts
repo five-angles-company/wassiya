@@ -73,6 +73,10 @@ crons.interval(
   {}
 )
 
+// Delete uploads nothing ever took: vault files a save never reached, replaced
+// certificates, refused support attachments. See `model/storage.ts`.
+crons.interval("sweep unheld uploads", { hours: 24 }, internal.storage.sweep, {})
+
 // Delete settled mail from the Resend component's tables.
 crons.interval("purge sent email", { hours: 24 }, internal.email.purgeSent, {})
 

@@ -95,13 +95,49 @@ export function assertCanAddAssets(user: Doc<"users">, now: number): void {
  * Called from `keyring.save` on the *first* write only. That is the real
  * chokepoint: no keyring means no MK wrapper, which means no assets, nothing to
  * hand over, and nothing to release — so gating vault creation gates
- * onboarding as a whole. Rotation is deliberately not gated: an owner whose
- * Didit record later lapses must still be able to replace a lost paper sheet.
+ * onboarding as a whole. `requireVaultOwner` is what makes "no keyring, no
+ * assets" true on the server rather than only in the app. Rotation is
+ * deliberately not gated: an owner whose Didit record later lapses must still
+ * be able to replace a lost paper sheet.
  */
 export function assertIdentityVerified(user: Doc<"users">): void {
   if (user.identityStatus !== "verified") {
     throw new Error("Identity verification required")
   }
+}
+
+/**
+ * A released vault is frozen as it stood at release: no asset or executor is
+ * added, changed, handed over or removed. After a death the owner's phone is in
+ * someone else's hands, and it could otherwise add items the executors receive,
+ * hand over what the owner kept private, or re-point an executor's contact, ID
+ * number and sheet at whoever holds it. `claims.reopenVault` is the way back.
+ */
+export function assertVaultOpen(user: Doc<"users">): void {
+  if (user.vaultClosedAt !== undefined) {
+    throw new Error("This vault was closed after a verified death")
+  }
+}
+
+/**
+ * The gate on putting anything into a vault: uploads and new assets. A keyring
+ * row is the server's proof that this account passed identity verification
+ * (`assertIdentityVerified` above), so an unverified throwaway account cannot
+ * store a file at all — a modified client skips the app's onboarding, not this.
+ * Keyed on the keyring rather than today's `identityStatus` for the same reason
+ * rotation is: a lapsed Didit record must not lock an owner out of their vault.
+ */
+export async function requireVaultOwner(ctx: QueryCtx): Promise<Doc<"users">> {
+  const user = await getCurrentUserOrThrow(ctx)
+  assertVaultOpen(user)
+  const keyring = await ctx.db
+    .query("keyring")
+    .withIndex("by_userId", (q) => q.eq("userId", user._id))
+    .unique()
+  if (keyring === null) {
+    throw new Error("Set up the vault before adding to it")
+  }
+  return user
 }
 
 export type { MutationCtx, QueryCtx }

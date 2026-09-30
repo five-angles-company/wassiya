@@ -39,4 +39,8 @@ export const CLAIM_CERTIFICATE = {
     ar: "لم يُرسل ولم يُحفظ شيء. حاول مرة أخرى.",
     en: "It wasn't sent and nothing was saved. Please try again.",
   },
+  uploadAgain: {
+    ar: "لم نتمكن من استخدام هذا الملف. ارفعه مرة أخرى.",
+    en: "We couldn't use that file. Please upload it again.",
+  },
 } as const satisfies Dictionary

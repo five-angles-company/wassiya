@@ -22,6 +22,13 @@
 // growing half of `update` both charge against them, because an edit that
 // swaps a note for a 400 MB file would otherwise be a quota with a door next to
 // it. Shrinking and re-wrapping stay free at any plan.
+//
+// Which files a row may name is `model/assetFiles.ts`: a file new to it must be
+// a fresh opaque upload held by nothing, and `meta.byteSize` is measured there
+// from storage, never taken from the phone. Every blob a row takes is held
+// (`holdBlobs`) in the same mutation, or the orphan sweep deletes it.
+//
+// Every write here refuses a closed vault (`assertVaultOpen`).
 import { v } from "convex/values"
 
 import type { Doc, Id } from "./_generated/dataModel"
@@ -31,7 +38,14 @@ import {
   type MutationCtx,
 } from "./_generated/server"
 import { writeAudit } from "./audit"
-import { assertCanAddAssets, requireUser } from "./model/access"
+import {
+  assertCanAddAssets,
+  assertVaultOpen,
+  requireUser,
+  requireVaultOwner,
+} from "./model/access"
+import { blobsOf, measureFiles } from "./model/assetFiles"
+import { dropBlobs, holdBlobs } from "./model/storage"
 import { assetTypeValidator } from "./model/assetTypes"
 import {
   assertCanAddAsset,
@@ -44,6 +58,7 @@ const assetType = assetTypeValidator
 
 const assetMeta = v.object({
   itemCount: v.optional(v.number()),
+  /** Accepted so older phones keep working, and ignored: see `measureFiles`. */
   byteSize: v.optional(v.number()),
   mimeType: v.optional(v.string()),
   expiryRemindAt: v.optional(v.number()),
@@ -69,20 +84,21 @@ function assertSecretSize(secretSealed: ArrayBuffer | undefined): void {
   }
 }
 
-/** Every blob a set of files owns, thumbnails included. */
-function blobsOf(files: Doc<"assets">["files"]): Id<"_storage">[] {
-  return files.flatMap((file) =>
-    file.thumbnailId === undefined
-      ? [file.storageId]
-      : [file.storageId, file.thumbnailId]
-  )
+/** `meta` with the size this deployment measured in place of the phone's. */
+function withMeasuredSize(
+  meta: Doc<"assets">["meta"],
+  byteSize: number | undefined
+): Doc<"assets">["meta"] {
+  const next = { ...meta, byteSize }
+  if (byteSize === undefined) delete next.byteSize
+  return next
 }
 
 /** Upload target for already-encrypted bytes. The plaintext never leaves the device. */
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireUser(ctx)
+    await requireVaultOwner(ctx)
     return await ctx.storage.generateUploadUrl()
   },
 })
@@ -180,7 +196,7 @@ export const create = mutation({
     files: v.array(assetFile),
   },
   handler: async (ctx, args) => {
-    const user = await requireUser(ctx)
+    const user = await requireVaultOwner(ctx)
     const now = Date.now()
     if (args.secretSealed === undefined && args.files.length === 0) {
       throw new Error("An asset needs a secret or a file")
@@ -189,9 +205,15 @@ export const create = mutation({
     // The one gate the subscription state is allowed to close. Called first and
     // on its own, so a lapsed owner is told to renew rather than to upgrade.
     assertCanAddAssets(user, now)
+    const { byteSize, added } = await measureFiles(
+      ctx,
+      args.files,
+      new Set(),
+      now
+    )
     await assertCanAddAsset(ctx, user, now, {
       type: args.type,
-      byteSize: args.meta.byteSize ?? 0,
+      byteSize: byteSize ?? 0,
     })
 
     const assetId = await ctx.db.insert("assets", {
@@ -199,11 +221,12 @@ export const create = mutation({
       type: args.type,
       labelSealed: args.labelSealed,
       secretSealed: args.secretSealed,
-      meta: args.meta,
+      meta: withMeasuredSize(args.meta, byteSize),
       dekWrappedByMk: args.dekWrappedByMk,
       files: args.files,
     })
-    await bumpStorageUsed(ctx, user._id, args.meta.byteSize ?? 0)
+    await holdBlobs(ctx, added, "asset")
+    await bumpStorageUsed(ctx, user._id, byteSize ?? 0)
     await writeAudit(ctx, {
       userId: user._id,
       event: "asset.created",
@@ -249,6 +272,7 @@ export const update = mutation({
   },
   handler: async (ctx, { assetId, ...fields }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
@@ -261,12 +285,20 @@ export const update = mutation({
       throw new Error("An asset needs a secret or a file")
     }
 
+    const { byteSize, added } =
+      fields.files === undefined
+        ? { byteSize: asset.meta.byteSize, added: [] }
+        : await measureFiles(
+            ctx,
+            fields.files,
+            new Set<string>(blobsOf(asset.files)),
+            Date.now()
+          )
     // `ctx.db.patch` is shallow, so patching a partial `meta` would REPLACE the
     // object and drop whatever it omitted — `mimeType` and `itemCount` are the
     // ones that would go. Callers are expected to send a complete `meta`; this
     // merge is the safety net for the day one of them does not.
-    const meta =
-      fields.meta === undefined ? undefined : { ...asset.meta, ...fields.meta }
+    const meta = withMeasuredSize({ ...asset.meta, ...fields.meta }, byteSize)
 
     // An edit that replaces a 1 KB note with a 400 MB file is an add in
     // everything but name, so growth is charged against the same quota — before
@@ -274,37 +306,31 @@ export const update = mutation({
     // telling different stories. Shrinking, renaming, handing over and re-wrapping
     // stay free: a vault that cannot be repaired after a plan change would be a
     // worse outcome than one slightly over its quota.
-    if (meta !== undefined) {
-      const added = (meta.byteSize ?? 0) - (asset.meta.byteSize ?? 0)
-      if (added > 0) {
-        await assertEditWithinLimits(ctx, user, Date.now(), {
-          byteSize: meta.byteSize ?? 0,
-          addedBytes: added,
-        })
-      }
+    const delta = (byteSize ?? 0) - (asset.meta.byteSize ?? 0)
+    if (delta > 0) {
+      await assertEditWithinLimits(ctx, user, Date.now(), {
+        byteSize: byteSize ?? 0,
+        addedBytes: delta,
+      })
     }
 
-    await ctx.db.patch("assets", assetId, { ...fields, ...(meta && { meta }) })
+    await ctx.db.patch("assets", assetId, { ...fields, meta })
+    await holdBlobs(ctx, added, "asset")
 
     // Deleted after the patch rather than before it: the row no longer points
     // at them, so there is no window in which it references a missing blob.
     if (fields.files !== undefined) {
       const kept = new Set<string>(blobsOf(fields.files))
-      for (const storageId of blobsOf(asset.files)) {
-        if (!kept.has(storageId)) {
-          await ctx.storage.delete(storageId)
-        }
-      }
+      await dropBlobs(
+        ctx,
+        blobsOf(asset.files).filter((storageId) => !kept.has(storageId))
+      )
     }
 
     // `create` counts `meta.byteSize` and `remove` gives it back, so an edit
-    // owes the difference. Credential types leave `byteSize` unset and so have
-    // never been counted at all — a delta of zero keeps them that way rather
-    // than half-counting them from the first edit onwards.
-    if (meta !== undefined) {
-      const delta = (meta.byteSize ?? 0) - (asset.meta.byteSize ?? 0)
-      await bumpStorageUsed(ctx, user._id, delta)
-    }
+    // owes the difference. An asset with no files has no `byteSize` and so is
+    // never counted.
+    await bumpStorageUsed(ctx, user._id, delta)
 
     await writeAudit(ctx, {
       userId: user._id,
@@ -319,14 +345,13 @@ export const remove = mutation({
   args: { assetId: v.id("assets") },
   handler: async (ctx, { assetId }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
     }
 
-    for (const storageId of blobsOf(asset.files)) {
-      await ctx.storage.delete(storageId)
-    }
+    await dropBlobs(ctx, blobsOf(asset.files))
     await ctx.db.delete("assets", assetId)
     await bumpStorageUsed(ctx, user._id, -(asset.meta.byteSize ?? 0))
 
@@ -352,6 +377,7 @@ export const setHandover = mutation({
   },
   handler: async (ctx, { assetId, dekWrappedByRelease }) => {
     const user = await requireUser(ctx)
+    assertVaultOpen(user)
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")

@@ -454,6 +454,32 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
   }
 }
 
+// ── 9. Blobs are deleted in one place, and every reference is held ─────────
+//
+// `storage.sweep` deletes any upload that `storageRefs` does not hold two days
+// on. A blob deleted outside `dropBlobs` leaves a hold naming nothing; a new
+// column that references a blob without `holdBlobs` loses its files two days
+// after upload, silently. The schema's references are counted so that adding
+// one stops the build here, where someone has to decide how it is held.
+{
+  const STORAGE_REFERENCES = 5
+  for (const file of files) {
+    const name = rel(file)
+    if (name !== "model/storage.ts" && code(file).includes("ctx.storage.delete(")) {
+      failures.push(
+        `${name} calls ctx.storage.delete — delete blobs with dropBlobs in model/storage.ts, which releases their hold.`
+      )
+    }
+  }
+  const schema = files.find((file) => rel(file) === "schema.ts")
+  const references = (code(schema).match(/v\.id\(\s*["']_storage["']\s*\)/g) ?? []).length
+  if (references !== STORAGE_REFERENCES) {
+    failures.push(
+      `schema.ts has ${references} _storage references, expected ${STORAGE_REFERENCES} — hold every blob a new one takes with holdBlobs (model/storage.ts), then update the count here.`
+    )
+  }
+}
+
 if (failures.length > 0) {
   console.error("\nBackend invariant check FAILED:\n")
   for (const failure of failures) {
@@ -463,5 +489,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "Backend invariants hold: one handover serving path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault, the ID-number lookup in step."
+  "Backend invariants hold: one handover serving path, append-only audit log, no logged ciphertext, one claims writer, one entitlement module, one authority module, support isolated from the vault, the ID-number lookup in step, every blob held and deleted in one place."
 )

@@ -6,6 +6,7 @@ import { v } from "convex/values"
 import { internal } from "../_generated/api"
 import { internalMutation } from "../_generated/server"
 import { recordJobRun } from "../model/jobRuns"
+import { dropBlobs } from "../model/storage"
 import { FILE_RETENTION_MS } from "../model/support"
 
 const THREAD_BATCH = 20
@@ -33,10 +34,11 @@ export const purgeFiles = internalMutation({
         .take(MESSAGES_PER_THREAD)
       for (const message of messages) {
         if (message.attachments.length === 0) continue
-        for (const file of message.attachments) {
-          await ctx.storage.delete(file.storageId)
-          files += 1
-        }
+        await dropBlobs(
+          ctx,
+          message.attachments.map((file) => file.storageId)
+        )
+        files += message.attachments.length
         await ctx.db.patch("supportMessages", message._id, { attachments: [] })
       }
       await ctx.db.patch("supportThreads", thread._id, { filesPurgedAt: now })

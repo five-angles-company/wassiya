@@ -50,3 +50,52 @@ describe("an unlimited plan's executors", () => {
     )
   })
 })
+
+describe("a closed vault's executors", () => {
+  test("are frozen: none is added, re-pointed, re-sheeted or removed", async () => {
+    const t = convexTest(schema, modules)
+    const executorId = await t.run(async (ctx) => {
+      const owner = await ctx.db.insert("users", {
+        externalId: "owner",
+        name: "owner",
+        email: "owner@example.com",
+        role: "owner",
+        identityStatus: "verified",
+        vaultClosedAt: Date.now(),
+      })
+      return await ctx.db.insert("executors", {
+        userId: owner,
+        name: "Executor",
+        phone: "+966500000000",
+        idNumberHash: "hash",
+      })
+    })
+    const as = t.withIdentity({ subject: "owner" })
+
+    const closed = "closed after a verified death"
+    await expect(
+      as.mutation(api.executors.add, {
+        name: "Someone else",
+        phone: "+966511111111",
+        idNumber: "1023456789",
+      })
+    ).rejects.toThrow(closed)
+    await expect(
+      as.mutation(api.executors.update, {
+        executorId,
+        phone: "+966522222222",
+        idNumber: "1098765432",
+      })
+    ).rejects.toThrow(closed)
+    await expect(
+      as.mutation(api.executors.saveSheet, {
+        executorId,
+        releaseKeyWrapped: new ArrayBuffer(72),
+        version: 1,
+      })
+    ).rejects.toThrow(closed)
+    await expect(as.mutation(api.executors.remove, { executorId })).rejects.toThrow(
+      closed
+    )
+  })
+})

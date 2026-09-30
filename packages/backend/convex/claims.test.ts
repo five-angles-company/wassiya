@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
+import rateLimiter from "@convex-dev/rate-limiter/test"
 import { convexTest } from "convex-test"
+import { ConvexError } from "convex/values"
 import { describe, expect, test, vi } from "vitest"
 
 import { api, internal } from "./_generated/api"
@@ -590,6 +592,84 @@ describe("death certificate retention", () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe("a certificate upload", () => {
+  /** convex-test records no content type on a stored blob, so the test sets the one the browser sends. */
+  async function upload(
+    t: ReturnType<typeof convexTest>,
+    bytes: number,
+    contentType: string
+  ): Promise<Id<"_storage">> {
+    return await t.run(async (ctx) => {
+      const storageId = await ctx.storage.store(new Blob([new Uint8Array(bytes)]))
+      const db = ctx.db as unknown as {
+        patch: (table: string, id: string, value: object) => Promise<void>
+      }
+      await db.patch("_storage", storageId, { contentType })
+      return storageId
+    })
+  }
+
+  async function setup() {
+    const t = convexTest(schema, modules)
+    rateLimiter.register(t)
+    const owner = await addUser(t, "owner")
+    const reporter = await addUser(t, "reporter")
+    const claimId = await addClaim(t, owner, reporter, { status: "submitted" })
+    return { t, claimId, as: t.withIdentity({ subject: "reporter" }) }
+  }
+
+  test("is a document the console can show, and nothing else", async () => {
+    const { t, claimId, as } = await setup()
+    const refused: [number, string][] = [
+      [16, "text/html"],
+      [16, "image/svg+xml"],
+      [16, "application/octet-stream"],
+      [20 * 1024 * 1024 + 1, "application/pdf"],
+    ]
+    for (const [bytes, contentType] of refused) {
+      const certificateStorageId = await upload(t, bytes, contentType)
+      const error = await as
+        .mutation(api.claims.attachCertificate, { claimId, certificateStorageId })
+        .catch((cause: unknown) => cause)
+      expect((error as ConvexError<{ reason: string }>).data.reason).toBe(
+        "bad_certificate"
+      )
+    }
+  })
+
+  test("replacing one deletes the file it replaced", async () => {
+    const { t, claimId, as } = await setup()
+    const first = await upload(t, 16, "application/pdf")
+    const second = await upload(t, 16, "image/jpeg")
+
+    await as.mutation(api.claims.attachCertificate, {
+      claimId,
+      certificateStorageId: first,
+    })
+    await as.mutation(api.claims.attachCertificate, {
+      claimId,
+      certificateStorageId: second,
+    })
+
+    await t.run(async (ctx) => {
+      expect(await ctx.db.system.get("_storage", first)).toBeNull()
+      expect((await ctx.db.get("claims", claimId))?.certificateStorageId).toBe(
+        second
+      )
+    })
+  })
+
+  test("upload links are rationed per account", async () => {
+    const { as } = await setup()
+    for (let i = 0; i < 5; i++) {
+      await as.mutation(api.claims.generateCertificateUploadUrl, {})
+    }
+    await expect(
+      as.mutation(api.claims.generateCertificateUploadUrl, {})
+    ).rejects.toThrow()
   })
 })
 

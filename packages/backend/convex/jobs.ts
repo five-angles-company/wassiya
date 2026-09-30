@@ -37,6 +37,7 @@ const RUNNABLE: Record<JobName, FunctionReference<"mutation", "internal">> = {
   "account.sweepDeletions": internal.account.sweep,
   "claims.purgeCertificates": internal.claims.purgeCertificates,
   "email.purgeSent": internal.email.purgeSent,
+  "storage.sweep": internal.storage.sweep,
 }
 
 const jobName = v.union(
@@ -47,7 +48,8 @@ const jobName = v.union(
   v.literal("support.purgeFiles"),
   v.literal("account.sweepDeletions"),
   v.literal("claims.purgeCertificates"),
-  v.literal("email.purgeSent")
+  v.literal("email.purgeSent"),
+  v.literal("storage.sweep")
 )
 
 /**

@@ -802,6 +802,24 @@ export default defineSchema({
     rescheduled: v.boolean(),
   }).index("by_name_and_ranAt", ["name", "ranAt"]),
 
+  // One row per stored blob that something references. Written and deleted
+  // only by `model/storage.ts`: a blob referenced without a row here is deleted
+  // by `storage.sweep` two days after it was uploaded.
+  storageRefs: defineTable({
+    storageId: v.id("_storage"),
+    kind: v.union(
+      v.literal("asset"),
+      v.literal("certificate"),
+      v.literal("support")
+    ),
+  }).index("by_storageId", ["storageId"]),
+
+  // How far `storage.sweep` has read `_storage`, by upload time. One row, set
+  // on its first run, so nothing uploaded before that is ever swept.
+  storageSweep: defineTable({
+    sweptThrough: v.number(),
+  }),
+
   notifications: defineTable({
     userId: v.id("users"),
     kind: v.string(),

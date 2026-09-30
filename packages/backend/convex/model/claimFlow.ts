@@ -113,6 +113,19 @@ export function certificateDeleteAt(status: ClaimStatus, now: number): number {
   return now + days * DAY_MS
 }
 
+/**
+ * What a certificate may be: types the review console can display, and never
+ * the octet-stream every vault ciphertext is. The web form checks the same
+ * list (`certificate-panel.tsx`); only this one is enforced.
+ */
+export const CERTIFICATE_TYPES: readonly string[] = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+]
+export const MAX_CERTIFICATE_BYTES = 20 * 1024 * 1024
+
 /** Tries a reviewer gets at the blind ID-number check, per report. */
 export const ID_CHECK_ATTEMPTS = 3
 

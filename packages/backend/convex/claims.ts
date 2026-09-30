@@ -11,9 +11,10 @@
 // they are alive. The reporter is never asked to verify: they receive nothing
 // by reporting. What each executor receives is a `deliveries` row, with its own
 // identity gate. Release also closes the owner's vault (`users.vaultClosedAt`).
+import { HOUR, RateLimiter } from "@convex-dev/rate-limiter"
 import { ConvexError, v } from "convex/values"
 
-import { internal } from "./_generated/api"
+import { components, internal } from "./_generated/api"
 import type { Doc, Id } from "./_generated/dataModel"
 import {
   internalMutation,
@@ -26,9 +27,11 @@ import { writeAudit, writeStaffAudit } from "./audit"
 import { createDeliveriesForClaim } from "./deliveries"
 import { requirePermission, requireUser } from "./model/access"
 import {
+  CERTIFICATE_TYPES,
   CLAIM_RATE_LIMIT,
   CLAIM_RATE_WINDOW_MS,
   DAY_MS,
+  MAX_CERTIFICATE_BYTES,
   DELIVERY_WINDOW_DAYS,
   ID_CHECK_ATTEMPTS,
   VETO_LOCKOUT_DAYS,
@@ -58,9 +61,39 @@ import {
 } from "./model/identityHash"
 import { usersWithIdentityHash } from "./model/identityLookup"
 import { recordJobRun } from "./model/jobRuns"
+import { dropBlobs, freshUpload, holdBlobs } from "./model/storage"
 import { getCurrentUserOrThrow } from "./users"
 
 const ADVANCE_BATCH = 50
+
+/**
+ * Upload links for a certificate, per signed-in account. An honest reporter
+ * needs one or two; the reporter is not identity-verified, so this and the
+ * orphan sweep are what bound the storage a stranger can fill.
+ */
+const certificateUploads = new RateLimiter(components.rateLimiter, {
+  upload: { kind: "token bucket", rate: 10, period: HOUR, capacity: 5 },
+})
+
+/**
+ * A certificate staff may be shown: a recent upload held by nothing, of a type
+ * and size the console displays. The web form's own checks are only a form.
+ */
+async function assertCertificateUpload(
+  ctx: QueryCtx,
+  storageId: Id<"_storage">,
+  now: number
+): Promise<void> {
+  const blob = await freshUpload(ctx, storageId, now)
+  if (
+    blob === null ||
+    blob.contentType === undefined ||
+    !CERTIFICATE_TYPES.includes(blob.contentType) ||
+    blob.size > MAX_CERTIFICATE_BYTES
+  ) {
+    throw new ConvexError({ code: "claim", reason: "bad_certificate" })
+  }
+}
 
 /**
  * How long an unmatched claim waits for a human before the sweep closes it.
@@ -245,6 +278,9 @@ export const submit = mutation({
     const lockout = prior.find((claim) => isLockedOut(claim, now))
     const barred = lockout !== undefined
 
+    if (args.certificateStorageId !== undefined) {
+      await assertCertificateUpload(ctx, args.certificateStorageId, now)
+    }
     const claimId = await ctx.db.insert("claims", {
       // Absent when nothing matched. That is the whole point: a filing always
       // produces a claim now, so the claimant has a reference and a page, and
@@ -271,6 +307,9 @@ export const submit = mutation({
         claimantContact: args.claimantContact,
       }),
     })
+    if (args.certificateStorageId !== undefined) {
+      await holdBlobs(ctx, [args.certificateStorageId], "certificate")
+    }
 
     // The owner is told only when there is an owner. An unmatched claim names
     // nobody's vault, so there is no one to notify and no log to write to —
@@ -799,7 +838,7 @@ export const purgeCertificates = internalMutation({
     let deleted = 0
     for (const claim of due) {
       if (claim.certificateStorageId !== undefined) {
-        await ctx.storage.delete(claim.certificateStorageId)
+        await dropBlobs(ctx, [claim.certificateStorageId])
         deleted += 1
         if (claim.subjectUserId !== undefined) {
           await writeAudit(ctx, {
@@ -1386,7 +1425,11 @@ export const generateCertificateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
     // Authenticated: an anonymous upload URL would be an open file drop.
-    await getCurrentUserOrThrow(ctx)
+    const claimant = await getCurrentUserOrThrow(ctx)
+    await certificateUploads.limit(ctx, "upload", {
+      key: claimant._id,
+      throws: true,
+    })
     return await ctx.storage.generateUploadUrl()
   },
 })
@@ -1424,11 +1467,19 @@ export const attachCertificate = mutation({
     if (claim.status !== "submitted") {
       throw new Error("This claim is no longer accepting documents")
     }
+    const now = Date.now()
+    await assertCertificateUpload(ctx, args.certificateStorageId, now)
 
     await patchClaim(ctx, args.claimId, {
-      certificateAttachedAt: Date.now(),
+      certificateAttachedAt: now,
       certificateStorageId: args.certificateStorageId,
     })
+    await holdBlobs(ctx, [args.certificateStorageId], "certificate")
+    // Deleted now rather than left to retention: nothing points at it any more,
+    // and it is third-party personal data.
+    if (claim.certificateStorageId !== undefined) {
+      await dropBlobs(ctx, [claim.certificateStorageId])
+    }
     // The audit log is the **owner's** history, and an unmatched claim has no
     // owner — so there is no log for this line to belong to. The fact is not
     // lost: `certificateAttachedAt` is on the claim, and the claimant gets a
