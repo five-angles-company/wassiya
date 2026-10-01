@@ -21,7 +21,9 @@ import { openLabel, type AssetLabel } from "@workspace/crypto/label"
 import { openSecret } from "@workspace/crypto/secret"
 import { unwrap } from "@workspace/crypto/wrap"
 
+import { usePaywall } from "@/components/paywall"
 import type { UploadProgress } from "@/lib/asset-upload"
+import { planLimitOf } from "@/lib/plan-limit"
 import type { EditSource } from "@/screens/assets/detail/forms/source"
 import {
   type AssetMeta,
@@ -41,7 +43,8 @@ export type EditorLoad =
   | { status: "unreadable"; title: string; subtitle: string }
   | ({ status: "ready" } & EditSource)
 
-export type SaveError = "locked" | "failed"
+/** `lapsed`: the subscription ended, which freezes edits until renewal. */
+export type SaveError = "locked" | "lapsed" | "failed"
 
 export type SaveInput = {
   label: AssetLabel
@@ -57,6 +60,7 @@ export function useAssetEditor(assetId: Id<"assets">) {
   const mk = useVault((s) => s.mk)
   const recordReveal = useMutation(api.assets.recordReveal)
   const saveAsset = useSaveAsset()
+  const paywall = usePaywall()
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<SaveError | null>(null)
@@ -128,13 +132,19 @@ export function useAssetEditor(assetId: Id<"assets">) {
         })
         return true
       } catch (thrown) {
-        setError(thrown instanceof VaultLockedError ? "locked" : "failed")
+        const lapsed = planLimitOf(thrown) === "lapsed"
+        if (lapsed) {
+          paywall.open("lapsed")
+        }
+        setError(
+          thrown instanceof VaultLockedError ? "locked" : lapsed ? "lapsed" : "failed"
+        )
         return false
       } finally {
         setSaving(false)
       }
     },
-    [asset, assetId, saveAsset]
+    [asset, assetId, paywall, saveAsset]
   )
 
   return {

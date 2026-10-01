@@ -7,7 +7,9 @@ import { cn } from "@workspace/ui-native/lib/utils"
 import { router } from "expo-router"
 import { Pressable, View } from "react-native"
 
+import { usePaywall } from "@/components/paywall"
 import { useStrings } from "@/i18n/use-strings"
+import { planLimitOf } from "@/lib/plan-limit"
 import { useSetHandover } from "@/lib/release-key"
 import { ChipRow } from "@workspace/ui-native/components/wassiya/chip-row"
 
@@ -30,6 +32,7 @@ export function HandoverCard({
   const asset = useQuery(api.assets.get, { assetId })
   const executors = useQuery(api.executors.list)
   const setHandover = useSetHandover()
+  const paywall = usePaywall()
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
 
@@ -47,8 +50,13 @@ export function HandoverCard({
         { assetId, dekWrappedByMk: asset.dekWrappedByMk },
         handedOver
       )
-    } catch {
-      setFailed(true)
+    } catch (cause) {
+      // A lapsed vault can still make an asset private, but not hand one over.
+      if (planLimitOf(cause) === "lapsed") {
+        paywall.open("lapsed")
+      } else {
+        setFailed(true)
+      }
     } finally {
       setBusy(false)
     }

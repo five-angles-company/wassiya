@@ -14,9 +14,10 @@
 // that: present means handed over. Nothing here returns it — the owner's phone
 // only needs to know which, and the release gate alone hands it to an executor.
 //
-// The subscription-lapse rule applies in exactly one place: `create`. Reads
-// and the entire release path never consult the plan, because a lapsed card
-// must not cost anyone their inheritance.
+// A lapsed subscription freezes the vault (`assertSubscriptionActive`):
+// `create`, a content change in `update`, and handing over in `setHandover`.
+// Reads, `remove`, making an asset private and the entire release path never
+// consult it, because a lapsed card must not cost anyone their inheritance.
 //
 // Plan *limits* are a separate rule with a wider reach: `create` and the
 // growing half of `update` both charge against them, because an edit that
@@ -39,7 +40,7 @@ import {
 } from "./_generated/server"
 import { writeAudit } from "./audit"
 import {
-  assertCanAddAssets,
+  assertSubscriptionActive,
   assertVaultOpen,
   requireUser,
   requireVaultOwner,
@@ -202,9 +203,9 @@ export const create = mutation({
       throw new Error("An asset needs a secret or a file")
     }
     assertSecretSize(args.secretSealed)
-    // The one gate the subscription state is allowed to close. Called first and
-    // on its own, so a lapsed owner is told to renew rather than to upgrade.
-    assertCanAddAssets(user, now)
+    // Called first and on its own, so a lapsed owner is told to renew rather
+    // than to upgrade.
+    assertSubscriptionActive(user, now)
     const { byteSize, added } = await measureFiles(
       ctx,
       args.files,
@@ -238,9 +239,10 @@ export const create = mutation({
 
 /**
  * Editing an asset: renaming, re-tagging, replacing the encrypted payload, and
- * re-wrapping after an MK rotation. Deliberately not gated on the subscription
- * — a lapsed card blocks *adding* assets and nothing else, so an existing vault
- * stays fully editable.
+ * re-wrapping after an MK rotation. A lapsed subscription blocks every change
+ * to the contents; a call that only re-wraps (`dekWrappedByMk` alone) is key
+ * maintenance and stays open, because refusing it would leave an asset its
+ * owner can no longer open.
  *
  * ## `files` is a full replacement, and only the dropped blobs are deleted
  *
@@ -273,6 +275,14 @@ export const update = mutation({
   handler: async (ctx, { assetId, ...fields }) => {
     const user = await requireUser(ctx)
     assertVaultOpen(user)
+    const changesContents =
+      fields.labelSealed !== undefined ||
+      fields.secretSealed !== undefined ||
+      fields.meta !== undefined ||
+      fields.files !== undefined
+    if (changesContents) {
+      assertSubscriptionActive(user, Date.now())
+    }
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")
@@ -368,6 +378,9 @@ export const remove = mutation({
  * Hand an asset over, or make it private. Handing over takes the DEK wrapped
  * under the owner's release key on the phone; private deletes that wrapper, so
  * nothing but MK can open the asset and it dies with the owner.
+ *
+ * A lapsed subscription blocks handing over, not making private: an owner can
+ * always take something back out of what is delivered.
  */
 export const setHandover = mutation({
   args: {
@@ -378,6 +391,9 @@ export const setHandover = mutation({
   handler: async (ctx, { assetId, dekWrappedByRelease }) => {
     const user = await requireUser(ctx)
     assertVaultOpen(user)
+    if (dekWrappedByRelease !== undefined) {
+      assertSubscriptionActive(user, Date.now())
+    }
     const asset = await ctx.db.get("assets", assetId)
     if (asset === null || asset.userId !== user._id) {
       throw new Error("Not found")

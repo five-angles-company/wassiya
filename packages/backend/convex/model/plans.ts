@@ -18,9 +18,9 @@
 //     every screen and every string interpolates what it is given.
 //     `DEFAULT_QUOTA_BYTES` on ٩.٤ was a client constant claiming 5 GB while
 //     the server enforced nothing.
-//   - **There is no price here, or in the table.** Prices are set per
-//     storefront and rendered from the store's own `priceString`. A price in
-//     this repo would be wrong in every country but one, and stale in that one.
+//   - **No price is ever written in code.** A price differs per store country,
+//     so it is data — `planPrices` rows, which only the website shows. The
+//     stores decide what is charged, and the paywall renders their `priceString`.
 //
 // `null` means unlimited. Convex serialises `Infinity` as a string, so a limit
 // that reaches the client as `"Infinity"` renders as garbage and compares as
@@ -117,9 +117,9 @@ export async function limitsOfPlan(
  * It does not take anything away: the limits gate *adding*, never reading, and
  * never release. An owner already over them — because they lapsed, or because
  * a tier was lowered under them — keeps every asset and every executor and simply
- * cannot add the next one. That asymmetry is the whole subscription-lapse
- * promise, and it is why the asset path still calls `assertCanAddAssets`
- * separately: a lapse deserves "renew", not "upgrade".
+ * cannot add the next one. The lapse itself is a separate, wider rule
+ * (`assertSubscriptionActive`, which also freezes edits): a lapse deserves
+ * "renew", not "upgrade".
  *
  * The per-account override is applied last and field by field, so raising one
  * owner's storage does not silently hand them every other paid limit too.

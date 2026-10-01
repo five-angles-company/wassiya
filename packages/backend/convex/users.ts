@@ -115,7 +115,7 @@ export const saveProfile = mutation({
 // purpose. A query is not rerun because time passed, so a boolean computed from
 // `Date.now()` here would freeze at whatever it was when the query last ran and
 // only correct itself on an unrelated write. The client has a live clock; the
-// authoritative check is `assertCanAddAssets` in `assets.create` regardless.
+// authoritative check is `assertSubscriptionActive` in the asset writes regardless.
 export const me = query({
   args: {},
   handler: async (ctx) => {

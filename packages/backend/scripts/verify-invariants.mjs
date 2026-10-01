@@ -240,6 +240,23 @@ const rel = (path) => relative(convexDir, path).replaceAll("\\", "/")
     }
   }
 
+  // The website's prices: what every visitor reads before installing. One
+  // gated, audited writer, for the same reason as the plans table.
+  for (const file of files) {
+    const name = rel(file)
+    if (name === "prices.ts") {
+      continue
+    }
+    const source = code(file)
+    for (const write of ["insert(\"planPrices\"", "patch(\"planPrices\"", "replace(\"planPrices\"", "delete(\"planPrices\""]) {
+      if (source.includes(write)) {
+        failures.push(
+          `${name} writes the planPrices table (${write}…). Only prices.ts may.`
+        )
+      }
+    }
+  }
+
   // Once the store path exists, keep it internal: a public mutation that
   // applies a store event is a mutation anyone can call with any event. It
   // does not exist yet, so the check is conditional on the name appearing.

@@ -76,6 +76,16 @@ are the points to re-read:
 - How a Wassiya executor relates to one appointed under law.
 - Effect of account termination; liability wording; governing law.
 
+## What changed on 2026-10-01: a lapsed subscription freezes the vault
+
+Before, a lapse only stopped adding. Now it also stops editing an item and
+handing a private item over, until the owner renews. Reading, deleting, making
+an item private, executors, the check-in and delivery are unaffected, because
+death ends most subscriptions and delivery must never depend on payment. The
+"Plans and payment" clause in both terms drafts now says this. Please confirm
+that restricting edits to content the owner stored while paying is acceptable
+under Saudi consumer protection rules, given they can always read and delete it.
+
 ## What the code now does (2026-09-28)
 
 The drafts do not describe these yet; please add them where they belong.

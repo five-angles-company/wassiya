@@ -63,8 +63,8 @@ export const FAQ: readonly { q: LabelSet; a: LabelSet }[] = [
   {
     q: { ar: "ماذا لو توقف اشتراكي؟", en: "What if my subscription stops?" },
     a: {
-      ar: "تبقى خزنتك كما هي، ويبقى التسليم لوصيّك قائماً. فقط لن تستطيع إضافة شيء جديد حتى تجدّد.",
-      en: "Your vault stays as it is, and your executor still receives what you chose to hand over. You just can't add anything new until you renew.",
+      ar: "إن حدث لك شيء، يُسلَّم لوصيّك ما اخترته حتى لو توقف الاشتراك — فالتسليم لا يرتبط بالدفع أبداً. وما دمت حيّاً تبقى خزنتك محفوظة ومقروءة كما هي، لكن الإضافة والتعديل يتوقفان حتى تجدّد.",
+      en: "If something happens to you, your executor still receives what you chose, even if the subscription has stopped — delivery never depends on payment. While you're alive, your vault stays safe and readable as it is, but adding and editing pause until you renew.",
     },
   },
   {

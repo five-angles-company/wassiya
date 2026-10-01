@@ -259,6 +259,11 @@ export const ASSET_DETAIL = {
     ar: "أُقفلت الخزنة أثناء التحرير. افتحها ثم احفظ مرة أخرى.",
     en: "The vault locked while you were editing. Unlock it, then save again.",
   },
+  // The lapse freezes edits; said as what still works, like every lapse line.
+  saveLapsed: {
+    ar: "التعديل متوقّف حتى التجديد. خزنتك والتسليم لأوصيائك كما هما.",
+    en: "Editing is paused until you renew. Your vault and delivery to your executors are unchanged.",
+  },
 
   deleteLabel: { ar: "حذف الأصل", en: "Delete asset" },
   deleteTitle: { ar: "حذف هذا الأصل؟", en: "Delete this asset?" },

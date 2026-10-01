@@ -1,10 +1,25 @@
 ---
-import { Check, Infinity as InfinityIcon, Minus, ShieldCheck, Smartphone } from "lucide-react"
+import {
+  FileUp,
+  FingerprintPattern,
+  Gem,
+  HandHeart,
+  HardDrive,
+  HeartPulse,
+  Images,
+  Layers,
+  LockKeyhole,
+  ScrollText,
+  Sprout,
+  Users,
+} from "lucide-react"
 
+import ButtonLink from "@/components/ButtonLink.astro"
 import SectionHead from "@/components/ui/SectionHead.astro"
+import { SITE } from "@/config/site"
 import { HOME } from "@/i18n/strings/home"
 import { t, type Locale } from "@/i18n/locale"
-import { fmtBytes, fmtNumber } from "@/lib/format"
+import { isReadable, PLAN_STRING_KEYS, priceFor, valuesFor, type PlanValues } from "@/lib/plan-view"
 import type { PublishedPlans } from "@/lib/plans"
 
 interface Props {
@@ -15,139 +30,223 @@ interface Props {
 
 const { locale, plans } = Astro.props
 const home = t(HOME, locale)
-const units = { mb: home.unitMb, gb: home.unitGb }
 
-type Limits = PublishedPlans["free"]
-type Ceilings = PublishedPlans["ceilings"]
-type Row = { label: string; value: string; kind: "value" | "unlimited" | "yes" | "no" }
+// What the build read. `scripts/plans-live.ts` replaces it with what Convex
+// holds now, on every visit; without JavaScript, or when that fetch fails,
+// this is what stays. Without a readable build, the rows say it in words.
+const readable = isReadable(plans)
+const price = priceFor(plans, locale, home)
 
-// Every value is interpolated from the fetched row. A size with no cap is
-// "unlimited"; a count with none stops at the vault's ceiling.
-function rowsFor(limits: Limits, ceilings: Ceilings): Row[] {
-  const count = (value: number | null): Row["kind"] => (value === null ? "unlimited" : "value")
-  const upTo = (value: number | null, ceiling: number) =>
-    value === null ? home.planUpTo.replace("{n}", fmtNumber(ceiling, locale)) : fmtNumber(value, locale)
+// The browser refresh gets the deployment and only the copy it formats with.
+const live =
+  SITE.convexUrl === undefined
+    ? undefined
+    : JSON.stringify({
+        url: SITE.convexUrl,
+        locale,
+        strings: Object.fromEntries(PLAN_STRING_KEYS.map((key) => [key, home[key]])),
+      })
+
+function rows(values: PlanValues) {
   return [
-    {
-      label: home.planStorage,
-      value: limits.storageBytes === null ? home.planUnlimited : fmtBytes(limits.storageBytes, locale, units),
-      kind: count(limits.storageBytes),
-    },
-    {
-      label: home.planAssets,
-      value: upTo(limits.assets, ceilings.assets),
-      kind: "value",
-    },
-    {
-      label: home.planExecutors,
-      value: upTo(limits.executors, ceilings.executors),
-      kind: "value",
-    },
-    {
-      label: home.planPhotos,
-      value: limits.photos ? home.planIncluded : home.planNotIncluded,
-      kind: limits.photos ? "yes" : "no",
-    },
-    {
-      label: home.planFileSize,
-      value: limits.maxFileBytes === null ? home.planUnlimited : fmtBytes(limits.maxFileBytes, locale, units),
-      kind: count(limits.maxFileBytes),
-    },
+    { key: "storage", icon: HardDrive, label: home.planStorage, value: values.storage, on: true },
+    { key: "assets", icon: Layers, label: home.planAssets, value: values.assets, on: true },
+    { key: "executors", icon: Users, label: home.planExecutors, value: values.executors, on: true },
+    { key: "photos", icon: Images, label: home.planPhotos, value: values.photos, on: values.photosOn },
+    { key: "fileSize", icon: FileUp, label: home.planFileSize, value: values.fileSize, on: true },
   ]
 }
 
-// A deployment older than the ceilings serves no `ceilings`; built against one,
-// the site shows its fallback copy rather than failing the build.
-const readable = plans !== null && plans.ceilings !== undefined
-
 const tiers = [
   {
-    name: home.planFree,
-    tagline: home.planFreeTagline,
-    fallback: home.planFreeFallback,
-    rows: readable ? rowsFor(plans.free, plans.ceilings) : null,
-    featured: false,
-  },
-  {
+    key: "annual",
+    icon: Gem,
     name: home.planAnnual,
     tagline: home.planAnnualTagline,
-    fallback: home.planAnnualFallback,
-    rows: readable ? rowsFor(plans.annual, plans.ceilings) : null,
+    display: price?.display ?? home.planAnnualDisplay,
+    note: price?.note ?? home.plansPrice,
+    cta: home.planAnnualCta,
+    rows: rows(
+      readable
+        ? valuesFor(plans, "annual", locale, home)
+        : {
+            storage: home.planStorageAnnual,
+            assets: home.planCountAnnual,
+            executors: home.planCountAnnual,
+            photos: home.planIncluded,
+            photosOn: true,
+            fileSize: home.planFileAnnual,
+          }
+    ),
     featured: true,
   },
+  {
+    key: "free",
+    icon: Sprout,
+    name: home.planFree,
+    tagline: home.planFreeTagline,
+    display: home.planFreeDisplay,
+    note: home.planFreeNote,
+    cta: home.planFreeCta,
+    rows: rows(
+      readable
+        ? valuesFor(plans, "free", locale, home)
+        : {
+            storage: home.planStorageFree,
+            assets: home.planCountFree,
+            executors: home.planCountFree,
+            photos: home.planNotIncluded,
+            photosOn: false,
+            fileSize: home.planFileFree,
+          }
+    ),
+    featured: false,
+  },
+] as const
+
+const core = [
+  { icon: LockKeyhole, label: home.planCoreLocked },
+  { icon: FingerprintPattern, label: home.planCoreFingerprint },
+  { icon: ScrollText, label: home.planCoreSheet },
+  { icon: HeartPulse, label: home.planCoreCheckin },
+  { icon: HandHeart, label: home.planCoreHandover },
 ]
 ---
 
-<section id="plans" class="grain band relative overflow-hidden py-24 lg:py-28">
+<section id="plans" class="grain band relative overflow-hidden py-24 lg:py-28" data-live={live}>
   <div class="mx-auto w-full max-w-[1200px] px-4 md:px-8">
     <SectionHead eyebrow={home.plansEyebrow} title={home.plansTitle} body={home.plansBody} align="center" />
 
-    <div class="mx-auto mt-14 grid max-w-[940px] gap-5 md:grid-cols-2 lg:mt-20">
+    <div class="mx-auto mt-14 grid max-w-[980px] items-stretch gap-5 md:grid-cols-2 lg:mt-16">
       {
-        tiers.map((tier) => (
-          <article
-            class:list={[
-              "rise-in relative flex flex-col overflow-hidden rounded-[32px] p-7 md:p-9",
-              tier.featured
-                ? "bg-[#1c1a19] text-sand-50 shadow-[var(--shadow-overlay)] ring-1 ring-terracotta-400/30"
-                : "bg-card border-border border shadow-[var(--shadow-raised)]",
-            ]}
-          >
-            <h3 class:list={["relative text-[26px]", tier.featured && "text-sand-50"]}>{tier.name}</h3>
-            <p class:list={["relative mt-1 text-[15px]", tier.featured ? "text-sand-300" : "text-sand-700"]}>
-              {tier.tagline}
-            </p>
-
-            {tier.rows ? (
-              <dl class="relative mt-7">
-                {tier.rows.map((row) => (
-                  <div
+        tiers.map((tier) => {
+          const dark = tier.featured
+          return (
+            <article
+              class:list={[
+                "rise-in relative flex flex-col rounded-[32px] p-6 md:p-8",
+                dark
+                  ? "text-sand-50 ring-terracotta-400/30 bg-[#1c1a19] shadow-[var(--shadow-overlay)] ring-1"
+                  : "bg-card border-border border shadow-[var(--shadow-raised)]",
+              ]}
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                  <span
                     class:list={[
-                      "flex items-center justify-between gap-4 border-t py-3.5",
-                      tier.featured ? "border-white/10" : "border-border",
+                      "flex size-12 shrink-0 items-center justify-center rounded-2xl",
+                      dark ? "bg-primary text-[#f5ead8]" : "bg-olive-100 text-olive-800",
                     ]}
                   >
-                    <dt class:list={["text-[14.5px]", tier.featured ? "text-sand-300" : "text-sand-700"]}>{row.label}</dt>
-                    <dd class="flex items-center gap-2 text-[15.5px] font-bold">
-                      {row.kind === "unlimited" && (
-                        <InfinityIcon
-                          className={tier.featured ? "text-terracotta-300 size-4" : "text-olive-700 size-4"}
-                          strokeWidth={2.5}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {row.kind === "yes" && (
-                        <Check
-                          className={tier.featured ? "text-terracotta-300 size-4" : "text-olive-700 size-4"}
-                          strokeWidth={3}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {row.kind === "no" && <Minus className="text-sand-500 size-4" strokeWidth={3} aria-hidden="true" />}
-                      <span class:list={[row.kind === "no" && "text-sand-500 font-semibold"]}>{row.value}</span>
-                    </dd>
+                    <tier.icon className="size-6" strokeWidth={2} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h3 class:list={["text-[22px] leading-tight", dark && "text-sand-50"]}>{tier.name}</h3>
+                    <p class:list={["mt-0.5 text-[14px]", dark ? "text-sand-300" : "text-sand-700"]}>{tier.tagline}</p>
                   </div>
+                </div>
+                {dark && (
+                  <span class="border-terracotta-400/40 text-terracotta-300 rounded-full border px-3 py-1 text-[12.5px] font-semibold">
+                    {home.planAnnualBadge}
+                  </span>
+                )}
+              </div>
+
+              <div
+                class:list={[
+                  "mt-6 rounded-[22px] px-5 py-4",
+                  dark ? "bg-white/[0.05]" : "bg-background border-border border",
+                ]}
+              >
+                <p
+                  class:list={[
+                    "font-heading leading-[1.3] font-black",
+                    dark ? "text-sand-50 text-[34px]" : "text-[26px]",
+                  ]}
+                  data-plan-price={dark ? "display" : undefined}
+                >
+                  {tier.display}
+                </p>
+                <p
+                  class:list={["mt-0.5 text-[13.5px]", dark ? "text-sand-300" : "text-sand-700"]}
+                  data-plan-price={dark ? "note" : undefined}
+                >
+                  {tier.note}
+                </p>
+                {dark && (
+                  <>
+                    <p
+                      class="text-terracotta-300 mt-1.5 text-[14px] font-semibold"
+                      data-plan-price="month"
+                      hidden={price === null}
+                    >
+                      {price?.perMonth}
+                    </p>
+                    <p class="text-sand-400 mt-2 text-[12px]" data-plan-price="varies" hidden={price === null}>
+                      {home.planPriceVaries}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              <ul class:list={["mt-4 mb-7 divide-y", dark ? "divide-white/10" : "divide-border"]}>
+                {tier.rows.map((row) => (
+                  <li class="group flex items-center gap-3.5 py-3.5" data-plan-row={`${tier.key}.${row.key}`} data-on={String(row.on)}>
+                    <span
+                      class:list={[
+                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                        dark
+                          ? "text-terracotta-300 bg-white/[0.07] group-data-[on=false]:text-sand-500 group-data-[on=false]:bg-white/[0.04]"
+                          : "bg-sand-100 text-sand-800 group-data-[on=false]:text-sand-500",
+                      ]}
+                    >
+                      <row.icon className="size-[18px]" strokeWidth={2} aria-hidden="true" />
+                    </span>
+                    <span
+                      class:list={[
+                        "min-w-0 flex-1 text-[15px] group-data-[on=false]:text-sand-500",
+                        dark ? "text-sand-200" : "text-sand-800",
+                      ]}
+                    >
+                      {row.label}
+                    </span>
+                    <span
+                      class="shrink-0 text-[15px] font-bold group-data-[on=false]:text-sand-500 group-data-[on=false]:font-semibold"
+                      data-plan-value
+                    >
+                      {row.value}
+                    </span>
+                  </li>
                 ))}
-              </dl>
-            ) : (
-              <p class:list={["relative mt-7 text-[16.5px] leading-[1.85] font-semibold", tier.featured && "text-sand-100"]}>
-                {tier.fallback}
-              </p>
-            )}
-          </article>
-        ))
+              </ul>
+
+              <ButtonLink href="#download" variant={dark ? "primary" : "outline"} class="mt-auto w-full">
+                {tier.cta}
+              </ButtonLink>
+            </article>
+          )
+        })
       }
     </div>
 
-    <div class="text-sand-700 mx-auto mt-10 flex max-w-[940px] flex-col items-center gap-3 text-center text-[14.5px] leading-[1.8] md:flex-row md:justify-center md:gap-8">
-      <p class="inline-flex items-center gap-2">
-        <Smartphone className="size-4 shrink-0" strokeWidth={2.25} aria-hidden="true" />
-        {home.plansPrice}
-      </p>
-      <p class="inline-flex items-start gap-2 md:items-center">
-        <ShieldCheck className="text-olive-700 mt-1 size-4 shrink-0 md:mt-0" strokeWidth={2.25} aria-hidden="true" />
-        {home.plansLapse}
-      </p>
+    <div class="border-border bg-card/60 mx-auto mt-5 max-w-[980px] rounded-[28px] border px-6 py-6 md:px-8">
+      <p class="text-sand-700 text-center text-[13.5px] font-semibold">{home.planAllTitle}</p>
+      <ul class="mt-5 grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3 lg:grid-cols-5">
+        {
+          core.map((item) => (
+            <li class="flex flex-col items-center gap-2.5 text-center">
+              <span class="bg-terracotta-100 text-terracotta-700 flex size-10 items-center justify-center rounded-full">
+                <item.icon className="size-5" strokeWidth={2} aria-hidden="true" />
+              </span>
+              <span class="text-[14px] leading-[1.5] font-semibold">{item.label}</span>
+            </li>
+          ))
+        }
+      </ul>
     </div>
   </div>
 </section>
+
+<script>
+  import "@/scripts/plans-live"
+</script>

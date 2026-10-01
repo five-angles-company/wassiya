@@ -57,8 +57,8 @@ export const PAYWALL = {
 
   lapsedTitle: { ar: "اشتراكك انتهى", en: "Your subscription has ended" },
   lapsedBody: {
-    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
-    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
+    ar: "خزنتك محفوظة كما هي، والتسليم لأوصيائك قائم. جدّد لتضيف وتعدّل.",
+    en: "Your vault is kept as it is, and delivery to your executors still works. Renew to add and edit.",
   },
 
   /** What the annual plan is, in four lines. Order is deliberate: value first. */

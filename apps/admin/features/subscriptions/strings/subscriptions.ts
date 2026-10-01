@@ -77,18 +77,59 @@ export const SUBSCRIPTIONS = {
     ar: "تسري الحدود فوراً على كل من في الخطة. من تجاوز حداً خُفّض يحتفظ بكل ما لديه ولا يستطيع الإضافة فقط — لا يُحذف شيء.",
     en: "Limits apply immediately to everyone on the plan. Anyone already past a lowered limit keeps everything they have and simply cannot add more — nothing is deleted.",
   },
-  // Prices are the one thing this sheet cannot touch, and an operator looking
-  // for them should be told where they are rather than left hunting.
-  noPricesHere: {
-    ar: "الأسعار ليست هنا: تُضبط في App Store Connect وGoogle Play، ويعرض التطبيق سعر المتجر نفسه.",
-    en: "Prices are not here: they are set in App Store Connect and Google Play, and the app renders the store's own price.",
-  },
-  // wassiya.app is static and prints these limits when it is built, so a save
-  // here reaches the app at once and the public site only at its next build.
+  // wassiya.app is static and prints limits and prices when it is built, so a
+  // save here reaches the app at once and the public site only at its next build.
   landingRebuild: {
-    ar: "موقع wassiya.app يطبع هذه الحدود عند بنائه. بعد الحفظ، أعد بناء الموقع ليعرضها.",
-    en: "wassiya.app prints these limits when it is built. After saving, rebuild the site for it to show them.",
+    ar: "موقع wassiya.app يطبع الحدود والأسعار عند بنائه. بعد الحفظ، أعد بناء الموقع ليعرضها.",
+    en: "wassiya.app prints limits and prices when it is built. After saving, rebuild the site for it to show them.",
   },
+
+  // The website's prices. The stores charge; this only says what the site shows,
+  // and the warning is the one sentence an operator must not miss.
+  pricesTitle: { ar: "أسعار الخطة السنوية على الموقع", en: "Yearly plan prices on the website" },
+  pricesHint: {
+    ar: "سعر لكل دولة، وسعر لكل الدول الأخرى. التطبيق يعرض دائماً سعر المتجر نفسه.",
+    en: "One price per country, and one for every other country. The app always shows the store's own price.",
+  },
+  pricesWarning: {
+    ar: "هذا يغيّر ما يعرضه الموقع فقط، لا ما يدفعه المشترك. غيّر السعر في App Store Connect وGoogle Play أولاً، ثم هنا.",
+    en: "This changes only what the website shows, not what anyone is charged. Change the price in App Store Connect and Google Play first, then here.",
+  },
+  pricesEmpty: { ar: "لا أسعار بعد، فلا يعرض الموقع سعراً.", en: "No prices yet, so the website shows none." },
+  colMarket: { ar: "الدولة", en: "Country" },
+  colPrice: { ar: "السعر", en: "Price" },
+  colTax: { ar: "الضريبة", en: "Tax" },
+  colChecked: { ar: "آخر تحقق", en: "Last checked" },
+  marketDefault: { ar: "كل الدول الأخرى", en: "Every other country" },
+  taxIncluded: { ar: "شاملة", en: "Included" },
+  taxExcluded: { ar: "غير شاملة", en: "Not included" },
+  editPrice: { ar: "عدّل", en: "Edit" },
+  removePrice: { ar: "أزل", en: "Remove" },
+  removePriceTitle: { ar: "إزالة سعر {market}؟", en: "Remove the price for {market}?" },
+  removePriceBody: {
+    ar: "بعد إعادة بناء الموقع يرى زوار هذه الدولة سعر كل الدول الأخرى، إن وُجد.",
+    en: "After the next rebuild, visitors from this country see the every-other-country price, if there is one.",
+  },
+  priceFormTitle: { ar: "أضف سعراً أو عدّله", en: "Add or change a price" },
+  fieldMarket: { ar: "رمز الدولة", en: "Country code" },
+  fieldMarketHint: { ar: "حرفان، مثل SA أو AE", en: "Two letters, like SA or AE" },
+  fieldEveryMarket: { ar: "لكل الدول الأخرى", en: "For every other country" },
+  fieldCurrency: { ar: "العملة", en: "Currency" },
+  fieldCurrencyHint: { ar: "ثلاثة أحرف، مثل SAR أو USD", en: "Three letters, like SAR or USD" },
+  fieldAmount: { ar: "السعر", en: "Price" },
+  fieldAmountHint: { ar: "كما يظهر في المتجر، مثل 379.99", en: "As the store shows it, like 379.99" },
+  fieldTaxIncluded: { ar: "شامل الضريبة", en: "Tax included" },
+  confirmChecked: {
+    ar: "تحققت اليوم أن هذا السعر يطابق App Store وGoogle Play",
+    en: "I checked today that this matches the App Store and Google Play",
+  },
+  invalidMarket: { ar: "رمز الدولة حرفان", en: "A country code is two letters" },
+  invalidCurrency: { ar: "رمز العملة ثلاثة أحرف", en: "A currency code is three letters" },
+  invalidAmount: { ar: "اكتب السعر بالأرقام، مثل 379.99", en: "Enter the price in numbers, like 379.99" },
+  savePrice: { ar: "احفظ السعر", en: "Save price" },
+  toastPrice: { ar: "حُفظ السعر", en: "Price saved" },
+  toastPriceRemoved: { ar: "أُزيل السعر", en: "Price removed" },
+  toastPriceFailed: { ar: "تعذّر حفظ السعر", en: "Could not save the price" },
 
   overrideTitle: { ar: "حدود خاصة بهذا الحساب", en: "Limits for this account" },
   overrideBody: {

@@ -95,7 +95,7 @@ export function useAssetSubmit(): AssetSubmit {
         })
         if (early !== null) {
           paywall.open(early)
-          setError(t.quotaExceeded)
+          setError(t.limitReached)
           return null
         }
 
@@ -126,7 +126,9 @@ export function useAssetSubmit(): AssetSubmit {
           cause instanceof VaultLockedError
             ? t.vaultLocked
             : limit !== null
-              ? t.quotaExceeded
+              ? limit === "lapsed"
+                ? t.addPaused
+                : t.limitReached
               : ceiling !== null
                 ? t.vaultFull.replace("{n}", fmtNum(ceiling, locale))
                 : t.saveFailed
@@ -143,7 +145,8 @@ export function useAssetSubmit(): AssetSubmit {
       paywall,
       plan,
       locale,
-      t.quotaExceeded,
+      t.addPaused,
+      t.limitReached,
       t.saveFailed,
       t.vaultFull,
       t.vaultLocked,

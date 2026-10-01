@@ -72,19 +72,26 @@ export function excludeStaff(
 }
 
 /**
- * The subscription-lapse rule, in the one place it is allowed to apply: adding
- * assets. Reading the vault and releasing to executors must never call this — a
- * lapsed subscription is a billing problem, not a reason to lose an
- * inheritance.
+ * The subscription-lapse rule: a lapsed vault is frozen as it stands. It gates
+ * exactly three writes — adding an asset, changing an asset's contents, and
+ * handing an asset over — so that keeping a vault current is what a
+ * subscription pays for.
  *
- * A user with no subscription row is a new or free-tier owner and may add;
- * only an explicitly expired `renewsAt` blocks.
+ * ⚠️ Never call it from a read, a delete, making an asset private, the
+ * executors, the sheets, the check-in or anything on the release path. Death
+ * is what ends most subscriptions, so delivery that depended on payment would
+ * fail in exactly the case the product exists for; and an owner must always be
+ * able to take something back out of what is delivered.
+ *
+ * A user with no subscription row is a new or free-tier owner and may write;
+ * only an explicitly expired `renewsAt` blocks. The "Subscription lapsed"
+ * prefix is matched by the mobile app (`lib/plan-limit.ts`) — keep it.
  */
-export function assertCanAddAssets(user: Doc<"users">, now: number): void {
+export function assertSubscriptionActive(user: Doc<"users">, now: number): void {
   const renewsAt = user.subscription?.renewsAt
   if (renewsAt !== undefined && renewsAt < now) {
     throw new Error(
-      "Subscription lapsed: adding assets is paused. Existing assets and executor delivery are unaffected."
+      "Subscription lapsed: the vault is read-only until renewal. Reading, deleting, the check-in and executor delivery are unaffected."
     )
   }
 }

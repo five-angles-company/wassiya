@@ -273,10 +273,10 @@ export default defineSchema({
   // with no rows runs on — a missing row must never be able to take the product
   // down, and a fresh deployment has none.
   //
-  // Prices are deliberately absent. They are set per storefront and rendered
-  // from the store's own `priceString`; a price here would be wrong in every
-  // country but one. `key` is a literal union rather than a string because a
-  // store product points at it: renaming a key orphans every subscriber on it.
+  // No price on this row: what a plan costs differs per store country, so it
+  // is `planPrices` rows, one per country. `key` is a literal union rather
+  // than a string because a store product points at it: renaming a key
+  // orphans every subscriber on it.
   plans: defineTable({
     key: v.union(v.literal("free"), v.literal("annual")),
     storageBytes: v.union(v.number(), v.null()),
@@ -286,6 +286,29 @@ export default defineSchema({
     maxFileBytes: v.union(v.number(), v.null()),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+
+  // What wassiya.app shows a plan costing, one row per store country. Display
+  // only: what an owner is charged is set in App Store Connect and Google Play,
+  // and the phone's paywall renders the store's own `priceString`. See
+  // `prices.ts`, the only writer.
+  //
+  // `amountMinor` is an integer in the currency's smallest unit (halalas,
+  // cents): a float would store 379.99 as 379.98999…. `market` is an ISO 3166-1
+  // alpha-2 store country, or `DEFAULT_MARKET` for every country without a row.
+  planPrices: defineTable({
+    plan: v.union(v.literal("free"), v.literal("annual")),
+    market: v.string(),
+    currency: v.string(),
+    amountMinor: v.number(),
+    taxInclusive: v.boolean(),
+    // When staff last confirmed this matches the store. A row nobody has
+    // checked in months is how the site ends up advertising a price nobody
+    // can buy at.
+    verifiedAt: v.number(),
+    updatedAt: v.number(),
+    // Absent on seeded preview rows only.
+    updatedBy: v.optional(v.id("users")),
+  }).index("by_plan_and_market", ["plan", "market"]),
 
   // Deployment settings an operator can change without the CLI.
   //

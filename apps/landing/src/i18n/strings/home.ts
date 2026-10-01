@@ -13,8 +13,8 @@ import type { Dictionary } from "@/i18n/locale"
  *     recover or reset anything.
  *   - **Delivery goes to the executor**, who carries out the will — never "to
  *     the people you chose". Arabic says الوصي / الأوصياء, never وريث / ورثة.
- *   - **No number is written here.** Plan limits arrive from `plans.published`
- *     at build time, and there is never a price — the fallbacks included.
+ *   - **No number is written here.** Plan limits and prices arrive from
+ *     `plans.published` at build time; the fallbacks carry neither.
  *   - **No "am I an executor?" path.** Every executor is silent; the executor
  *     door explains the message they may receive and nothing more.
  */
@@ -40,6 +40,7 @@ export const HOME = {
   heroTrustPasswords: { ar: "بلا كلمات مرور", en: "No passwords" },
   heroTrustFree: { ar: "مجاني للبدء", en: "Free to start" },
 
+  heroDemoHint: { ar: "جرّبها: اضغط «أنا بخير»", en: "Try it: tap “I'm well”" },
   floatLockTitle: { ar: "لا نملك أي مفتاح", en: "We hold no key" },
   floatLockMeta: { ar: "لا في حياتك، ولا بعدها", en: "Not in your lifetime, nor after" },
   floatExecutorTitle: { ar: "وصيّك: محمد", en: "Your executor: Mohammed" },
@@ -207,40 +208,62 @@ export const HOME = {
   },
 
   plansEyebrow: { ar: "الخطط", en: "Plans" },
-  plansTitle: { ar: "ابدأ مجاناً", en: "Start for free" },
+  plansTitle: { ar: "احفظ كل ما يهمّك", en: "Keep everything that matters" },
   plansBody: {
-    ar: "إنشاء الحساب وكل الخطوات الأساسية مجانية. ولا نطلب منك الاشتراك إلا إذا احتجت إلى أكثر.",
-    en: "Creating your account and all the basic steps are free. We only ask you to subscribe if you need more.",
+    ar: "جرّب خزنتك بالخطة المجانية، ثم انتقل إلى السنوية لتحفظ كل شيء: مساحة أوسع، وأوصياء أكثر، والصور والفيديو.",
+    en: "Try your vault on the free plan, then move to the yearly plan to keep everything: more room, more executors, and photos and videos.",
   },
-  planFree: { ar: "المجانية", en: "Free" },
-  planFreeTagline: { ar: "لتبدأ", en: "To get started" },
-  planAnnual: { ar: "السنوية", en: "Yearly" },
+  planFree: { ar: "المجانية", en: "Free plan" },
+  planFreeTagline: { ar: "لتجرّب خزنتك", en: "To try your vault" },
+  planAnnual: { ar: "السنوية", en: "Yearly plan" },
   planAnnualTagline: { ar: "لكل ما يهمّك", en: "For everything that matters" },
-  planFreeFallback: { ar: "مساحة لتبدأ خزنتك.", en: "Room to start your vault." },
-  planAnnualFallback: {
-    ar: "مساحة أكبر، وأوصياء أكثر، والصور والفيديو والملفات الكبيرة.",
-    en: "More room, more executors, plus photos, videos and large files.",
+  planAnnualBadge: { ar: "نوصي بها", en: "Recommended" },
+  // The price block. The yearly price itself comes from `plans.published`;
+  // `planAnnualDisplay` is what shows when the build could not read one.
+  planFreeDisplay: { ar: "مجاناً", en: "Free" },
+  planFreeNote: { ar: "بحدود تكفي لتبدأ", en: "With enough room to start" },
+  planAnnualDisplay: { ar: "اشتراك سنوي", en: "Paid yearly" },
+  planPerYear: { ar: "في السنة", en: "per year" },
+  // The yearly price divided by twelve. Billing stays yearly; this only reads it.
+  planPerMonth: { ar: "أي {price} في الشهر", en: "That is {price} a month" },
+  planTaxIncluded: { ar: "شامل الضريبة", en: "tax included" },
+  planTaxExcluded: { ar: "قبل الضريبة", en: "before tax" },
+  planPriceVaries: {
+    ar: "يختلف السعر حسب البلد، ويظهر بعملتك في المتجر",
+    en: "Prices vary by country; your store shows yours",
   },
+  planFreeCta: { ar: "ابدأ مجاناً", en: "Start for free" },
+  planAnnualCta: { ar: "اشترك من التطبيق", en: "Subscribe in the app" },
+  // What every vault gets, on either plan.
+  planAllTitle: { ar: "في كل خطة", en: "Every plan includes" },
+  planCoreLocked: { ar: "خزنة مقفلة لا يراها غيرك", en: "A vault only you can see" },
+  planCoreFingerprint: { ar: "تُفتح ببصمتك", en: "Opens with your fingerprint" },
+  planCoreSheet: { ar: "وثيقة الاسترداد", en: "A recovery sheet" },
+  planCoreCheckin: { ar: "تأكيد الحياة", en: "Life check-in" },
+  planCoreHandover: { ar: "التسليم لوصيّك", en: "Handover to your executor" },
   planStorage: { ar: "المساحة", en: "Storage" },
   planAssets: { ar: "العناصر", en: "Items" },
   planExecutors: { ar: "الأوصياء", en: "Executors" },
   planPhotos: { ar: "الصور والفيديو", en: "Photos & videos" },
-  planFileSize: { ar: "أكبر ملف", en: "Largest file" },
+  planFileSize: { ar: "حجم الملف الواحد", en: "Size per file" },
   planUnlimited: { ar: "بلا حدود", en: "Unlimited" },
+  planIncluded: { ar: "متاحة", en: "Included" },
+  planNotIncluded: { ar: "غير متاحة", en: "Not included" },
   // A count with no plan cap still stops at the vault's ceiling, fetched with
   // the plans — never "unlimited".
   planUpTo: { ar: "حتى {n}", en: "Up to {n}" },
-  planIncluded: { ar: "متاحة", en: "Included" },
-  planNotIncluded: { ar: "غير متاحة", en: "Not included" },
+  // The same rows without numbers, for a build that could not read the plans.
+  planStorageFree: { ar: "أساسية", en: "Basic" },
+  planStorageAnnual: { ar: "واسعة", en: "Ample" },
+  planCountFree: { ar: "بعدد محدود", en: "Limited" },
+  planCountAnnual: { ar: "بعدد أكبر", en: "More" },
+  planFileFree: { ar: "صغير", en: "Small" },
+  planFileAnnual: { ar: "كبير", en: "Large" },
   unitMb: { ar: "م.ب", en: "MB" },
   unitGb: { ar: "غ.ب", en: "GB" },
   plansPrice: {
-    ar: "ترى السعر في متجر التطبيقات.",
-    en: "You'll see the price in your app store.",
-  },
-  plansLapse: {
-    ar: "إذا توقف اشتراكك تبقى خزنتك كما هي، ويبقى التسليم لوصيّك قائماً. فقط لن تستطيع إضافة الجديد.",
-    en: "If your subscription stops, your vault stays as it is and your executor still receives what you chose to hand over. You just can't add anything new.",
+    ar: "ترى السعر في متجر التطبيقات",
+    en: "You'll see the price in your app store",
   },
 
   doorsEyebrow: { ar: "للعائلات", en: "For families" },

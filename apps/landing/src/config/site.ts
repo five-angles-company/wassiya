@@ -2,7 +2,7 @@
  * Everything the build reads from its environment, resolved once.
  *
  * Every value is public — Astro inlines it into static HTML — and every one
- * degrades rather than failing the build: no store URL renders "coming soon",
+ * degrades rather than failing the build: no store URL links its badge to `#`,
  * no GA id ships no script, no Convex URL drops the plan numbers.
  */
 function read(value: string | undefined): string | undefined {

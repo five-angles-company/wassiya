@@ -60,7 +60,7 @@ Filing a false death report, or one with forged documents, is prohibited. We may
 
 - The service has a free plan and a paid annual plan. Each plan's limits are shown in the app, and we may change them.
 - Subscriptions, payment and refunds happen through your app store under its policy, and the price is shown there.
-- **If your subscription ends, your vault stays readable and delivery to your executors keeps working**; only adding new items stops until you renew.
+- **Delivery to your executors never depends on your subscription.** If it ends, delivery keeps working and your vault stays readable, but adding new items, editing existing ones and handing over a private one stop until you renew. You can still delete items and make them private.
 
 ## Ending your account
 

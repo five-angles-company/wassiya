@@ -299,3 +299,46 @@ describe("a closed vault", () => {
     await expect(as.mutation(api.assets.remove, { assetId })).rejects.toThrow(closed)
   })
 })
+
+describe("a lapsed subscription freezes the vault as it stands", () => {
+  async function lapsedWithAsset() {
+    const t = convexTest(schema, modules)
+    const owner = await seedOwner(t, "owner")
+    const as = t.withIdentity({ subject: "owner" })
+    const assetId = await as.mutation(api.assets.create, {
+      ...newAsset([]),
+      secretSealed: new ArrayBuffer(8),
+    })
+    await t.run(async (ctx) => {
+      await ctx.db.patch("users", owner, {
+        subscription: { plan: "annual", renewsAt: Date.now() - DAY },
+      })
+    })
+    return { t, as, assetId }
+  }
+
+  test("adding, editing the contents and handing over are refused", async () => {
+    const { as, assetId } = await lapsedWithAsset()
+    await expect(
+      as.mutation(api.assets.create, { ...newAsset([]), secretSealed: new ArrayBuffer(8) })
+    ).rejects.toThrow("Subscription lapsed")
+    await expect(
+      as.mutation(api.assets.update, { assetId, labelSealed: new ArrayBuffer(8) })
+    ).rejects.toThrow("Subscription lapsed")
+    await expect(
+      as.mutation(api.assets.update, { assetId, secretSealed: new ArrayBuffer(8) })
+    ).rejects.toThrow("Subscription lapsed")
+    await expect(
+      as.mutation(api.assets.setHandover, { assetId, dekWrappedByRelease: new ArrayBuffer(72) })
+    ).rejects.toThrow("Subscription lapsed")
+  })
+
+  test("re-wrapping, making private, reading and deleting stay open", async () => {
+    const { as, assetId } = await lapsedWithAsset()
+    await as.mutation(api.assets.update, { assetId, dekWrappedByMk: new ArrayBuffer(8) })
+    await as.mutation(api.assets.setHandover, { assetId })
+    expect(await as.query(api.assets.get, { assetId })).not.toBeNull()
+    await as.mutation(api.assets.remove, { assetId })
+    expect(await as.query(api.assets.get, { assetId })).toBeNull()
+  })
+})

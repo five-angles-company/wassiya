@@ -131,7 +131,9 @@ export function StepEditFrame({
           ? (notice ?? null)
           : error === "locked"
             ? t.saveLocked!
-            : t.saveFailed!
+            : error === "lapsed"
+              ? t.saveLapsed!
+              : t.saveFailed!
       }
       onExit={leave}
       dirty={dirty}

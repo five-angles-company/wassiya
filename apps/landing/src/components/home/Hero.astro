@@ -1,8 +1,9 @@
 ---
-import { ArrowRight, Check, LockKeyhole, ShieldCheck } from "lucide-react"
+import { ArrowRight, Check, LockKeyhole, Pointer, ShieldCheck } from "lucide-react"
 
+import PhoneFrame from "@/components/PhoneFrame.astro"
 import StoreBadges from "@/components/StoreBadges.astro"
-import ExecutorSheet from "@/components/mock/ExecutorSheet.astro"
+import AppDemo from "@/components/mock/AppDemo.astro"
 import Faces from "@/components/ui/Faces.astro"
 import { HOME } from "@/i18n/strings/home"
 import { MOCK } from "@/i18n/strings/mock"
@@ -79,34 +80,40 @@ const trust = [home.heroTrustDevice, home.heroTrustPasswords, home.heroTrustFree
       </ul>
     </div>
 
-    <div class="rise relative mx-auto w-full max-w-[440px] py-12" style="--rise-delay: 200ms">
-      <div class="bg-sand-100 border-border absolute inset-x-8 top-6 bottom-16 -rotate-[7deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
-      <div class="bg-card border-border absolute inset-x-6 top-8 bottom-14 rotate-[5deg] rounded-[20px] border shadow-[var(--shadow-raised)]"></div>
-      <div class="relative rotate-[-1.5deg]">
-        <ExecutorSheet locale={locale} />
+    <div class="rise mx-auto w-full max-w-[440px]" style="--rise-delay: 200ms">
+      <div class="relative py-10">
+        <PhoneFrame label={m.demoLabel}>
+          <AppDemo locale={locale} />
+        </PhoneFrame>
+
+        <div
+          class="float-b bg-card border-border absolute -top-1 -end-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-end-10"
+        >
+          <Faces initials={[m.executorName.charAt(0)]} size={32} />
+          <span class="text-start">
+            <span class="block text-[14px] leading-tight font-bold">{home.floatExecutorTitle}</span>
+            <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatExecutorMeta}</span>
+          </span>
+        </div>
+
+        <div
+          class="float-a bg-card border-border absolute -bottom-1 -start-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-start-10"
+        >
+          <span class="bg-terracotta-100 text-terracotta-700 flex size-10 items-center justify-center rounded-full">
+            <LockKeyhole className="size-5" strokeWidth={2.25} aria-hidden="true" />
+          </span>
+          <span class="text-start">
+            <span class="block text-[14px] leading-tight font-bold">{home.floatLockTitle}</span>
+            <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatLockMeta}</span>
+          </span>
+        </div>
       </div>
 
-      <div
-        class="float-b bg-card border-border absolute -top-1 -end-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-end-10"
-      >
-        <Faces initials={[m.executorName.charAt(0)]} size={32} />
-        <span class="text-start">
-          <span class="block text-[14px] leading-tight font-bold">{home.floatExecutorTitle}</span>
-          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatExecutorMeta}</span>
-        </span>
-      </div>
-
-      <div
-        class="float-a bg-card border-border absolute -bottom-1 -start-2 flex items-center gap-3 rounded-[22px] border px-4 py-3 shadow-[var(--shadow-overlay)] sm:-start-10"
-      >
-        <span class="bg-terracotta-100 text-terracotta-700 flex size-10 items-center justify-center rounded-full">
-          <LockKeyhole className="size-5" strokeWidth={2.25} aria-hidden="true" />
-        </span>
-        <span class="text-start">
-          <span class="block text-[14px] leading-tight font-bold">{home.floatLockTitle}</span>
-          <span class="text-sand-700 mt-0.5 block text-[12.5px]">{home.floatLockMeta}</span>
-        </span>
-      </div>
+      {/* Shown by `scripts/app-demo.ts`: without it the phone does nothing. */}
+      <p data-demo-hint hidden class="text-sand-700 mt-3 flex items-center justify-center gap-2 text-[14px] font-semibold">
+        <Pointer className="text-primary size-4" strokeWidth={2.5} aria-hidden="true" />
+        {home.heroDemoHint}
+      </p>
     </div>
   </div>
 </section>

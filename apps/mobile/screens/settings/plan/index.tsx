@@ -2,8 +2,8 @@
  * ٩.٤ — الخطة والتخزين.
  *
  * The lapse rule is a product promise, not a billing detail: a lapsed vault
- * stays readable and executor delivery keeps working; only adding assets is blocked.
- * `assertCanAddAssets` is called in `assets.create` and nowhere else.
+ * stays readable and executor delivery keeps working; adding and editing are
+ * frozen until renewal (`assertSubscriptionActive`).
  *
  * So the lapse banner leads with what still works. A dunning notice that made
  * someone fear for their executors' access would be both untrue and cruel, and this

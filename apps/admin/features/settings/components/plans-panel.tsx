@@ -158,7 +158,6 @@ export function PlansPanel() {
           </TableCard>
         ))}
 
-        <p className="text-xs text-muted-foreground">{labels.noPricesHere}</p>
         <p className="text-xs text-muted-foreground">{labels.landingRebuild}</p>
       </div>
     </fieldset>

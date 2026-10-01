@@ -30,12 +30,16 @@ export const ASSET_NEW = {
     ar: "خزنتك أُقفلت. افتحها وحاول مرة أخرى.",
     en: "Your vault locked. Unlock it and try again.",
   },
-  // The one gate a lapsed subscription closes. Worded to say what still works,
-  // because the rule is that a lapsed card never costs anyone their
-  // inheritance — only adding is paused.
-  quotaExceeded: {
-    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
-    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
+  // A lapsed vault is frozen until renewal. Worded to say what still works,
+  // because a lapsed card never costs anyone their inheritance.
+  addPaused: {
+    ar: "الإضافة والتعديل متوقّفان حتى التجديد. خزنتك والتسليم لأوصيائك كما هما.",
+    en: "Adding and editing are paused until you renew. Your vault and delivery to your executors are unchanged.",
+  },
+  // Any other plan wall; the paywall sheet that opens with it says which.
+  limitReached: {
+    ar: "بلغت حدّ خطتك الحالية.",
+    en: "You've reached your current plan's limit.",
   },
   vaultFull: {
     ar: "بلغت خزنتك أقصى عدد من العناصر ({n}). احذف عنصراً لتضيف غيره.",

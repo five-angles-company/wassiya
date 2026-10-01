@@ -14,10 +14,6 @@ export const COMMON = {
 
   appStoreAlt: { ar: "حمّل من App Store", en: "Download on the App Store" },
   playStoreAlt: { ar: "احصل عليه من Google Play", en: "Get it on Google Play" },
-  storesSoon: {
-    ar: "قريباً على App Store وGoogle Play",
-    en: "Coming soon to the App Store and Google Play",
-  },
 
   // The same sentence as mobile's `LEGAL.notLegal`: the product's most
   // important legal statement, repeated wherever a reader already is.
@@ -30,7 +26,11 @@ export const COMMON = {
   encryption: { ar: "كيف يعمل التشفير", en: "How the encryption works" },
   help: { ar: "المساعدة", en: "Help" },
   reportDeath: { ar: "أبلغ عن وفاة", en: "Report a death" },
-  footerProduct: { ar: "وصيّة", en: "Wassiya" },
+  footerPromise: {
+    ar: "ما دمت حيّاً، لا أحد يفتح خزنتك — ولا نحن.",
+    en: "While you live, nobody opens your vault — not even us.",
+  },
+  footerProduct: { ar: "المنتج", en: "Product" },
   footerLegal: { ar: "قانوني", en: "Legal" },
   footerHelp: { ar: "للعائلات", en: "For families" },
   cookieSettings: { ar: "إعدادات التتبّع", en: "Cookie settings" },

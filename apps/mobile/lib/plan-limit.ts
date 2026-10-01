@@ -10,7 +10,7 @@
  *
  * The lapse keeps its plain-`Error` sentence on the backend, so it is matched
  * here by message. That one string is load-bearing in two repos; the backend
- * comment on `assertCanAddAssets` says so.
+ * comment on `assertSubscriptionActive` says so.
  */
 import { ConvexError } from "convex/values"
 

@@ -2,6 +2,7 @@ import { cookies } from "next/headers"
 
 import { RequirePermission } from "@/components/permission-gate"
 import { PlansPanel } from "@/features/settings/components/plans-panel"
+import { PricesPanel } from "@/features/settings/components/prices-panel"
 import { SETTINGS } from "@/features/settings/strings/settings"
 import { LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
 
@@ -20,6 +21,7 @@ export default async function Page() {
           {labels.introPlans}
         </p>
         <PlansPanel />
+        <PricesPanel />
       </>
     </RequirePermission>
   )

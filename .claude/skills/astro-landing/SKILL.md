@@ -12,8 +12,10 @@ description: >-
 
 `apps/landing` is the **static** public site at wassiya.app: an Arabic home at
 `/`, English at `/en/`, and `/legal/{terms,privacy,encryption}` in both. It
-reuses `@workspace/ui` tokens (the `.wassiya` Organic palette) and ships one
-script, the consent-gated analytics.
+reuses `@workspace/ui` tokens (the `.wassiya` Organic palette) and ships three
+small scripts: the consent-gated analytics, `scripts/plans-live.ts` (refreshes
+the Plans section from Convex on every visit) and `scripts/app-demo.ts` (the
+hero's interactive phone). Everything else is static HTML.
 
 ## When to use
 - Any change under `apps/landing`: sections, copy, legal Markdown, styling, env.
@@ -30,10 +32,14 @@ script, the consent-gated analytics.
 - `REVIEW-NOTES.md` beside the legal files is for the lawyer and is not published.
   `draft: true` in a legal file shows the "pending legal review" banner; only a
   sign-off removes it.
-- The hero picture is `src/components/mock/ExecutorSheet.astro` — the sheet the
-  owner prints for their executor, in the recovery sheet's paper, fanned over
-  two blank sheets. The share images in `public/og/` show it too, so changing it
-  means regenerating those.
+- The hero picture is an **interactive demo** in `PhoneFrame`:
+  `src/components/mock/AppDemo.astro` (Home, Vault, Executors tabs and the
+  check-in), driven by `scripts/app-demo.ts`. It is always drawn — a real
+  screenshot cannot be interactive. **The check-in confirms only through the
+  fingerprint prompt**, as in the app; never let a tap alone confirm. Without
+  JavaScript it is the Home screen. The printed sheet is pictured once, in the
+  keys section; don't put a second sheet on the page. The share images in
+  `public/og/` show the hero too, so changing it means regenerating those.
   The product pictures are drawn fragments in
   `src/components/mock/`, built from the app's tokens and strings; when the
   app's look changes, they change with it. Sample names only.
@@ -55,8 +61,10 @@ script, the consent-gated analytics.
   anything.
 - **Delivery goes to the executor(s)**, who carry out the will — never "to the
   people you chose". Arabic: الوصي / الأوصياء, never وريث / ورثة for this role.
-- **No price, ever**, and no plan limit typed as text — limits come only from
-  the build-time fetch below.
+- **No price or plan limit typed as text** — both come only from the
+  build-time fetch below. Prices are `planPrices` rows (edited in the console's
+  Settings › Plans), formatted with `@workspace/ui/lib/price`. Until the site has
+  a page per market, Arabic shows the `SA` row and English the default (`*`) row.
 - **No "am I an executor?" path.** Every executor is silent.
 - Links into the web app go through `webUrl(locale, path)`, which appends
   `?lang=` — `apps/web/proxy.ts` turns that into the web app's locale cookie.
@@ -64,9 +72,16 @@ script, the consent-gated analytics.
 ## Build-time plan limits (the stale-data traps)
 - `src/lib/plans.ts` reads `api.plans.published` with `ConvexHttpClient` **once
   per build** from `PUBLIC_CONVEX_URL`. Unset or unreachable → the Plans section
-  renders a sentence without numbers and the build logs a warning.
-- The numbers are frozen into the HTML: **a plan edited in the console reaches the
-  site only when it is rebuilt.** That is why `apps/landing/turbo.json` sets
+  renders words instead of numbers and no price, and the build logs a warning.
+- **Then the browser refreshes them.** `scripts/plans-live.ts` posts to Convex's
+  HTTP query API (`/api/query`, `plans:published`) on every visit and rewrites
+  the `data-plan-*` elements, so a plan or price edited in the console shows
+  without a rebuild. Build and browser format through the same
+  `lib/plan-view.ts` — never format a plan value anywhere else. The HTML keeps
+  the build's numbers for search engines and no-JS visitors, and a failed fetch
+  leaves them. It needs `https://*.convex.cloud` in the CSP's `connect-src`.
+- The build's numbers are still frozen into the HTML, which is what search
+  engines index until the next rebuild. That is why `apps/landing/turbo.json` sets
   `build.cache: false` (turbo would otherwise replay an old `dist/`, since no file
   changed) and declares `PUBLIC_*` in `env` (strict env mode hides them otherwise).
 

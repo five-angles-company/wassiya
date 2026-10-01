@@ -6,14 +6,15 @@
 // disagree — which they would the first time a tier was edited and a hardcoded
 // "٥٠٠ م.ب" stayed behind in a string file.
 //
-// They deliberately serve no price. Prices are set per storefront and rendered
-// from the store's own `priceString`.
+// The app never shows a price from here: the paywall renders the store's own
+// `priceString`. Only `published` carries prices, for the website.
 import { v } from "convex/values"
 
 import { internalMutation, query } from "./_generated/server"
 import { requirePermission, requireUser } from "./model/access"
 import { usageFor, VAULT_CEILINGS } from "./model/entitlements"
 import { limitsFor, limitsOfPlan, PLAN_IDS, planOf } from "./model/plans"
+import { pricesOf } from "./model/prices"
 
 export const current = query({
   args: {},
@@ -51,9 +52,9 @@ export const current = query({
  * is built. Unauthenticated on purpose: a plan's limits are marketing copy, and
  * the site has no session to present.
  *
- * ⚠️ Only the tier rows, through `limitsOfPlan`, and the vault ceilings a
- * `null` count stops at. Never an override (that is one account's business)
- * and never a price.
+ * ⚠️ Only the tier rows, through `limitsOfPlan`, the vault ceilings a `null`
+ * count stops at, and the annual plan's display prices per store country.
+ * Never an override: that is one account's business.
  *
  * ⚠️ The site is static, so what it prints is what this returned at its last
  * build. Editing a plan does not reach wassiya.app until the landing image is
@@ -65,6 +66,7 @@ export const published = query({
     free: await limitsOfPlan(ctx, "free"),
     annual: await limitsOfPlan(ctx, "annual"),
     ceilings: VAULT_CEILINGS,
+    prices: await pricesOf(ctx, "annual"),
   }),
 })
 

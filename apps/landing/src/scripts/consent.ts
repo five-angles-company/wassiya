@@ -4,8 +4,7 @@
  * loaded in a denied state. The choice is kept in localStorage, which is not a
  * cookie; if storage is unavailable the banner simply asks again.
  *
- * This is the only script the site ships. GA belongs to this site alone —
- * never add it to `apps/web` or `apps/mobile`.
+ * GA belongs to this site alone — never add it to `apps/web` or `apps/mobile`.
  */
 export {}
 

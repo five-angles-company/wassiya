@@ -290,11 +290,11 @@ export const PLAN = {
   unitMb: { ar: "م.ب", en: "MB" },
 
   // The lapse rule, stated as what still works. AGENTS.md: a lapsed card must
-  // never cost anyone their inheritance — only adding is paused.
+  // never cost anyone their inheritance — the vault is frozen, never lost.
   lapsedTitle: { ar: "انتهى اشتراكك", en: "Your subscription lapsed" },
   lapsedBody: {
-    ar: "الإضافة متوقّفة حتى التجديد. خزنتك والتسليم لأوصيائك يعملان كما هما.",
-    en: "Adding is paused until you renew. Your vault and delivery to your executors work as before.",
+    ar: "خزنتك محفوظة كما هي، والتسليم لأوصيائك قائم. جدّد لتضيف وتعدّل.",
+    en: "Your vault is kept as it is, and delivery to your executors still works. Renew to add and edit.",
   },
   manage: { ar: "إدارة الاشتراك", en: "Manage subscription" },
   // Billing is not wired: the row says so and opens a message to us.
