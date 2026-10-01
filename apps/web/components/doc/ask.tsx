@@ -23,7 +23,6 @@ export function Ask({
 }) {
   return (
     <section className="rise-in bg-card border-border rounded-panel relative overflow-hidden border p-6 shadow-[var(--shadow-overlay)] md:p-9">
-      <span aria-hidden className="bg-brand absolute inset-x-0 top-0 h-1" />
       <div className="flex items-start gap-4">
         {icon !== undefined && <IconDisc icon={icon} tone="attention" />}
         <div className="min-w-0">

@@ -5,7 +5,7 @@ import { cn } from "@workspace/ui/lib/utils"
 type Tone = "attention" | "settled" | "quiet" | "brand"
 type Size = "sm" | "md" | "lg"
 
-// Token pairs only — never ramp classes — so every tone flips with the theme.
+// Token pairs only, so a tone is defined once in `globals.css`.
 const TONE: Record<Tone, string> = {
   attention: "bg-accent text-accent-foreground",
   settled: "bg-tone-settled-soft text-tone-settled",

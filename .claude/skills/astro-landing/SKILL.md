@@ -12,10 +12,11 @@ description: >-
 
 `apps/landing` is the **static** public site at wassiya.app: an Arabic home at
 `/`, English at `/en/`, and `/legal/{terms,privacy,encryption}` in both. It
-reuses `@workspace/ui` tokens (the `.wassiya` Organic palette) and ships three
+reuses `@workspace/ui` tokens (the `.wassiya` Organic palette) and ships four
 small scripts: the consent-gated analytics, `scripts/plans-live.ts` (refreshes
-the Plans section from Convex on every visit) and `scripts/app-demo.ts` (the
-hero's interactive phone). Everything else is static HTML.
+the Plans section from Convex on every visit), `scripts/app-demo.ts` (the
+hero's interactive phone) and `scripts/signed-in.ts` (the header button's
+label). Everything else is static HTML.
 
 ## When to use
 - Any change under `apps/landing`: sections, copy, legal Markdown, styling, env.
@@ -111,8 +112,13 @@ each as a `--build-arg`.
   declares `--font-heading` inline as the body face.
 - Buttons use `buttonClasses` from `@workspace/ui/lib/wassiya-button` (shared with
   `apps/web`), via `ButtonLink.astro` — not shadcn's `buttonVariants`.
-- Light only: `.wassiya` dark is reached by an explicit switch, never
-  `prefers-color-scheme`, and this site has no switch.
+- Light only, like the web app; never `prefers-color-scheme`.
+- **The header frame and footer are shared with the web app**
+  (`@workspace/ui/components/site/`), rendered in `layouts/Layout.astro` with
+  links from `lib/site-hrefs.ts`. Change them there, never with a local copy.
+  This site supplies its own menu and account button through the header's
+  `nav` / `actions` slots; `scripts/signed-in.ts` swaps the button's label to
+  "بلاغاتي" when Clerk's `__client_uat` marker shows a session.
 
 ## Verify
 - `pnpm --filter landing build`; with `PUBLIC_GA_ID` unset, `dist/index.html`

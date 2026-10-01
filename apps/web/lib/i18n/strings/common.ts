@@ -8,11 +8,6 @@ export const COMMON = {
     en: "Write to us — a person on our team will answer.",
   },
 
-  // What the switch will give you, not what you are looking at.
-  themeDark: { ar: "التبديل إلى الوضع الداكن", en: "Switch to dark" },
-  themeLight: { ar: "التبديل إلى الوضع الفاتح", en: "Switch to light" },
-  language: { ar: "اللغة", en: "Language" },
-
   stepNow: { ar: "الآن", en: "Now" },
   stepDone: { ar: "تم", en: "Done" },
   // Always this phrase above an Ask, or it stops being a signal.

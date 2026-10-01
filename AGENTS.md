@@ -195,6 +195,24 @@ Two traps worth stating:
 
 ## Design rules (web + landing)
 
+**The web app and wassiya.app must feel like one site.** A visitor crossing
+from one to the other must not notice a change, so:
+
+- **One header frame and one footer, shared**: `SiteHeader` and `SiteFooter`
+  in `@workspace/ui/components/site/`, with their words in
+  `@workspace/ui/lib/site`. The landing renders them to static HTML, the web
+  app in `SiteShell`. Never give either app its own header or footer again —
+  that is how the two drifted. The logo always leads to wassiya.app's home.
+- **Each app fills the header with its own menu and buttons** (`nav`,
+  `actions`, links styled with `SITE_NAV_LINK`). The landing: its sections and
+  المساعدة, then one button to the web app — "تسجيل الدخول", or "بلاغاتي" when
+  Clerk's `__client_uat` marker says the visitor is signed in
+  (`scripts/signed-in.ts`). The web app (`WebNav`): بلاغاتي (signed in only),
+  أبلغ عن وفاة, المساعدة, then its own sign-in button or account menu. Neither
+  shows the other's button, and the web header has no download button.
+- **Light only, both apps.** No dark mode and no theme switch on web, because
+  the landing has none.
+
 `apps/web` shares the landing site's look: sticky glass header, cards with
 soft shadows, pill eyebrows, lucide icons in tinted discs, the brand gradient,
 a dot-grid ground. Most of its screens are read by someone who has just lost a
@@ -207,10 +225,10 @@ person, so four rules hold on top of that look:
   shows recorded dates only, never estimated ones.
 - **One large button per screen**, inside the one `Ask`. Status is a sentence
   (`StatusBanner`), never a badge.
-- **Tokens, not ramps.** Shared brand surfaces live in
-  `packages/ui/src/styles/surface.css`, driven by tokens in `globals.css` so dark
-  mode flips them. Never copy landing ramp classes (`text-sand-700`,
-  `bg-terracotta-100`, …) into web — they don't flip.
+- **Tokens first.** Shared brand surfaces live in
+  `packages/ui/src/styles/surface.css`, driven by tokens in `globals.css`.
+  Prefer the tokens in web screens; ramp classes (`text-sand-700`, …) are fine
+  in the shared chrome and anywhere both apps must render identically.
 
 `/dev/preview` (development only) renders the screens that need a session or
 real data, from sample props.

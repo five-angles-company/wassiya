@@ -71,7 +71,6 @@ export function HelpCenter() {
       )}
 
       <section className="rise-in bg-card border-border rounded-panel relative overflow-hidden border p-7 shadow-[var(--shadow-overlay)] md:p-9">
-        <span aria-hidden className="bg-brand absolute inset-x-0 top-0 h-1" />
         <div className="flex flex-col items-start gap-5 md:flex-row md:items-center">
           <IconDisc icon={MessagesSquareIcon} tone="attention" size="lg" />
           <div className="min-w-0 flex-1">

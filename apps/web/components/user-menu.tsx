@@ -21,6 +21,8 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { siteCopy } from "@workspace/ui/lib/site"
+
 import { useLocale } from "@/components/locale-provider"
 import { t } from "@/lib/i18n/locale"
 import { NAV } from "@/lib/i18n/strings/nav"
@@ -34,7 +36,9 @@ import { NAV } from "@/lib/i18n/strings/nav"
  * below `md`, and this menu is the phone's way to them.
  */
 export function UserMenu() {
-  const nav = t(NAV, useLocale())
+  const locale = useLocale()
+  const nav = t(NAV, locale)
+  const copy = siteCopy(locale)
   const { user, isLoaded } = useUser()
   const { openUserProfile, signOut } = useClerk()
 
@@ -45,11 +49,11 @@ export function UserMenu() {
   const initial = (name ?? email ?? "?").trim().charAt(0).toUpperCase()
 
   const links: { href: string; label: string; icon: LucideIcon }[] = [
-    { href: "/", label: nav.home, icon: HouseIcon },
-    { href: "/file", label: nav.reportDeath, icon: HeartHandshakeIcon },
+    { href: "/", label: copy.myReports, icon: HouseIcon },
+    { href: "/file", label: copy.reportDeath, icon: HeartHandshakeIcon },
     { href: "/notifications", label: nav.notifications, icon: BellIcon },
     { href: "/account", label: nav.account, icon: UserRoundIcon },
-    { href: "/help", label: nav.help, icon: LifeBuoyIcon },
+    { href: "/help", label: copy.help, icon: LifeBuoyIcon },
   ]
   const row =
     "flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium focus:bg-foreground/[0.05] data-highlighted:bg-foreground/[0.05]"

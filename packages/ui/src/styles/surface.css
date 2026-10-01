@@ -79,7 +79,12 @@
       border-bottom-color: var(--header-rule);
     }
   }
+  /* Transparent underneath the animation: a page too short to scroll has no
+     active scroll timeline, so the animation does nothing and this is what
+     shows — the same unscrolled header as every other page. */
   .wassiya .site-header {
+    background-color: transparent;
+    border-bottom-color: transparent;
     animation: wassiya-header-fill linear both;
     animation-timeline: scroll();
     animation-range: 0 96px;

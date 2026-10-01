@@ -41,20 +41,6 @@ export function dirFor(locale: Locale): "rtl" | "ltr" {
   return locale === "ar" ? "rtl" : "ltr"
 }
 
-/**
- * Persist the reader's choice. Browser-only — `document` does not exist on the
- * server, and nothing server-side should be writing this.
- *
- * Lives here rather than inline in the toggle because the React compiler reads
- * an assignment to `document.cookie` inside a component as mutating a value it
- * considers immutable. It is a legitimate write; keeping it in a plain module
- * function puts it outside the compiler's component analysis and next to the
- * cookie's name and lifetime, which is where it belongs anyway.
- */
-export function writeLocaleCookie(locale: Locale): void {
-  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${LOCALE_MAX_AGE}; samesite=lax`
-}
-
 /** One string in both languages. */
 export type LabelSet = { ar: string; en: string }
 

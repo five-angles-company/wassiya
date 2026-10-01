@@ -12,7 +12,6 @@ import { clerkLocalization } from "@/lib/clerk-localization"
 import { dirFor, LOCALE_COOKIE, resolveLocale, t } from "@/lib/i18n/locale"
 import { getLocale } from "@/lib/i18n/server"
 import { NAV } from "@/lib/i18n/strings/nav"
-import { getTheme } from "@/lib/theme-server"
 
 /**
  * ⚠️ **Nothing here is indexed.** Case and delivery URLs are capabilities, and
@@ -31,9 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export async function generateViewport(): Promise<Viewport> {
-  return { themeColor: (await getTheme()) === "dark" ? "#201e1d" : "#f5ead8" }
-}
+export const viewport: Viewport = { themeColor: "#f5ead8" }
 
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
@@ -54,13 +51,13 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 })
 
 /**
- * `dir`, `lang` and the theme are read from cookies on the server so they are
- * right in the first byte — a page that renders LTR and then flips is worse
- * than one that is simply English. The cost is that every route renders
- * dynamically; `apps/landing` is the static site.
+ * `dir` and `lang` are read from the cookie on the server so they are right in
+ * the first byte — a page that renders LTR and then flips is worse than one
+ * that is simply English. The cost is that every route renders dynamically;
+ * `apps/landing` is the static site.
  *
- * ⚠️ Dark comes only from the reader's own switch (the cookie), never from
- * `prefers-color-scheme`. See `lib/theme.ts`.
+ * ⚠️ Light only, like wassiya.app: never add `.dark` here or follow
+ * `prefers-color-scheme`. A visitor must not feel they changed sites.
  */
 export default async function RootLayout({
   children,
@@ -68,7 +65,6 @@ export default async function RootLayout({
   children: React.ReactNode
 }>) {
   const locale = resolveLocale((await cookies()).get(LOCALE_COOKIE)?.value)
-  const theme = await getTheme()
 
   return (
     <html
@@ -77,7 +73,6 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={cn(
         "wassiya font-sans antialiased",
-        theme === "dark" && "dark",
         fontMono.variable,
         plexArabic.variable,
         cairo.variable
@@ -89,8 +84,7 @@ export default async function RootLayout({
             context to get its access token. `dynamic` is what puts the CSP
             nonce on Clerk's script tags (`lib/csp.ts`).
 
-            Clerk's colours are the palette's CSS variables, so the theme
-            switch repaints it without a reload. `elevation: "flush"` drops
+            Clerk's colours are the palette's CSS variables. `elevation: "flush"` drops
             Clerk's own card; `AuthShell` supplies ours. The footer is hidden
             with `!` because Clerk's styles sit in a layer that plain utility
             classes do not beat — nothing in this product's chrome is another
@@ -116,11 +110,21 @@ export default async function RootLayout({
               fontFamily: "var(--font-body-wassiya)",
             },
             elements: {
-              cardBox: "shadow-none! border-0! bg-transparent! w-full!",
-              card: "shadow-none! border-0! bg-transparent! p-0!",
+              rootBox: "w-full!",
+              cardBox: "shadow-none! border-0! bg-transparent! w-full! max-w-none!",
+              card: "shadow-none! border-0! bg-transparent! p-0! w-full! gap-7!",
+              header: "items-start! text-start! gap-1.5!",
+              headerTitle: "font-heading! text-[22px]! font-extrabold! leading-snug!",
+              headerSubtitle: "text-[14.5px]! leading-relaxed!",
               formButtonPrimary: "rounded-full! h-12! text-[15px]! font-semibold!",
+              buttonArrowIcon: "hidden!",
               socialButtonsBlockButton: "rounded-full! h-12!",
-              formFieldInput: "rounded-[18px]! h-12!",
+              socialButtonsBlockButtonText: "text-[14.5px]! font-semibold!",
+              lastAuthenticationStrategyBadge: "hidden!",
+              dividerLine: "bg-border!",
+              dividerText: "text-[13px]!",
+              formFieldLabel: "text-[14px]! font-semibold!",
+              formFieldInput: "rounded-[18px]! h-12! text-[15px]!",
               footer: "hidden!",
             },
           }}

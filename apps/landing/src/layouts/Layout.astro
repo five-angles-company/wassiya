@@ -1,12 +1,17 @@
 ---
 import "../styles/global.css"
 
+import { SiteFooter } from "@workspace/ui/components/site/site-footer"
+import { SiteHeader } from "@workspace/ui/components/site/site-header"
+import { SITE_NAV_LINK, siteCopy } from "@workspace/ui/lib/site"
+import { buttonClasses } from "@workspace/ui/lib/wassiya-button"
+
+import mark from "@/assets/brand/mark.png"
 import ConsentBanner from "@/components/ConsentBanner.astro"
-import SiteFooter from "@/components/SiteFooter.astro"
-import SiteHeader from "@/components/SiteHeader.astro"
 import { SITE } from "@/config/site"
 import { COMMON } from "@/i18n/strings/common"
-import { dirFor, pathFor, stripLocale, t, type Locale } from "@/i18n/locale"
+import { dirFor, pathFor, stripLocale, t, webUrl, type Locale } from "@/i18n/locale"
+import { siteHrefs } from "@/lib/site-hrefs"
 
 interface Props {
   locale: Locale
@@ -21,6 +26,15 @@ const bare = stripLocale(Astro.url.pathname)
 const canonical = new URL(pathFor(locale, bare), Astro.site)
 const alternate = (to: Locale) => new URL(pathFor(to, bare), Astro.site).href
 const ogImage = new URL(`/og/${locale}.png`, Astro.site).href
+const hrefs = siteHrefs(locale, Astro.url.pathname)
+const copy = siteCopy(locale)
+const nav = [
+  { href: hrefs.how, label: copy.navHow },
+  { href: hrefs.security, label: copy.navSecurity },
+  { href: hrefs.plans, label: copy.navPlans },
+  { href: hrefs.faq, label: copy.navFaq },
+  { href: hrefs.help, label: copy.help },
+]
 ---
 
 <!doctype html>
@@ -60,11 +74,24 @@ const ogImage = new URL(`/og/${locale}.png`, Astro.site).href
     >
       {common.skipToContent}
     </a>
-    <SiteHeader locale={locale} />
+    <SiteHeader locale={locale} hrefs={hrefs} markSrc={mark.src}>
+      <Fragment slot="nav">
+        {nav.map((item) => <a href={item.href} class={SITE_NAV_LINK}>{item.label}</a>)}
+      </Fragment>
+      {/* The web app's front page, which asks for sign-in when needed; the
+          label follows the visitor's session (`scripts/signed-in.ts`). */}
+      <a slot="actions" href={webUrl(locale, "/")} class={`${buttonClasses("primary", "sm")} h-10 px-5`} data-track="account_click">
+        <span data-account-label="signed-out">{copy.signIn}</span>
+        <span data-account-label="signed-in" hidden>{copy.myReports}</span>
+      </a>
+    </SiteHeader>
     <main id="main">
       <slot />
     </main>
-    <SiteFooter locale={locale} />
+    <SiteFooter locale={locale} hrefs={hrefs} markSrc={mark.src} cookieSettings={SITE.gaId !== undefined} />
     {SITE.gaId && <ConsentBanner locale={locale} gaId={SITE.gaId} />}
+    <script>
+      import "@/scripts/signed-in"
+    </script>
   </body>
 </html>
